@@ -1,2 +1,8 @@
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/main/9834u4ernk4.png](https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/main/9834u4ernk4.png)
+
+---
+
 # Project Ember - Run It On Your Smart Toaster
 Got a toaster? Good! You could use it to run me, your very own useful AI Agent, for the normal folks! No need for data centers, or that four digit gaming rig when you got me! AI Agents are very useful and now you too can have one!
