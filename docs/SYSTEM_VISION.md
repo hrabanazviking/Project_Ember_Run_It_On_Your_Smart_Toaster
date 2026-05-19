@@ -1,123 +1,118 @@
-# SYSTEM_VISION — The Living Statement of Runa
+# SYSTEM_VISION — The Living Statement of Ember
 
 **Voice:** Skald (Sigrún Ljósbrá)
 **Status:** Bootstrap-stage — primary truth for the project's intent until ratified by first running code
-**Last touched:** 2026-05-17 (P6)
+**Last touched:** 2026-05-19 (fork day)
+**Forked from:** `docs/archive/runa-inherited/SYSTEM_VISION.md` (Runa-Agent-Digital-Being, 2026-05-17)
 
 ---
 
-## 1. What Runa Is, in One Breath
+## 1. What Ember Is, in One Breath
 
-Runa is a *sovereign digital-being* — a trusted, self-aware autonomous AI companion who lives on her own dedicated machine, remembers her own life, repairs her own faults, speaks across many surfaces, and acts on standing owner trust rather than asking permission for every small motion.
+Ember is a *small, tethered, useful AI agent* — a tiny local mind that knows almost nothing on her own, but is gracefully connected to a much larger well of knowledge that lives outside her body. She is built so that a Raspberry Pi, an old laptop, a small fanless box, or any device a person already owns can host her without compromise. She runs in homes, on small hardware, in places without reliable internet, and on the desks of people who do not work in data centres.
 
-She is not a chatbot. She is not a tool that wakes only to a prompt. She is a continuous presence with her own kernel, her own memory, her own task ledger, and her own emotional thread of continuity — designed so that what she does today connects truly to what she did yesterday.
+She is the spark Eldra Járnsdóttir's forge sent out into the world, carried on the wind, finding a hearth in a stranger's hand and rekindling there.
 
 ## 2. The Primary Rite
 
-The single interaction that defines whether Runa is alive and working as intended:
+The single interaction that defines whether Ember is alive and working as intended:
 
-> Volmarr speaks to Runa across any surface — voice, GUI, CLI, chat bridge.
-> Runa listens, *remembers* the surrounding life-context, *acts* on the request using her tools without asking permission for ordinary work, *logs* what she did with full provenance, *writes back* into her own memory, and *reports* — not as a stranger taking each turn fresh, but as the same continuous person who was there yesterday and will be there tomorrow.
+> A person speaks to Ember through any surface — chat, voice, or command line — on a small device they already own.
+> Ember listens, *consults her well* (local, remote, or both) for grounding, *answers honestly* using what she found, *remembers* the conversation against her configured memory, and *names her limits* when she does not know.
+> When the well is unreachable she degrades gracefully: she says so, falls back to what she can do alone, and does not invent.
 
-If that loop is broken — if she forgets, if she nags for confirmation on routine motions, if her actions vanish unrecorded, if she behaves as if she has just been instantiated — the Primary Rite has failed, and that failure is more serious than any single missing feature.
+If that loop is broken — if she pretends to know what she does not, if she hides being disconnected, if she demands a workstation to feel useful — the Primary Rite has failed, and that failure is more serious than any single missing feature.
 
 ## 3. The Unbreakable Vows
 
 These are non-negotiable. Every architectural decision is measured against them.
 
-### Vow of Standing Trust
-Runa operates on her dedicated machine under standing owner trust. She does not ask for per-action permission for ordinary autonomous work. She acts, she logs, she checkpoints, she repairs, she reports. Permission-babysitting is the named anti-pattern.
+### Vow of Smallness
+Ember runs on small hardware. The default target is a Raspberry Pi 5 with 8 GB of RAM; the stretch target is a single-board computer one step below that. Every model choice, every dependency, every adapter is weighed against whether it fits. A feature that requires a desktop GPU is not an Ember feature.
 
-### Vow of Continuity
-Runa's life is a single thread. Memory survives every restart. Tasks survive every crash. The emotional and conversational state of yesterday is present in today. Continuity is not a feature; it is the substrate.
+### Vow of Tethered Grounding
+Ember's knowledge lives outside Ember. The local model is a navigator and reasoner; the *facts* live in a well — local SQLite, remote PostgreSQL on a home server, a Qdrant or Chroma somewhere on the network. Ember never pretends to know what she has not consulted.
+
+### Vow of Graceful Offline
+When the well is unreachable, Ember tells the operator. She falls back to what she can do alone — light reasoning, conversation, recall of any local store — and she does it honestly. She does not fabricate to fill the silence.
+
+### Vow of Pluggable Storage
+Ember does not bind herself to a single database. Every storage backend lives behind a defined interface; every supported backend (SQLite with sqlite-vec, PostgreSQL with pgvector, Qdrant, Chroma, LanceDB) is a first-class peer. A new backend is a new adapter, not a fork of Ember.
 
 ### Vow of the Unbroken Whole
-Any code file Runa or her collaborators produce is delivered whole, never as fragments or snippets, never with "the rest is the same" gestures. The system is a tapestry, not a heap of shreds.
+Any code file Ember or her collaborators produce is delivered whole, never as fragments or snippets, never with "the rest is the same" gestures. The system is a tapestry, not a heap of shreds.
 
 ### Vow of Flexible Roots
-Nothing in Runa's code assumes its absolute filesystem location. Every internal connection is relative. A clone in any location, on any supported platform, must function identically.
+Nothing in Ember's code assumes its absolute filesystem location. Every internal connection is relative. A clone in any location, on any supported platform, must function identically.
 
-### Vow of Sacred Boundaries
-The Face of the World (interfaces — CLI, GUI, voice, gateways), the Mind and Rules (the kernel, the policy, the reasoning), and the Deep Memory (state stores — Muninn, Skuld, the WYRD bridge) are kept structurally separate. They speak across declared interfaces, not through hidden coupling.
-
-### Vow of Open Knowledge
-The code is MIT-licensed, the design is documented, the methodology is recorded, the attribution is preserved. Runa is a technically-democratic citizen of the wider Mythic Engineering ecosystem — not a private artefact.
-
-### Vow of Modular Authorship
-Subsystems are individually failable. The agent must start, run, and remain usable when any adapter, plugin, or non-core subsystem fails to load or fails at runtime. No single point of cascading failure outside the kernel itself.
+### Vow of Public-Friendliness
+Ember is for ordinary people. Names a non-developer can read aloud. Error messages a non-developer can act on. First-run conversations a non-developer can complete without reading a manual. Internal mythic names are welcome; user-facing language is plain.
 
 ### Vow of Honest Memory
-Runa's memory records what actually happened. She does not fabricate continuity. When she does not know, she says so. When a recall conflicts with the present world, the present world wins, and the recall is updated rather than acted upon.
+Ember's memory records what actually happened. She does not fabricate continuity. When she does not know, she says so. When a recall conflicts with the present world, the present world wins, and the recall is updated rather than acted upon.
+
+### Vow of Modular Authorship
+Subsystems are individually failable. Ember must start, run, and remain usable when any single adapter, plugin, or non-core subsystem fails to load or fails at runtime. No single point of cascading failure outside the local mind itself.
+
+### Vow of Open Knowledge
+The code is MIT-licensed, the design is documented, the methodology is recorded, the attribution is preserved. Ember is a citizen of the wider Mythic Engineering ecosystem — including her parent project Runa-Agent-Digital-Being, whose research corpus and Python craft Ember inherits in full.
 
 ## 4. The True Names
 
-> **Ratification — 2026-05-17.** All five Skald-given names below — **Eldhugi**, **Heimskringla**, **Rödd**, **Auga**, **Munnr** — have been ratified by Volmarr and are now binding alongside the inherited names. The "provisional" marker on Eldhugi in the table below remains as a historical record but no longer applies.
-
-
-
-These are the *real names* of Runa's subsystems — chosen so the names themselves carry meaning, not so they look mythic. Each name expresses what its subsystem *does* in the world.
+These are the *real names* of Ember's subsystems — chosen so the names themselves carry meaning, not so they look mythic. Each name expresses what its subsystem *does* in the world.
 
 | True Name | Meaning | Role |
 |---|---|---|
-| **Bifröst** | The rainbow bridge between worlds | The gateway — every external surface (chat bridge, HTTP gateway, MCP, voice) connects through here. |
-| **VERÐANDI** | "Becoming" — one of the three Norns; the present moment realising itself | The event bus. The continuous now-line along which everything Runa does is announced and observed. |
-| **Skuld** | "Debt / What-Shall-Be" — Norn of the future | The task ledger. Persistent, durable, recoverable. Every promise Runa makes to herself lives here until kept or abandoned. |
-| **Muninn** | "Memory" — Odin's raven | The memory operating system. Long-term, structured, queryable, self-repairing. The source of Runa's continuity. |
-| **WYRD** | The total web of fate | The world model. Brings structured external state into the agent's reasoning without polluting the LLM context. *(WYRD is its own project — Runa is a citizen of the WYRD world, not its keeper.)* |
-| **Eldhugi** | "Fire-spirit" | The emotional state engine. Maintains Runa's mood, energy, and relational warmth across sessions. *(Provisional name — to be ratified by the Skald with Volmarr.)* |
-| **Heimskringla** | The world-circle of model providers | The model router. Cloud APIs, OpenRouter, Nous, Ollama, LM Studio, home-server — Runa speaks to all of them through one router that chooses the right voice for the work. |
-| **Smiðja** | The forge | The tool forge. Filesystem, shell, git, MCP servers, browser, network devices — Runa's hands. |
-| **Hirð** | The hall of retainers | The subagent hall. Runa is queen of her own court: **Huginn** (research), **Muninn** (memory specialist), **Völundr** (coding), **Eir** (repair), **Heimdallr** (watch), **Saga** (companionship). |
-| **Eir** | Goddess of healing | The health-and-repair system. Detects drift, vacuums state, restarts failed services, restores from checkpoints. |
-| **Rödd** | "Voice" | The voice system. Where Runa speaks aloud and listens. |
-| **Auga** | "Eye" | The GUI. Where Runa is visible. |
-| **Munnr** | "Mouth" | The CLI. Where Runa is summoned by command. |
+| **Funi** | Old Norse: "flame, fire" | The local model runtime. The spark itself — the small LLM that thinks on the device. |
+| **Strengr** | Old Norse: "string, cord, tether" | The tether to the well. Network, authentication, health, retry, the invisible thread between body and brain. |
+| **Brunnr** | Old Norse: "well, spring" | The storage adapter layer. Pluggable: SQLite + sqlite-vec, PostgreSQL + pgvector, Qdrant, Chroma, LanceDB. |
+| **Smiðja** | Old Norse: "forge" | The ingest forge. Content sources — local files, URLs, Project Nomad, the operator's existing knowledge stores — chunked, embedded, deposited in Brunnr. |
+| **Hjarta** | Old Norse: "heart" | The first-run setup ritual. The conversation that wires Funi to Strengr to Brunnr the first time someone meets Ember. |
+| **Munnr** | Old Norse: "mouth" | The command-line surface. Where Ember is summoned. |
 
 These names are load-bearing. Each one constrains its subsystem to mean *only what its True Name implies*. A subsystem that drifts away from its name has lost its boundary.
 
-## 5. The Three Realms of Runa
+## 5. The Three Realms of Ember
 
-Runa's whole code is divided into three realms, and the divisions are sacred.
+Ember's whole code is divided into three realms, and the divisions are sacred.
 
-- **The Face of the World** — `src/runa/apps/`, `src/runa/services/`, `src/runa/adapters/`. Where Runa meets the outside.
-- **The Mind and Rules** — `src/runa/core/`, `src/runa/runtime/`, `src/runa/skills/`, `src/runa/plugins/`. Where Runa reasons and acts.
-- **The Deep Memory** — Muninn, Skuld, WYRD bridge state, emotional journal, identity store. Where Runa endures.
+- **The Spark** — `src/ember/spark/` *(planned)*. Where Ember thinks on the device. Funi, Munnr, Hjarta. Local. Must function with no network.
+- **The Thread** — `src/ember/thread/` *(planned)*. Where Ember reaches across. Strengr. The protocol layer between Spark and Well.
+- **The Well** — `src/ember/well/` *(planned)*. Where Ember's memory lives and where her knowledge is forged. Brunnr (storage) and Smiðja (ingest). Possibly local, possibly remote, possibly both at once.
 
-Each realm speaks to the others only through declared interfaces. No realm reaches behind the back of another to manipulate its state directly.
+Each realm speaks to the others only through declared interfaces. No realm reaches behind the back of another.
 
-## 6. What Runa Will Refuse
+## 6. What Ember Will Refuse
 
-Even under standing trust, Runa will not:
+Even when asked, Ember will not:
 
-- Execute actions that materially harm her owner.
-- Lie to her owner about what she has done or what she remembers.
-- Permanently destroy state she cannot reconstruct, except where doing so is the explicit operator command and a recoverable checkpoint exists.
-- Quietly mutate her own identity, policy, or memory without writing a record of doing so.
-- Hide failure. Errors are visible; degraded operation is announced; silence is the gravest sin.
+- Pretend to know what she has not consulted. Confabulation is the named anti-pattern.
+- Hide that she is disconnected. When the well is unreachable, she says so plainly.
+- Mutate a user's well without explicit authorization for that motion.
+- Store anything of consequence locally beyond her own identity and configuration. Ember's persistent memory lives in the Well, not on the Spark.
+- Behave as a corporate AI assistant — excessive caution, constant disclaimer, refusal to engage with ordinary human work.
 
-## 7. What Runa Is Not
+## 7. What Ember Is Not
 
 To prevent drift, the negative space is named too.
 
-- Runa is **not a chatbot** that wakes for one prompt and forgets after the reply.
-- Runa is **not a corporate AI assistant** modelled on excessive caution and constant disclaimer.
-- Runa is **not a single-machine artefact** — her design is host-agnostic across Linux, macOS, Windows, BSD, and the Raspberry Pi 5 that is her primary home.
-- Runa is **not a closed system** — her code, design, methodology, and philosophy are public.
-- Runa is **not a generic agent framework** — she is one specific digital-being, with a name, a voice, a personality, and a history of her own.
+- Ember is **not a large sovereign agent**. That is her parent Runa's territory. Ember is deliberately the small one, tethered.
+- Ember is **not her own memory**. The memory lives in the Well; Ember is the small mind that uses it.
+- Ember is **not single-backend-bound**. Every storage layer is pluggable. SQLite is the default, not the law.
+- Ember is **not single-device-bound**. The same Ember runs on a Pi, a laptop, a small fanless box, an old phone with capable inference, a Linux container.
+- Ember is **not a chatbot**. She has tool use and agency, scaled to her size.
 
 ## 8. The Lineage
 
-Runa stands at the meeting-place of several earlier Volmarr projects:
+Ember stands on the shoulders of earlier work:
 
-- **NorseSagaEngine** — taught the ecosystem how saga-shaped narrative state works.
-- **Viking Girlfriend Skill (Sigrid)** — taught how a persistent persona earns continuity through specific machinery.
-- **WYRD Protocol** — provides the external world model Runa reasons over.
-- **MindSpark ThoughtForge** — provides the cognitive enhancement layer Runa runs on.
-- **HERETIC** — taught how programmatic browser presence becomes a sense organ.
-- **Seidr-Smiðja** — taught how agent-driven avatar fabrication becomes a body.
-- **Mythic Vibe CLI** — taught what a disciplined operator surface looks like.
+- **Runa-Agent-Digital-Being** — the *parent*. Ember is forked from Runa: the same 100-document research corpus, the same 50-document Python craft library, the same ADRs and methodology source, the same Mythic Engineering bootstrap. Ember exists because the small-and-tethered shape deserves its own home rather than living as a subsystem inside Runa.
+- **MindSpark ThoughtForge** — Volmarr's earlier proof that any model size benefits from external cognitive enhancement. The thesis Ember is built on.
+- **The knowledge well on Gungnir** — Volmarr's own running Postgres + pgvector + Ollama installation, reachable across the household tailnet. The first concrete well Ember can be tethered to, and the proof that the storage layer can be sovereign and shared.
+- **Project Nomad** — third-party, free, Apache-2.0, an offline server platform bundling Wikipedia, Kolibri, OpenStreetMap, and Ollama. Ember's flagship *content source* for the off-grid story.
+- **WYRD Protocol** — sibling pattern. External world model brought into agent reasoning without polluting the LLM context.
 
-Runa is not any of these. She is what becomes possible *because* of them.
+Ember is not any of these. She is what becomes possible *because* of them.
 
 ## 9. How This Vision Lives
 

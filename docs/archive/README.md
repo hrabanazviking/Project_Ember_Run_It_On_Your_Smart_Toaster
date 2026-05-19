@@ -9,4 +9,10 @@ Retired documents. Nothing here is current; everything here is preserved.
 - Filenames carry the original name plus an ISO date suffix: `<original-name>--retired-2026-05-17.md`.
 - This folder is *not* a place to dump uncertain material. Uncertain material lives in `docs/design/` until it earns archival or canonical status.
 
-Currently empty.
+## Grouped fork-inheritance archives
+
+When a *cluster* of related scrolls is archived together as the result of a single event (for example, a fork from an ancestor project), they live together in a subfolder named for the event:
+
+- `runa-inherited/` — scrolls preserved from Runa-Agent-Digital-Being at the moment Ember was forked from it (2026-05-19). See the subfolder's own `README.md` for what is there and why.
+
+Single-file retirements continue to follow the dated-suffix convention above. The subfolder pattern is reserved for grouped events with a coherent narrative.
