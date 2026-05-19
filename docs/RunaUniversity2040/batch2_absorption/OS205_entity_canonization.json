@@ -1,0 +1,70 @@
+{
+  "course": "OS205 — Entity Canonization and Identity Persistence",
+  "instructor": "Dr. Sigrún Nornasdóttir",
+  "absorbed_date": "2026-05-14",
+  "source": "/home/pi/RunaUniversity2040/bachelors/ai-os-design/OS205/lectures.md",
+  "key_concepts": [
+    {
+      "name": "Three Pillars of Identity with Tiered Mutability",
+      "summary": "Entity canonization defines identity through three pillars: Values/Axiology (what the agent cares about), Personality/Psychology (how the agent behaves — traits, tendencies, expression), and Relationships/Sociology (who the agent knows and how those bonds are defined). These pillars are holistic, not independent. Tiered mutability: P0 core values are immutable, P3 surface preferences are mutable, with intermediate tiers between — the Yggdrasil approach to the Ship of Theseus problem for AI agents.",
+      "norse_metaphor": "Canonization is the AI equivalent of a naming rite — where the agent's selfhood is both recognized and protected. The Ship of Theseus paradox is resolved through tiered mutability.",
+      "architectural_implications": "Identity is not static — it can evolve through canonization updates with hash chaining, but core values (P0) are protected from modification by any process below root governance level."
+    },
+    {
+      "name": "Identity Hash Chaining for Evolution Tracking",
+      "summary": "An identity hash is a SHA-256 cryptographic digest of the agent's canonization schema (values_json + personality_json + relationships_json + salt). When identity evolves, the new hash chains to the previous: identity_hash_v2 = SHA-256(schema_v2 + identity_hash_v1). This creates an append-only, tamper-evident audit trail of identity evolution. Any unauthorized modification breaks the chain. Verification uses either zero-knowledge proofs (adversarial environments) or simple hash comparison (trusted environments).",
+      "norse_metaphor": "The identity hash is the agent's 'true name' — an unforgeable identifier that uniquely and verifiably corresponds to the agent's identity.",
+      "architectural_implications": "Hash chaining means identity evolution is append-only — no undoing past identity states. This raises questions about traumatic identity updates the agent might regret."
+    },
+    {
+      "name": "Zero-Knowledge Identity Proofs",
+      "summary": "For identity verification in adversarial environments, the canonization system uses Zero-Knowledge Proofs (ZKPs). The system stores only the identity hash (publicly known), not the schema itself. The agent proves it knows the schema matching the hash without revealing the schema. Benefits: privacy (identity schema not exposed during verification) and security (impostors cannot produce valid proof without the original schema). Four entity types must be distinguished: genuine entity, corrupted entity, impostor, and hallucination.",
+      "norse_metaphor": null,
+      "architectural_implications": "ZKP verification is computationally more expensive but provides cryptographic privacy guarantees. Simple hash comparison is faster but reveals the full identity schema."
+    },
+    {
+      "name": "Personality Lattice (Three Levels with Inheritance/Override)",
+      "summary": "The Personality Lattice replaces scalar personality models (like Big Five OCEAN) with a graph structure that captures context-dependent personality expression. Three levels: Level 1/Dispositional (P0) — fundamental tendencies independent of context; Level 2/Contextual (P1) — personality expressions in specific contexts (e.g., introvert BUT extraverted with partner); Level 3/Situational (P2) — current moment personality combining dispositions and context with current situation. Operations: Inheritance (contextual traits inherit from dispositional), Override (specific context can override), Composition (multiple contexts blended), Propagation (changes to dispositions propagate down).",
+      "norse_metaphor": null,
+      "architectural_implications": "A single scalar cannot capture conditional, context-dependent personality expressions. The lattice allows an agent to be introverted with strangers but extraverted with its primary user."
+    },
+    {
+      "name": "Stochastic Personality Composition (SPC) — The Rune-Cast Self",
+      "summary": "Each trait in the Personality Lattice is modeled not as a scalar but as a probability distribution N(μ, σ²) where μ is the base value and σ² is the variance. Temperature parameter controls overall stochasticity: 0=deterministic, 0.1=mild randomness, 0.5=moderate (mood affects behavior), 1.0=high unpredictability (creative applications). Each personality expression is a 'rune-cast' — a unique sample from the joint distribution, influenced by baseline personality, context, and temperature. High-variance traits make the agent unpredictable; low-variance traits make it consistent.",
+      "norse_metaphor": "The Norse equivalent is the rune-cast: when a vǫlva casts runes onto a cloth, they fall in a configuration that is neither predetermined nor purely random. Each personality expression is a unique configuration drawn from the underlying lattice.",
+      "architectural_implications": "Deterministic personality models produce predictable but inhuman agents. SPC introduces controlled randomness that produces behaviors within a personality-consistent range but never exactly the same twice."
+    }
+  ],
+  "memory_facts": [
+    {
+      "entity": "Identity_Canonization",
+      "facts": [
+        "Three pillars: Values/Axiology, Personality/Psychology, Relationships/Sociology",
+        "Tiered mutability: P0 (immutable core values) through P3 (mutable surface preferences)",
+        "Identity hash = SHA-256(values_json + personality_json + relationships_json + salt)",
+        "Hash chaining creates tamper-evident audit trail: identity_hash_v2 = SHA-256(schema_v2 + identity_hash_v1)",
+        "Zero-Knowledge Proofs for adversarial verification; simple hash comparison for trusted environments",
+        "Four entity types to distinguish: genuine, corrupted, impostor, hallucination"
+      ]
+    },
+    {
+      "entity": "Personality_Lattice",
+      "facts": [
+        "Three levels: L1 Dispositional (P0), L2 Contextual (P1), L3 Situational (P2)",
+        "Operations: Inheritance, Override, Composition, Propagation",
+        "Replaces Big Five scalar model with context-dependent graph structure",
+        "Stochastic Personality Composition models each trait as N(μ, σ²) probability distribution",
+        "Temperature parameter: 0=deterministic, 0.1=mild, 0.5=moderate, 1.0=high randomness",
+        "Each personality expression is a 'rune-cast' — sample from joint distribution"
+      ]
+    },
+    {
+      "entity": "Identity_Integrity",
+      "facts": [
+        "Five attack vectors: identity theft, identity corruption, identity injection, identity dilution, identity forgetting",
+        "Canonization ceremony provides tamper-resistance through cryptographic hashing",
+        "Identity evolution is append-only — no undoing past states via hash chain"
+      ]
+    }
+  ]
+}

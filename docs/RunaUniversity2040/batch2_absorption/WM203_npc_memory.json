@@ -1,0 +1,84 @@
+{
+  "course": "WM203 — NPC Memory Systems (Each Mind Its Own Well)",
+  "instructor": "Dr. Geirrøðr Heimdallarson",
+  "absorbed_date": "2026-05-14",
+  "source": "/home/pi/RunaUniversity2040/bachelors/ai-world-modeling/WM203/lectures.md",
+  "key_concepts": [
+    {
+      "name": "Nested Cognition (Russian Doll) and Tiered NPC Memory",
+      "summary": "NPCs within world models are AI agents with their own world models — minds within minds. Each NPC has its own Mímir Protocol persistence layer (miniaturized NPC Event Log, NPC Snapshot Store, NPC Personality Lattice) — a private, persistent record of experiences. The parent world model knows THAT an NPC saw something but not WHAT the NPC remembers about it. To manage resource constraints, NPC memory is tiered: P0 (player characters, quest-givers) get full memory; P1 (recurring characters) get compressed memory; P2 (townsfolk) get key-facts-only; P3 (passersby) get no persistent memory. Deep nesting beyond one level (NPCs modeling other NPCs' minds) is the Theory of Mind problem (Lecture 6).",
+      "norse_metaphor": "Mímir-in-Mímir architecture: each NPC has its own well of memory, within the parent world model's larger well.",
+      "architectural_implications": "Memory privacy is fundamental — the parent world model's omniscient viewpoint should not be available to NPCs. NPCs must act on their own subjective, potentially misremembering, experiences. This creates emergent social dynamics."
+    },
+    {
+      "name": "NPC Episodic Memory with Subjective Content",
+      "summary": "Each NPC's episodic memory is stored as a compact event stream (NPCEpisodicEvent) with key fields: event_type (saw/heard/did/felt/learned), content (the NPC's SUBJECTIVE description — not the global truth), emotional_valence (-1.0 to +1.0), importance (0.0 to 1.0), and confidence (0.0 doubtful to 1.0 certain). Retrieval uses a miniaturized NPCReadGate that scores candidates by: importance × mood_boost × recency × confidence. Mood boost amplifies memories matching the NPC's current emotional state (+30% for mood-congruent memories). Low-confidence memories may be doubted, misremembered, or ignored.",
+      "norse_metaphor": null,
+      "architectural_implications": "NPC memories are SUBJECTIVE — Rurik the Smith might remember 'Volmarr cheated me' even if the global event log shows a fair transaction. This creates emergent social dynamics: NPCs who bear false grudges, NPCs who misattribute heroic deeds."
+    },
+    {
+      "name": "Social Relationship Memory as Directed Weighted Graphs",
+      "summary": "Each NPC maintains a social graph — a weighted, directed graph of relationships stored as SocialRelationship objects: subject, object, type (friend/enemy/family/romantic/debtor), strength (0.0 barely known to 1.0 core relationship), valence (-1.0 hostility to +1.0 affection), last_interaction timestamp, and memories list (event IDs of key shared memories). Relationships are ASYMMETRIC — Sigrún may consider Rurik a friend (valence 0.7) while Rurik sees Sigrún as an acquaintance (valence 0.3). Relationships affect behavior through: greeting templates, price modifications, information sharing, and action thresholds.",
+      "norse_metaphor": "The 'Web of Bonds' — social relationships as the glue holding NPC communities together. Without it, every NPC interaction starts from scratch and the world feels dead.",
+      "architectural_implications": "Asymmetric relationships create rich emergent dynamics. Relationship decay over time forces active maintenance — players who ignore NPCs see relationships weaken. Shared memories create relationship-specific context."
+    },
+    {
+      "name": "Goal-State Memory with 4-Priority Hierarchy and Aspiration Engine",
+      "summary": "NPC goals are organized as NPCGoal objects with a 4-priority hierarchy: P0 Survival (eat, sleep, avoid danger — preempts all others), P1 Vocation (daily role — blacksmith smiths, farmer farms), P2 Social (maintain relationships, visit friends, pursue romance), P3 Aspirational (long-term dreams — 'open a second smithy'). Each goal has progress, deadline, dependencies, and status. The aspiration engine generates new P3 goals from: personality (ambitious NPCs generate more), current state (what is the NPC lacking?), social environment (peer aspirations — cultural transmission), and memory (past successes/failures — persistence vs learned helplessness). When P0 activates, all other goals are paused (preemption).",
+      "norse_metaphor": null,
+      "architectural_implications": "Goal hierarchies create natural behavior prioritization. P3 aspirations give NPCs long-term depth but raise questions about impossible goals ('I want to become a dragon'). Goal conflicts (vocation vs friendship) create realistic NPC dilemmas."
+    },
+    {
+      "name": "NPC Forgetting with Decay, Misremembering, and Intentional Forgetting",
+      "summary": "NPC memory is reconstructive, not recordable — each recall is an act of re-assembly that may differ from the original. Each NPC has its own forgetting curve parameterized by: decay_rate λ (higher for simple NPCs/forgetful peasants, lower for intelligent NPCs/wise elders) and reinforcement_factor β (recall strengthens memories). Intentional forgetting has three mechanisms: (1) Suppression — memory is still stored but retrieve-ability is artificially lowered; (2) Repression — memory's confidence is set to 0 (inaccessible to conscious recall but still influences behavior through implicit pathways); (3) Amnesia — traumatic or magical event wipes episodic events (still exist in global event log). Emotional bias: happy NPCs recall positive interactions; angry NPCs recall grievances.",
+      "norse_metaphor": "The 'Crooked Path of Recall' — memory is not a straight road back to truth but a winding path that can lead astray.",
+      "architectural_implications": "Imperfect NPC memory creates interesting social dynamics but can frustrate players. Repressed memories still influence behavior implicitly (behavior shaped by memories the NPC cannot consciously access). Players can exploit debt-forgetting NPCs by avoiding them."
+    }
+  ],
+  "memory_facts": [
+    {
+      "entity": "NPC_Memory_Architecture",
+      "facts": [
+        "Mímir-in-Mímir architecture: each NPC has own Event Log, Snapshot Store, Personality Lattice inside parent world model",
+        "Tiered NPC memory: P0 (full), P1 (compressed), P2 (key facts only), P3 (no memory/procedural)",
+        "Memory privacy: parent world model knows THAT NPC saw something but not WHAT NPC remembers",
+        "Belief divergence: parent has omniscient truth, NPC has subjective belief that may differ"
+      ]
+    },
+    {
+      "entity": "NPC_Episodic_Memory",
+      "facts": [
+        "NPCEpisodicEvent fields: event_type (saw/heard/did/felt/learned), content (SUBJECTIVE description), emotional_valence (-1.0 to +1.0), importance (0.0 to 1.0), confidence (0.0 doubtful to 1.0 certain)",
+        "NPCReadGate retrieval scores: importance × mood_boost × recency × confidence",
+        "Mood boost: +30% for mood-congruent memories (emotions amplify recall of emotionally similar memories)",
+        "Subjective content: NPC may remember events differently from global truth"
+      ]
+    },
+    {
+      "entity": "NPC_Social_Relationships",
+      "facts": [
+        "SocialRelationship: subject, object, type, strength (0.0-1.0), valence (-1.0 hostility to +1.0 affection), last_interaction, memories list",
+        "Relationships are ASYMMETRIC — one NPC can rate the relationship differently from the other",
+        "Relationships affect: greeting templates, price modifications (-10% to -30% for friends, +20% for enemies), information sharing, action thresholds",
+        "Relationship decay over time if not maintained"
+      ]
+    },
+    {
+      "entity": "NPC_Goal_State",
+      "facts": [
+        "4-priority hierarchy: P0 Survival (preempts all), P1 Vocation (daily role), P2 Social (relationships), P3 Aspirational (long-term dreams)",
+        "Aspiration engine generates P3 goals from: personality traits, current needs, social environment (peer aspirations), past memories",
+        "NPCGoal has: progress (0.0-1.0), deadline, dependencies, status (active/paused/completed/failed)"
+      ]
+    },
+    {
+      "entity": "NPC_Forgetting",
+      "facts": [
+        "Forgetting curve: memory_strength = exp(-λ × age_hours / reinforcement)",
+        "λ (decay_rate) varies by NPC intelligence, β (reinforcement) varies by NPC memory quality",
+        "Three intentional forgetting modes: Suppression (lower retrieve-ability), Repression (confidence=0, still influences behavior), Amnesia (deletes from episodic store, still in global log)",
+        "Emotional bias: happy NPCs recall positive memories; angry NPCs recall grievances"
+      ]
+    }
+  ]
+}

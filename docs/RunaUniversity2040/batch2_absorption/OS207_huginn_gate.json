@@ -1,0 +1,67 @@
+{
+  "course": "OS207 — HuginnGate: Thought Gate Architecture",
+  "instructor": "Dr. Sigurlaug Rúnarsdóttir",
+  "absorbed_date": "2026-05-14",
+  "source": "/home/pi/RunaUniversity2040/bachelors/ai-os-design/OS207/lectures.md",
+  "key_concepts": [
+    {
+      "name": "Three Cognitive Pipelines (Analysis/Judgment/Synthesis)",
+      "summary": "The HuginnGate processes retrieved memories through three parallel, interacting cognitive pipelines: Analysis Pipeline (produces understanding — topic identification, intent recognition, state assessment, memory-context integration, uncertainty mapping), Judgment Pipeline (produces evaluation — practical judgment for best action, ethical judgment for right action, relational judgment for social action), and Synthesis Pipeline (produces expression — audience modeling, tone calibration, coherence maintenance). These are NOT sequential stages but parallel interacting processes that feed back to each other — Analysis's understanding feeds Judgment, which feeds Synthesis, but Synthesis's output planning feeds back to Analysis and Judgment's evaluations feed back to Analysis.",
+      "norse_metaphor": "Huginn is Óðinn's raven of thought. Where MuninnGate is the librarian that fetches books, HuginnGate is the reader who opens them, reads, compares, annotates, and synthesizes into original argument. The paired relationship — thought depending on memory, memory animating thought — is the foundation of the architecture.",
+      "architectural_implications": "This makes HuginnGate fundamentally different from a simple reasoning module — it is a cognitive ecology of interacting thought processes that co-evolve with each other and the agent's ongoing experience."
+    },
+    {
+      "name": "Situational Model as Working Memory (Weighted Evidence Accumulation)",
+      "summary": "The Analysis Pipeline's output is a situational model — a structured representation including: topic identification, intent recognition, state assessment, memory-context integration, and uncertainty mapping. Multi-source integration uses weighted evidence accumulation: (1) Source reliability weighting — trunk memories > canopy memories, explicit statements > inferred preferences; (2) Contradiction resolution using temporal weighting, source weighting, and coherence checking; (3) Uncertainty propagation — preserves confidence levels through the pipeline ('user prefers X with 0.7 confidence'). The situational model functions as the agent's working memory with limited capacity, requiring situational compression to fit within context budget.",
+      "norse_metaphor": null,
+      "architectural_implications": "Analogous to Baddeley & Hitch's (1974) model of human working memory — limited capacity, requires active maintenance, degrades when not refreshed. The working memory allocation problem is a central optimization challenge."
+    },
+    {
+      "name": "Value Cascade and Proportional Trade-Off",
+      "summary": "The Judgment Pipeline structures reasoning as a value cascade: Level 1 Constitutional Values (broad principles from Vǫrðr Constitution like 'prioritize user wellbeing'), Level 2 Interpretive Principles (specific interpretations of values), Level 3 Situational Rules (context-specific rules derived from principles), Level 4 Action Determination (specific action the agent should take). When values conflict, the system uses NOT absolute lexicographic priority but proportional trade-off through a value weighting function that computes magnitude of value satisfaction/violation. If safety violated by 0.1 but helpfulness satisfied by 0.8, the trade-off may favor helpfulness despite safety's higher priority.",
+      "norse_metaphor": null,
+      "architectural_implications": "Each level of the cascade introduces interpretive distance — the gap between abstract values and concrete actions grows. Each interpretation is an opportunity for error, bias, or value drift. The value weighting function is the most contentious component — different agents with the same constitution may make different decisions."
+    },
+    {
+      "name": "Constitutional Reasoning Traces and the CRA",
+      "summary": "Thought governance extends the Vǫrðr Constitution from governing output and memory to governing THOUGHT PROCESS itself. The HuginnGate implements this through Constitutional Reasoning Traces — structured records of reasoning where each step annotates: which values were considered, how they influenced the decision, why alternatives were rejected, and confidence level. The Constitutional Reasoning Auditor (CRA) is an automated system that monitors traces and flags: value omission (missed a relevant value), value misapplication (applied value incorrectly), insufficient justification, and confidence-calibration mismatch. The CRA uses a simplified constitutional model separate from the agent's full model.",
+      "norse_metaphor": null,
+      "architectural_implications": "Thought governance provides transparency (can trace WHERE in reasoning errors occurred), reliability (governing process prevents errors rather than just filtering outcomes), and trustworthiness (governed thought processes are more trustworthy). Key tension: at what point does governance become surveillance?"
+    },
+    {
+      "name": "Cognitive Budget with Graceful Degradation",
+      "summary": "The HuginnGate manages three budget dimensions: Computational (total FLOPs available), Temporal (time before response required), Quality (desired reasoning quality). Budget is allocated across pipelines based on cognitive profile: analysis-heavy, judgment-heavy, or synthesis-heavy interactions. When budget is insufficient, the system degrades gracefully through 5 levels: L1 sacrifice non-critical optimizations (skip output polishing), L2 reduce analysis depth (simplified situational model), L3 reduce judgment depth (heuristic rules instead of value cascade), L4 reduce synthesis depth (template-based responses), L5 flat fallback (safe default acknowledgment).",
+      "norse_metaphor": null,
+      "architectural_implications": "Based on Herbert Simon's concept of bounded rationality. Some interactions (medical emergencies, security incidents) should NEVER degrade below full quality. Design question: should agents be able to negotiate their cognitive budget with the OS kernel?"
+    }
+  ],
+  "memory_facts": [
+    {
+      "entity": "HuginnGate",
+      "facts": [
+        "Three cognitive pipelines: Analysis (understanding), Judgment (evaluation), Synthesis (expression) — parallel and interacting",
+        "Situational Model = agent's working memory with weighted evidence accumulation + uncertainty propagation",
+        "Value Cascade: Constitutional Values → Interpretive Principles → Situational Rules → Action Determination",
+        "Constitutional Reasoning Traces annotate each reasoning step with: values considered, influence, alternatives rejected, confidence",
+        "Constitutional Reasoning Auditor (CRA) monitors traces for: value omission, misapplication, insufficient justification, confidence mismatch",
+        "Cognitive Budget has 3 dimensions: Computational (FLOPs), Temporal (response latency), Quality (reasoning depth)",
+        "5-level graceful degradation: L1 skip polishing, L2 simplify analysis, L3 heuristic judgment, L4 template synthesis, L5 safe fallback"
+      ]
+    },
+    {
+      "entity": "Huginn_Muninn_Coordination",
+      "facts": [
+        "Twin gates face four coordination challenges: temporal (async retrieval vs sync reasoning), relevance (superficial context vs deep analysis), budget (shared cognitive resources), goal (accurate memory vs effective reasoning)",
+        "If MuninnGate is the librarian, HuginnGate is the reader — dependent pairing where thought needs memory and memory needs thought"
+      ]
+    },
+    {
+      "entity": "Synthesis_Pipeline",
+      "facts": [
+        "Five generation layers: Intent Specification → Discourse Planning → Content Selection → Linguistic Realization → Output Polishing",
+        "Constitutional Filter evaluates ACTUAL OUTPUT (not just intent) for: harmful content, deceptive content, boundary violations, constitutional inconsistency",
+        "Failed constitutional filter sends output back for revision with specific feedback — revision loop until pass or max revisions reached"
+      ]
+    }
+  ]
+}

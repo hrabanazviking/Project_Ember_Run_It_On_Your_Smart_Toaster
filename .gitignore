@@ -1,0 +1,109 @@
+# ---------------------------------------------------------------------------
+# Runa Agent — .gitignore
+#
+# Rule of thumb: the repository holds SOURCE and TEMPLATES.
+# Live runtime state lives under ~/.runa/ on each operator's host and
+# is never committed.
+# ---------------------------------------------------------------------------
+
+# Python build / cache artefacts -------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments -----------------------------------------------------
+.venv/
+venv/
+ENV/
+env/
+.python-version.local
+
+# Package managers ---------------------------------------------------------
+# (Keep uv.lock / poetry.lock when present — they are reproducibility artefacts.)
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing and coverage -----------------------------------------------------
+.coverage
+.coverage.*
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checkers and linters ------------------------------------------------
+.pyre/
+.pytype/
+
+# Documentation builds ----------------------------------------------------
+docs/_build/
+site/
+
+# Secrets / environment ---------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env.local
+secrets/
+*.secret
+*.secret.*
+
+# Runa runtime state (must never be in repo) ------------------------------
+# These are listed for clarity even though ~/.runa/ is outside the repo;
+# they protect against accidental "runa state snapshot . " or similar.
+.runa/
+runa-state/
+runa-memory/
+runa-logs/
+
+# IDE / editor -------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Jupyter ------------------------------------------------------------------
+.ipynb_checkpoints/
+
+# OS / misc ---------------------------------------------------------------
+*.log
+*.pid
+*.seed
+.DS_Store?
+._*
+
+# Build / packaging artefacts not covered above ---------------------------
+.tox/
+.pyrightconfig.json

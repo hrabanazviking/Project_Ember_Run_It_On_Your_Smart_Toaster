@@ -1,0 +1,63 @@
+{
+  "course": "WM201 — World State Persistence and Memory (Mímir's Droplet)",
+  "instructor": "Dr. Hervör Alfarinsdóttir",
+  "absorbed_date": "2026-05-14",
+  "source": "/home/pi/RunaUniversity2040/bachelors/ai-world-modeling/WM201/lectures.md",
+  "key_concepts": [
+    {
+      "name": "Event Sourcing with Hash-Chained WorldEvent Log",
+      "summary": "In event sourcing, the event log IS the single source of truth — the current world state is a derived artifact (materialized view). Each WorldEvent has: event_id, event_type, timestamp, tick, source_entity, target_entity, payload, sequence number, and causality_hash. The causality_hash chains each event to the previous event (like a blockchain), ensuring the log cannot be tampered with. This gives event sourcing powerful capabilities: temporal query (reconstruct any past state), audit (complete audit trail), debugging (replay to reproduce bugs), and branching (fork simulation at any point for what-if scenarios).",
+      "norse_metaphor": "Mímir is the guardian of the well of wisdom — Mímir's Well is the persistence layer where accumulated world state resides, always available, always queryable, surviving across sessions, crashes, and the death and rebirth of worlds.",
+      "architectural_implications": "Append-only log means errors cannot be deleted — they must be corrected with compensating events (like accounting). The log grows without bound, requiring compaction strategies."
+    },
+    {
+      "name": "Three-Tier Storage: Full Snapshots + Incremental Snapshots + Event Log",
+      "summary": "The Mímir Protocol uses a hybrid persistence architecture with three tiers: (1) Full snapshots — complete world state captured every N ticks (default N=1000), expensive but self-contained. (2) Incremental snapshots — only entities that changed since last full snapshot, captured every M ticks (default M=10), much smaller. (3) Event log — every tick produces events, provides sub-tick granularity. To reconstruct state at tick T: start from nearest full snapshot, apply incremental snapshots forward, then apply any remaining events. This provides: fast recovery (O(snapshot_size) not O(total_events)), temporal query (any past state reconstructable), sub-tick granularity.",
+      "norse_metaphor": null,
+      "architectural_implications": "Full snapshot of 100K entities × 50 properties × 100 bytes = 500MB per snapshot. Incremental snapshots are O(K) where K=changes, not O(N) where N=total entities. Storage cost is manageable when K << N."
+    },
+    {
+      "name": "Differential State Storage (Delta Encoding)",
+      "summary": "Instead of storing the entire world state, store only what CHANGED — the delta. A StateDelta records: tick_start, tick_end, property_changes (entity.property → new_value), entity_creations, entity_deletions, relationship_additions, relationship_removals. When K properties change out of N total (K << N), delta storage is O(K) vs O(N). Consecutive deltas can be merged for further compression (later values overwrite earlier ones for same property). The merge is lossy — intermediate states are lost — so merging must be done carefully for audit-sensitive applications.",
+      "norse_metaphor": "The Norse metaphor of 'what changed between the rain' — not 'here is the entire world' but 'here is what changed since last we looked.'",
+      "architectural_implications": "Differential storage is efficient for writes but reads require replaying all deltas from a base snapshot. Read optimization requires appropriate indexing and snapshot frequency."
+    },
+    {
+      "name": "Mímir Protocol Multi-Layer Query Architecture",
+      "summary": "The Mímir Protocol uses a multi-layer indexing architecture for efficient queries: Hash Index (point queries — entity.property → value), Tree Index (range queries — spatial, numerical ranges), Graph Index (pattern queries — relationship traversal), Materialized Views (pre-computed aggregates for common queries like population count). Above these indexes sits a SQL-like query interface. Below them sits the Snapshot Store (full + incremental), and below that the Event Log (append-only, hash-chained). Temporal queries are the Protocol's most distinctive feature — to query past state at tick T: find nearest snapshot, apply incremental snapshots forward to T, then apply events.",
+      "norse_metaphor": null,
+      "architectural_implications": "Each index type has storage cost. Choosing which indexes to maintain is a workload-dependent optimization problem. Combined temporal+pattern queries (e.g., 'Who was married to Entity 42 on Day 100?') require both temporal reconstruction and graph traversal."
+    },
+    {
+      "name": "Impermanence Problem Three Dimensions",
+      "summary": "World model persistence must solve three problems: (1) Crash Recovery — how much state is lost when the process fails? Demands durability. (2) Process Migration — how is state transferred between machines? Demands portability. (3) Historical Querying — can the system answer questions about past states? Demands temporality. Event sourcing solves all three but is expensive for long simulations. Periodic checkpointing is simple but lossy. The hybrid Mímir Protocol balances all three.",
+      "norse_metaphor": null,
+      "architectural_implications": "These three dimensions map to: durability (survive crashes), portability (survive migration), temporality (preserve history). The hybrid approach balances all three but requires careful tuning of snapshot frequency vs storage cost vs recovery time."
+    }
+  ],
+  "memory_facts": [
+    {
+      "entity": "Mimir_Protocol",
+      "facts": [
+        "Named after Mímir's Well — the Norse well of wisdom where Óðinn sacrificed his eye for knowledge",
+        "Three-tier storage: Full snapshots (every N=1000 ticks), Incremental snapshots (every M=10 ticks), Event log (every tick)",
+        "Event log is append-only with hash chaining (causality_hash links each event to previous)",
+        "WorldEvent schema: event_id, event_type, timestamp, tick, source_entity, target_entity, payload, sequence, causality_hash",
+        "Differential storage: StateDelta records only property_changes, entity_creations/deletions, relationship_additions/removals",
+        "Multi-layer query: Hash Index + Tree Index + Graph Index + Materialized Views",
+        "Temporal query: find nearest snapshot, apply incremental snapshots, apply remaining events",
+        "Impermanence problem three dimensions: durability (crash recovery), portability (migration), temporality (historical query)"
+      ]
+    },
+    {
+      "entity": "WorldEvent_EventSourcing",
+      "facts": [
+        "Event log is the single source of truth — current state is a derived materialized view",
+        "Three properties: Append-only (immutable), Ordered (causal sequence), Complete (every state change represented)",
+        "Errors cannot be deleted — corrected with compensating events",
+        "Branching: simulation can be forked at any point by creating new event log from past state",
+        "Event sourcing enables: temporal query, audit trail, debugging replay, what-if branching"
+      ]
+    }
+  ]
+}

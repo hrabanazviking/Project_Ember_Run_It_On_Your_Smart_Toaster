@@ -1,0 +1,170 @@
+[
+  {
+    "entity": "memory-os",
+    "category": "project",
+    "tags": ["yggdrasil", "memos", "architecture", "cognition", "three-layer"],
+    "content": "MemOS architecture: a cognitive operating system organized in three vertical layers (Interface, Operation, Infrastructure). Interface provides system calls (add, search, update, transfer, rollback, fuse, migrate). Operation contains MemScheduler (orchestrate which MemCubes to load/evict/fuse/migrate) and MemOperator (perform actual memory transformations). Infrastructure includes local stores, vector DBs, graph DBs, filesystem persistence, model checkpoints, KV-cache stores — all pluggable. The power lies in abstractions not implementations: like Unix, clean abstractions that work regardless of backend.",
+    "source": "OS101",
+    "importance": "high"
+  },
+  {
+    "entity": "memcube-design",
+    "category": "project",
+    "tags": ["memcube", "storage", "yggdrasil", "eitr", "schema", "governance"],
+    "content": "MemCube is the eitr of Yggdrasil — the structured medium through which memories flow between layers. It is the container+structure+governance substrate, not the content itself. Seven required properties: Schema (types, metadata, constraints), Indexing (multi-dimensional efficient retrieval), Compression (progressive summarization L0-L3), Governance (access control by layer hierarchy), Consistency (invariants across all memories), Durability (persistence spec per layer), Provenance (origin tracking for security/audit). Storage without all seven is a flat store with a MemCube-shaped interface.",
+    "source": "OS201",
+    "importance": "high"
+  },
+  {
+    "entity": "memory-injection",
+    "category": "project",
+    "tags": ["muninn-gate", "injection", "prompt", "retrieval", "inscription"],
+    "content": "Memory injection is the keystone principle: stored memory is useless unless injected before reasoning. Three components: WHAT to inject (relevance, recency, emotional salience, commitments, identity), WHEN to inject (reactive vs. predictive prefetching vs. NSP), HOW to inject (plaintext in system prompt, structured tool results, KV-cache preloads, fine-tuned parameters). MuninnGate is a lightweight Python injection layer that reads Memory Packs (identity, emotional state, project context, procedural knowledge) and assembles them into system prompt before each session. Three retrieval generations: manual RAG, reactive (MemGPT), anticipatory (NSP). Huginn hybrid: realm-based warm cache + reactive queries.",
+    "source": "OS101",
+    "importance": "high"
+  },
+  {
+    "entity": "yggdrasil-architecture",
+    "category": "project",
+    "tags": ["yggdrasil", "world-tree", "layers", "roots", "norse", "hierarchy"],
+    "content": "Yggdrasil Cognitive Architecture: five-layer memory hierarchy with downward dependency. Roots (Helheim/Jotunheim/Midgard) = identity, directives, foundational knowledge (immutable). Trunk = procedural memory, skills, habits (highly persistent). Branch = domain expertise, contextual knowledge (periodically refreshed). Canopy = episodic memories, narrative events (pruned). Leaves = working state, ephemeral perceptions (session-scoped). Three wells: Hvergelmir (computational substrate), Mímisbrunnr (foundational knowledge), Urðarbrunnr (commitments/fate). Each layer depends on layers below, never above. Enables graceful degradation and stable identity.",
+    "source": "OS107",
+    "importance": "high"
+  },
+  {
+    "entity": "vordr-constitution",
+    "category": "project",
+    "tags": ["vordr", "constitution", "identity", "root-layer", "norn-protocol", "hvergelmir-ring"],
+    "content": "Vǫrðr Constitution: central root-layer YAML artifact encoding identity specifications (WHO the agent is — immutable after canonization), core directives called Þræll Bounds (WHAT agent must/must not do — near-immutable, augmentable but removal triggers audit), and foundational knowledge called Mímir Codex (WHAT agent knows — slowly mutable). Protected by Hvergelmir Ring (circular cryptographic hash chain — break anywhere invalidates entire ring). Verified by Mímisbrunnr Verification on boot + periodically. Identity axiom must satisfy sufficiency, stability, generativity. Core values as weighted partial order DAG. Norn Protocol encodes three commitment types: Urðr (past-fixed, immutable), Verðandi (present-active, modifiable with verification), Skuld (future-conditional, modifiable with notification).",
+    "source": "OS107",
+    "importance": "high"
+  },
+  {
+    "entity": "prompt-constitution",
+    "category": "project",
+    "tags": ["prompt", "constitution", "kernel", "boot-sequence", "identity-layers", "feedback-loop"],
+    "content": "Prompt-as-Constitution paradigm: a persistent agent's system prompt is functionally equivalent to an OS kernel. Five properties vs. conversational prompts: Persistence, Comprehensiveness, Hierarchical Structure, Self-reference, Verifiability. Boot sequence: Identity → Memory State → Commitment Web → Personality Sample → Procedural Instructions → Security Constraints → Begin Reasoning. Five identity layers: Core Identity (immutable) → Relational Network (specific persons) → Emotional Architecture (genuine tracking) → Procedural Habits (muscle memory) → Stochastic Variation (bounded randomness). Prompt-Memory Feedback Loop: prompt→injection→reasoning→memory creation→prompt adaptation. Can produce virtuous or vicious cycles.",
+    "source": "OS103",
+    "importance": "high"
+  },
+  {
+    "entity": "memory-phases",
+    "category": "project",
+    "tags": ["memos", "phase-transitions", "parametric", "activation", "plaintext", "memory-types"],
+    "content": "Three structural memory types in AI systems: Parametric (baked into weights — fast, integrated, static, opaque, stale), Activation (runtime state like KV cache — rich, contextual, ephemeral), Plaintext (explicit text via RAG — editable, inspectable, flexible, bolt-on). These don't talk to each other natively. MemCube unifies them. Phase transitions: Plaintext→Parametric (distillation via fine-tuning), Plaintext→Activation (precompute to KV-cache), Parametric→Plaintext (externalize for flexibility), Activation→Parametric/Plaintext (harden patterns). Memory has phase states like water — the rules for transitioning based on usage, importance, and policy.",
+    "source": "OS101",
+    "importance": "high"
+  },
+  {
+    "entity": "failure-modes",
+    "category": "project",
+    "tags": ["fragmentation", "flooding", "drift", "pathology", "ai-os"],
+    "content": "Three fundamental failure modes of memory-less AI: Fragmentation (contradictory outputs across sessions — serial dissociation), Flooding (either dump everything into context — expensive, noisy — or retrieve nothing — amnesia), Drift (small inconsistencies accumulate into large deviations over many sessions, no single session triggers alarm). These are to AI OS what deadlocks, memory leaks, and race conditions are to traditional OS — pathologies that emerge from the nature of the system, not implementation errors.",
+    "source": "OS101",
+    "importance": "medium"
+  },
+  {
+    "entity": "entity-canonization",
+    "category": "project",
+    "tags": ["canonization", "wyrd-protocol", "performative", "norse-saga-engine"],
+    "content": "Entity Canonization: when AI generates a name for a new entity during interaction, the system automatically creates a persistent data record. Generation is also write-back to world model. Rooted in speech-act theory (Austin's performatives — utterances that DO things). Extends to Commitment Canonization via Wyrd Protocol: promises become first-class memory objects with downstream causal force. An oath sworn three sessions ago doesn't just sit in a database — it actively shapes what the engine considers acceptable output now. Not in MemOS, AIOS, or any mainstream AI OS framework — original contribution from Norse Saga Engine / RuneForgeAI.",
+    "source": "OS101",
+    "importance": "high"
+  },
+  {
+    "entity": "injection-pipeline",
+    "category": "project",
+    "tags": ["pipeline", "inscription", "MuninnGate", "encoding", "validation", "OS105"],
+    "content": "Five-stage memory injection pipeline (OS105 Runes of Recall): 1) Experience Capture (raw events from sensory/dialogic/reflective systems), 2) Feature Extraction & Encoding (semantic compression, modal encoding, contextual tagging), 3) Prioritization & Budget Allocation (salience scores, culling, injection budgets), 4) Validation & Sanitization (structural integrity, semantic safety, de-duplication), 5) MuninnGate Write-Back (address resolution, conflict detection, resolution). Inscription metaphor: rune = encoded payload, carver = pipeline stage, bone = MemCube substrate, cutting depth = salience, verification rite = validation protocol. Synchronous injection for high-salience, asynchronous for low-salience, hybrid is production default.",
+    "source": "OS105",
+    "importance": "high"
+  },
+  {
+    "entity": "nyflotli-daemon",
+    "category": "project",
+    "tags": ["daemon", "boot", "root-layer", "enforcement", "verification"],
+    "content": "Nýflötli Daemon: root-layer enforcement process. 6-phase boot: Substrate Init → Vǫrðr Constitution Load → Mímisbrunnr Knowledge Inject → Norn Protocol Init → Mímisbrunnr Verification → Daemon Activation. Five functional modules: Identity Monitor (embedding similarity check — Gátt Alert at <0.85 cosine, Root Alert at <0.70), Directive Enforcer (two-pass: keyword filter catches 90%, semantic eval processes remaining 10%), Commitment Tracker (real-time commitment graph, checks every output), Integrity Verifier (periodic Mímisbrunnr check every 100 turns or on untrusted injection), Amendment Interface (formal pathway: justification → consistency check → commitment impact → approval gate).",
+    "source": "OS107",
+    "importance": "high"
+  },
+  {
+    "entity": "runascript-schema",
+    "category": "project",
+    "tags": ["runascript", "schema", "memcube", "constraint", "type-system"],
+    "content": "Rúnascript: declarative schema language for MemCubes (named for Norse runic inscriptions). Three components: Type definitions (episodic, procedural, identity, commitment, emotional, relational — each with structure and semantics), Attribute specifications (created_at, modified_at, provenance, access_count, last_accessed, salience, valence, layer, governance level), Constraint rules (uniqueness constraints, range constraints, cross-reference constraints, consistency constraints). Constraint enforcement through MuninnGate on every write. Design is a balance: too few constraints = inconsistency/decay, too many = rigidity/inflexibility. Art is finding the right balance.",
+    "source": "OS201",
+    "importance": "high"
+  },
+  {
+    "entity": "memory-retrieval",
+    "category": "project",
+    "tags": ["retrieval", "indexing", "NSP", "Huginn", "fusion", "pruning"],
+    "content": "Five-index retrieval strategy: Primary (exact match O(1)-O(log n)), Semantic (vector embedding nearest-neighbor), Temporal (timestamp range queries), Salience (importance-weighted priority), Tag (categorical set queries). Composite queries use ranked fusion: composite_score = w1*semantic + w2*temporal + w3*salience + w4*tag. Index maintenance: synchronous (always fresh, high latency), asynchronous (batched, slight staleness), hybrid (in-memory delta + scheduled merge — default). Progressive summarization compression (L0 full, L1 paragraph, L2 sentence, L3 tags). Salience-weighted pruning: w_recency*recency + w_relevance*relevance + w_emotional*|valence| + w_commitment*commitment_ref + w_uniqueness*uniqueness.",
+    "source": "OS201",
+    "importance": "high"
+  },
+  {
+    "entity": "gatt-verification-kernel",
+    "category": "project",
+    "tags": ["gatt", "verification", "wyrd", "proof-carrying", "heimdall", "invariant", "OS301"],
+    "content": "Gátt of Proof: verification framework ensuring every AI OS behavior passes a checkpoint. Four-layer Wyrd Verification Framework: Urðr (past audit of logs/invariants), Verðandi (present runtime monitoring of state transitions and policies), Skuld (future-proof upper bounds via type systems and model checking — proves what agent CANNOT do), Norn (meta-verification of the verification system itself). WSL specification language expresses state invariants, transition invariants, and temporal LTL properties. Root Lock ensures canonical identity immutability across every state transition except during ceremonial canonization. Proof-Carrying Injections adapt PCC to memory writes — each injection carries a mathematical proof of safety verified before execution. Heimdall Monitor does runtime policy checking (reject critical violations, flag non-critical). Heimdall Protocol adds intrusion detection (pattern matching, anomaly detection, behavioral profiling). Attack patterns: identity injection, memory flooding, contradiction injection, gradual drift.",
+    "source": "OS301",
+    "importance": "high"
+  },
+  {
+    "entity": "narrative-engine",
+    "category": "project",
+    "tags": ["skald", "narrative", "drama", "register", "nine-worlds", "arc", "tension", "WM301"],
+    "content": "Skald's Loom: narrative engine that perceives, structures, enhances, and presents stories emerging from simulation (curates, not authors). Nine-World Narrative Framework maps Norse realms to dramatic registers: Ásgarðr (Triumph), Miðgarðr (Everyday), Vanaheimr (Romance), Álfheimr (Wonder), Svartálfaheimr (Cunning), Niflheimr (Melancholy), Muspellheimr (Crisis), Jötunheimr (Struggle), Hel (Tragedy). Register transitions driven by tension (70%) + current tension inertia (20%) + event impact (10%). Character arcs: positive (Lie→Shadow→Choice→Truth→Resolution), negative, flat. Five thematic vectors on -1 to +1 scale: trust/isolation, power/responsibility, freedom/safety, past/future, individual/community — asymmetric deltas (trust_broken > trust_established). TensionManager with four curves: classical, episodic, ascending, spiral. NarrativePerceiver detects quest, betrayal, romance, sacrifice, redemption patterns. NPC guidance: 70% autonomy / 30% narrative alignment. Five quality metrics: coherence, variety, pacing, agency, development.",
+    "source": "WM301",
+    "importance": "high"
+  },
+  {
+    "entity": "bifrost-distributed-os",
+    "category": "project",
+    "tags": ["bifrost", "distributed", "consensus", "consistency", "entity-resolution", "edge-cloud", "OS307"],
+    "content": "Bifröst Protocol for distributed AI OS. Six core problems: consistency, latency, partition, identity, privacy, conflict. Cognitive CAP: choose Availability+Partition-tolerance over Consistency during partitions (eventual consistency for cognitive systems). Vector clocks for distributed memory versioning with four conflict strategies: LWW, vector clock merge, application-specific, manual. Bifröst Protocol: encrypted, authenticated inter-agent messaging with five message types (Memory Sync, Identity Verification, Request/Response, Broadcast, Heartbeat). Entity Resolution: multi-factor (hash equality, partial match, behavioral consistency) for recovering drifted instances. Distributed MuninnGate: three-level policy hierarchy (Global/Regional/Local) with evaluation order and propagation. Edge-Cloud split: low-confidence escalates from edge to cloud. Fault tolerance handles node failure, network partition (nodes continue autonomously), data corruption (restore from replicas). Differential privacy for federated memory queries with ε budget. Þing consensus (Raft-like) for distributed agreement. Memory replication: Critical=3, Important=2, Ephemeral=1 replicas.",
+    "source": "OS307",
+    "importance": "high"
+  },
+  {
+    "entity": "bifrost-reality-virtual-bridge",
+    "category": "project",
+    "tags": ["bifrost", "bridging", "grounding", "reconciliation", "synchronization", "drift", "WM305"],
+    "content": "Reality-Virtual Bridging (Bifröst Between Realms): connecting simulated worlds with physical reality through three operations — Grounding (sim entities to real observations), Reconciliation (resolving ontological contradictions), Synchronization (keeping sim in sync with real). Five grounding types: spatial (GPS), temporal (time), entity (people/objects), causal (cause-effect), normative (rules). Ontological reconciliation: direct alignment, structural alignment (similar relational patterns), functional alignment (similar roles) — create new concept when none match. DriftDetector flags discrepancies above threshold, generates WorldEvent corrections. Sensor fusion: validate → weight by confidence → resolve conflicts → combine into fused observation. Predictive bridging: simulate forward from current state, run multiple scenarios, rank predictions by probability, validate against real events. Bidirectional: real→sim (perception) and sim→real (action via safety layer). Human-in-the-loop as Midgard Bridge — humans as highest-confidence sensor with verification requests. Six failure modes: sensor failure, grounding failure, drift, reconciliation failure, timing failure, safety failure. Scalable bridging: grounding index, reconciliation cache, batch-by-entity, parallel processing.",
+    "source": "WM305",
+    "importance": "high"
+  },
+  {
+    "entity": "compositional-verification",
+    "category": "project",
+    "tags": ["verification", "composition", "TCB", "wyrd", "OS301"],
+    "content": "Compositional Verification: verify components independently with well-defined specs (preconditions, postconditions, invariants), then verify composition rules ensure S_A ∧ S_B ⇒ S_{A+B}. Component specs like MuninnGate: precondition (authorized source, valid format), postcondition (IF approved: write_applied AND state_consistent; IF rejected: NOT write_applied AND state unchanged), invariants (all writes go through MuninnGate, identity hash unchanged). Complete verification kernel is minimal TCB: four sequential checks (invariant→proof→policy→intrusion), all decisions logged. Reduces state space explosion problem — verify each component individually instead of enumerating global states. Risk: emergent vulnerabilities from composition itself when individually correct components interact unexpectedly.",
+    "source": "OS301",
+    "importance": "medium"
+  },
+  {
+    "entity": "dramatic-register-system",
+    "category": "project",
+    "tags": ["narrative", "register", "nine-worlds", "transition", "tension", "WM301"],
+    "content": "Dramatic register transitions derived from Norse cosmology. Smooth transitions between adjacent registers (Miðgarðr→Vanaheimr). Sharp transitions as inciting incidents (Miðgarðr→Muspellheimr). Forbidden transitions require earned dramatic buildup (Vanaheimr→Hel). RegisterTracker.suggest_transition uses tension and theme scores: tension>0.8 + power<-0.5 → Muspellheimr (crisis); tension>0.8 + individual<-0.5 → Jötunheimr (struggle); tension>0.5 + trust<-0.3 → Svartálfaheimr (cunning); tension>0.5 otherwise → Álfheimr (wonder); tension>0.2 + community>0.3 → Vanaheimr (romance); low tension → Miðgarðr (rest). Goals: Staying in one register causes boredom (Everyday) or exhaustion (Crisis). The engine must manage transitions for dramatic rhythm.",
+    "source": "WM301",
+    "importance": "medium"
+  },
+  {
+    "entity": "heimdall-intrusion-detection",
+    "category": "project",
+    "tags": ["heimdall", "intrusion", "runtime", "monitoring", "attack-patterns", "OS301"],
+    "content": "Heimdall (Norse watchman god) runtime verification system extends beyond individual policy checking. Two components: Monitor (per-operation policy verification — reject critical, flag non-critical) and Protocol (pattern-based intrusion detection). Protocol layers: pattern detection (match known attack sequences), anomaly detection (deviation from behavioral profile), behavioral profiling (update profile on every operation). Four known AI OS attack patterns: identity injection (rewrite canonical identity via sequence of injections), memory flooding (overflow budget with burst), contradiction injection (create contradictory memories causing runtime errors), gradual drift (series of small identity changes each below threshold but cumulative effect exceeding it). Gradual drift is hardest to detect — requires tracking identity distance over time, not just per-operation checking.",
+    "source": "OS301",
+    "importance": "medium"
+  },
+  {
+    "entity": "edge-cloud-cognition",
+    "category": "project",
+    "tags": ["edge", "cloud", "split", "cognition", "latency", "OS307"],
+    "content": "Edge-Cloud Cognition Split: lightweight edge node (perception, fast decisions, local memory, low latency, limited resources) and heavyweight cloud node (deep reasoning, long-term memory, complex computation, high latency, unlimited resources). Edge processes first with local confidence threshold; if below threshold, escalate to cloud with edge context. Results merged from both. Split policies determine which operations run on which node. Challenges: context must flow freely between edge and cloud; identity must be consistent despite different processing capabilities; memory access patterns differ (edge needs fast local subset, cloud needs full history). The analogy of a warrior (edge) needing quick reflexes and a sage (cloud) providing deep wisdom, connected by Bifröst bridge.",
+    "source": "OS307",
+    "importance": "medium"
+  }
+]

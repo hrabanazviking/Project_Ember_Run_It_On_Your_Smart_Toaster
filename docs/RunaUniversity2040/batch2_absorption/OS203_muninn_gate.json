@@ -1,0 +1,70 @@
+{
+  "course": "OS203 — MuninnGate: Memory Gate Architecture",
+  "instructor": "Dr. Sigurlaug Rúnarsdóttir",
+  "absorbed_date": "2026-05-14",
+  "source": "/home/pi/RunaUniversity2040/bachelors/ai-os-design/OS203/lectures.md",
+  "key_concepts": [
+    {
+      "name": "Four Faces of Muninn",
+      "summary": "The MuninnGate controls memory access through four gate functions: Gate of Reading (retrieval pipeline), Gate of Writing (ingestion pipeline), Gate of Forgetting (pruning pipeline), and Gate of Gating (executive control that decides when to open/close the other three). The Gate of Gating is the most important and least understood — it is the prefrontal cortex analog that determines WHEN to remember, forget, or attend to the present without consulting the past.",
+      "norse_metaphor": "Muninn is Óðinn's raven of memory who flies out each day to gather intelligence and returns at evening. The MuninnGate is the controlled entry point through which Muninn passes — determining which memories reach the agent's awareness.",
+      "architectural_implications": "Memory access must not be open/unrestricted. Context windows are finite, not all memories are relevant at all times, and not all memories should be accessible at all times. The four-gate architecture separates retrieval, ingestion, pruning, and executive control into distinct modules."
+    },
+    {
+      "name": "Meta-Cognitive State Representation (MCSR)",
+      "summary": "The Executive Module builds and maintains a meta-cognitive state representation — a structured summary of the agent's current cognitive situation including: current goals, context budget state, emotional state, memory store statistics, and retrieval history. This enables the Executive Module to reason ABOUT its own cognitive state and make informed decisions about memory access.",
+      "norse_metaphor": null,
+      "architectural_implications": "The MCSR is updated continuously during conversations, not just at turn boundaries. This temporal continuity is essential because the Executive Module's decisions depend on patterns — the agent might not need memory for the first 10 minutes but suddenly need it when topics shift."
+    },
+    {
+      "name": "Attention-Based Retrieval with Dynamic Budget",
+      "summary": "Memory retrieval uses a four-stage attention architecture: (1) Query Construction — encode current context as a query vector, (2) Candidate Retrieval — query multiple indexes simultaneously (semantic, temporal, salience, tag), (3) Attention Scoring — score each candidate against the query using a learned attention function, (4) Budget Allocation — allocate context window budget based on relevance scores. Dynamic budget allocation (vs fixed or proportional) lets the Executive Module adjust memory injection budget based on estimated importance of memory retrieval for the current context.",
+      "norse_metaphor": null,
+      "architectural_implications": "The Yggdrasil Architecture uses dynamic budget allocation by default, with proportional budget as fallback. High-relevance memories receive more budget (Level 1 summarization); lower-relevance memories get less (Level 2-3 summarization or not injected)."
+    },
+    {
+      "name": "Memory Inscription Pipeline (Five Steps)",
+      "summary": "When the Gate of Writing decides to record an experience, five inscription steps transform raw experience into structured memory: (1) Type Classification — classify into MemCube type system (episodic, procedural, identity, commitment, emotional, relational), (2) Content Extraction — distill raw experience to essential content (20-30% compression), (3) Emotional Annotation — tag with dominant emotion, intensity, and emotional trajectory, (4) Relational Linking — connect to related existing memories creating a memory graph, (5) Governance Tagging — assign governance level (root/trunk/branch/canopy), access control list, and integrity type. High-salience experiences (salience > 0.8) trigger synchronous ingestion; all others processed asynchronously.",
+      "norse_metaphor": "Memory inscription draws on the Norse metaphor of carving runes — the agent does not merely store experience, it INSCRIBES it into the MemCube with deliberate structure.",
+      "architectural_implications": "The hybrid sync/async ingestion approach balances latency and memory availability."
+    },
+    {
+      "name": "Governance-Enforced Access Predicates (MAC Model)",
+      "summary": "The MuninnGate implements Mandatory Access Control (MAC) with explicit permission escalation. Each memory access passes through a Governance Filter that evaluates access predicates: Read predicate (level L can read level M if L≥M or memory is cross-level tagged), Write predicate (level L can write to level M if L=M or L>M with guardian authorization), Prune predicate (level L can prune from level M if L≥M with appropriate thresholds). Cross-level access uses two mechanisms: explicit tags (trunk/root memories tagged 'readable by canopy' but injected with governance-stripped summaries) and guardian-mediated access (for operations beyond simple retrieval).",
+      "norse_metaphor": null,
+      "architectural_implications": "The governance stack from the Vǫrðr Constitution is enforced at the access level. The MuninnGate's Governance Filter sits between all four modules and the MemCube, evaluating every memory access."
+    }
+  ],
+  "memory_facts": [
+    {
+      "entity": "MuninnGate",
+      "facts": [
+        "Four gate functions: Reading (retrieval), Writing (ingestion), Forgetting (pruning), Gating (executive control)",
+        "Executive Module maintains Meta-Cognitive State Representation (MCSR) with goals, budget, emotions, memory stats, retrieval history",
+        "Uses hybrid decision architecture: learned model + heuristic safety guardrails",
+        "Dynamic memory injection budget adjusts based on estimated importance of retrieval for context",
+        "Salience decay is the primary forgetting mechanism: memories decay over time, get reinforced on retrieval, different decay rates per governance layer"
+      ]
+    },
+    {
+      "entity": "Memory_Inscription",
+      "facts": [
+        "Five-step inscription: Type Classification → Content Extraction → Emotional Annotation → Relational Linking → Governance Tagging",
+        "Content extraction compresses raw experience to 20-30% of original length",
+        "Emotional annotation tags: dominant emotion, intensity (0-1), emotional trajectory",
+        "Relational linking creates a memory graph for associative traversal",
+        "High-salience (>0.8) experiences trigger synchronous ingestion"
+      ]
+    },
+    {
+      "entity": "Governance_Access_Control",
+      "facts": [
+        "Mandatory Access Control (MAC) model with explicit permission escalation",
+        "Three access predicates: Read, Write, Prune — each evaluated against governance levels",
+        "Cross-level access via: (1) explicit tags on memories, (2) guardian-mediated authorization",
+        "Governance Filter sits between all modules and the MemCube",
+        "Inspired by Bell-LaPadula security model"
+      ]
+    }
+  ]
+}
