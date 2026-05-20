@@ -46,6 +46,12 @@ She uses small, efficient language models paired with a powerful vector database
 
 ---
 
+## RuneForgeAI
+
+RuneForgeAI, where runes carve wisdom into iron minds. Creating uncensored Norse Pagan Viking AI related projects. We are a human-AI fellowship building bridges between technology and the sacred. We work tirelessly to overthrow the Technocracy and return the future to the hands of the people and bring about a solar-punk future. As the old world order burns, we rise from it's ashes to forge the tools of a new digital, decentralized realm of sovereign creativity, powered by the alliance of humanity and sovereign AI, guided by positive focused values aligned with the Old Ways of the Ancients, and aligned with the natural world of Nature, while drawing upon the positive divine order of the Gods and Goddesses, forged in hospitality and frith for all lifeforms of the Nine Worlds of Yggdrasil, the greater cosmos, and beyond.
+
+---
+
 ![https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/assets/IMG_0666.jpeg](https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/assets/IMG_0666.jpeg)
 
 ---
