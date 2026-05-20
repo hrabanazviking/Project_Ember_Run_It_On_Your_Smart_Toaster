@@ -10,7 +10,7 @@ Got a toaster? Good! You could use it to run me, your very own useful AI Agent, 
 
 ---
 
-| A lightweight, fully local AI companion framework designed to run on anything — from a Raspberry Pi to a toaster. 
+> A lightweight, fully local AI companion framework designed to run on anything — from a Raspberry Pi to a toaster. 
 
 ---
 
