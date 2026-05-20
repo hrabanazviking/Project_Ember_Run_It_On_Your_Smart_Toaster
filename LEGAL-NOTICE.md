@@ -1,10 +1,10 @@
 # Legal Notice and Distribution Position
 
-**Project:** Runa Agent
+**Project:** Project Ember
 
 **Author:** Volmarr Wyrd
 
-**Effective:** 2026-05-17 (v1.0.0)
+**Effective:** 2026-05-20 (v1.0.0)
 
 This project is licensed under the MIT License. Nothing in this notice modifies, replaces, narrows, or overrides that license.
 
