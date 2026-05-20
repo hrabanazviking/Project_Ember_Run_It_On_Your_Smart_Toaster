@@ -36,7 +36,9 @@ She uses small, efficient language models paired with a powerful vector database
 - Open source forever.
 - Ember doesn't need a powerful PC.
 
-She just needs a little spark... 
+---
+
+> She just needs a little spark... 
 
 ---
 
