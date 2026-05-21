@@ -5,12 +5,19 @@
 Local LLM runtime. One adapter per supported runtime. Funi is given
 prompts and (rarely) tool slots; Funi produces replies or honest stops.
 
-## Public entry points (planned, Phase 5 onward)
+## Public entry points (shipped Phase 5, 2026-05-21)
 
-- `ember.spark.funi.handle.FuniHandle` — the Protocol every runtime
-  adapter satisfies.
-- `ember.spark.funi.handle.open(config) -> FuniHandle | Unavailable`
-- `ember.spark.funi.ollama.OllamaFuni` — first-slice default (Phase 5).
+- `ember.spark.funi.FuniHandle` — `@runtime_checkable` Protocol every
+  runtime adapter satisfies. Required attributes: `runtime_kind: str`,
+  `model_id: str`. Required methods: `complete`, `health`, `close`.
+- `ember.spark.funi.open(config) -> FuniHandle | Unavailable` — the
+  registry entry. Dispatches on `config.runtime`. Returns `Unavailable`
+  for runtimes not yet implemented in this build.
+- `ember.spark.funi.prompt.assemble(*, identity, episodes, hits,
+  well_disconnected=False) -> list[ContextItem]` — runtime-neutral
+  context assembler called by Munnr before `complete()`.
+- `ember.spark.funi.ollama.OllamaFuni` — the first-slice default
+  adapter; `runtime_kind = "ollama"`.
 
 ## Minimum surface — the canonical table
 
@@ -18,10 +25,15 @@ prompts and (rarely) tool slots; Funi produces replies or honest stops.
 
 | Operation | Inputs | Returns | Notes |
 |---|---|---|---|
-| `open(config)` | `FuniConfig` | `FuniHandle` or `Unavailable` | Loads the model or connects to its endpoint. |
-| `complete(prompt, context, tools=None)` | `str`, `list[ContextItem]`, optional list | `FuniReply` | One turn. **No streaming in the first slice.** |
-| `embed(texts)` *(optional)* | `list[str]` | `list[list[float]]` | Only some runtimes; Smiðja uses its own client if absent. |
-| `health()` | — | `FuniHealth` | `model_id`, `ram_use`, `last_ok` — for `ember doctor`. |
+| `open(config)` | `FuniConfig` | `FuniHandle` or `Unavailable` | Probes the endpoint; never raises. |
+| `complete(prompt, context, tools=None)` | `str`, `Sequence[ContextItem]`, optional `Sequence[str]` | `FuniReply` | One turn. **Always returns** — mid-call failure → `finish_reason=ERROR` with operator-readable text. **No streaming.** |
+| `health()` | — | `FuniHealth` | `model_id`, `ram_use_bytes`, `last_ok` — for `ember doctor`. Never raises. |
+| `close()` | — | None | Free any held resources. |
+
+The `embed()` method is **not** part of the Funi surface — embedding
+lives in :mod:`ember.well.smidja.embed_client`. Keeping Funi focused on
+reasoning avoids the "Funi also embeds" temptation that would couple
+runtime selection to embedding-model selection.
 
 ## Inputs
 
