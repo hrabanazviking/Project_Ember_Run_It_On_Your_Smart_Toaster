@@ -337,6 +337,9 @@ class SqliteVecBrunnr:
         k: int,
         filter: object | None = None,
     ) -> list[RetrievalHit]:
+        safe_query = _escape_fts5_query(query)
+        if not safe_query:
+            return []
         cur = self._conn.execute(
             """
             SELECT c.id, c.document_id, c.text, c.char_start, c.char_end,
@@ -348,7 +351,7 @@ class SqliteVecBrunnr:
             ORDER BY fts.rank
             LIMIT ?
             """,
-            (query, k),
+            (safe_query, k),
         )
         hits: list[RetrievalHit] = []
         for row in cur:
@@ -463,6 +466,25 @@ def _parse_iso(value: str | None) -> datetime | None:
         return datetime.fromisoformat(cleaned)
     except ValueError:
         return None
+
+
+def _escape_fts5_query(query: str) -> str:
+    """Make any operator string safe for FTS5 ``MATCH``.
+
+    FTS5's query language reserves ``:``, ``"``, ``*``, ``(``, ``)``,
+    bare ``AND/OR/NOT/NEAR``, and the column-name syntax ``foo:bar``
+    (which is what bit the Hjarta probe at 2026-05-21 with ``run:``).
+    Splitting on whitespace and wrapping each token as a literal phrase
+    sidesteps every special meaning while preserving useful retrieval —
+    the operator's natural-language input becomes an OR over the words
+    they typed. Empty / whitespace-only input returns the empty string;
+    callers treat that as "no results".
+    """
+    tokens = [t for t in query.split() if t.strip()]
+    if not tokens:
+        return ""
+    escaped = ['"' + t.replace('"', '""') + '"' for t in tokens]
+    return " OR ".join(escaped)
 
 
 __all__ = ["SqliteVecBrunnr", "open"]

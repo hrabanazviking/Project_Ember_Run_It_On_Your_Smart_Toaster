@@ -313,9 +313,11 @@ def _probe_round_trip(brunnr: BrunnrHandle) -> tuple[bool, str]:
                 )
             ]
         )
-        # Phrase-quote so FTS5 treats the whole string as a single term
-        # and does not parse internal punctuation as syntax.
-        hits = brunnr.text_search('"Ember Hjarta first time setup"', k=3)
+        # The Brunnr adapter sanitises FTS5 input for us, so plain text
+        # is safe here. (Hjarta originally hit a `no such column: run`
+        # error from a bare `run:` token; the fix now lives in
+        # SqliteVecBrunnr.text_search via _escape_fts5_query.)
+        hits = brunnr.text_search("Ember Hjarta first time setup", k=3)
     except Exception as exc:
         return (False, f"probe error: {exc}")
 
