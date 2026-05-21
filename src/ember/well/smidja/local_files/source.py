@@ -13,8 +13,10 @@ later phases.
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import logging
+import stat
 import time
 from collections.abc import Iterator, Sequence
 from pathlib import Path
@@ -50,6 +52,35 @@ DEFAULT_EXCLUDE_DIRS: tuple[str, ...] = (
     "__pycache__",
 )
 
+# Filenames the ingest skips even when their suffix is in the include set.
+# These commonly hold secrets that an operator does NOT want vectorised
+# into the Well. Hardening pass added this; an operator running
+# ``ember well ingest ~/`` would otherwise have shipped their SSH keys,
+# pgpass, AWS credentials, etc. straight into pgvector.
+DEFAULT_EXCLUDE_FILE_PATTERNS: tuple[str, ...] = (
+    ".env",
+    ".env.*",
+    ".pgpass",
+    ".netrc",
+    ".aws/*",
+    "id_rsa*",
+    "id_ed25519*",
+    "id_ecdsa*",
+    "id_dsa*",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "*.kdbx",
+)
+
+# Maximum bytes per file. Files larger than this are skipped with a
+# warning rather than read into memory. The threshold is generous
+# (markdown rarely runs to gigabytes); the cap exists to defend against
+# an operator pointing the ingest at, e.g., a 50 GB log file or — worse —
+# a device node like /dev/zero that would read forever.
+DEFAULT_MAX_FILE_BYTES: int = 64 * 1024 * 1024  # 64 MiB
+
 _CONTENT_TYPE_BY_SUFFIX: dict[str, str] = {
     ".md": "md",
     ".txt": "txt",
@@ -70,11 +101,15 @@ def walk(
     *,
     include_suffixes: Sequence[str] = DEFAULT_INCLUDE_SUFFIXES,
     exclude_dirs: Sequence[str] = DEFAULT_EXCLUDE_DIRS,
+    exclude_file_patterns: Sequence[str] = DEFAULT_EXCLUDE_FILE_PATTERNS,
+    max_file_bytes: int = DEFAULT_MAX_FILE_BYTES,
 ) -> Iterator[ParsedFile]:
     """Yield ``ParsedFile`` per matching file under ``root``.
 
     Files are sorted by path for deterministic ingest order. Unreadable
-    files and non-utf8 files are logged and skipped, never raised.
+    files, non-utf8 files, oversize files, sensitive-name files, and
+    non-regular files (FIFOs, device nodes, sockets) are logged and
+    skipped, never raised.
     """
     root = root.expanduser().resolve()
     if not root.exists():
@@ -84,12 +119,19 @@ def walk(
 
     include_set = frozenset(s.lower() for s in include_suffixes)
     exclude_set = frozenset(exclude_dirs)
+    exclude_patterns = tuple(exclude_file_patterns)
 
-    for path in _iter_matching(root, include_set, exclude_set):
+    for path in _iter_matching(root, include_set, exclude_set, exclude_patterns):
         try:
             data = path.read_bytes()
         except OSError as exc:
             logger.warning("local_files: skipping unreadable %s: %s", path, exc)
+            continue
+        if len(data) > max_file_bytes:
+            logger.warning(
+                "local_files: skipping oversize %s (%d bytes > %d cap)",
+                path, len(data), max_file_bytes,
+            )
             continue
         try:
             text = data.decode("utf-8")
@@ -105,15 +147,39 @@ def _iter_matching(
     root: Path,
     include_suffixes: frozenset[str],
     exclude_dirs: frozenset[str],
+    exclude_file_patterns: tuple[str, ...] = (),
 ) -> Iterator[Path]:
     candidates: list[Path] = []
     for path in root.rglob("*"):
-        if not path.is_file():
+        # Skip non-regular files (FIFOs, device nodes, sockets). A
+        # bare ``is_file()`` would accept ``/dev/zero``, where
+        # ``read_bytes()`` would block reading forever. One stat per
+        # candidate; the failure mode otherwise is "ingest hangs and
+        # the operator has to kill -9 the process".
+        try:
+            st_mode = path.lstat().st_mode
+        except OSError:
+            continue
+        if not stat.S_ISREG(st_mode):
             continue
         rel_parts = path.relative_to(root).parts
         if any(part in exclude_dirs for part in rel_parts):
             continue
         if path.suffix.lower() not in include_suffixes:
+            continue
+        # Sensitive-filename denylist (.env, *.key, id_rsa*, etc.).
+        # Checks both the basename and any nested-path match (so
+        # ``.aws/credentials`` is caught by the ``.aws/*`` pattern).
+        rel_str = "/".join(rel_parts)
+        if any(
+            fnmatch.fnmatchcase(path.name, pat)
+            or fnmatch.fnmatchcase(rel_str, pat)
+            for pat in exclude_file_patterns
+        ):
+            logger.warning(
+                "local_files: skipping sensitive-name file %s "
+                "(matches denylist)", path,
+            )
             continue
         candidates.append(path)
     candidates.sort()
@@ -245,8 +311,10 @@ DEFAULT_EXCLUDE = DEFAULT_EXCLUDE_DIRS
 __all__ = [
     "DEFAULT_EXCLUDE",
     "DEFAULT_EXCLUDE_DIRS",
+    "DEFAULT_EXCLUDE_FILE_PATTERNS",
     "DEFAULT_INCLUDE",
     "DEFAULT_INCLUDE_SUFFIXES",
+    "DEFAULT_MAX_FILE_BYTES",
     "run",
     "walk",
 ]

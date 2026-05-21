@@ -15,6 +15,8 @@ keeping all formatting inside this module.
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Sequence
 
 from ember.schemas.chunks import BrunnrStats, RetrievalHit
@@ -32,6 +34,52 @@ from ember.schemas.tool import (
 
 INTERRUPTED_TAG = "[interrupted by operator]"
 TOOL_OUTPUT_PREVIEW_BYTES = 2 * 1024  # 2 KiB shown on stdout; full text persisted in audit
+
+# ANSI / CSI / OSC escape-sequence pattern. Tools return strings that
+# may include attacker-controllable bytes (HTTP response bodies, file
+# contents, model output that quoted a malicious source). Without
+# scrubbing, a reply.error or reply.output containing ``\x1b[2J`` could
+# clear the operator's terminal; ``\x1b]0;evil\x07`` could rewrite the
+# window title; raw CR could overwrite previously-printed lines.
+# Stripping the whole ESC-introduced sequence is safer than per-byte
+# filtering because the SAFE rendering target is plain text — we do
+# not emit ANSI colors ourselves.
+_ANSI_ESCAPE_RE = re.compile(
+    r"\x1b\[[0-?]*[ -/]*[@-~]"      # CSI (cursor / color)
+    r"|\x1b\][^\x07]*\x07"          # OSC (title) terminated by BEL
+    r"|\x1b\][^\x1b]*\x1b\\"        # OSC terminated by ST
+    r"|\x1b[@-_]",                  # other ESC-then-byte sequences
+)
+
+
+def _strip_terminal_controls(text: str) -> str:
+    """Strip ANSI escape sequences and stray Cc characters from ``text``.
+
+    Tools and exceptions can carry attacker-controlled bytes; rendering
+    them raw would let a hostile URL response or filename rewrite the
+    operator's terminal. We replace the dangerous bytes with their
+    Unicode replacement character so the operator sees that something
+    was scrubbed rather than getting silent disappearance.
+
+    Newlines and tabs are kept (they're handled by the line-by-line
+    rendering above); everything else in Unicode category ``Cc`` is
+    replaced. Bidi-override format chars (Cf) are also stripped — they
+    can flip the visual reading order of a line.
+    """
+    if not text:
+        return text
+    text = _ANSI_ESCAPE_RE.sub("�", text)
+    out_chars = []
+    for ch in text:
+        if ch in ("\n", "\t"):
+            out_chars.append(ch)
+            continue
+        cat = unicodedata.category(ch)
+        if cat in ("Cc", "Cf"):
+            out_chars.append("�")
+        else:
+            out_chars.append(ch)
+    return "".join(out_chars)
 
 # --------------------------------------------------------------------- #
 # Conversation                                                          #
@@ -194,17 +242,23 @@ def render_tool_reply(
     """
     name = descriptor.name if descriptor is not None else "(unknown tool)"
     head = _outcome_headline(name, reply, outcome)
-    if reply.error and not reply.output:
-        return f"{head}\n  error: {reply.error}"
-    body = reply.output or ""
+    # Tool output and error text can carry ANSI escapes or other
+    # terminal-rewriting control bytes — sanitise before printing. The
+    # audit log gets the raw text (via _serialise_reply); the operator's
+    # terminal gets the scrubbed view.
+    safe_error = _strip_terminal_controls(reply.error) if reply.error else None
+    safe_output = _strip_terminal_controls(reply.output or "")
+    if safe_error and not safe_output:
+        return f"{head}\n  error: {safe_error}"
+    body = safe_output
     if len(body.encode("utf-8")) > TOOL_OUTPUT_PREVIEW_BYTES:
         body = body.encode("utf-8")[:TOOL_OUTPUT_PREVIEW_BYTES].decode(
             "utf-8", errors="ignore",
         ) + "..."
     body_block = "\n".join(f"  {line}" for line in body.splitlines()) or "  (no output)"
     parts = [head, body_block]
-    if reply.error:
-        parts.append(f"  (with error: {reply.error})")
+    if safe_error:
+        parts.append(f"  (with error: {safe_error})")
     return "\n".join(parts)
 
 

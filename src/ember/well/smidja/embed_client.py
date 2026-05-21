@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import time
 import urllib.error
 import urllib.request
@@ -125,9 +126,25 @@ class OllamaEmbedClient:
                     error=f"endpoint returned {returned} embeddings for batch of {len(batch)}",
                 )
 
+            try:
+                coerced = tuple(
+                    _coerce_vector(v, expected_dim=None) for v in vectors
+                )
+            except (ValueError, TypeError) as exc:
+                # Malformed scalar inside a vector — Ollama can return
+                # stringified floats, ``None`` entries, or non-finite
+                # values when an upstream model misbehaves. Return the
+                # batch as all-None so the journal can record the
+                # failure and the orchestrator can skip these chunks
+                # rather than corrupting the Well with NaN embeddings.
+                return EmbedResult(
+                    texts=tuple(batch),
+                    vectors=tuple([None] * len(batch)),
+                    error=f"endpoint returned malformed vector data: {exc}",
+                )
             return EmbedResult(
                 texts=tuple(batch),
-                vectors=tuple(tuple(float(x) for x in v) for v in vectors),
+                vectors=coerced,
                 error=None,
             )
 
@@ -138,6 +155,43 @@ class OllamaEmbedClient:
         delay = min(self._backoff_base_s * (2 ** (attempt - 1)), self._backoff_max_s)
         logger.debug("embed batch failed, sleeping %.1fs before attempt %d", delay, attempt + 1)
         time.sleep(delay)
+
+
+def _coerce_vector(
+    raw: object, *, expected_dim: int | None,
+) -> tuple[float, ...]:
+    """Convert one raw vector from Ollama's JSON into a tuple of floats.
+
+    Raises :class:`ValueError` / :class:`TypeError` if any scalar is not
+    convertible to float, is non-finite (NaN / Inf), or if the resulting
+    dimension does not match ``expected_dim`` (when given).
+
+    Hardening pass added this. Earlier code did ``tuple(float(x) for x in v)``
+    inline; that path quietly accepted NaN and Inf — which then either
+    crashed pgvector at insert time with a cryptic ``data exception`` or
+    poisoned cosine similarity downstream so every query looked equally
+    bad. Catching at parse time gives the journal a clean failure with a
+    useful reason instead.
+    """
+    if not isinstance(raw, list):
+        raise TypeError(f"vector must be a list, got {type(raw).__name__}")
+    out: list[float] = []
+    for x in raw:
+        if isinstance(x, bool):  # bool subclasses int — refuse explicitly
+            raise TypeError("vector scalar must not be bool")
+        if not isinstance(x, (int, float)):
+            raise TypeError(
+                f"vector scalar must be int/float, got {type(x).__name__}"
+            )
+        f = float(x)
+        if not math.isfinite(f):
+            raise ValueError(f"vector scalar is non-finite: {f!r}")
+        out.append(f)
+    if expected_dim is not None and len(out) != expected_dim:
+        raise ValueError(
+            f"vector has {len(out)} dims, expected {expected_dim}"
+        )
+    return tuple(out)
 
 
 __all__ = ["EmbedResult", "OllamaEmbedClient"]

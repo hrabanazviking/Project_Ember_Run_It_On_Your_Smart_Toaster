@@ -139,13 +139,26 @@ def _coerce_value(  # noqa: PLR0911,PLR0912 — one return + one branch per supp
             for i, item in enumerate(value)
         ]
 
-    # Mapping[str, X] — preserve as dict
+    # Mapping[str, X] — preserve as dict, coercing each value to X.
+    # Earlier code returned ``dict(value)`` raw, which let a field
+    # typed ``Mapping[str, str]`` accept ``{"foo": 123}`` silently.
+    # The downstream coercion (e.g., approval-override ApprovalPolicy
+    # parsing in chat.py) then dropped the bad entry without telling
+    # the operator. Hardening pass walks the mapping values so the
+    # error lands at config-load time where the path is visible.
     if origin in (dict, Mapping):
         if not isinstance(value, Mapping):
             raise ConfigError(
                 _msg(path, f"expected mapping, got {type(value).__name__}")
             )
-        return dict(value)
+        args = get_args(target_type)
+        if not args or len(args) < 2 or args[1] is Any:
+            return dict(value)
+        value_type = args[1]
+        return {
+            str(k): _coerce_value(value_type, v, f"{path}[{k!r}]")
+            for k, v in value.items()
+        }
 
     # StrEnum / Enum
     if isinstance(target_type, type) and issubclass(target_type, Enum):
@@ -166,6 +179,18 @@ def _coerce_value(  # noqa: PLR0911,PLR0912 — one return + one branch per supp
         if not isinstance(value, (str, Path)):
             raise ConfigError(
                 _msg(path, f"expected path string, got {type(value).__name__}")
+            )
+        # Empty / whitespace-only strings would coerce to ``Path(".")``
+        # (the current working directory), which is almost certainly
+        # not what the operator meant. ``path: ""`` is a typo, not a
+        # default; refuse it explicitly so the error names the field
+        # instead of silently writing the store under wherever
+        # ``ember`` was launched from. Hardening pass added this.
+        as_str = str(value).strip()
+        if not as_str:
+            raise ConfigError(
+                _msg(path, "path must not be empty (use a default or "
+                           "supply an explicit path)")
             )
         # Expand ``~`` automatically so operators can write
         # ``path: "~/.ember/well/store.db"`` in YAML and have it Just

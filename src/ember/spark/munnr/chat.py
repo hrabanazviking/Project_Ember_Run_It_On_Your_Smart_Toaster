@@ -314,6 +314,7 @@ def _maybe_init_tools(  # noqa: PLR0913 — wires together the optional Phase-16
 
     descriptors = tuple(list_tools())
     overrides = _coerce_overrides(config.tools.approval_overrides)
+    _warn_unknown_override_tools(overrides, descriptors, stdout=stdout)
 
     audit_root = config.tools.audit_root or config_root
     audit = AuditLog(audit_root, ember_version=getattr(ember, "__version__", ""))
@@ -346,6 +347,34 @@ def _coerce_overrides(
         except ValueError:
             continue
     return out
+
+
+def _warn_unknown_override_tools(
+    overrides: Mapping[str, ApprovalPolicy],
+    descriptors: Sequence[ToolDescriptor],
+    *,
+    stdout: TextIO,
+) -> None:
+    """Warn the operator if ``tools.approval_overrides`` names a tool
+    that isn't actually registered.
+
+    Without this, a config like ``approval_overrides: {fech_url: per_call}``
+    (note the typo) would silently apply nothing — the operator would
+    believe they had tightened approval on ``fetch_url`` while the
+    actual descriptor's policy is in force. Surfacing the typo at
+    startup is the only point where the operator is looking for it.
+    """
+    if not overrides:
+        return
+    known = {d.name for d in descriptors}
+    unknown = sorted(name for name in overrides if name not in known)
+    if not unknown:
+        return
+    stdout.write(
+        f"warning: tools.approval_overrides names {len(unknown)} unknown "
+        f"tool(s) (typo? plugin not loaded?): {unknown!r}; the override "
+        f"will NOT take effect.\n"
+    )
 
 
 def _drive_turn_with_tools(  # noqa: PLR0913 — one whole turn naturally fans in this many handles

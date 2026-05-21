@@ -28,6 +28,7 @@ The registry is process-global. Tests use :func:`clear` between cases.
 
 from __future__ import annotations
 
+import re
 import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -56,6 +57,14 @@ class _Entry:
 _REGISTRY: dict[str, _Entry] = {}
 _LOCK = threading.RLock()
 
+# Tool names must be alphanumeric + underscore. The audit log keys on
+# this name, the model proposes calls by this name, and the operator
+# reads it in approval prompts; whitespace / control chars / shell
+# metachars would all confuse one of those readers. The constraint also
+# matches the OpenAI / Anthropic tool-name conventions, so a tool that
+# passes here can be safely surfaced over either wire format.
+_TOOL_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+
 
 def register(descriptor: ToolDescriptor, executor: ToolExecutor) -> None:
     """Register a tool by descriptor + executor.
@@ -65,8 +74,26 @@ def register(descriptor: ToolDescriptor, executor: ToolExecutor) -> None:
     - the descriptor's ``required_approval`` is ``FORBIDDEN`` (mechanical
       "never executable"),
     - a tool with the same name is already registered (re-registration
-      is an error — tests use :func:`clear` between cases).
+      is an error — tests use :func:`clear` between cases),
+    - the descriptor's ``name`` is empty, contains whitespace or
+      control characters, or violates the allowed identifier shape
+      (alphanumeric + underscore, leading letter or underscore, 1-64
+      chars),
+    - ``executor`` is not callable.
     """
+    if not isinstance(descriptor.name, str) or not _TOOL_NAME_RE.match(
+        descriptor.name
+    ):
+        raise ToolError(
+            f"tool name {descriptor.name!r} is invalid; must match "
+            f"[A-Za-z_][A-Za-z0-9_]{{0,63}} (alphanumeric + underscore, "
+            f"1-64 chars, no whitespace or control characters)"
+        )
+    if not callable(executor):
+        raise ToolError(
+            f"executor for tool {descriptor.name!r} is not callable "
+            f"(got {type(executor).__name__}); refusing to register"
+        )
     if descriptor.required_approval is ApprovalPolicy.FORBIDDEN:
         raise ToolError(
             f"tool {descriptor.name!r} is FORBIDDEN at the registry level "

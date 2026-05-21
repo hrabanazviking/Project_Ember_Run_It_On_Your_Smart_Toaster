@@ -50,13 +50,42 @@ class JournalState:
 
     @classmethod
     def from_payload(cls, payload: dict) -> JournalState:
+        """Reconstruct from a JSON dict. Refuses malformed payloads.
+
+        A corrupted on-disk journal (truncated write, manual edit,
+        version-skew between two Ember installs) would otherwise
+        produce a bare ``KeyError`` or ``ValueError`` at resume time,
+        crashing the ingest with a confusing traceback. The hardening
+        pass wraps each missing-field and bad-enum case in
+        :class:`IngestError` so the operator gets one clear line
+        naming the field and the file.
+        """
+        required = ("job_id", "source_kind", "source_root", "started_at", "last_heartbeat")
+        missing = [k for k in required if k not in payload]
+        if missing:
+            raise IngestError(
+                f"journal payload missing required field(s): {missing!r}"
+            )
+        try:
+            source_kind = IngestSourceKind(payload["source_kind"])
+        except ValueError as exc:
+            raise IngestError(
+                f"journal payload has unknown source_kind "
+                f"{payload['source_kind']!r}: {exc}"
+            ) from exc
+        entries_raw = payload.get("entries", {})
+        if not isinstance(entries_raw, dict):
+            raise IngestError(
+                f"journal payload `entries` must be a dict, got "
+                f"{type(entries_raw).__name__}"
+            )
         return cls(
             job_id=payload["job_id"],
-            source_kind=IngestSourceKind(payload["source_kind"]),
+            source_kind=source_kind,
             source_root=payload["source_root"],
             started_at=payload["started_at"],
             last_heartbeat=payload["last_heartbeat"],
-            entries=dict(payload.get("entries", {})),
+            entries=dict(entries_raw),
         )
 
 

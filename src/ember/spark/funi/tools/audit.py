@@ -185,14 +185,39 @@ def _redact_arguments(
     arguments: Mapping[str, object],
     redacted_names: tuple[str, ...],
 ) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    redact_set = set(redacted_names)
-    for name, value in arguments.items():
-        if name in redact_set:
-            out[name] = "<redacted>"
-        else:
-            out[name] = _to_jsonable(value)
-    return out
+    """Redact named keys at any nesting depth.
+
+    A tool that accepts ``payload={"token": "...", "path": "..."}`` with
+    ``redacted_arg_names=("token",)`` must not leak the token to the
+    audit log via the nested ``payload`` dict. Earlier code only
+    redacted top-level keys; the hardening pass walks the value tree so
+    a sensitive key gets replaced wherever it appears.
+    """
+    redact_set = frozenset(redacted_names)
+    return {
+        name: ("<redacted>" if name in redact_set else _redact_value(value, redact_set))
+        for name, value in arguments.items()
+    }
+
+
+def _redact_value(value: object, redact_set: frozenset[str]) -> Any:
+    """Walk ``value`` recursively; redact any dict key that's in the set.
+
+    Lists and tuples are walked; scalars are passed through ``_to_jsonable``
+    unchanged. Cycles are not handled — tool arguments are JSON-shaped
+    per ADR 0011 §2.2 and JSON forbids cycles.
+    """
+    if isinstance(value, Mapping):
+        return {
+            str(k): (
+                "<redacted>" if str(k) in redact_set
+                else _redact_value(v, redact_set)
+            )
+            for k, v in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_redact_value(v, redact_set) for v in value]
+    return _to_jsonable(value)
 
 
 def _serialise_reply(reply: ToolReply) -> dict[str, Any]:

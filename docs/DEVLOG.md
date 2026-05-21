@@ -8,6 +8,61 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Hardening sweep Batch F — third pass, fresh Auditor surfaces (no version bump).
+
+**Who:** Claude (Opus 4.7, 1M context). Six-role Mythic-Engineering pass #3 of the day, in response to *"call on the 6 Mythic Engineering agents and search all code for any other bugs and code hardening."*
+
+**Method:** Cartographer (Védis) re-mapped the post-d5d2792 state, ranked the highest-complexity modules + named surfaces NOT covered by Batches A-E. Four parallel Auditors (Sólrún) hit those surfaces:
+
+- **Auditor 1** — `spark/munnr/render.py` (terminal output / ANSI injection)
+- **Auditor 2** — `well/smidja/local_files/source.py` + `journal.py` (filesystem traversal + persistence)
+- **Auditor 3** — `spark/funi/tools/registry.py` + `approval.py` + `schemas/tool.py` (tool dispatch invariants)
+- **Auditor 4** — `config/loader.py` + `overlay.py` + `validate.py` (config overlay + validation)
+
+Architect (Rúnhild) triaged ~50 raw findings against the prior sweeps' exclusion list, dropped duplicates and false claims, applied the Tier-1/2 set. Forge Worker (Eldra) shipped fixes + 24 new regression tests. Scribe (Eirwyn) wrote this entry.
+
+**Scope:** Third-pass defensive depth. **No code-shape changes; no version bump; no ADR.** This is hygiene #3 on top of v0.2.0 + Batches A/B + Batches C/D/E. **550 tests pass + 2 skipped** (was 526 + 2 after Batches C+D+E; +24 new tests in `test_hardening_batch_f.py`), ruff clean.
+
+### Batch F fixes (each with a pinning regression test)
+
+| File | Hardening |
+|---|---|
+| `src/ember/well/smidja/local_files/source.py` | **Three related defences in walk()**: (1) skip non-regular files via `stat.S_ISREG(path.lstat().st_mode)` — `path.is_file()` would let `read_bytes()` block forever on `/dev/zero` or a FIFO; (2) new `DEFAULT_EXCLUDE_FILE_PATTERNS` denylist for `.env*`, `.pgpass`, `.netrc`, `id_rsa*`, `*.key`, `*.pem`, `*.p12`, `*.kdbx`, `.aws/*` so `ember well ingest ~/` doesn't vectorise the operator's secrets; (3) `DEFAULT_MAX_FILE_BYTES=64 MiB` cap protects against runaway memory on a 50 GB log file. |
+| `src/ember/well/smidja/embed_client.py` | New `_coerce_vector()` helper validates each scalar: refuses non-finite (NaN, ±Inf), refuses non-numeric types (str, None, bool), enforces optional `expected_dim`. Without this, NaN embeddings would crash pgvector at insert time with a cryptic `data exception`, or poison cosine-similarity downstream so every query looked equally bad. |
+| `src/ember/spark/funi/tools/registry.py` | `register()` now validates at registration time: descriptor `name` must match `[A-Za-z_][A-Za-z0-9_]{0,63}` (alphanumeric + underscore, 1-64 chars); executor must be `callable()`. Without this, a malformed registration (empty name, name with newline / ESC, non-callable handler) would surface only at call-time with a confusing traceback. The name shape also matches OpenAI/Anthropic tool-name conventions. |
+| `src/ember/spark/funi/tools/audit.py` | `_redact_arguments` now walks nested dicts + lists via new `_redact_value()` helper. A tool with `redacted_arg_names=("token",)` accepting `payload={"token": "...", "path": "..."}` would previously leak the nested token to the audit log; now it's redacted wherever the key appears in the value tree. |
+| `src/ember/spark/munnr/render.py` | New `_strip_terminal_controls()` helper scrubs ANSI escapes (CSI, OSC, ST-terminated) and Unicode Cc+Cf bytes from `reply.output` and `reply.error` before rendering. A tool reply that quoted a hostile HTTP response containing `\x1b[2J\x1b[H` could otherwise clear the operator's terminal; `\x1b]0;INFECTED\x07` could rewrite the window title. Raw bytes still go to the audit log (only the operator's screen gets the scrubbed view). |
+| `src/ember/config/validate.py` | **Two related defences**: (1) `Path`-typed fields now refuse empty / whitespace-only strings — `path: ""` would previously coerce to `Path(".")` (cwd) silently, a typo-becomes-misconfiguration footgun; (2) `Mapping[str, X]` fields now coerce each value to `X` via the same `_coerce_value` walk used for other annotations — previously the coercer returned `dict(value)` raw, so a field typed `Mapping[str, str]` would accept `{"a": 123}` and the downstream consumer would either drop the bad entry silently or crash. |
+| `src/ember/well/smidja/journal.py` | `JournalState.from_payload` now refuses malformed/corrupted payloads with typed `IngestError` instead of bare `KeyError`/`ValueError`. Required fields checked explicitly; unknown `source_kind` enum value caught; non-dict `entries` rejected. A truncated journal write or version-skew between Ember installs now produces one clear operator-facing line naming the field instead of crashing the ingest with a confusing traceback. |
+| `src/ember/spark/munnr/chat.py` | New `_warn_unknown_override_tools()` prints a warning at chat-startup if `tools.approval_overrides` names a tool that isn't registered. Without this, a typo like `{fech_url: per_call}` would silently apply nothing — the operator would believe approval was tightened on `fetch_url` while the descriptor default was actually in force. |
+
+### Findings deliberately NOT acted on (Batch F scope)
+
+- **TOCTOU walk→read race in source.py** — real, but limited damage (file just gets skipped if it vanishes between walk and read; no path to data corruption or escalation). Documented as a known limitation rather than fixed.
+- **Concurrent `ember well ingest` against same Well** — operator-level concern; the journal is single-writer by design (one ingest at a time per Well). Could add `fcntl.flock()` in slice 3 if multi-operator deployments become common.
+- **`os.replace()` tempfile orphan on rare failure** — `tempfile.NamedTemporaryFile(delete=False)` + `os.replace()` is the standard atomic-write pattern; the orphan window is microseconds wide and `os.replace` is atomic on POSIX.
+- **PgVectorConfig.url shape validation** — left to fail at first-connect with a libpq error. Adding a regex matcher would risk false-rejecting valid postgres URL forms.
+- **OLLAMA_HOST trailing-path component (`/api`) double-append** — real risk but rare; documented as a known limitation. The fix would require either stripping path components (silent) or refusing them (operator-hostile to ambient setups).
+- **Tool execution timeout** — `ToolDescriptor.timeout_s` field exists but the framework doesn't enforce it. Real bug, but timeout enforcement needs cross-platform thinking (signal.alarm on POSIX vs `threading.Timer` on Windows) — deferred to a focused slice.
+- **Render unicode-width assumptions** (CJK / combining chars) — cosmetic; column alignment is best-effort already.
+- **Auditor false claims** verified-and-dropped: Python 3.13+ `rglob(recurse_symlinks=False)` is the default (Ember requires 3.14, so symlink-recursion is already-clean); ToolDescriptor is already `frozen=True` (Mapping mutability concern was for a *shared* dict, which we don't share); journal `_write_state` already uses `tempfile.NamedTemporaryFile` cleanup correctly.
+
+### Why the bar gets higher each pass
+
+This is the third sweep of the same day. The Auditor reports came back with fewer Tier-1 findings per surface than Batches A or C/D/E — most "real bugs" the auditors flagged were either already-fixed, already-clean, or genuinely scope-creep (new features dressed as bugs). The signal-to-noise ratio of further sweeps will keep dropping; future sweeps should target a single new surface (e.g., slice-3 HTTP gateway when it lands) rather than re-running the same six roles against the whole tree.
+
+### Stats
+
+- **Before:** 526 pass + 2 skip, ruff clean.
+- **After:** **550 pass + 2 skip**, ruff clean. **+24 regression tests.**
+- **Files touched:** 8 source files (`local_files/source.py`, `embed_client.py`, `registry.py`, `audit.py`, `render.py`, `validate.py`, `journal.py`, `chat.py`).
+- **Files created:** 1 regression test file (`test_hardening_batch_f.py`).
+- **No version bump.** Slice-2 is still 0.2.0; Batch F is hygiene #3.
+
+The Scribe's closing word: *"Three sweeps in one day. Batch A found the real bugs. Batch C/D/E hardened the typed-value seams. Batch F closed the surfaces the first two passes had missed. The repo enters the next sleep at 550 tests, ruff clean, with every flagged surface either defended or named in this log as deliberately out-of-scope. The next sweep should wait for the next surface to land."*
+
+---
+
 ## 2026-05-21 — Hardening sweep Batches C+D+E — "fix all bugs" follow-up (no version bump).
 
 **Who:** Claude (Opus 4.7, 1M context). Continuation of the same six-role sweep that produced Batches A+B earlier this day, in response to *"please fix all bugs and make all hardening, my friend"* — extending the work from the prioritized Tier-1/2 set to every remaining auditor finding worth acting on.
