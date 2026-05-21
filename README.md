@@ -42,7 +42,11 @@ Ember uses small, efficient language models paired with a powerful vector databa
 
 ---
 
-> Ember just needs a little spark... 
+> Ember just needs a little spark...
+
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/IMG_0865.jpeg](https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/IMG_0865.jpeg)
 
 ---
 
