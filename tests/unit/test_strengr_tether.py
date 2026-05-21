@@ -86,10 +86,14 @@ def _default_strengr_config(*, attempts: int = 3) -> StrengrConfig:
 
 
 def _placeholder_brunnr_config() -> BrunnrConfig:
+    # The path is never opened — these tests inject a scripted opener.
+    # Use a portable in-CWD path (resolved via Path) rather than a
+    # POSIX-only ``/tmp/...`` literal so the test suite is happy on
+    # Windows too.
     return BrunnrConfig(
         backend=BrunnrBackend.SQLITE_VEC,
         embedding_dim=4,
-        sqlite_vec=SqliteVecConfig(path=Path("/tmp/never-used.db")),
+        sqlite_vec=SqliteVecConfig(path=Path("never-used.db")),
     )
 
 

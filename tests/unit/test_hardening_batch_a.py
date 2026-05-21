@@ -245,7 +245,7 @@ class _ExplodingBrunnr:
         self.closed = True
 
 
-def test_funi_close_failure_does_not_prevent_brunnr_close() -> None:
+def test_funi_close_failure_does_not_prevent_brunnr_close(tmp_path: Path) -> None:
     """Hardening: each cleanup runs independently in the finally block.
 
     Drive a single ``run()`` invocation where the funi handle's
@@ -263,7 +263,10 @@ def test_funi_close_failure_does_not_prevent_brunnr_close() -> None:
     )
     from ember.spark.hjarta import save_identity_atomic  # noqa: PLC0415
 
-    config_root = Path("/tmp/ember-hardening-test")
+    # Use pytest's tmp_path fixture instead of a literal /tmp/ path:
+    # /tmp doesn't exist on Windows, and tmp_path also gives each test
+    # a unique sandbox so concurrent runs don't collide.
+    config_root = tmp_path / "ember-hardening-test"
     config_root.mkdir(exist_ok=True)
     save_identity_atomic(config_root, IdentityConfig())
 
@@ -275,7 +278,7 @@ def test_funi_close_failure_does_not_prevent_brunnr_close() -> None:
         strengr=StrengrConfig(retry_backoff_max_s=0.0),
         brunnr=BrunnrConfig(
             embedding_dim=4,
-            sqlite_vec=SqliteVecConfig(path=Path("/tmp/never.db")),
+            sqlite_vec=SqliteVecConfig(path=tmp_path / "never.db"),
         ),
     )
 
@@ -299,7 +302,7 @@ def test_funi_close_failure_does_not_prevent_brunnr_close() -> None:
 # --------------------------------------------------------------------- #
 
 
-def test_cli_main_surfaces_oserror_as_friendly_message() -> None:
+def test_cli_main_surfaces_oserror_as_friendly_message(tmp_path: Path) -> None:
     """Hardening: ``load_ember_config`` raising OSError used to crash with
     a traceback. Now the main dispatcher catches it and writes a
     friendly one-line message."""
@@ -308,8 +311,8 @@ def test_cli_main_surfaces_oserror_as_friendly_message() -> None:
     stdout = io.StringIO()
 
     # Build a parser-shaped invocation. Use a non-existent config root
-    # that points into a file (so the parent isn't a dir).
-    nonexistent_dir = Path("/tmp/ember-no-such-dir-for-hardening-test")
+    # under tmp_path so the test works on Windows + macOS + Linux.
+    nonexistent_dir = tmp_path / "ember-no-such-dir-for-hardening-test"
 
     with patch("ember.cli.main.load_ember_config") as fake_load:
         fake_load.side_effect = PermissionError("permission denied")
