@@ -8,6 +8,28 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Six True Names formally ratified. EMBER_TRUE_NAMES.md added.
+
+**Who:** Claude (Opus 4.7, 1M context) continuing the same session. Voice: Skald (Sigrún Ljósbrá) for the new doc; Scribe (Eirwyn Rúnblóm) for this entry.
+**Scope:** Capture Volmarr's formal ratification of the Six True Names and preserve the per-name explanatory record they were ratified against.
+
+### What shipped
+
+- **Volmarr's ratification of all six names** — *"names are all approved"*. Funi, Strengr, Brunnr, Smiðja, Hjarta, Munnr are now canonical. The longstanding item from the 2026-05-19 "What's next" — Skald's True Names ratification — is closed.
+- **`docs/architecture/EMBER_TRUE_NAMES.md`** — new canonical reference doc, Skald-voiced. One section per True Name covering: Old Norse meaning, realm + code path, what it is, what it's for, owns/does-not-own, why the name was chosen. Includes the Three Realms grouping, the conversation-turn flow tying all six together, and the discipline-of-naming framing. Ratification recorded in §5 with rules for any future rename.
+
+### What's next
+
+- **First-slice Phase 2 begins** (the next commit) per `EMBER_FIRST_SLICE_PLAN.md` §3 Phase 2: ship `ember.schemas.{errors,config,chunks,episode,funi}`. Types only. Tests: shape contracts only. With the names ratified, every typed identifier in the schemas can lean on them.
+- **Light root edits** still pending from 2026-05-19: Ember-descent rows in `ORIGINS.md`; Runa-specific phrasing pass on root `PHILOSOPHY.md`.
+
+### Notes
+
+- The ratification covers the names as they appear in `SYSTEM_VISION.md` §4 and as used throughout `ARCHITECTURE.md` / `DOMAIN_MAP.md` / `DATA_FLOW.md` / `EMBER_TRUE_NAMES.md` / `pyproject.toml` (via folder paths) / `config/ember.example.yaml` / every `INTERFACE.md` in `src/ember/`. Renaming from this point requires an ADR, a single atomic commit touching every reference, and updates to all five canonical docs in the same commit.
+- This entry is intentionally short. The substance is in the new `EMBER_TRUE_NAMES.md`; this is the index pointer.
+
+---
+
 ## 2026-05-21 — Ember fork-delta executed. Three Realms tree built. Runa skeleton archived.
 
 **Who:** Claude (Opus 4.7, 1M context) on the travel laptop, continuing the same session as the earlier 2026-05-21 entry below. Roles rotated: Architect (mostly), Forge Worker (the new `src/ember/` files), Cartographer (the archive mapping), Scribe (this entry).
