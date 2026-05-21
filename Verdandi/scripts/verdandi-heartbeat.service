@@ -1,0 +1,50 @@
+[Unit]
+Description=Verðandi Heartbeat — The Pulse of Becoming
+Documentation=https://github.com/hrabanazviking/Verdandi
+After=network.target
+Wants=runa-nervous-system.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m heartbeat.cli start --foreground
+Restart=on-failure
+RestartSec=15
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Reload config on SIGHUP
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Dump state on SIGUSR1
+# sudo kill -USR1 <pid>
+
+# Force immediate pulse on SIGUSR2
+# sudo kill -USR2 <pid>
+
+# Environment
+Environment=VERDANDI_HOME=%h/.hermes/state
+WorkingDirectory=%h/.hermes/state
+
+# Logging (systemd journal)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=verdandi-heartbeat
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.hermes/state %h/.mimir_well %h/Verdandi
+
+# Resource limits (Pi-friendly)
+MemoryHigh=256M
+MemoryMax=384M
+CPUQuota=10%
+
+[Install]
+WantedBy=default.target

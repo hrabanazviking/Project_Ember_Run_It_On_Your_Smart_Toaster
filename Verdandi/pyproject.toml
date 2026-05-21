@@ -1,0 +1,44 @@
+[project]
+name = "verdandi"
+version = "0.3.0"
+description = "VERÐANDI — The Norn of Becoming. Unix domain socket event bus + heartbeat daemon for AI self-awareness, self-healing, and unified consciousness."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Volmarr"},
+    {name = "Runa Gridweaver Freyjasdottir"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Networking",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = ["nervous-system", "event-bus", "unix-socket", "ai-awareness", "self-awareness", "pub-sub", "heartbeat", "daemon", "monitoring"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[project.optional-dependencies]
+dev = ["pytest-asyncio>=0.23"]
+
+[project.scripts]
+verdandi = "nervous_system:main"
+verdandi-nerve = "nervous_system:main"
+verdandi-heartbeat = "heartbeat.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["verdandi", "verdandi.eir"]
+py-modules = ["nervous_system", "conversation_logger", "context_injector", "reactor"]
