@@ -28,6 +28,7 @@ from ember.schemas.errors import Disconnected, DisconnectReason
 class BrunnrHandle(Protocol):
     """Minimum public surface every Brunnr backend satisfies."""
 
+    backend_kind: str
     embedding_dim: int
 
     def add_document(self, doc: Document) -> int: ...

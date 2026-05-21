@@ -60,6 +60,7 @@ class SqliteVecBrunnr:
     """sqlite-vec Brunnr adapter. Implements :class:`BrunnrHandle`."""
 
     SCHEMA_VERSION = 1
+    backend_kind: str = "sqlite_vec"
 
     def __init__(self, conn: sqlite3.Connection, embedding_dim: int) -> None:
         self._conn = conn

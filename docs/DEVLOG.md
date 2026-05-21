@@ -8,6 +8,45 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 4 shipped: Strengr wraps Brunnr-open with retry + honest health.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (recoverable-vs-non-recoverable reason split), Forge Worker (tether implementation), Auditor (parametrised retry tests), Scribe (this entry).
+**Scope:** Phase 4 of `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` §3 — the Thread realm's tether. Wraps `ember.well.brunnr.handle.open()` with retry-on-recoverable-failure and a graceful never-raising health probe, completing the Spark↔Well boundary contract.
+
+### What shipped
+
+**Schemas (additive)**
+- `src/ember/schemas/thread.py` — `StrengrHealth(backend_kind, last_ok, documents, chunks, embedded_chunks, size_bytes, detail)`. `last_ok=None` is the honest *degraded* signal Munnr will surface to the operator.
+
+**Strengr (the Thread realm)**
+- `src/ember/thread/strengr/tether.py` — module-level `open(strengr_config, brunnr_config, *, opener=None, sleeper=time.sleep) -> BrunnrHandle | Disconnected` and `health(handle) -> StrengrHealth`. The `opener` and `sleeper` kwargs are test seams; defaults are production wiring.
+- Retry policy: exponential backoff (`base=1.0s`) capped at `StrengrConfig.retry_backoff_max_s`, up to `StrengrConfig.retry_attempts` total attempts. Recoverable reasons (`CONN_REFUSED`, `TIMEOUT`, `BACKEND_REPORTED_UNAVAILABLE`, `UNKNOWN`) get retried; non-recoverable reasons (`CONFIG_INVALID`, `AUTH_FAILED`, `DNS_FAILURE`) fast-fail with no retry so the operator isn't kept waiting on a typo.
+- `health()` **never raises** — `BrunnrError` from `count()` becomes `StrengrHealth(last_ok=None, detail="probe failed: …")`. Vow of Graceful Offline in mechanical form, applied at the doctor flow this time.
+- `src/ember/thread/strengr/__init__.py` re-exports `open`, `health`, `Opener`.
+- `src/ember/thread/strengr/INTERFACE.md` updated from "(planned, Phase 4)" to "(shipped Phase 4, 2026-05-21)", with the recoverable/non-recoverable table inline.
+
+**Brunnr protocol extension (additive)**
+- Added `backend_kind: str` to `BrunnrHandle` Protocol and set it as a class attribute (`"sqlite_vec"`) on `SqliteVecBrunnr`. Lets `Strengr.health()` populate `StrengrHealth.backend_kind` without needing the original config.
+
+**Tests (21 new, 149 total, 0.22s, ruff clean)**
+- `tests/unit/test_schemas_thread.py` (4 tests) — `StrengrHealth` minimal construction, frozen-ness, degraded shape, live shape.
+- `tests/unit/test_strengr_tether.py` (15 tests, 8 parametrised) — happy path, fast-fail on each non-recoverable reason, retry-up-to-N on each recoverable reason, success-on-later-attempt, sleeper-called-between-attempts, zero-attempts synthetic Disconnected, health live/degraded/named-backend/unknown-backend.
+- `tests/integration/test_strengr_real_backend.py` (2 tests) — real sqlite_vec end-to-end via Strengr.open(); missing-config returns Disconnected. Skipped if `sqlite_vec` not installed.
+
+### What's next
+
+- **Phase 5 of the first slice:** Funi (Ollama adapter) — `ember.spark.funi.handle` Protocol + registry + `ember.spark.funi.ollama.adapter`. Prompt assembler. `FuniReply` round-tripped through the real Ollama endpoint (test marked `requires_ollama` for hosts that have it; mocked for those that don't).
+- **Light root edits** still pending: Ember-descent rows in `ORIGINS.md`; check root `PHILOSOPHY.md` for Runa-specific phrasings worth softening.
+
+### Notes & gotchas
+
+- **Recoverable vs non-recoverable reason split is load-bearing.** Without it, an operator with a typo'd config waits `retry_attempts × backoff_max_s` before seeing the error. The split makes "your config is wrong" feedback instant while still giving "your server is slow" a chance to recover.
+- **`sleeper` injection beats monkey-patching `time.sleep`.** Tests verify the schedule explicitly (`assert sleeps == [0.0, 0.0]`) without mocking the global. Same pattern Smiðja's `embed_client` uses (`OllamaEmbedClient(backoff_base_s=0.0)`).
+- **`backend_kind` on the Protocol is the right home.** Considered passing config into `health()` instead; rejected because `BrunnrHandle` already knows what kind of thing it is, and the operator's `ember doctor` invocation shouldn't need the config to render the backend's name.
+- **Empty `__init__.py` bug caught mid-phase.** First write of `src/ember/thread/strengr/__init__.py` was blocked by the harness's "read-before-write" rule (because the file existed as a Phase-1 scaffold). The block was silent in my read of the result; tests immediately surfaced it with `AttributeError: module 'ember.thread.strengr' has no attribute 'open'`. Fixed by reading then writing. Reinforces the value of running the test suite at every step rather than waiting until the end.
+
+---
+
 ## 2026-05-21 — Phase 3 shipped: Well realm wired end-to-end.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices rotated: Architect (Brunnr handle Protocol), Forge Worker (sqlite_vec adapter + Smiðja modules), Auditor (test suite + bug fixes mid-phase), Scribe (this entry).
