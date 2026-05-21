@@ -8,6 +8,100 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Batch I — Bidirectional MCP integration (ADR-0014, Phase 18).
+
+**Who:** Claude (Opus 4.7, 1M context). User: *"give it robust and advanced mcp, buddy."* Scoped via single AskUserQuestion → chose "Client + Server, both today."
+
+**What shipped:** Full bidirectional Model Context Protocol integration as a new opt-in package `src/ember/mcp/`, gated behind the `[mcp]` pip extra. Both the client side (Ember consumes external MCP servers + bridges their tools into the existing tool registry) and the server side (`ember mcp serve` exposes Ember's Well + diagnostics over stdio JSON-RPC) ship in this single commit.
+
+**Scope:** New feature, ADR-driven, slice-2-extended (Phase 18). **No version bump in this commit** — that lands as part of a 0.3.0rc1 cut when slice-3 architecture changes accumulate. ADR-0014 is the canonical reference.
+
+### New ADR
+
+- **`docs/decisions/0014-mcp-bidirectional.md`** (~150 lines) — full design + rationale + tradeoffs. V1 scope is stdio-only, both sides. V2 deferrals: `streamable-http` / SSE / WebSocket transports; auth; episode reader API + `recent_episodes` MCP tool; tool-execution timeout enforcement (already declared on descriptors).
+
+### New package: `src/ember/mcp/`
+
+- **`runner.py`** — `MCPRunner`: async-event-loop-in-a-daemon-thread bridge so the synchronous Ember REPL can submit coroutines via `asyncio.run_coroutine_threadsafe`. One loop hosts every `ClientSession`. Thread-safe submit + idempotent close + post-close-submit guard.
+- **`client.py`** — `MCPClientPool`: spawns one stdio subprocess per `MCPServerSpec`, initializes one `ClientSession` per server, holds the lifetime under managed `AsyncExitStack`s for per-server unwind, surfaces `call_tool` + `ping` + `tools_for` as synchronous methods. Per-server failure during open is logged + skipped (other servers continue) — never crashes the chat.
+- **`bridge.py`** — `register_pool_tools`: translates each discovered MCP `Tool` into Ember's `ToolDescriptor` + closure executor. Naming: `mcp__<server>__<tool>` (matches Claude Code's convention). `inputSchema` (JSON Schema) → `parameters_schema` (Ember's simpler ToolParameter dict); `MCPServerSpec.auto_approve` lifts named tools from `PER_CALL` to `STANDING`. `CallToolResult` content → `ToolReply.output`/`error` per the ADR-0011 typed-value contract.
+- **`server.py`** — `build_server` + `run_stdio`: FastMCP wrapper exposing **`search_well`**, **`well_status`**, **`doctor`** as tools and **`ember://well/status`** as a resource. Best-effort Brunnr open — if the Well is unreachable, tools return typed `{"error": ...}` payloads rather than crashing (Vow of Graceful Offline).
+- **`__init__.py`** — exposes `MCP_TOOL_NAME_PREFIX = "mcp__"`.
+
+### Schema additions (`src/ember/schemas/config.py`)
+
+```python
+@dataclass(frozen=True, slots=True)
+class MCPServerSpec:
+    name: str
+    command: str
+    args: tuple[str, ...] = ()
+    env: Mapping[str, str] = field(default_factory=dict)
+    cwd: str | None = None
+    auto_approve: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class MCPConfig:
+    enabled: bool = False           # client side
+    expose_self: bool = False       # server side
+    startup_timeout_s: float = 10.0
+    call_timeout_s: float = 30.0
+    servers: tuple[MCPServerSpec, ...] = ()
+```
+
+`MCPConfig` added to `EmberConfig` as a field; both exported in `__all__`. Default-all-off — operators who don't touch the new config see no behavior change.
+
+### New CLI surface (`src/ember/cli/main.py` + new `src/ember/cli/mcp.py`)
+
+| Subcommand | Purpose |
+|---|---|
+| `ember mcp list` | Show configured MCP servers + their command lines + auto_approve sets |
+| `ember mcp tools` | Spawn the pool, register tools, list every tool in the registry (first-party + MCP-bridged) with approval policy |
+| `ember mcp ping [<server>]` | Health-probe one or all configured servers via the MCP `ping` primitive |
+| `ember mcp serve [--transport stdio]` | Run Ember as an MCP server over stdio. The chat REPL is one mode of Ember; `mcp serve` is another. Mutually exclusive — `serve` blocks until SIGINT. |
+
+The `cli/mcp.py` handlers all lazy-import the MCP package so operators without the `[mcp]` extra get a friendly "Install with `pip install ember-agent[mcp]`" message rather than an `ImportError` traceback.
+
+### `pyproject.toml` extra
+
+```toml
+mcp = ["mcp>=1.27"]   # ADR 0014 — bidirectional MCP integration (client + server).
+```
+
+The single `mcp` package pulls in transitive deps (`anyio`, `httpx`, `pydantic`, `starlette`, `uvicorn`, etc.) but only when the operator opts in. Default `pip install ember-agent[sqlite_vec]` is unchanged.
+
+### Tests (+36 new, all passing)
+
+- **`tests/unit/test_mcp_runner.py`** (6 tests) — async-in-thread bridge: submit returns value, propagates exceptions, honors timeout, idempotent close, post-close raises, single-loop sharing.
+- **`tests/unit/test_mcp_bridge.py`** (16 tests) — JSON Schema → ToolParameterKind coercion (string/integer/number/boolean/union/unknown→string); descriptor building (required + enum + standing lift + missing-input-schema fallback); CallToolResult → ToolReply translation (text concat / non-text bracketed / isError → typed error); executor failure modes (TimeoutError / KeyError / generic exception all become typed `ToolReply.error`); `register_pool_tools` end-to-end (naming convention + auto_approve + conflict-skip-with-warning).
+- **`tests/unit/test_mcp_server.py`** (7 tests) — `build_server` registers expected tools + resources; tool behavior with stub Brunnr; graceful failure when Brunnr raises or is None; resource returns JSON.
+- **`tests/integration/test_mcp_end_to_end.py`** (7 tests) — **real subprocess MCP roundtrip**: spawns a small FastMCP stub server (written to `tmp_path`), discovers its tools via `MCPClientPool`, registers them via bridge, calls them via the registered executor closure, verifies the full discovery + call + result roundtrip. Also tests `ping` happy path + unknown-server + idempotent close. All tests `pytest.importorskip("mcp")`-gated so the suite still runs without the extra.
+
+### Stats
+
+- **Before:** 556 pass + 2 skip, ruff clean.
+- **After:** **592 pass + 2 skip**, ruff clean. **+36 regression tests.**
+- **Files created:** `docs/decisions/0014-mcp-bidirectional.md`, `src/ember/mcp/{__init__,runner,client,bridge,server}.py`, `src/ember/cli/mcp.py`, `tests/unit/test_mcp_{runner,bridge,server}.py`, `tests/integration/test_mcp_end_to_end.py`.
+- **Files modified:** `src/ember/schemas/config.py` (MCPConfig + MCPServerSpec), `src/ember/cli/main.py` (subparser wiring), `pyproject.toml` (`[mcp]` extra).
+- **No version bump.** ADR-0014 marks this as Phase 18 of slice-2-extended.
+
+### V2 backlog (named in the ADR)
+
+- `streamable-http` transport on both sides (with bearer-token auth)
+- Reconnect-with-backoff for client-side server crashes (currently: dead-server tools become typed `NO_SUCH_TOOL` until chat restart)
+- Reader API on `BrunnrHandle` for episodes → enables `recent_episodes` MCP tool + resource
+- Per-tool timeout enforcement on the bridge executor (descriptor declares `timeout_s`; runner already supports it but bridge currently uses the pool-wide `call_timeout_s`)
+- Subscription-based resource change notifications
+- MCP `sampling` (host asks client to call its LLM)
+- Operator-friendly wildcard syntax in `auto_approve` (today: literal name match only)
+
+### Closing word
+
+This is the largest single commit since slice-2 ratification. Five hardening sweeps earlier today (A through H) tightened the foundation; Batch I builds on it. The bidirectional MCP surface turns Ember from "a chat client with three tools" into both a tool-ecosystem participant (the client side opens the door to the entire MCP plugin ecosystem) and a sovereign knowledge endpoint that Claude Desktop / Claude Code / any MCP client can address (the server side exposes the operator's Well as an addressable resource). Vow alignment intact: opt-in, gated, approval-defaulted-safe, audit-symmetric. The Six True Names hold.
+
+---
+
 ## 2026-05-21 — Hardening sweep Batch H — absolute-path audit + cross-platform audit (no version bump).
 
 **Who:** Claude (Opus 4.7, 1M context). Sweep #5 of the day, in response to *"examine every code file to make sure there is no absolute paths… and fix any to relative paths you find… and then call on the 6 Mythic Engineer subagents to make sure all the code is totally cross platform… and come up with a plan to fix any that is not."*

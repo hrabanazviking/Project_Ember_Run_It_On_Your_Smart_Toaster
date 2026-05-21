@@ -251,6 +251,50 @@ class ToolsConfig:
 
 
 # --------------------------------------------------------------------- #
+# MCP (ADR-0014)                                                        #
+# --------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class MCPServerSpec:
+    """One external MCP server Ember will spawn and connect to.
+
+    Per ADR-0014. ``name`` becomes the prefix in the registered tool
+    name (``mcp__<name>__<tool>``) so multiple servers' tools never
+    collide. ``auto_approve`` lists individual tool names that lift
+    from PER_CALL to STANDING — every other tool requires per-call
+    operator approval (Vow of Sovereignty default).
+    """
+
+    name: str
+    command: str
+    args: tuple[str, ...] = ()
+    env: Mapping[str, str] = field(default_factory=dict)
+    cwd: str | None = None
+    auto_approve: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class MCPConfig:
+    """MCP client + server enablement and tuning.
+
+    Per ADR-0014. ``enabled`` turns on the client side (Ember spawns +
+    consumes external MCP servers). ``expose_self`` turns on the server
+    side (Ember exposes Well + diagnostics as an MCP server when
+    ``ember mcp serve`` is invoked).
+
+    The timeouts apply only to the client side; the server side runs
+    until the operator Ctrl-Cs it.
+    """
+
+    enabled: bool = False
+    expose_self: bool = False
+    startup_timeout_s: float = 10.0
+    call_timeout_s: float = 30.0
+    servers: tuple[MCPServerSpec, ...] = ()
+
+
+# --------------------------------------------------------------------- #
 # Top-level                                                             #
 # --------------------------------------------------------------------- #
 
@@ -263,6 +307,7 @@ class EmberConfig:
     brunnr: BrunnrConfig = field(default_factory=BrunnrConfig)
     smidja: SmidjaConfig = field(default_factory=SmidjaConfig)
     tools: ToolsConfig = field(default_factory=ToolsConfig)
+    mcp: MCPConfig = field(default_factory=MCPConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
 
@@ -283,6 +328,8 @@ __all__ = [
     "LogLevel",
     "LoggingConfig",
     "LoggingDestination",
+    "MCPConfig",
+    "MCPServerSpec",
     "PgVectorConfig",
     "SmidjaConfig",
     "SqliteVecConfig",

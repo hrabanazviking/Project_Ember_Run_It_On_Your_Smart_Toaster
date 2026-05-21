@@ -50,6 +50,7 @@ dependencies = []
 sqlite_vec = ["sqlite-vec>=0.1.6"]
 config = ["pyyaml>=6.0"]   # Enables YAML config files. TOML config works without this.
 pgvector = ["psycopg[binary]>=3.2", "pgvector>=0.3"]   # ADR 0010 — Postgres + pgvector Brunnr.
+mcp = ["mcp>=1.27"]   # ADR 0014 — bidirectional MCP integration (client + server).
 # Planned for later phases (filled in as they land):
 #   qdrant      = ["qdrant-client>=1.9"]
 #   chroma      = ["chromadb>=0.5"]

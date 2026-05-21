@@ -76,6 +76,33 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("doctor", help="Diagnose Funi + Well health.")
 
+    # MCP subcommands — ADR-0014.
+    mcp_p = sub.add_parser("mcp", help="Manage MCP (Model Context Protocol).")
+    mcp_sub = mcp_p.add_subparsers(dest="mcp_command", required=True)
+    mcp_sub.add_parser(
+        "list", help="List configured MCP servers + their connection state.",
+    )
+    mcp_sub.add_parser(
+        "tools",
+        help="List every registered tool (Ember's first-party + MCP-bridged).",
+    )
+    ping_p = mcp_sub.add_parser(
+        "ping", help="Health-probe configured MCP servers.",
+    )
+    ping_p.add_argument(
+        "server", nargs="?", default=None,
+        help="One server name (default: ping all configured).",
+    )
+    serve_p = mcp_sub.add_parser(
+        "serve",
+        help="Run Ember as an MCP server over stdio (expose Well + diagnostics).",
+    )
+    serve_p.add_argument(
+        "--transport", default="stdio",
+        choices=("stdio",),
+        help="MCP transport (V1: stdio only; HTTP/SSE deferred to V2).",
+    )
+
     return parser
 
 
@@ -152,6 +179,19 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
             return ingest.run(path=args.path, config=config, stdout=stdout)
         if args.well_command == "status":
             return status.run(config=config, stdout=stdout)
+    if args.command == "mcp":
+        from ember.cli import mcp as mcp_cli  # noqa: PLC0415 — lazy import
+        if args.mcp_command == "list":
+            return mcp_cli.list_servers(config=config, stdout=stdout)
+        if args.mcp_command == "tools":
+            return mcp_cli.list_tools(config=config, stdout=stdout)
+        if args.mcp_command == "ping":
+            return mcp_cli.ping(config=config, server=args.server, stdout=stdout)
+        if args.mcp_command == "serve":
+            return mcp_cli.serve(
+                config=config, config_root=config_root,
+                transport=args.transport, stdout=stdout,
+            )
     # argparse with required=True should make this unreachable; defensive
     # exit-code anyway.
     parser.print_help(stdout)
