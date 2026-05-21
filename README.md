@@ -22,17 +22,17 @@ Got a toaster? Good! You could use it to run me, your very own useful AI Agent, 
 
 Ember is a sovereign AI companion that lives entirely on your device.
 
-She uses small, efficient language models paired with a powerful vector database to stay intelligent and personalized without ever calling home to the cloud.
+Ember uses small, efficient language models paired with a powerful vector database to stay intelligent and personalized without ever calling home to the cloud.
 
 ---
 
 ## Why Ember?
 
 - Complete privacy — nothing leaves your device.
-- Truly yours — no company can change, censor, or shut her down.
+- Truly yours — no company can change, censor, or shut Ember down.
 - Extremely lightweight — designed to run on very weak hardware.
-- Fully customizable — give her any personality, memory, or role you want.
-- Portable — move her between devices without losing her soul Features.
+- Fully customizable — give Ember any personality, memory, or role you want.
+- Portable — move Ember between devices without losing her soul Features.
 - Simple personality injection system.
 - Persistent memory through vector database.
 - Modular design (swap models easily).
@@ -42,7 +42,7 @@ She uses small, efficient language models paired with a powerful vector database
 
 ---
 
-> She just needs a little spark... 
+> Ember just needs a little spark... 
 
 ---
 
