@@ -7,12 +7,19 @@ The sandbox refuses, in order:
 
 1. Non-string URL or empty URL.
 2. URLs with a scheme other than ``http`` / ``https``.
-3. URLs whose host resolves to a private address (RFC1918), loopback,
+3. URLs that carry credentials in the netloc
+   (``http://user:pass@host/``) — secrets in URLs are leak hazards
+   (logs, audit, server access logs).
+4. URLs whose host resolves to a private address (RFC1918), loopback,
    link-local, or multicast — unless the operator passes
-   ``allow_private_addresses=True`` (Phase 16 config will surface this
-   as a config knob; for now it's an explicit per-call argument).
-4. URLs disallowed by the target site's ``robots.txt``.
-5. Responses larger than ``_MAX_RESPONSE_BYTES`` (1 MiB).
+   ``allow_private_addresses=True`` (the per-call escape hatch).
+5. URLs whose host resolves to **no addresses at all** — fail-closed.
+6. URLs disallowed by the target site's ``robots.txt``.
+7. **Redirects** are not followed. A 3xx response is reported as a
+   refusal naming the redirect target, so the operator can re-issue
+   with a fresh per-call approval rather than the sandbox silently
+   chasing a redirect to a private address.
+8. Responses larger than ``_MAX_RESPONSE_BYTES`` (1 MiB).
 
 Refusals come back as :class:`ToolReply` with ``error=...`` and an
 empty ``output``. The audit log records the proposed URL; the body is
@@ -133,6 +140,21 @@ def _execute(call: ToolCall) -> ToolReply:  # noqa: PLR0911 — each refusal is 
     if not parsed.hostname:
         return _error(call, "fetch_url: refused: URL has no host", started)
 
+    # Refuse URLs with credentials in the netloc — secrets in URLs are
+    # leak hazards (the audit log, the server's access log, every
+    # intermediate proxy). The operator should put credentials in a
+    # secret file, not in the URL.
+    if parsed.username is not None or parsed.password is not None:
+        return _error(
+            call,
+            (
+                "fetch_url: refused: URL carries credentials in netloc "
+                "(user:password@host); strip them and pass credentials via "
+                "headers if you really need them"
+            ),
+            started,
+        )
+
     refusal = _check_address_class(parsed.hostname, allow_private=allow_private)
     if refusal is not None:
         return _error(call, refusal, started)
@@ -190,12 +212,29 @@ def _execute(call: ToolCall) -> ToolReply:  # noqa: PLR0911 — each refusal is 
 # --------------------------------------------------------------------- #
 
 
-def _check_address_class(host: str, *, allow_private: bool) -> str | None:
-    """Refuse RFC1918 / loopback / link-local / multicast unless allowed."""
+def _check_address_class(  # noqa: PLR0911 — one named early-return per address class is the clear shape
+    host: str, *, allow_private: bool,
+) -> str | None:
+    """Refuse RFC1918 / loopback / link-local / multicast unless allowed.
+
+    Also fails CLOSED on empty resolver result — a host that resolves
+    to zero addresses must not pass the sandbox. Python's
+    ``ipaddress`` module already handles IPv6 correctly: ``is_private``
+    covers ``fc00::/7``, ``is_link_local`` covers ``fe80::/10``,
+    ``is_loopback`` covers ``::1``.
+    """
     try:
         addresses = _resolve(host)
     except OSError as exc:
         return f"fetch_url: refused: DNS lookup failed for {host!r}: {exc}"
+
+    # Fail-closed on empty resolution. A custom resolver or DNS
+    # misconfiguration that returns no addresses would otherwise let
+    # the host through (the for-loop just wouldn't execute).
+    if not addresses:
+        return (
+            f"fetch_url: refused: DNS resolved {host!r} to no addresses"
+        )
 
     for addr in addresses:
         try:
@@ -246,18 +285,24 @@ def _check_robots(raw_url: str, parsed) -> str | None:
     Failures fetching robots.txt are treated as "not disallowed" — the
     standard interpretation. Tests inject a fake parser via
     :func:`_set_robots_fetcher`.
+
+    We catch the *narrow* set of expected failure types (network
+    errors + value/type errors from the stdlib parser). ``MemoryError``,
+    ``KeyboardInterrupt``, and ``SystemExit`` propagate as they should
+    — the operator can interrupt a robots-fetch, and a memory crisis
+    is not the moment to silently allow a fetch.
     """
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
     fetcher = _ROBOTS_FETCHER or _default_robots
     try:
         parser = fetcher(robots_url)
-    except Exception:
+    except (urllib.error.URLError, OSError, TimeoutError, ValueError):
         return None
     if parser is None:
         return None
     try:
         allowed = parser.can_fetch(_USER_AGENT, raw_url)
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         return None
     if not allowed:
         return f"fetch_url: refused: robots.txt disallows {raw_url}"
@@ -287,12 +332,13 @@ def _default_robots(robots_url: str) -> RobotFileParser | None:
 def _open_and_read(url: str) -> tuple[bytes, str, str]:
     """Perform the GET. Returns (body, content_type, final_url).
 
-    ``urllib.request.urlopen`` follows redirects by default; the
-    redirect target is re-checked at the OS-socket layer when urllib
-    actually connects, but the URL-class check we did above only
-    validates the initial host. Phase 17 may tighten this with a custom
-    redirect handler; for slice 2 the per-call approval is the gating
-    constraint.
+    **Redirects are refused at the URL-class level** by
+    :class:`_NoRedirectHandler` — see ADR 0011 hardening pass. A 3xx
+    response surfaces as ``urllib.error.HTTPError`` whose caller
+    converts it into a typed-error ``ToolReply`` naming the redirect
+    target. The operator can then re-issue ``fetch_url`` for the
+    redirect target with a fresh per-call approval, which forces the
+    sandbox to re-validate that target's address class.
     """
     import contextlib  # noqa: PLC0415 — narrowly scoped
     opener = _URL_OPENER or _default_opener
@@ -310,8 +356,33 @@ def _open_and_read(url: str) -> tuple[bytes, str, str]:
     return body, content_type, final_url
 
 
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Refuse to follow redirects so the sandbox stays honest.
+
+    A 3xx response surfaces as ``HTTPError`` carrying the original
+    code + reason; the caller converts that to a refusal naming the
+    target URL via the ``Location`` header.
+    """
+
+    def http_error_301(self, req, fp, code, msg, headers):
+        location = headers.get("Location", "<no Location header>")
+        raise urllib.error.HTTPError(
+            req.full_url, code,
+            f"redirect not followed; Location was {location!r}",
+            headers, fp,
+        )
+
+    http_error_302 = http_error_301
+    http_error_303 = http_error_301
+    http_error_307 = http_error_301
+    http_error_308 = http_error_301
+
+
+_DEFAULT_OPENER_INSTANCE = urllib.request.build_opener(_NoRedirectHandler())
+
+
 def _default_opener(req, timeout):
-    return urllib.request.urlopen(req, timeout=timeout)
+    return _DEFAULT_OPENER_INSTANCE.open(req, timeout=timeout)
 
 
 # --------------------------------------------------------------------- #

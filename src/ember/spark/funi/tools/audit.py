@@ -95,7 +95,12 @@ class AuditLog:
             line = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
             payload = line.encode("utf-8")
 
-            # Append atomically: one os.write of the line.
+            # Append the line. POSIX guarantees write(2) appends are
+            # serialized when O_APPEND is set, but a single os.write()
+            # may return fewer bytes than requested (especially when
+            # the payload exceeds PIPE_BUF or the disk is filling up).
+            # The hardening pass added a write-until-complete loop so
+            # a short write is retried rather than corrupting the line.
             existed = path.exists()
             fd = os.open(
                 str(path),
@@ -103,7 +108,7 @@ class AuditLog:
                 FILE_MODE,
             )
             try:
-                os.write(fd, payload)
+                _write_all(fd, payload)
             finally:
                 os.close(fd)
             # Tighten perms on freshly-created files; chmod is idempotent
@@ -218,6 +223,29 @@ def _to_jsonable(value: object) -> Any:
     if isinstance(value, Mapping):
         return {str(k): _to_jsonable(v) for k, v in value.items()}
     return repr(value)
+
+
+def _write_all(fd: int, payload: bytes) -> None:
+    """Loop on ``os.write`` until every byte is written.
+
+    POSIX permits ``write(2)`` to return fewer bytes than requested.
+    For audit records exceeding PIPE_BUF (~4 KiB on most filesystems)
+    or under disk pressure, a single ``os.write`` could leave a
+    partial JSONL line on disk — corrupting the file for downstream
+    parsers. This helper guarantees the line is either fully written
+    or surfaces an OSError that the caller turns into ``ToolError``.
+    """
+    view = memoryview(payload)
+    while view:
+        n = os.write(fd, view)
+        if n <= 0:
+            # Defensive: a non-blocking write returning 0 would loop
+            # forever. Treat as failure to surface the issue.
+            raise OSError(
+                f"audit write returned {n} bytes from a {len(payload)}-byte "
+                f"payload; file may be left in an inconsistent state"
+            )
+        view = view[n:]
 
 
 __all__ = [

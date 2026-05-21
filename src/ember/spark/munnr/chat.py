@@ -242,12 +242,22 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
             if brunnr is not None:
                 # Persistence failure is recoverable — we keep serving
                 # the operator with the in-memory episode window.
-                with contextlib.suppress(BrunnrError):
+                # Broaden beyond BrunnrError to also swallow lower-
+                # level backend exceptions (sqlite3.Error, psycopg.Error)
+                # that the adapter might let through on a stale
+                # connection; the cost of losing one Episode is less
+                # than crashing the REPL.
+                with contextlib.suppress(Exception):
                     brunnr.add_episode(episode)
     finally:
-        funi.close()
+        # Close each handle independently so a raise from one doesn't
+        # leak the other. Neither adapter's close() is documented to
+        # raise, but we defend in depth.
+        with contextlib.suppress(Exception):
+            funi.close()
         if brunnr is not None:
-            brunnr.close()
+            with contextlib.suppress(Exception):
+                brunnr.close()
 
     return 0
 
@@ -435,7 +445,8 @@ def _run_tool_round(
             _emit_proposal(stdout, descriptor=None, call=call)
             _emit_reply(stdout, reply=reply, descriptor=None,
                         outcome=ApprovalOutcome.NO_SUCH_TOOL)
-            tool_ctx.audit.record(
+            _safe_audit(
+                tool_ctx.audit, stdout,
                 call=call, descriptor=None,
                 approval=ApprovalOutcome.NO_SUCH_TOOL, reply=reply,
             )
@@ -451,7 +462,8 @@ def _run_tool_round(
             reply = ToolReply(call_id=call.call_id, error=arg_error)
             _emit_reply(stdout, reply=reply, descriptor=descriptor,
                         outcome=ApprovalOutcome.INVALID_ARGUMENTS)
-            tool_ctx.audit.record(
+            _safe_audit(
+                tool_ctx.audit, stdout,
                 call=call, descriptor=descriptor,
                 approval=ApprovalOutcome.INVALID_ARGUMENTS, reply=reply,
             )
@@ -466,7 +478,7 @@ def _run_tool_round(
             standing_trust_all=tool_ctx.standing_trust_all,
         )
         if decision.needs_prompt:
-            answer = tool_ctx.prompter.prompt(descriptor, call)
+            answer = _safe_prompt(tool_ctx.prompter, stdout, descriptor, call)
             outcome = resolve_with_answer(answer)
             if outcome is ApprovalOutcome.APPROVED_FOR_SESSION:
                 session_added.append(descriptor.name)
@@ -483,7 +495,8 @@ def _run_tool_round(
             # so there is no tool-side reply to record. The synthesized
             # error string is still fed back into Funi's next-turn context
             # so the model knows the call was refused.
-            tool_ctx.audit.record(
+            _safe_audit(
+                tool_ctx.audit, stdout,
                 call=call, descriptor=descriptor,
                 approval=outcome, reply=None,
             )
@@ -502,7 +515,8 @@ def _run_tool_round(
             )
 
         _emit_reply(stdout, reply=reply, descriptor=descriptor, outcome=outcome)
-        tool_ctx.audit.record(
+        _safe_audit(
+            tool_ctx.audit, stdout,
             call=call, descriptor=descriptor,
             approval=outcome, reply=reply,
         )
@@ -521,6 +535,51 @@ _APPROVE_OUTCOMES = frozenset({
     ApprovalOutcome.APPROVED_THIS_CALL,
     ApprovalOutcome.APPROVED_FOR_SESSION,
 })
+
+
+def _safe_audit(
+    audit: AuditLog,
+    stdout: TextIO,
+    **record_kwargs: object,
+) -> None:
+    """Record an audit entry; degrade-loud if the audit log can't be written.
+
+    Audit failures (disk full, permission flip, etc.) historically raised
+    ``ToolError`` per ADR 0011 §2.7's "audit miss is bad" stance, which
+    would crash the chat loop mid-tool. We keep audit miss visible by
+    writing a one-line warning to stdout, but never let it terminate
+    the REPL.
+    """
+    try:
+        audit.record(**record_kwargs)  # type: ignore[arg-type]
+    except Exception as exc:
+        stdout.write(
+            f"[warning: audit log write failed: {type(exc).__name__}: {exc}]\n"
+        )
+        stdout.flush()
+
+
+def _safe_prompt(
+    prompter: ApprovalPrompter,
+    stdout: TextIO,
+    descriptor: ToolDescriptor,
+    call: ToolCall,
+) -> str:
+    """Ask the prompter for an approval answer; degrade to "n" on any IO error.
+
+    A closed-stdin / disconnected-terminal IOError mid-prompt should
+    refuse the call rather than crash the loop. The Vow of Sovereignty
+    says ambiguity defaults to refusal.
+    """
+    try:
+        return prompter.prompt(descriptor, call)
+    except (OSError, EOFError, ValueError) as exc:
+        stdout.write(
+            f"[warning: approval prompter failed ({type(exc).__name__}); "
+            f"treating as 'n']\n"
+        )
+        stdout.flush()
+        return "n"
 
 
 def _emit_proposal(

@@ -79,7 +79,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(  # noqa: PLR0911 — top-level dispatcher legitimately returns from many branches
+def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns + branches from many places
     argv: list[str] | None = None,
     *,
     stdout: TextIO | None = None,
@@ -94,6 +94,16 @@ def main(  # noqa: PLR0911 — top-level dispatcher legitimately returns from ma
         config = load_ember_config(config_root)
     except ConfigError as exc:
         stdout.write(f"Config error: {exc}\n")
+        return 1
+    except OSError as exc:
+        # PermissionError, FileNotFoundError-on-config-dir-parent, etc.
+        # These can occur when the operator's $HOME or --config-root
+        # points at a path they can't read. Surface a friendly message
+        # rather than letting a traceback hit the terminal.
+        stdout.write(
+            f"Cannot read config from {config_root}: "
+            f"{type(exc).__name__}: {exc}\n"
+        )
         return 1
 
     config = _apply_tool_overrides(config, args)
@@ -113,6 +123,12 @@ def main(  # noqa: PLR0911 — top-level dispatcher legitimately returns from ma
             config = load_ember_config(config_root)
         except ConfigError as exc:
             stdout.write(f"Config error after setup: {exc}\n")
+            return 1
+        except OSError as exc:
+            stdout.write(
+                f"Cannot reload config after setup: "
+                f"{type(exc).__name__}: {exc}\n"
+            )
             return 1
         config = _apply_tool_overrides(config, args)
 

@@ -85,6 +85,19 @@ def write_ember_config(
     ) as tmp:
         tmp.write(body)
         tmp_path = Path(tmp.name)
+
+    # Tighten mode to 0o600 BEFORE the atomic replace — the
+    # NamedTemporaryFile default honours umask, which on many systems
+    # is 0o022 (i.e. world-readable group + others). The operator's
+    # ember.yaml never contains secrets, but it does carry the
+    # identity name + tool config, which is operator-private. The
+    # chmod is best-effort: on Windows the bits don't carry the same
+    # meaning, and unusual filesystems may refuse chmod entirely.
+    if os.name != "nt":
+        import contextlib  # noqa: PLC0415 — narrowly scoped
+        with contextlib.suppress(OSError):
+            os.chmod(tmp_path, 0o600)
+
     try:
         os.replace(tmp_path, target)
     except OSError as exc:

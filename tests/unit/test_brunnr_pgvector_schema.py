@@ -80,8 +80,24 @@ def test_render_quotes_schema_with_double_quote() -> None:
 
 
 def test_render_refuses_schema_with_nul_byte() -> None:
-    with pytest.raises(BrunnrError, match="NUL byte"):
+    # Hardening pass broadened the rejection to all control characters
+    # (NUL is one of them, but so is ESC, BEL, TAB-in-identifier, etc.).
+    # The error names the exact control byte(s).
+    with pytest.raises(BrunnrError, match="control character"):
         render_schema_sql(embedding_dim=768, schema="bad\x00name")
+
+
+def test_render_refuses_schema_with_esc_character() -> None:
+    """Hardening: identifiers with ESC could inject terminal control
+    sequences when surfaced in operator-facing error messages."""
+    with pytest.raises(BrunnrError, match="control character"):
+        render_schema_sql(embedding_dim=768, schema="evil\x1bname")
+
+
+def test_render_refuses_empty_schema() -> None:
+    """Hardening: empty identifier is meaningless and could mask a bug."""
+    with pytest.raises(BrunnrError, match="empty"):
+        render_schema_sql(embedding_dim=768, schema="")
 
 
 # --------------------------------------------------------------------- #

@@ -49,6 +49,14 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_TIMEOUT_S = 60.0
 
+# Sanity bound on a single NDJSON frame from Ollama's streaming
+# endpoint. Legitimate frames carry one token batch plus a small JSON
+# envelope (a few KiB at most, even with parsed tool_calls). A frame
+# larger than this is a runaway server or a memory-exhaustion attack
+# disguised as a streaming response. The streaming loop aborts with a
+# typed ERROR chunk if it sees one.
+_MAX_NDJSON_FRAME_BYTES = 1 * 1024 * 1024  # 1 MiB
+
 
 def _now_utc() -> datetime:
     return datetime.now(tz=UTC)
@@ -145,8 +153,12 @@ class OllamaFuni:
                 request, timeout=self._timeout_s
             ) as response:
                 body = response.read()
-        except urllib.error.URLError as exc:
-            logger.debug("ollama complete: URL error %s", exc)
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            # OSError catches socket.timeout (which doesn't always surface
+            # as URLError) and other low-level network exceptions that
+            # bypass urllib's wrapping. TimeoutError is the modern
+            # equivalent of socket.timeout in Python 3.10+.
+            logger.debug("ollama complete: network error %s", exc)
             return FuniReply(
                 text=f"[ollama unreachable: {exc}]",
                 finish_reason=FinishReason.ERROR,
@@ -241,8 +253,12 @@ class OllamaFuni:
             response = urllib.request.urlopen(
                 request, timeout=self._timeout_s
             )
-        except urllib.error.URLError as exc:
-            logger.debug("ollama complete_streaming: URL error %s", exc)
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            # OSError catches socket.timeout and other low-level network
+            # exceptions that bypass urllib's URLError wrapping. The
+            # streaming contract (ADR 0009 §2.4) requires a single final
+            # ERROR chunk on open-time failure.
+            logger.debug("ollama complete_streaming: network error %s", exc)
             yield FuniStreamChunk(
                 text_delta=f"[ollama unreachable: {exc}]",
                 done=True,
@@ -266,6 +282,21 @@ class OllamaFuni:
         seen_done = False
         try:
             for raw_line in response:
+                # Defensive: cap individual NDJSON frame size so a
+                # runaway server can't push us into a MemoryError mid-
+                # stream. Anything beyond _MAX_NDJSON_FRAME_BYTES is
+                # treated as an error chunk; the stream ends cleanly.
+                if len(raw_line) > _MAX_NDJSON_FRAME_BYTES:
+                    yield FuniStreamChunk(
+                        text_delta=(
+                            f"[ollama frame exceeded "
+                            f"{_MAX_NDJSON_FRAME_BYTES} bytes — aborting]"
+                        ),
+                        done=True,
+                        finish_reason=FinishReason.ERROR,
+                        model_id=self.model_id,
+                    )
+                    return
                 line = raw_line.strip()
                 if not line:
                     continue
@@ -322,7 +353,7 @@ class OllamaFuni:
                     done=False,
                     model_id=str(parsed.get("model") or self.model_id),
                 )
-        except urllib.error.URLError as exc:
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
             yield FuniStreamChunk(
                 text_delta=f"[ollama stream died: {exc}]",
                 done=True,

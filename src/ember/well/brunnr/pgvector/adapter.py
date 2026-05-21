@@ -77,10 +77,23 @@ def _quote_ident(name: str) -> str:
     """Quote a Postgres identifier safely.
 
     pgsql identifier rules: double-quote, double internal double-quotes.
-    Refuse names containing a NUL byte (Postgres can't store them).
+
+    Refuses:
+
+    - NUL bytes (Postgres can't store them).
+    - Any other ASCII control character (0x01-0x1f, 0x7f) — these
+      can confuse terminals when the identifier appears in error
+      messages (ESC sequences, bell, etc.) and have no legitimate
+      use in a schema or table name.
     """
-    if "\x00" in name:
-        raise BrunnrError(f"schema name contains NUL byte: {name!r}")
+    if not name:
+        raise BrunnrError("identifier is empty")
+    bad = [c for c in name if ord(c) < 0x20 or ord(c) == 0x7f]
+    if bad:
+        raise BrunnrError(
+            f"identifier {name!r} contains control character(s) "
+            f"{[hex(ord(c)) for c in bad]}"
+        )
     escaped = name.replace('"', '""')
     return f'"{escaped}"'
 

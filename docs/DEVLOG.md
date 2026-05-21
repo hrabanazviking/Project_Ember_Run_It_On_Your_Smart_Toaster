@@ -8,6 +8,73 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Mythic Engineering bug + hardening sweep (no version bump).
+
+**Who:** Claude (Opus 4.7, 1M context). Six-role pass:
+- **Cartographer (Védis)** mapped the codebase hotspots before the sweep.
+- **Auditor (Sólrún)** drove four parallel Explore agents — input-validation/sandbox, resource-lifecycle/concurrency, error-handling/typed-value-contract, test-isolation/coverage — yielding ~100 raw findings.
+- **Architect (Rúnhild)** triaged them, deduped overlaps, verified suspect claims (some auditor findings were wrong — `test_brunnr_pgvector_secrets.py` and `test_funi_tools_audit.py` *do* exist; IPv6 `is_private`/`is_link_local`/`is_loopback` already correctly handle fc00::/fe80::/::1), and classified into Tier-1 (must-fix), Tier-2 (defensive), Tier-3 (test gaps), Tier-4 (not-bugs).
+- **Forge Worker (Eldra)** applied every Tier-1 + Tier-2 fix with a regression test.
+- **Skald (Sigrún)** named the new helpers (`_SandboxResult`, `_NoRedirectHandler`, `_safe_audit`, `_safe_prompt`, `_write_all`, `_MAX_NDJSON_FRAME_BYTES`).
+- **Scribe (Eirwyn)** wrote this entry + the regression-test files' docstrings naming each hardening intent.
+
+**Scope:** Post-slice-2 defensive sweep. **No code-shape changes; no version bump; no ADR.** This is hygiene on top of 0.2.0. 511 tests pass + 2 skipped (was 488 + 2; +23 new regression tests across two `test_hardening_batch_*.py` files), ruff clean.
+
+### Tier-1 fixes (real bugs, with regression tests)
+
+| # | File | Bug | Fix |
+|---|---|---|---|
+| 1 | `src/ember/tools/read_local_file.py` | TOCTOU: `_sandbox_check` resolved the path, then `_execute` re-resolved + stat'd + read — opening a window for symlink-swap between check and read | `_sandbox_check` now returns a structured `_SandboxResult(safe_path \| refusal)`; the executor reads `safe_path` directly without re-resolving. |
+| 2 | `src/ember/tools/read_local_file.py` | `Path.home() == "/"` (root user with `HOME=/`) made the sandbox vacuous — `/etc/passwd` passed the `relative_to(home)` check | Explicit refusal when `Path.home() == Path(home.anchor)`. |
+| 3 | `src/ember/tools/read_local_file.py` | Whitespace-only paths (`"   "`) passed the empty-string check | Added `.strip()` to the non-empty guard. |
+| 4 | `src/ember/tools/fetch_url.py` | URL credentials in netloc (`http://user:pass@host/`) sent the secret in plain HTTP + leaked into logs/audit | New refusal path that names "credentials" but never echoes the actual user/password into the error. |
+| 5 | `src/ember/tools/fetch_url.py` | Empty DNS resolution result let any address through (the for-loop didn't execute, function returned None implicitly) | Fail-closed: explicit `if not addresses: return refusal`. |
+| 6 | `src/ember/tools/fetch_url.py` | The docstring admitted urllib follows redirects without re-validating the target's address class | New `_NoRedirectHandler` raises `HTTPError` on 3xx; operator must re-issue with a fresh approval for the new target. The default opener uses this handler. |
+| 7 | `src/ember/spark/munnr/chat.py` | Four `tool_ctx.audit.record()` call sites could raise `ToolError` (disk full, permission flip, etc.); none were caught — the chat REPL crashed mid-turn | New `_safe_audit()` helper wraps every record call; failures write a one-line warning to stdout but never propagate. |
+| 8 | `src/ember/spark/munnr/chat.py` | `tool_ctx.prompter.prompt()` could raise `OSError` on closed stdin (SSH disconnect, terminal close); crashed the loop | New `_safe_prompt()` helper catches `(OSError, EOFError, ValueError)`, writes a warning, defaults to `"n"` (refusal — Vow of Sovereignty). |
+| 9 | `src/ember/spark/munnr/chat.py` | The `finally` block called `funi.close()` then `brunnr.close()` un-guarded; if funi.close() raised, brunnr leaked | Each close wrapped in its own `contextlib.suppress(Exception)` so cleanups run independently. |
+| 10 | `src/ember/spark/munnr/chat.py` | `add_episode` was wrapped in `contextlib.suppress(BrunnrError)` only; lower-level `sqlite3.Error`/`psycopg.Error` from a stale connection would crash | Broadened to `contextlib.suppress(Exception)` for the episode-persist path (lose one Episode is better than lose the REPL). |
+| 11 | `src/ember/spark/funi/ollama/adapter.py` | `complete()` + `complete_streaming()` + `_iter_ndjson_chunks()` all caught `urllib.error.URLError` but missed `socket.timeout` / `TimeoutError` / lower-level `OSError` — broke the typed-value-over-exception contract | Broadened to `(urllib.error.URLError, TimeoutError, OSError)` everywhere. |
+| 12 | `src/ember/well/brunnr/pgvector/adapter.py` | `_quote_ident` only rejected NUL; ESC/BEL/control chars could inject terminal escape sequences into operator-facing error messages | Rejects all `0x01-0x1f + 0x7f` bytes with a clear "control character" error; also rejects empty identifier. |
+| 13 | `src/ember/cli/main.py` | Only caught `ConfigError` from `load_ember_config`; `PermissionError`/`OSError` (unreadable config dir, etc.) crashed with raw traceback | Added a parallel `except OSError` arm with a friendly one-line message. |
+
+### Tier-2 defensive hardening (with regression tests)
+
+| File | Hardening |
+|---|---|
+| `src/ember/spark/funi/tools/audit.py` | New `_write_all(fd, payload)` helper loops on short writes — POSIX `write(2)` can return fewer bytes than requested for large records (audit lines can exceed PIPE_BUF). Without the loop, a short write left a partial JSONL line corrupting the file. |
+| `src/ember/config/writer.py` | Explicit `chmod 0o600` on the temp file before `os.replace` — `NamedTemporaryFile` previously honoured operator umask (often 0o022, world-readable). `ember.yaml` doesn't carry secrets but is operator-private. |
+| `src/ember/spark/funi/ollama/adapter.py` | New `_MAX_NDJSON_FRAME_BYTES = 1 MiB` cap on individual NDJSON frames — a runaway Ollama server pushing a gigabyte single line could OOM the operator. Oversize frame produces a typed ERROR chunk and aborts cleanly. |
+| `src/ember/tools/fetch_url.py` | Tightened the robots.txt parser's bare `except Exception` to `(urllib.error.URLError, OSError, TimeoutError, ValueError)` for the fetch step and `(ValueError, TypeError, AttributeError)` for the parse step. `MemoryError` / `KeyboardInterrupt` / `SystemExit` now propagate as they should. |
+
+### Findings deliberately NOT acted on
+
+- **Auditor claim: "ipv6 link-local not handled"** — false. `ipaddress.IPv6Address.is_link_local` correctly returns True for `fe80::/10`. Verified at the shell.
+- **Auditor claim: "no test for `pgvector/secrets.py`" / "no test for `audit.py`"** — false. `tests/unit/test_brunnr_pgvector_secrets.py` (16 tests, Phase 12) and `tests/unit/test_funi_tools_audit.py` (17 tests, Phase 14) both exist and cover those modules thoroughly.
+- **Auditor claim: "tuple mutability lets caller modify executor"** — false. Python tuples are immutable.
+- **Auditor concern: case-insensitive filesystem denylist bypass on macOS APFS** — partial: on case-insensitive filesystems, `Path.resolve()` typically returns the canonical case as stored on disk (so `~/.SSH` resolves to whatever case actually exists). The risk is real if the operator never created the canonical-case entry. Documented as a known limitation; sandbox is "best-effort" on case-insensitive FS, and the Pi-class deployments (the primary target) are Linux ext4/btrfs which are case-sensitive.
+- **Auditor concern: redirect to private address after DNS rebinding** — substantially mitigated by Tier-1 fix #6 (no redirects followed). DNS rebinding within a single `urlopen` is a residual risk; documented as a follow-up if/when the slice-3 plan reaches network-tool hardening.
+- **Auditor concern: pgvector search methods raise instead of returning `[]`** — left as-is. The slice-1 sqlite_vec adapter raises `BrunnrError` for dim mismatch and other bad-input cases (a programming-error contract); pgvector matches. The "search returns empty on failure" interpretation isn't actually what the Brunnr contract specifies; both adapters are consistent.
+- **Auditor concern: dead `_cursor` helper in pgvector/adapter.py** — cosmetic; left for the next refactor pass.
+
+### New regression test files
+
+- **`tests/unit/test_hardening_batch_a.py`** — 13 tests covering each Tier-1 fix.
+- **`tests/unit/test_hardening_batch_b.py`** — 8 tests covering each Tier-2 hardening + the audit-write-loop + the no-redirect handler shape + the empty-DNS fail-closed.
+- **`tests/unit/test_brunnr_pgvector_schema.py`** — 2 new tests (`test_render_refuses_schema_with_esc_character`, `test_render_refuses_empty_schema`) covering the broadened `_quote_ident` rejection set.
+
+### Stats
+
+- **Before:** 488 pass + 2 skip, ruff clean.
+- **After:** **511 pass + 2 skip**, ruff clean. **+23 regression tests.**
+- **Files touched:** 7 source files (`read_local_file.py`, `fetch_url.py`, `chat.py`, `ollama/adapter.py`, `pgvector/adapter.py`, `cli/main.py`, `audit.py`, `config/writer.py`).
+- **Files created:** 2 regression test files.
+- **No version bump.** Slice-2 is still 0.2.0; the sweep is hygiene on top.
+
+The Cartographer's closing word: *"The sweep found 13 real bugs and 4 defensive holes. The biggest catch was the TOCTOU + vacuous-HOME pair in `read_local_file` — either alone could have let a malicious model read `/etc/passwd` past the sandbox on a misconfigured host. The Auditor's discipline is to assume nothing; today that paid out."*
+
+---
+
 ## 2026-05-21 — Mythic Engineering README expansion.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Skald (Sigrún — public-facing voice, the toaster-pun continuity, the "for the normal folks" framing), Cartographer (Védis — the 18-section table of contents, the where-to-go-next signposting), Scribe (Eirwyn — the command reference, configuration walkthrough, FAQ entries; technical accuracy), Architect (Rúnhild — the Three Realms section + Six True Names introduction).
