@@ -8,6 +8,60 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 10 shipped: ADR 0009 + streaming Funi protocol + Ollama native streaming.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0009 + Protocol shape), Forge Worker (OllamaFuni native streaming), Auditor (13 new tests + real-Ollama smoke), Scribe (this entry).
+**Scope:** First half of slice-2's streaming work. Funi can now produce incremental chunks; Munnr integration is Phase 11. No version bump this phase — 0.1.7 lands when streaming is end-to-end visible at the operator's terminal.
+
+### What shipped
+
+- **`docs/decisions/0009-streaming-funi-replies.md`** — ratifies 8 decisions: new Protocol method (not separate Protocol), `wrap_complete_as_stream` helper for non-streaming runtimes, `FuniStreamChunk` schema with `text_delta`-only semantics, mid-stream failure folding identical to slice-1 `complete()` pattern, immediate tool refusal, `FuniConfig.streaming` opt-out (default True), NDJSON line-buffered reading for Ollama, file locations.
+
+- **`src/ember/schemas/stream.py`** — `FuniStreamChunk(text_delta, done, finish_reason, model_id, prompt_tokens, completion_tokens)`. Frozen dataclass; `text_delta` carries new tokens only (never cumulative); final-chunk-only fields are `None` on intermediate chunks.
+
+- **`src/ember/schemas/config.py`** — `FuniConfig.streaming: bool = True` field added. Operators who want batched behaviour set `funi.streaming: false` in their `ember.yaml`.
+
+- **`src/ember/spark/funi/handle.py`** — `FuniHandle` Protocol gains `complete_streaming(prompt, context, tools=None) -> Iterator[FuniStreamChunk]`. Module-level `wrap_complete_as_stream(handle, prompt, context, tools)` helper for adapters that can't stream natively (calls `handle.complete()`, yields one final chunk).
+
+- **`src/ember/spark/funi/ollama/adapter.py`** — `OllamaFuni.complete_streaming` POSTs `/api/chat` with `"stream": true`, reads the response line-by-line as NDJSON, yields one `FuniStreamChunk` per JSON object. Mid-stream URL errors, non-JSON lines, error payloads, and unexpected end-of-stream all fold into a final `FuniStreamChunk(done=True, finish_reason=ERROR)` with operator-readable text. Tool requests refuse immediately with a single ERROR chunk. Token totals populate from the final NDJSON object's `prompt_eval_count` + `eval_count`.
+
+**Tests (13 new, 278 pass + 2 skip, 0.38s, ruff clean):**
+- `tests/unit/test_schemas_stream.py` (4) — shape contracts, immutability, final-chunk totals, text-delta join semantics.
+- `tests/unit/test_funi_ollama_streaming.py` (9) — happy-path NDJSON parsing, `stream=true` in payload, finish-reason mapping, URL-error folding, non-JSON line folding, error-payload folding, unexpected EOS folding, tool refusal, `wrap_complete_as_stream` helper.
+
+### Real-hardware acceptance verified
+
+Streaming smoke against the laptop's tailnet Ollama with `phi3:mini`:
+
+```
+$ OLLAMA_HOST=100.67.240.22 python -m ember.spark.funi.ollama …
+opened: OllamaFuni
+--- streaming ---
+1 2 3 4 5
+--- done: 10 chunks, finish=stop, tokens=10 ---
+full reply: '1 2 3 4 5'
+```
+
+10 NDJSON chunks streamed live, tokens appeared incrementally, final chunk carried done + finish_reason + token totals. NDJSON line-reading works on the wire.
+
+### What's next — Phase 11
+
+- Touch `src/ember/spark/munnr/chat.py` — REPL calls `complete_streaming` when `config.funi.streaming=True` (default), renders each `text_delta` as it arrives, aggregates for the persisted Episode.
+- Touch `src/ember/spark/munnr/render.py` — `render_stream_chunk` helper; final disconnect-banner / citations logic unchanged.
+- Add Ctrl-C handler that closes the stream cleanly; partial reply tagged `[interrupted by operator]`.
+- Tests + integration test for the full streaming chat loop.
+- **Suggested release after Phase 11: `0.1.7` (streaming live).**
+
+### Notes & gotchas
+
+- **No Phase-10 caller actually consumes the streaming path yet.** Munnr's `chat.py` still uses `complete()`. Phase 11 wires the consumer. This split keeps the integration risk in a separate, reviewable commit (same shape as slice 1's Phase 1 → Phase 2 split for the loader).
+- **Test doubles in earlier slice-1 tests** (`_FakeFuni` in `test_phase6_acceptance.py`, `test_phase9_operator_edit.py`, `test_hjarta_machine.py`) **don't yet implement `complete_streaming`.** They satisfy the Protocol structurally because no caller uses isinstance on the Protocol; `chat.py` accesses methods by name. Phase 11 updates them when chat.py starts calling `complete_streaming`.
+- **NDJSON line iteration** works because `urllib.request.urlopen()`'s response is a file-like object that iterates line-by-line on its underlying byte stream. No SSE parser needed.
+- **Mid-stream failure** is a *single* final chunk with `done=True, finish_reason=ERROR`. Munnr's render logic treats this identically to a non-streaming failure — the operator sees the error text in the same shape regardless of mode.
+- **`FuniConfig.streaming` defaults true** — slice-1 operators upgrading to 0.1.7 will see streaming by default. Documented in DEVLOG; INSTALL.md Phase-11 sidebar will surface it.
+
+---
+
 ## 2026-05-21 — Phase 9 shipped: config loader live, Hjarta writes ember.yaml. **0.1.5 released.**
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (writer + cli wiring), Architect (overlay-order discipline), Auditor (12 new tests + real-Ollama smoke), Scribe (this entry).

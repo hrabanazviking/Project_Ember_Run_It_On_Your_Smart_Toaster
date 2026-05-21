@@ -94,6 +94,12 @@ class FuniOllamaConfig:
 @dataclass(frozen=True, slots=True)
 class FuniConfig:
     runtime: FuniRuntime = FuniRuntime.OLLAMA
+    streaming: bool = True
+    """Whether ``ember chat`` consumes Funi via streaming
+    (incremental) or batched (whole reply at once). Default True per
+    ADR 0009. Operators on terminals that struggle with byte streams,
+    or operators piping output to log collectors, may set ``false``
+    in their ``ember.yaml``."""
     ollama: FuniOllamaConfig = field(default_factory=FuniOllamaConfig)
     # Other runtime sub-configs (llamacpp, lmstudio, phi_silica,
     # apple_foundation) land alongside their adapters in Phase 5+.

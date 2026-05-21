@@ -23,7 +23,7 @@ import json
 import logging
 import urllib.error
 import urllib.request
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime
 
 from ember.schemas.config import FuniConfig, FuniRuntime
@@ -36,6 +36,7 @@ from ember.schemas.funi import (
     Unavailable,
     UnavailableReason,
 )
+from ember.schemas.stream import FuniStreamChunk
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +188,135 @@ class OllamaFuni:
             prompt_tokens=_safe_int(parsed.get("prompt_eval_count")),
             completion_tokens=_safe_int(parsed.get("eval_count")),
         )
+
+    # --------------------------------------------------- complete_streaming
+
+    def complete_streaming(
+        self,
+        prompt: str,
+        context: Sequence[ContextItem],
+        tools: Sequence[str] | None = None,
+    ) -> Iterator[FuniStreamChunk]:
+        """Stream a turn via ``/api/chat`` with ``stream=True``.
+
+        Yields one :class:`FuniStreamChunk` per Ollama NDJSON line.
+        Mid-stream errors fold into a final ERROR chunk per ADR 0009
+        §2.4. Tool requests refuse immediately per §2.5.
+        """
+        if tools:
+            yield FuniStreamChunk(
+                text_delta="",
+                done=True,
+                finish_reason=FinishReason.ERROR,
+                model_id=self.model_id,
+            )
+            return
+
+        messages = _messages_from_context(context, prompt)
+        payload = json.dumps(
+            {
+                "model": self.model_id,
+                "messages": messages,
+                "stream": True,
+                "options": self._options,
+            }
+        ).encode("utf-8")
+        url = f"{self._base_url}/api/chat"
+
+        try:
+            request = urllib.request.Request(
+                url=url,
+                data=payload,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            response = urllib.request.urlopen(
+                request, timeout=self._timeout_s
+            )
+        except urllib.error.URLError as exc:
+            logger.debug("ollama complete_streaming: URL error %s", exc)
+            yield FuniStreamChunk(
+                text_delta=f"[ollama unreachable: {exc}]",
+                done=True,
+                finish_reason=FinishReason.ERROR,
+                model_id=self.model_id,
+            )
+            return
+
+        try:
+            yield from self._iter_ndjson_chunks(response)
+        finally:
+            response.close()
+
+    def _iter_ndjson_chunks(self, response) -> Iterator[FuniStreamChunk]:
+        seen_done = False
+        try:
+            for raw_line in response:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                try:
+                    parsed = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    yield FuniStreamChunk(
+                        text_delta=f"[ollama returned non-JSON line: {exc}]",
+                        done=True,
+                        finish_reason=FinishReason.ERROR,
+                        model_id=self.model_id,
+                    )
+                    return
+
+                if isinstance(parsed, dict) and parsed.get("error"):
+                    yield FuniStreamChunk(
+                        text_delta=f"[ollama error: {parsed['error']}]",
+                        done=True,
+                        finish_reason=FinishReason.ERROR,
+                        model_id=self.model_id,
+                    )
+                    return
+
+                message = (parsed or {}).get("message") or {}
+                text_delta = (
+                    message.get("content") if isinstance(message, dict) else ""
+                ) or ""
+                done = bool(parsed.get("done"))
+                if done:
+                    seen_done = True
+                    finish = _OLLAMA_DONE_REASON_TO_FINISH.get(
+                        str(parsed.get("done_reason") or "stop"),
+                        FinishReason.STOP,
+                    )
+                    self._last_ok = _now_utc()
+                    yield FuniStreamChunk(
+                        text_delta=text_delta,
+                        done=True,
+                        finish_reason=finish,
+                        model_id=str(parsed.get("model") or self.model_id),
+                        prompt_tokens=_safe_int(parsed.get("prompt_eval_count")),
+                        completion_tokens=_safe_int(parsed.get("eval_count")),
+                    )
+                    return
+                yield FuniStreamChunk(
+                    text_delta=text_delta,
+                    done=False,
+                    model_id=str(parsed.get("model") or self.model_id),
+                )
+        except urllib.error.URLError as exc:
+            yield FuniStreamChunk(
+                text_delta=f"[ollama stream died: {exc}]",
+                done=True,
+                finish_reason=FinishReason.ERROR,
+                model_id=self.model_id,
+            )
+            return
+
+        if not seen_done:
+            yield FuniStreamChunk(
+                text_delta="[ollama stream ended without done=true]",
+                done=True,
+                finish_reason=FinishReason.ERROR,
+                model_id=self.model_id,
+            )
 
     # ------------------------------------------------------------- health
 
