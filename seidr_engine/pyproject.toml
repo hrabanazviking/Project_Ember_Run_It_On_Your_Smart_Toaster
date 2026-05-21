@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seidr-engine"
+version = "0.1.0"
+description = "ᛋᛖᛁᛞᚱ — Deterministic Old Norse poetry generator. Weave verse from the Nine Worlds."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Runa Gridweaver Freyjasdóttir"},
+]
+
+[project.scripts]
+seidr = "seidr.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
