@@ -1,9 +1,9 @@
 # SMIDJA_INGEST_PATTERNS — Patterns for the Ingest Forge
 
 **Voice:** Forge Worker (Eldra Járnsdóttir)
-**Status:** Proposed — for ratification. Bootstrap-stage reference.
+**Status:** **Ratified post-slice-2 (2026-05-21).** The `local_files` source + chunker + resumable journal shipped Phase 3 (0.1.0); the embedding client + atomic deposit shipped Phase 3 as well. Other sources (`url_fetch`, `shared_well`, `nomad`) remain on the menu as deferred per ADR 0013 §3.
 **Last touched:** 2026-05-21
-**Reads with:** `docs/architecture/DATA_FLOW.md` §3, `docs/architecture/DOMAIN_MAP.md` §3, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`.
+**Reads with:** `docs/architecture/DATA_FLOW.md` §3, `docs/architecture/DOMAIN_MAP.md` §3, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`, `src/ember/well/smidja/INTERFACE.md`.
 
 ---
 

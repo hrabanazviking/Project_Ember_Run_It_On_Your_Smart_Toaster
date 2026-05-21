@@ -1,9 +1,9 @@
 # EMBER_FIRST_SLICE_PLAN — The Smallest End-to-End Vertical
 
 **Voice:** Forge Worker (Eldra Járnsdóttir), with Architect (Rúnhild Svartdóttir)
-**Status:** Proposed — for ratification. Bootstrap-stage. The plan is a *file-by-file* listing; the code is not in this commit.
-**Last touched:** 2026-05-21
-**Reads with:** `ARCHITECTURE.md` (the shape), `DOMAIN_MAP.md` (the ownership), `DATA_FLOW.md` (the motion), `EMBER_FORK_DELTA.md` (the migration).
+**Status:** **COMPLETE — ratified at 0.1.0 by ADR 0007 (2026-05-21).** Every phase (1-7) shipped end-to-end in a single day. The plan is preserved as the historical record of what the first slice committed to and delivered; the canonical "what's now true" lives in `ARCHITECTURE.md` + `DOMAIN_MAP.md` + `DATA_FLOW.md` (which were promoted from the EMBER_*.md prefixed predecessors during the fork-delta commit).
+**Last touched:** 2026-05-21 (archived in-place at slice-2 ratification)
+**Reads with:** `ARCHITECTURE.md` (the shape), `DOMAIN_MAP.md` (the ownership), `DATA_FLOW.md` (the motion), `EMBER_FORK_DELTA.md` (the migration), `docs/decisions/0007-first-slice-ratification-2026-05-21.md` (the ratification ADR), `EMBER_SECOND_SLICE_PLAN.md` (what came next).
 
 ---
 

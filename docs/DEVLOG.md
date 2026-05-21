@@ -8,6 +8,90 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Mythic Engineering full doc-pass (post-slice-2 ratification).
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Cartographer (Védis — audit pass + ledger updates), Auditor (Sólrún — stale-ref triage), Scribe (Eirwyn — the bulk of the rewrites), Skald (Sigrún — SYSTEM_VISION §11 Vows-Fulfilled Postscript), Architect (Rúnhild — ADR-referencing rationale in the new README bodies).
+
+**Scope:** Full pass through every active MD file in the repo (~95 files, skipping inherited corpora at `docs/{research,python,phd-2040,RunaUniversity2040,AI_OS_Research,philosophy,methodology,archive}/`). The user said "extensively expand and enlarge"; I picked the **maximalist** scope: surgical stale-ref fixes + create missing core docs + substantively expand thin module READMEs + author new slice-2 retrospective + operator playbook + Vows-Fulfilled Postscript. **No code touched. 488 tests still green, ruff clean.**
+
+**What shipped — 5 batches:**
+
+### Batch 1: Surgical stale-ref fixes (12 files)
+
+- **`src/README.md`** — `runa` → `ember`; rewritten to explain PEP 517 src-layout + install paths.
+- **`docs/README.md`** — full rewrite. New per-subfolder table, "Reading order for new contributors", maintenance rule.
+- **`deploy/README.md`** — full rewrite. Per-subfolder state column (Pi/INSTALL.md live, systemd/docker scaffold only); slice-2 capability map; "What's NOT here yet" honesty.
+- **`config/README.md`** — full rewrite. Overlay order spelled out per ADR 0008 §2.3; per-file slice-2 state; secret rules per ADR 0010 §2.5.
+- **`examples/README.md`** — full rewrite. Honest about scaffold state; pointer to `config/ember.example.yaml` as the load-bearing template.
+- **`ORIGINS.md`** — added §7 Ember-descent (slice-1 + slice-2 fresh material): identity + soul-layer, architecture canon, ADRs 0006-0013, slice-1+2 source tree, slice-2 operator-facing docs.
+- **`RULES.AI.md`** — added Mythic-Engineering header (Voice/Status/Last-touched/Reads-with); rules body unchanged.
+- **`docs/adapters/BRUNNR_BACKEND_MATRIX.md`** — Status header flipped: "Proposed" → "**Ratified post-slice-2**" with phase-shipped notes (sqlite_vec 0.1.0; pgvector 0.1.9).
+- **`docs/adapters/FUNI_LOCAL_MODEL_OPTIONS.md`** — same Status flip + the slice-2 tool-capability note (phi3:mini → 400; llama3.2:3b recommended for tool use).
+- **`docs/adapters/SMIDJA_INGEST_PATTERNS.md`** — same Status flip.
+- **`docs/architecture/EMBER_FIRST_SLICE_PLAN.md`** — Status: **COMPLETE** at 0.1.0 (ratified by ADR 0007); archived in-place.
+- **`docs/architecture/EMBER_FORK_DELTA.md`** — Status: **COMPLETE** (migration shipped 2026-05-21 in commit `045fda6`); archived in-place as long-term lineage reference.
+- **`docs/adapters/README.md`** — full rewrite with the slice-2 adapter catalogue + adapter-doc template documented.
+
+### Batch 2: Create 4 missing core docs
+
+- **`src/ember/tools/INTERFACE.md`** — the Phase-15-shipped-without-INTERFACE gap. Full public surface: per-tool bindings table, descriptor conventions, runtime chain, three first-party tools' refusal matrices, failure semantics.
+- **`src/ember/config/README.md`** — Phase-9 module had INTERFACE but no README. Full breakdown: what it owns / doesn't own, layout, production + test usage, overlay order, slice-2 field extensions, failure modes.
+- **`src/ember/well/brunnr/sqlite_vec/README.md`** — slice-1 default adapter, no README before. Identity, ownership table, on-disk shape, failure semantics, phase notes, limitations.
+- **`src/ember/well/brunnr/pgvector/README.md`** — Phase-13 adapter, no README before. Full ownership table, on-disk shape, failure-classification matrix (8 typed reasons), Phase-12-vs-13 archaeology, the two live-fire bugs documented.
+
+### Batch 3: Substantively expand 11 thin module READMEs
+
+Each grew from ~15-25 lines to 150-300 lines of proper Architect+Scribe content (identity, owns/doesn't-own, file map, neighbour interactions, slice-2 changes, failure semantics, related docs):
+
+- `src/ember/schemas/README.md` — every module + what's in it; conventions (`frozen=True, slots=True, StrEnum, tuple defaults`); slice-2 schema growth log.
+- `src/ember/spark/README.md` — the Spark realm; subpackage table; the conversation-turn diagram with slice-2 tool-loop annotations; constraints per ADR 0007+0013.
+- `src/ember/spark/funi/README.md` — Protocol declaration; runtime menu with status; slice-2 extensions matrix; failure semantics per ADR 0007+0009+0011.
+- `src/ember/spark/hjarta/README.md` — FSM diagram with new ADVANCED_TOOLS branch; CLI vs test invocation; failure modes; Phase-9 + Phase-16 extensions.
+- `src/ember/spark/munnr/README.md` — chat.run shape with full slice-2 tool-loop pseudocode; render rules; test seams; slice-2 changes.
+- `src/ember/thread/README.md` — why this realm has only one subpackage; slice-2 "no code changes" note.
+- `src/ember/thread/strengr/README.md` — Disconnected dataclass + 7 reasons; retry-with-backoff semantics; what Strengr never does.
+- `src/ember/well/README.md` — two subpackages relationship; ingest-vs-retrieval flow; slice-2 acceptance criterion mapped.
+- `src/ember/well/brunnr/README.md` — Protocol declaration with all 14 methods; two-shipped-backend comparison; deferred backends per ADR 0013 §3.
+- `src/ember/well/smidja/README.md` — source menu (current + planned); Phase-3 pipeline flow; conventions per ADR 0007.
+- `src/ember/cli/README.md` — subcommand table; flag inventory; dispatch flow; slice-2 changes (Phase 7 + 9 + 16).
+
+### Batch 4: Maximalist new docs
+
+- **`docs/SYSTEM_VISION.md`** — Status flipped to "**Ratified by code**"; added **§10 Slice ratifications** table + **§11 Vows-Fulfilled Postscript** mapping each of the 10 Vows to specific shipped-code enforcement (citing exact ADR sections + module names). The Skald's poetry made mechanical.
+- **`docs/SLICE_2_RETROSPECTIVE.md`** — **new file**, ~650 lines. What slice 2 was; the numbers (488 tests, 0.1.0 → 0.2.0); what was deferred; what we learned (3 live-fire bugs documented with regression tests); what worked (Mythic Engineering as a build discipline; typed-value-over-exception; Protocol+registry+lazy-import; test seams everywhere); what didn't work as well (pgvector adapter's two bugs would have been caught earlier; model-capability constraint surfaced late; `tools.example.yaml` never landed); how long it actually took; what's queued for slice 3.
+- **`docs/OPERATOR_PLAYBOOK.md`** — **new file**, ~600 lines. **10 numbered recipes** for what operators will actually want to do: point Ember at tailnet Ollama; switch to shared Gungnir-shape Well; enable tool use safely; audit what tools have done; tighten approval policy; forbid a tool entirely; run Ember offline; verify streaming is on; reset Ember from scratch; move Ember to a new machine. Each recipe: what you want / what you'll edit / the recipe (copy-pasteable yaml + commands) / verification / what could go wrong.
+- **`Yggdrasil_and_Huginn_and_Muninn_Theory.md`** — left untouched (intellectual heritage per fork-delta).
+
+### Batch 5: Refresh scripts/ + tools/
+
+- **`scripts/README.md`** — full rewrite. Honest scaffold state for slice 2; "What's NOT here yet" table; rules-when-scripts-land.
+- **`tools/README.md`** — full rewrite. Critical **naming clarification box** at the top distinguishing repo `tools/` from `src/ember/tools/`. Slice-2 state table; what's NOT here yet; how-to-add-a-tool guidance.
+
+**Total: ~30 files touched, ~25k words added, 4 new files authored, 0 lines of code modified.**
+
+**Verification:** Full test suite (`488 pass + 2 skip`) and ruff (`All checks passed!`) both green after the pass. No code under `src/` touched; only documentation, examples, and the SYSTEM_VISION.md vision-fulfilment postscript.
+
+**What this accomplishes:**
+
+- Every stale `runa` reference in operator-facing READMEs is gone (5 top-level READMEs rewritten).
+- Every "Status: Proposed — for ratification" header in adapter docs is flipped to "Ratified post-slice-2" with concrete phase / version pointers.
+- The two slice plans are properly marked **COMPLETE** with archive-in-place rationale.
+- The Phase-15-shipped-without-INTERFACE gap is closed (`src/ember/tools/INTERFACE.md` now exists).
+- Three previously-undocumented critical subpackages got proper READMEs (`config/`, `well/brunnr/sqlite_vec/`, `well/brunnr/pgvector/`).
+- Eleven thin module READMEs grew from scaffolds to substantive Architect+Scribe docs.
+- The SYSTEM_VISION now has the Vows-Fulfilled Postscript — each Vow mapped to the exact shipped-code enforcement.
+- Two brand-new docs (slice-2 retrospective + operator playbook) give future contributors and operators a one-stop reference for what slice 2 was and how to actually live with the result.
+
+**No new ADR needed** — this is documentation hygiene, not architectural change. ADR 0013 (the slice-2 ratification) is unchanged.
+
+**What's NOT in this pass:**
+
+- The inherited Runa-era corpora at `docs/{research,python,phd-2040,RunaUniversity2040,AI_OS_Research,philosophy,methodology,archive}/` — left untouched per the slice-1 forking rule (intellectual heritage preserved as-is).
+- The `Yggdrasil_and_Huginn_and_Muninn_Theory.md` at repo root — cross-project Volmarr theory, intellectual heritage; not Ember-specific.
+- The `docs/design/*` Runa-era design explorations — kept as forking-day attribution material per `EMBER_FORK_DELTA.md`.
+
+---
+
 ## 2026-05-21 — Phase 17 shipped: SLICE 2 RATIFIED at **0.2.0**. 🔥
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Auditor (the acceptance test), Architect (ADR 0013 — the slice ratification), Cartographer (INSTALL.md slice-2 sections — operator-facing), Scribe (this entry + memory).

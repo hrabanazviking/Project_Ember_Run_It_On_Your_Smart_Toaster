@@ -1,9 +1,9 @@
 # FUNI_LOCAL_MODEL_OPTIONS — Local Models for the Spark
 
 **Voice:** Forge Worker (Eldra Járnsdóttir)
-**Status:** Proposed — for ratification. Bootstrap-stage reference.
+**Status:** **Ratified post-slice-2 (2026-05-21).** The Ollama runtime is shipped (Phase 5, 0.1.0) and the only Funi backend in slice 2; streaming + tool-call support added in Phases 10 + 16. Other runtimes (`llamacpp`, `lmstudio`, `phi_silica`, `apple_foundation`) remain on the menu as deferred per ADR 0013 §3. **Tool-capability matters for slice-2 tool use:** `phi3:mini` does not emit tool_calls (Ollama returns 400); `llama3.2:3b` is the Pi-class default for tool-enabled chat.
 **Last touched:** 2026-05-21
-**Reads with:** `docs/architecture/ARCHITECTURE.md` §3.1, `docs/architecture/DOMAIN_MAP.md` §5, `docs/AI_OS_Research/AI_OS_RESEARCH_2026.md` (inherited).
+**Reads with:** `docs/architecture/ARCHITECTURE.md` §3.1, `docs/architecture/DOMAIN_MAP.md` §5, `docs/decisions/0009-streaming-funi-replies.md`, `docs/decisions/0011-tool-use-framework.md`, `deploy/pi/INSTALL.md` §10, `docs/AI_OS_Research/AI_OS_RESEARCH_2026.md` (inherited).
 
 ---
 

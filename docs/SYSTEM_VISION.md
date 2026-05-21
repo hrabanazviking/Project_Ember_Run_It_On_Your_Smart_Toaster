@@ -1,8 +1,8 @@
 # SYSTEM_VISION — The Living Statement of Ember
 
 **Voice:** Skald (Sigrún Ljósbrá)
-**Status:** Bootstrap-stage — primary truth for the project's intent until ratified by first running code
-**Last touched:** 2026-05-19 (fork day)
+**Status:** **Ratified by code.** Slice 1 (ADR 0007, 2026-05-21, version 0.1.0) and slice 2 (ADR 0013, 2026-05-21, version 0.2.0) have shipped end-to-end. See §11 below — the Vows-Fulfilled Postscript — for how each Vow was honored by the shipped code.
+**Last touched:** 2026-05-21 (post-slice-2 ratification; the §11 Vows-Fulfilled Postscript added)
 **Forked from:** `docs/archive/runa-inherited/SYSTEM_VISION.md` (Runa-Agent-Digital-Being, 2026-05-17)
 
 ---
@@ -119,3 +119,159 @@ Ember is not any of these. She is what becomes possible *because* of them.
 This document is the Skald's statement of intent. It is read by every contributor — human or AI — before they propose work. When the code drifts away from this vision, either the code changes back, or this document is amended with explicit reasoning and a Decision Record in `docs/decisions/`.
 
 The vision is not aspirational. It is the standard against which every commit is measured.
+
+---
+
+## 10. Slice ratifications
+
+| Slice | Date | Version | Ratifying ADR | Headline |
+|---|---|---|---|---|
+| 1 | 2026-05-21 | `0.1.0` | `docs/decisions/0007-first-slice-ratification-2026-05-21.md` | Hjarta + Funi + Strengr + Brunnr (sqlite_vec) + Smiðja (local_files) + Munnr — the Primary Rite, end-to-end. |
+| 2 | 2026-05-21 | `0.2.0` | `docs/decisions/0013-second-slice-ratification.md` | Config loader; streaming Funi; pgvector Brunnr (Gungnir-compatible); tool framework + first three tools. |
+
+---
+
+## 11. Vows-Fulfilled Postscript (added 2026-05-21, post-slice-2)
+
+Each Vow has a corresponding mechanical enforcement in the shipped
+code. This section is the bridge between the Skald's poetry and the
+Forge Worker's iron — what the code actually does to keep each Vow.
+
+### Vow of Smallness — *fulfilled*
+
+- **Default install:** zero external runtime dependencies. The
+  `sqlite_vec` extra adds `sqlite-vec` (~1 MB); `pgvector` adds
+  `psycopg[binary] + pgvector` (~10 MB); `config` adds `pyyaml`
+  (~700 KB). Each is opt-in per ADR 0007 §2.1. Total Pi-5 install
+  including Ollama runtime + `phi3:mini` model: ~3.5 GB.
+- **Stdlib-first** across every adapter: `urllib.request` for HTTP
+  (no httpx), `tomllib` for TOML (no toml), `dataclasses` + `StrEnum`
+  for schemas (no pydantic), `argparse` for CLI (no typer).
+- **Pi-5 verified:** the slice-2 acceptance test
+  `tests/integration/test_phase17_acceptance.py` runs in 0.2s; the
+  full 488-test suite runs in 18s on the laptop. Pi-5 numbers are
+  larger but proportional — the system fits.
+
+### Vow of Tethered Grounding — *fulfilled*
+
+- **Two shipped Brunnr backends:** `sqlite_vec` (Phase 3, local-only
+  default) and `pgvector` (Phase 13, Gungnir-compatible shared Well).
+- **Gungnir compatibility verified live:** the slice-2 pgvector
+  adapter was tested against the live operator Gungnir (95 docs / 35 682
+  chunks at dim=768) — `tests/integration/test_pgvector_real_backend.py::TestGungnirRetrieval`.
+- **Citations rendered on every grounded reply:** Munnr's
+  `render_citations` is called on the streaming path's final block
+  when the Well was reachable for this turn.
+
+### Vow of Graceful Offline — *fulfilled*
+
+- **`Disconnected` typed value across every realm boundary:**
+  Strengr (`thread.strengr`), Funi's `Unavailable`, the pgvector
+  adapter's eight-reason classification — all return typed values
+  instead of raising.
+- **Disconnect banner mechanically prepended** by Munnr's
+  `render_well_disconnected_banner` to every ungrounded reply. The
+  banner shows the typed reason and the time since the disconnect
+  began.
+- **"Do not invent" instruction injected into the system prompt**
+  when the Well is unreachable, via `funi_prompt.assemble(...,
+  well_disconnected=True)`.
+
+### Vow of Pluggable Storage — *fulfilled*
+
+- **One Protocol, two adapters** as of slice 2. `BrunnrHandle` (14
+  methods) is the same for both `sqlite_vec` and `pgvector`. Spark
+  code imports the Protocol, never the concrete class. Switching
+  backends is a config edit (`brunnr.backend: pgvector` + the
+  `pgvector:` block) — no code changes.
+- **RRF constant `k=60`** matches across both backends, so retrieval
+  ordering is commensurate when the operator switches.
+
+### Vow of the Unbroken Whole — *fulfilled*
+
+- **Whole files only** across every Phase commit. No fragments, no
+  "the rest is the same" gestures, no partial diffs. Verified by
+  reading any of the 17 phase commits.
+- **No orphaned code:** every connection wired before commit.
+- **Tests added in lockstep with code:** 488 tests, ~50% landed in
+  slice 2 alongside the implementation.
+
+### Vow of Flexible Roots — *fulfilled*
+
+- **No absolute paths** in any source code or shipped config
+  template. All paths are `~`-expanded at use-time via
+  `Path.home()` / `Path(...).expanduser()`.
+- **PEP 517 src-layout** prevents accidental in-tree imports — the
+  package must be installed.
+- **Cross-platform:** Linux / macOS verified in slice 2; Windows
+  permission-bit checks have explicit `os.name == "nt"` early-returns
+  in the secret resolver. iOS / Android are out of slice-2 scope
+  but not blocked by current code.
+
+### Vow of Public-Friendliness — *fulfilled*
+
+- **Hjarta is the only first-run experience:** the operator sees a
+  named wizard with prompts written in plain language (no jargon).
+- **Munnr renders typed errors as plain English:** "well: disconnected
+  (conn_refused, since 2026-05-21T...) — reply is ungrounded; run
+  `ember doctor` for diagnosis". Not stack traces.
+- **`ember doctor` is the single command** for "is everything okay?".
+  Plain-English output; no log-spelunking required.
+- **Internal mythic names** (Funi, Strengr, Brunnr, Smiðja, Hjarta,
+  Munnr) stay inside the code and the contributor docs. Operator-
+  facing strings use plain language ("the well", "the model", "this
+  tool").
+
+### Vow of Honest Memory — *fulfilled*
+
+- **`Episode` persistence is post-turn:** Munnr writes the persisted
+  Episode after the reply lands. Failure-to-persist is non-fatal
+  (the in-memory window keeps serving the operator); honest about
+  what was kept.
+- **The streaming path persists the FINAL reply** (post-tool-loop),
+  not intermediate states. The operator's mental model of "what
+  Ember said" matches what's stored.
+- **Ctrl-C-interrupted partial replies are persisted with the
+  `[interrupted by operator]` tag** — the memory layer records that
+  the operator chose to stop the stream; no fabricated continuity.
+- **Tool refusals are audited but not executed:** the audit log
+  distinguishes "denied" / "invalid_arguments" / "forbidden" /
+  "no_such_tool" as typed `ApprovalOutcome` values, never
+  collapsing them into a generic "failed".
+
+### Vow of Modular Authorship — *fulfilled*
+
+- **Realm bands are mechanical:** higher band may import lower
+  (Spark → Thread → Well), never the reverse. Verified by the
+  skeleton-imports test (`tests/unit/test_skeleton_imports.py`).
+- **Brunnr backends are lazy-loaded.** A missing `pgvector` extra
+  doesn't break `import ember`; calling `pgvector.open()` returns
+  a typed `Disconnected(BACKEND_REPORTED_UNAVAILABLE)`.
+- **Tool framework refuses-but-survives.** A FORBIDDEN descriptor
+  doesn't crash registration; the tool just isn't registered.
+- **No single point of cascading failure:** the chat loop handles
+  Brunnr disconnect, Funi unavailable, Tool framework absent, all
+  as typed values that flow through the system without taking it
+  down.
+
+### Vow of Open Knowledge — *fulfilled*
+
+- **MIT licensed** — `LICENSE`, root.
+- **Designed in the open** — every architectural decision in
+  `docs/decisions/`, ratified by ADR.
+- **Methodology recorded** — `MYTHIC_ENGINEERING.md` at root +
+  `docs/methodology/` for the canonical Mythic Engineering body.
+- **Attribution preserved** — `ORIGINS.md` traces every imported
+  file back to its origin, plus the slice-1 + slice-2 Ember-fresh
+  additions in §7.
+- **Lineage honoured:** Runa-inherited material is in
+  `docs/archive/runa-inherited/`, never deleted; the Skein/Skry/
+  Bifröst cross-project family is named throughout.
+
+---
+
+The Vision is the standard. The code now mechanically honours it.
+The Forge Worker's quote at the end of `EMBER_FIRST_SLICE_PLAN.md`
+applies again, once more:
+
+> *Aspiration is cheap; the only thing that proves a Vow is code that, when run, refuses to break it.*

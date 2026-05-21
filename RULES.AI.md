@@ -1,5 +1,12 @@
-# Rules AIs (and Humans Too) Have to Follow When Coding Here.
+# RULES.AI — Rules AIs (and Humans Too) Have to Follow When Coding Here.
 # Project Laws — Viking Edition
+
+**Voice:** Volmarr Wyrd (standing AI coding laws across his projects)
+**Status:** Canonical for Project Ember. Cross-project variations live in sibling repos (NSE / MindSpark / WYRD / RuneForge AI / etc.).
+**Last touched:** 2026-05-21 (header added at slice-2 ratification; rules body unchanged from the cross-project canonical form).
+**Reads with:** `MYTHIC_ENGINEERING.md` (the methodology these rules ride on), `docs/decisions/0007-first-slice-ratification-2026-05-21.md` §2 (the slice-1 standing-rules ratification), `docs/decisions/0013-second-slice-ratification.md` §2.1 (the slice-2 extension that carries these rules forward).
+
+---
 
 -Never make pseudocde ever. Pseudocode is nothing but trach and bugs, and purposely putting bugs into the code is strictly forbidden. Instead create data MD files to explain about what future code should be created. Nowhere in any actual code file is there to exist any pseudocode.
 -Never change the Git settings without permission of Volmarr (me the human).

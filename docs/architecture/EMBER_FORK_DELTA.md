@@ -1,8 +1,8 @@
 # EMBER_FORK_DELTA — What Ember Keeps, Renames, and Sets Aside from Runa
 
 **Voice:** Cartographer (Védis Eikleið), with Architect (Rúnhild Svartdóttir)
-**Status:** Proposed — for ratification. Working document for the Architect's first pass called out in `docs/DEVLOG.md` (2026-05-19 entry, "What's next" item 1).
-**Last touched:** 2026-05-21
+**Status:** **COMPLETE — the fork-delta migration shipped 2026-05-21 in commit `045fda6` (Phase 1).** This document is preserved as the long-term lineage reference: it captures *what changed* from Runa to Ember, which lets future contributors trace the provenance of any subsystem back to its Runa-era predecessor (or note that it's slice-1 fresh). The canonical "what Ember is now" lives in `ARCHITECTURE.md` + `DOMAIN_MAP.md`. The Runa-shaped predecessors are preserved at `docs/archive/runa-inherited/architecture/`.
+**Last touched:** 2026-05-21 (archived in-place at slice-2 ratification)
 **Reads with:** `ARCHITECTURE.md`, `DOMAIN_MAP.md`, `ORIGINS.md`, `docs/REPO_MAP.md`, `docs/archive/runa-inherited/`.
 
 ---

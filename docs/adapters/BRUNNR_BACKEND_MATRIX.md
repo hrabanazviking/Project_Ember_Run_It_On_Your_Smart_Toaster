@@ -1,9 +1,9 @@
 # BRUNNR_BACKEND_MATRIX — Storage Backends for the Well
 
 **Voice:** Cartographer (Védis Eikleið)
-**Status:** Proposed — for ratification. Bootstrap-stage reference.
+**Status:** **Ratified post-slice-2 (2026-05-21).** `sqlite_vec` shipped Phase 3 (0.1.0); `pgvector` shipped Phase 13 (0.1.9); ADR 0010 sets the pgvector design. Other backends (`qdrant`, `chroma`, `lancedb`) remain on the matrix as deferred per ADR 0013 §3.
 **Last touched:** 2026-05-21
-**Reads with:** `docs/architecture/ARCHITECTURE.md`, `docs/architecture/DOMAIN_MAP.md`, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`, `docs/SYSTEM_VISION.md` §"Vow of Pluggable Storage".
+**Reads with:** `docs/architecture/ARCHITECTURE.md`, `docs/architecture/DOMAIN_MAP.md`, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`, `docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md`, `docs/decisions/0010-pgvector-brunnr.md`, `docs/SYSTEM_VISION.md` §"Vow of Pluggable Storage".
 
 ---
 
