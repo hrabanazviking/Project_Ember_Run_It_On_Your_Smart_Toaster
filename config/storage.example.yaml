@@ -1,0 +1,20 @@
+# Brunnr backend selection — alternative-shape example.
+#
+# This file is reserved for slice 2+ when per-realm config files
+# become a thing. For now (slice 2 part 1 / Phase 9), all storage
+# config lives under the `brunnr:` section of `ember.yaml`.
+#
+# Once per-realm files land, the storage subset becomes:
+#
+#   backend: pgvector
+#   embedding_dim: 768
+#   pgvector:
+#     url: "postgresql://operator@host/db"
+#     secret_ref: "~/.ember/secrets/well.password"
+#
+# Until then, set these keys under `brunnr:` in your `ember.yaml`.
+# See `config/ember.example.yaml` and
+# `docs/adapters/BRUNNR_BACKEND_MATRIX.md`.
+
+# (Intentionally empty body — keep this file as a marker of the shape
+# the slice-3+ split will take.)

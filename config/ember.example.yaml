@@ -1,14 +1,18 @@
 # Ember Agent — main configuration template
 #
-# Copy this file to ~/.ember/config/ember.yaml and edit per your deployment.
-# This template errs on the side of cautious defaults; the agent will start
-# with this file untouched and walk you through Hjarta (the first-run
-# wizard) the first time you run `ember chat`.
+# Copy this file to ~/.ember/config/ember.yaml and edit per your
+# deployment. Every key is optional; absent keys fall through to the
+# defaults in src/ember/schemas/config.py.
+#
+# Loaded by `ember.config.load_ember_config`. Environment variables
+# (e.g. OLLAMA_HOST) overlay on top of anything set here.
 #
 # Cross-reference:
 #   docs/architecture/{ARCHITECTURE,DATA_FLOW,DOMAIN_MAP}.md
-#   docs/architecture/EMBER_FIRST_SLICE_PLAN.md
-#   docs/adapters/{BRUNNR_BACKEND_MATRIX,FUNI_LOCAL_MODEL_OPTIONS,SMIDJA_INGEST_PATTERNS,GUNGNIR_WELL_REFERENCE}.md
+#   docs/architecture/EMBER_SECOND_SLICE_PLAN.md
+#   docs/decisions/0008-config-file-loader.md
+#   docs/adapters/{BRUNNR_BACKEND_MATRIX,FUNI_LOCAL_MODEL_OPTIONS,
+#                  SMIDJA_INGEST_PATTERNS,GUNGNIR_WELL_REFERENCE}.md
 
 # ---------------------------------------------------------------------------
 # Ember identity (written by Hjarta on first run; you may also edit here)
@@ -33,10 +37,9 @@ funi:
     base_url: "http://localhost:11434"
     model: "phi3:mini"
     # Operator-tunable; the model's own context limit applies first.
-    options:
-      temperature: 0.7
-      top_p: 0.9
-      num_predict: 1024
+    temperature: 0.7
+    top_p: 0.9
+    num_predict: 1024
 
 # ---------------------------------------------------------------------------
 # Strengr — the tether
@@ -44,22 +47,22 @@ funi:
 # ---------------------------------------------------------------------------
 strengr:
   # How long to wait for the Well to answer before declaring Disconnected.
-  health_check_timeout_s: 5
+  health_check_timeout_s: 5.0
   # Connection retry policy. Exponential backoff.
   retry_attempts: 3
-  retry_backoff_max_s: 30
+  retry_backoff_max_s: 30.0
 
 # ---------------------------------------------------------------------------
 # Brunnr — pluggable storage (the Well)
 # Default is sqlite_vec on local disk (the toaster baseline).
-# Switch to pgvector to talk to a shared/household Well (e.g. Gungnir).
+# Switch to pgvector to talk to a shared/household Well (e.g. Gungnir);
+# the pgvector adapter ships in slice 2 (ADR 0010).
 # See docs/adapters/BRUNNR_BACKEND_MATRIX.md to choose.
 # ---------------------------------------------------------------------------
 brunnr:
   backend: sqlite_vec
   embedding_dim: 768   # nomic-embed-text default; must match Smiðja's
   sqlite_vec:
-    # Default location; overridden by ~/.ember/config/storage.yaml if present.
     path: "~/.ember/well/store.db"
     wal_mode: true
   # pgvector example (uncomment + edit to use; recommended for Gungnir):
@@ -84,9 +87,8 @@ smidja:
     target_chars: 1684     # Gungnir-aligned average
     min_chars: 200
     overlap_chars: 0
-    boundary_preference: paragraph   # paragraph → sentence → word → char
+    boundary_preference: paragraph   # paragraph / sentence / word / char
   journal:
-    # Where resumable ingest progress is written.
     root: "~/.ember/state/smidja_progress/"
     heartbeat_s: 30
     stale_heartbeat_s: 600
@@ -96,7 +98,7 @@ smidja:
 # ---------------------------------------------------------------------------
 logging:
   level: INFO       # DEBUG / INFO / WARNING / ERROR
-  format: structured   # structured (JSON) or plain
+  format: structured   # structured / plain
   destinations:
     - kind: file
       path: "~/.ember/logs/ember.log"

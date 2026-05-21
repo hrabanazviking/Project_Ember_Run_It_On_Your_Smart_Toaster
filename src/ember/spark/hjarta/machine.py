@@ -232,11 +232,24 @@ def run(  # noqa: PLR0911,PLR0915 — explicit FSM with one return per abort sta
         # -------------------------------------------------- WRITE_IDENTITY
         current_state = HjartaState.WRITE_IDENTITY
         identity = IdentityConfig(name=chosen_name, role=config.identity.role)
+        from ember.config import write_ember_config  # noqa: PLC0415
         from ember.spark.hjarta.identity import identity_path as _identity_path  # noqa: PLC0415
 
         target = _identity_path(config_root)
         _emit(io, prompts[HjartaState.WRITE_IDENTITY], identity_path=str(target))
         written_path = save_identity_atomic(config_root, identity)
+        # Also lay down the operator-editable ember.yaml at the same atomic
+        # step — Phase 9 part of ADR 0008. Failure here is non-fatal: the
+        # operator can still chat; they just won't have a config file to
+        # edit until they re-run setup or hand-write one.
+        try:
+            written_config = write_ember_config(config_root, identity)
+            io.info(f"  → also wrote operator config at {written_config}")
+        except Exception as exc:
+            io.error(
+                f"warning: could not write operator config: {exc}. "
+                f"Identity is saved; ember chat will work."
+            )
 
         # ----------------------------------------------------------- DONE
         current_state = HjartaState.DONE

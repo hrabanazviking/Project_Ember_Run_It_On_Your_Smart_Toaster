@@ -1,0 +1,24 @@
+# Smiðja content-source registry — alternative-shape example.
+#
+# This file is reserved for slice 2+ when per-realm config files
+# become a thing. For now (slice 2 part 1 / Phase 9), Smiðja sources
+# are specified at the command line (`ember well ingest <path>`)
+# rather than a registry file.
+#
+# Once a registry file lands, its shape will be:
+#
+#   sources:
+#     - kind: local_files
+#       name: notes
+#       path: "~/notes/"
+#       include: ["**/*.md", "**/*.txt"]
+#     - kind: url_fetch
+#       name: blog
+#       seed_urls: ["https://example.com/"]
+#       crawl_depth: 1
+#
+# Until then, see `config/ember.example.yaml` for chunker / embedding
+# defaults under `smidja:`.
+
+# (Intentionally empty body — keep this file as a marker of the shape
+# the slice-3+ split will take.)

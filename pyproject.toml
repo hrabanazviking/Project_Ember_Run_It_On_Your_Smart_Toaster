@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ember-agent"
-version = "0.1.0"
+version = "0.1.5"
 description = "Ember — a small, tethered, runs-anywhere AI companion. See docs/SYSTEM_VISION.md."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -44,15 +44,17 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-# Per-Brunnr and per-Funi adapter dependencies, shipped as each phase
-# lands. Operators install only the extras they need.
+# Per-adapter dependencies, shipped as each phase lands. Operators
+# install only the extras they need.
 sqlite_vec = ["sqlite-vec>=0.1.6"]
+config = ["pyyaml>=6.0"]   # Enables YAML config files. TOML config works without this.
 # Planned for later phases (filled in as they land):
 #   pgvector    = ["psycopg[binary]>=3.2", "pgvector>=0.3"]
 #   qdrant      = ["qdrant-client>=1.9"]
 #   chroma      = ["chromadb>=0.5"]
 #   lancedb     = ["lancedb>=0.6"]
 #   llamacpp    = ["llama-cpp-python>=0.2"]
+#   validation  = ["pydantic>=2.7"]   # Richer config-error messages.
 # Ollama (the first-slice Funi runtime) is reached over HTTP via the
 # standard library — no client dependency required.
 dev = [

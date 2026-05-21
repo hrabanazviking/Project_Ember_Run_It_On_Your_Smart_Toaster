@@ -8,6 +8,70 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 9 shipped: config loader live, Hjarta writes ember.yaml. **0.1.5 released.**
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (writer + cli wiring), Architect (overlay-order discipline), Auditor (12 new tests + real-Ollama smoke), Scribe (this entry).
+**Scope:** Phase 9 of `EMBER_SECOND_SLICE_PLAN.md` — ADR 0008 part 2. Wires `load_ember_config` into the CLI dispatcher, makes Hjarta write the operator's initial `ember.yaml`, retires the duplicate env-overlay logic, bumps to **0.1.5 (config loader live)** per the slice-2 plan's suggested intermediate release.
+
+### What shipped
+
+- **`src/ember/config/writer.py`** — `write_ember_config(config_root, identity, *, extras)`. Hand-rolled minimal YAML emission (no PyYAML dep on the write side — Hjarta runs *before* the operator has any reason to install extras). Atomic write via `NamedTemporaryFile` + `os.replace`. Always double-quotes strings to neutralise YAML 1.1's surprise booleans (`yes`/`no`/`on`/`off`). Header comment block points at `config/ember.example.yaml` + ADR 0008.
+- **`src/ember/config/__init__.py`** re-exports `write_ember_config`, `ember_config_path`, `ember_config_exists`.
+- **`src/ember/cli/main.py`** — replaced `_apply_env_overrides(EmberConfig())` with `load_ember_config(config_root)` wrapped in `try/except ConfigError`. Reloads config after Hjarta runs so the operator's wizard choices take effect in the same invocation. Deleted `_apply_env_overrides` and `_normalise_ollama_host` (now in `ember.config.overlay`).
+- **`src/ember/spark/hjarta/machine.py`** — at WriteIdentity, after the identity.json atomic write, *also* calls `write_ember_config`. Soft-fails on writer error (identity is the load-bearing artifact; the yaml is a convenience).
+- **`config/ember.example.yaml`** — rewritten to match the actual `EmberConfig` shape (the previous version had `funi.ollama.options` as a sub-mapping that the loader correctly rejected as unknown). Now parses cleanly through the loader.
+- **`config/storage.example.yaml`**, **`config/sources.example.yaml`** — placeholder files documenting the shape per-realm split files will take in slice 3+; bodies intentionally empty for slice 2.
+- **`pyproject.toml`** — bumped to **0.1.5**; added `config = ["pyyaml>=6.0"]` extra; planned `validation = ["pydantic>=2.7"]` documented in the comment block.
+- **`src/ember/__init__.py`** docstring updated to reflect 0.1.5 + config loader live.
+- **`tests/unit/test_cli_env_overrides.py`** removed — superseded by `tests/unit/test_config_overlay.py` (same logic, now in its proper home).
+
+**Tests (12 new, 265 pass + 2 skip, 0.33s, ruff clean):**
+- `tests/unit/test_config_writer.py` (9 tests) — round-trip through loader, YAML-ambiguous string quoting, escape handling, atomicity, extras section, unserialisable-value error.
+- `tests/integration/test_phase9_operator_edit.py` (3 tests) — first-launch writes both files, operator-edit-takes-effect on next load, yaml-write-failure doesn't block identity.
+
+### Real-hardware acceptance (against live Ollama on this laptop)
+
+Two-layer compose verified:
+
+```
+$ OLLAMA_HOST=100.67.240.22 ember --config-root /tmp/x doctor
+
+# with /tmp/x/config/ember.yaml saying:
+#   funi:
+#     ollama:
+#       model: "llama3.2:3b"
+
+exit: 0
+Ember health:
+  Funi:    ok — model llama3.2:3b, last_ok 2026-05-21T12:53:01+00:00
+  Well:    ok — backend sqlite_vec, 0 docs / 0 chunks, last_ok 2026-05-21T12:53:01+00:00
+```
+
+- File override took effect (`model llama3.2:3b`, not the default `phi3:mini`).
+- Env override took effect (Funi reached the tailnet endpoint, not localhost).
+- Both layers composed correctly per ADR 0008 §2.3 overlay order (defaults → file → env).
+
+### What's next — Phase 10 (streaming Funi)
+
+Per `EMBER_SECOND_SLICE_PLAN.md` §3 Phase 10:
+- Author ADR 0009.
+- `src/ember/schemas/stream.py` — `FuniStreamChunk`.
+- Touch `FuniHandle` Protocol — add `complete_streaming` slot.
+- Touch `OllamaFuni.complete_streaming` against `/api/chat` `stream=true`.
+- Tests against mocked NDJSON response.
+
+After Phase 11 (Munnr incremental render + Ctrl-C): suggested release at **0.1.7 (streaming live)**.
+
+### Notes & gotchas
+
+- **`config/ember.example.yaml` shape correction.** The previous file had `funi.ollama.options` as a sub-mapping but the dataclass has `temperature` / `top_p` / `num_predict` as flat fields. Rewriting was the right move — the example IS now the truth for what the loader accepts.
+- **Hjarta's yaml-write soft-fails.** If `~/.ember/config/` can't be written (e.g. operator pre-created a file there), identity.json still lands and `ember chat` still works. The operator just gets a warning and no auto-config file. They can hand-write one later.
+- **CLI reloads config after Hjarta.** First-launch flow: `load_ember_config(root)` returns defaults (no file) → triggers Hjarta → Hjarta writes file → re-`load_ember_config(root)` picks up the new file before the same invocation proceeds to `chat.run`. Operator gets one continuous experience.
+- **`OLLAMA_HOST` keeps working.** The Phase-7 escape hatch is now layer-2 (env) of the overlay; the loader composes file → env. Operators with non-default Ollama setups don't need to change anything.
+- **Deleted `test_cli_env_overrides.py`.** The functions moved to `ember.config.overlay` and `test_config_overlay.py` covers them. Single source of truth for the env-overlay logic.
+
+---
+
 ## 2026-05-21 — Phase 8 shipped: ADR 0008 + `ember.config` loader scaffold.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0008), Forge Worker (loader modules), Auditor (45 new tests + did-you-mean polish), Scribe (this entry).
