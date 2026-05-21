@@ -22,9 +22,12 @@ documents are load-bearing, not aspirational.
   ratified at 0.1.0 (2026-05-21);** kept as historical record alongside
   the slice-2 plan once that lands.
 - `EMBER_SECOND_SLICE_OPTIONS.md` — Cartographer's menu of slice-2
-  starting points (the five candidate ADRs from ADR 0007 §5, three
-  suggested bundles, and the template for `EMBER_SECOND_SLICE_PLAN.md`
-  once Volmarr picks scope). **Not a plan — a map of choices.**
+  starting points. **Superseded** by the ratified plan below; kept as
+  the historical record of how scope was chosen.
+- `EMBER_SECOND_SLICE_PLAN.md` — **Ratified 2026-05-21.** File-by-file
+  plan for ADRs 0008 + 0009 + 0010 + 0011 across Phases 8-17. Target
+  acceptance at `0.2.0`. Multi-session work; each phase ends with a
+  green commit.
 
 ## Imported plundered material (Runa-era source material, preserved)
 

@@ -8,6 +8,40 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Slice 2 scope ratified. `EMBER_SECOND_SLICE_PLAN.md` authored.
+
+**Who:** Claude (Opus 4.7, 1M context). Voice: Architect (Rúnhild Svartdóttir), with Forge Worker (Eldra Járnsdóttir) notes on phasing.
+**Scope:** Volmarr ratified the slice-2 scope as **all three bundles from `EMBER_SECOND_SLICE_OPTIONS.md` §3** — which dedupes to **ADRs 0008 + 0009 + 0010 + 0011**. ADR 0012 (first new surface) stays in the queue for slice 3. Per `MYTHIC_ENGINEERING.md`'s core loop, the next thing is the plan, not the code. This DEVLOG entry records the plan's authorship.
+
+### What shipped
+
+- **`docs/architecture/EMBER_SECOND_SLICE_PLAN.md`** — full file-by-file plan, modelled on `EMBER_FIRST_SLICE_PLAN.md`:
+    - **§0 Acceptance criterion** — operator can edit `ember.yaml`, switch to `pgvector` (Gungnir-compatible) Brunnr, watch streamed replies, propose-and-approve a tool call, get a grounded reply with citations, survive a network pull mid-conversation.
+    - **§1 Dependencies** — new optional extras: `config` (pyyaml), `pgvector` (psycopg + pgvector), `tools` (stdlib only for first three first-party tools), `validation` (opt-in pydantic).
+    - **§2 File list** — ~50 NEW files, ~10 touched; target 5 000-7 000 LOC.
+    - **§3 Phase sequence** — Phases 8-17. ADR 0008 (config) ships first because it unblocks the rest; then ADR 0009 (streaming, small); then ADR 0010 (pgvector + Gungnir compat); then ADR 0011 (tools, biggest); then Phase 17 acceptance.
+    - **§4 Non-goals** — qdrant/chroma/lancedb, other Funi runtimes, other surfaces (Auga/Rödd/Bifröst), writable tools, multi-operator wells, Skein/KG layers, plugins, backup/restore, voice/image Funi.
+    - **§5 Quality bar** — standing rules from ADR 0007 carry forward.
+    - **§6 Risks register** — config scope creep, streaming/Ctrl-C OS specifics, pgvector schema drift vs Gungnir, tool sandbox escapes, audit log growth, phase ordering pressure.
+    - **§7 Forge Worker's closing word.**
+    - **§8 Session pacing** — slice 2 is **3-5 long sessions** (vs slice 1's one long day). Suggested intermediate releases at 0.1.5 / 0.1.7 / 0.1.9 / 0.2.0-rc1 / 0.2.0.
+
+- **`docs/architecture/README.md`** updated — `EMBER_SECOND_SLICE_OPTIONS.md` marked as superseded-but-preserved; new plan listed as ratified.
+
+### What's next
+
+- **Phase 8 begins** in the next commit: author ADR 0008 + write `src/ember/config/{loader,toml_loader,yaml_loader,overlay,validate}.py` + tests.
+- Natural opening for the next session: **"go for phase 8"**.
+
+### Notes
+
+- No code changes in this commit. Pure plan authorship per ME discipline.
+- `EMBER_SECOND_SLICE_OPTIONS.md` is intentionally not deleted — it's the historical record of how slice-2 scope was chosen. The README marks it as superseded.
+- Each phase will get its own DEVLOG entry, same shape as slice-1 phases. The slice will be ratified at Phase 17 with ADR 0013 (parallel to ADR 0007 for slice 1).
+- Carry-over housekeeping from slice 1 still pending: Ember-descent rows in `ORIGINS.md`, root `PHILOSOPHY.md` Runa-specific phrasing pass. These are non-blocking; can land any time.
+
+---
+
 ## 2026-05-21 — `EMBER_SECOND_SLICE_OPTIONS.md` added (slice-2 menu, not plan).
 
 **Who:** Claude (Opus 4.7, 1M context). Voice: Cartographer (Védis Eikleið), with Architect notes.
