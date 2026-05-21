@@ -18,8 +18,13 @@ documents are load-bearing, not aspirational.
   the migration from the inherited Runa parent. Long-term lineage
   reference.
 - `EMBER_FIRST_SLICE_PLAN.md` — file-by-file plan for the minimum viable
-  Ember (~38 new files across seven phases). Archived once the first
-  slice ships.
+  Ember (~38 new files across seven phases). **First slice complete and
+  ratified at 0.1.0 (2026-05-21);** kept as historical record alongside
+  the slice-2 plan once that lands.
+- `EMBER_SECOND_SLICE_OPTIONS.md` — Cartographer's menu of slice-2
+  starting points (the five candidate ADRs from ADR 0007 §5, three
+  suggested bundles, and the template for `EMBER_SECOND_SLICE_PLAN.md`
+  once Volmarr picks scope). **Not a plan — a map of choices.**
 
 ## Imported plundered material (Runa-era source material, preserved)
 

@@ -8,6 +8,30 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — `EMBER_SECOND_SLICE_OPTIONS.md` added (slice-2 menu, not plan).
+
+**Who:** Claude (Opus 4.7, 1M context). Voice: Cartographer (Védis Eikleið), with Architect notes.
+**Scope:** Volmarr asked whether any additional phase plans exist beyond the first slice. Honest answer: no formal plan, only scattered `Phase 8 / 9+` hints and ADR 0007 §5's candidate-ADR list. Authored a Cartographer's options-menu doc so the next session can pick scope and the Architect can then author the real `EMBER_SECOND_SLICE_PLAN.md`.
+
+### What shipped
+
+- **`docs/architecture/EMBER_SECOND_SLICE_OPTIONS.md`** — explicitly marked "Menu, Not Plan". Inventories the five ADR-shaped starting points (ADRs 0008-0012 per ADR 0007 §5), reconciles older `Phase 8 / 9+` references scattered across adapter docs, sketches three suggested bundles (Household Well = 0008 + 0010; Ember Feels Alive = 0008 + 0009; Ember Gets Useful = 0011), provides the template for the eventual `EMBER_SECOND_SLICE_PLAN.md`, and lists five open scope questions only Volmarr can decide.
+- **`docs/architecture/README.md`** updated to list the new options doc and to mark the first-slice plan as complete-and-historical.
+
+### What's next
+
+- Volmarr picks a slice-2 bundle (or names a different one).
+- Architect authors `EMBER_SECOND_SLICE_PLAN.md` per the template in §4 of the options doc — *before* any code is touched, per `MYTHIC_ENGINEERING.md`'s core loop.
+- Mechanical cleanup: once a bundle is picked, sweep the codebase to update older `Phase 8 / 9+` references to match the new ADR numbering.
+
+### Notes
+
+- This is *not* code work and *not* a commitment. The options doc explicitly says so in its §0.
+- The recommended bundle (per §6 of the options doc) is the Household Well bundle — ADR 0008 (config loader) + ADR 0010 (pgvector Brunnr) — because it completes the Gungnir lineage story from `SYSTEM_VISION.md` §8 and removes the biggest operator-customisation friction. But that's a recommendation, not a default.
+- ADR-numbered approach (one decision per ADR) is now the standing pattern, superseding the older `Phase 8 / 9+` ad-hoc numbering. The mechanical cleanup makes this consistent when slice 2 begins.
+
+---
+
 ## 2026-05-21 — Phase 7 shipped. First slice ratified at 0.1.0. 🔥
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (`OLLAMA_HOST` override + env-shape design), Scribe (INSTALL.md + ADR 0007 + this entry), Auditor (version-bump test update).
