@@ -8,6 +8,136 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Design tree for Stofa (the TUI) — `docs/tui/` shipped, no code.
+
+**Who:** Claude (Opus 4.7, 1M context). User asked the 6 Mythic-Engineering
+crew to design "the best, most advanced, most user friendly, most beautiful,
+most modern Viking, most fun, most cute, most stable, most robust ever TUI"
+for Project Ember as **50+ long technical detailed MD data files**.
+
+**Delivered: 74 files, 15,138 lines, zero code.**
+
+This is **design before code** — the Mythic-Engineering iron law applied
+to a substantial new surface. Stofa (the TUI's name; Old Norse for *"the
+hall"*) is a planned slice-3 deliverable; this commit is its design
+input. No code lands until ADR-0015 ratifies the design.
+
+### What "Stofa" is
+
+The terminal-user-interface surface for Project Ember. Turns `ember chat`
+from a one-prompt-one-reply REPL into a **persistent multi-screen hall**:
+chat + Well browser + doctor + settings + MCP + tool approval +
+first-run wizard + help overlay, all in one Textual app with theme
+support, pets, and accessibility.
+
+The metaphor is the Norse longhouse common-room — the *stofa* — where
+the household ate, talked, played tafl, slept on the benches.
+Operator-cozy by intent. Modern-Norse-domestic register, never
+heroic-mythic LARP.
+
+### The full design tree
+
+`docs/tui/INDEX.md` is the navigation root. Nine sections:
+
+| Section | Files | Lines | Owner role |
+|---|---|---|---|
+| Vision | 5 | ~1,400 | Skald (Sigrún) |
+| Architecture | 10 | ~2,800 | Architect (Rúnhild) |
+| Research (15 TUIs studied) | 15 | ~3,200 | Cartographer + Scribe |
+| UX Science | 10 | ~2,400 | Auditor + Scribe |
+| Design (Viking aesthetic + 5 palettes) | 9 | ~1,700 | Skald + Auditor |
+| Pets | 6 | ~1,400 | Skald + Forge |
+| Screens | 9 | ~1,500 | Architect |
+| Operations | 5 | ~900 | Auditor |
+| Roadmap (4 phases) | 4 | ~800 | Forge + Scribe |
+| **Total** | **74** | **15,138** | all six roles |
+
+### What the design covers
+
+- **The name Stofa, the Hjarta wizard surface, the 9-pet bestiary** —
+  Hugin (raven), Refur (fox), Heiðr (goat), Sumarbýfa (bee), Geri-cub
+  (wolf), Ask-sapling (ash), Drift (snowflake), Funi-spark (hearth),
+  Ember-ember (logo). Each has a role, sprites (Unicode + ASCII
+  fallback), helpfulness contract, voice for docs.
+- **The framework choice** (Textual 2.x) with full Rich-vs-Textual-vs-
+  prompt_toolkit comparison.
+- **The state machine** (CONSTRUCTING → HJARTA → READY → OPEN → CLOSING)
+  with per-screen sub-state-machines.
+- **The 20-token theming contract** + 5 built-in themes (Aurora,
+  Midgard, Ginnungagap, Solstice, Barrow). Each palette with full hex
+  values + rationale + WCAG contrast tables + colorblind-simulation
+  results.
+- **The keybinding philosophy** — vim + arrow + GUI traditions all
+  served; command palette as escape hatch; full rebindability.
+- **15 TUI deep-dives** — lazygit, htop/btop, neovim/helix, ranger/nnn,
+  atuin, aerc, glow, lazydocker, k9s, gh-dash, spotify-tui,
+  claude-code/mods/llm, nap/pipes/oneko. What we steal + what we
+  avoid catalogued in a synthesis doc.
+- **10 UX-science docs** — Fitts's Law for keyboards, Hick's Law for
+  menus, information density, visual hierarchy, color theory for
+  terminals, typography for monospace, accessibility (CVD + low-vision
+  + screen-reader + motor + vestibular + cognitive), interaction
+  patterns (modal/modeless/confirmation/loading/notification/editing/
+  selection/drill-down/cancel/undo/search/empty/error), animation +
+  timing budgets, progressive disclosure.
+- **9 screen specs** — Home (4-panel dashboard), Chat (streaming +
+  inline tool approval), Well (browse + ingest), Doctor (per-realm
+  health), Settings (every config field), MCP (server management),
+  Tool Approval (modal), Hjarta Wizard (first-launch), Help Overlay.
+- **5 operations docs** — performance budgets (< 500ms launch, < 16ms
+  keypress, < 100ms theme swap, < 50MB idle), terminal compat matrix
+  (Tier 1/2/3/4 with per-terminal quirks), resize handling, error
+  boundaries, observability.
+- **4-phase roadmap** — Phase 1 (The Hearth: MVP, ~25 files / ~2500 LOC),
+  Phase 2 (The Hall: full screens + 6 pets), Phase 3 (The Familiars:
+  plugins + accessibility + Settings UI + Theme Studio), Phase 4
+  (The Feast: long-horizon community-shaped).
+
+### Why this is a doc-only commit
+
+Per the Mythic-Engineering iron law: **document before code**. Stofa
+is a substantial new realm (the "Hall realm"); it gets ADR + design
+discipline. The 74-doc tree is the *input* to the ADR-0015 conversation
+the operator will have with the maintainer to ratify the design.
+
+**No code lands** in this commit. **No `pyproject.toml` change** (the
+`[tui]` extra is described in the design but not added until the
+implementation phase). **No tests** (testing strategy is documented;
+tests come with the code).
+
+### Stats
+
+- **Before:** 603 pass + 2 skip, ruff clean. No docs/tui/.
+- **After:** **same** test pass + ruff status; 74 new MD files,
+  15,138 lines of design documentation.
+- **Files touched in src/:** zero.
+- **Files added to docs/:** 74 (one new tree under `docs/tui/`).
+- **Files modified in docs/:** 1 (this DEVLOG entry).
+
+### What happens next
+
+Per the roadmap, Stofa V1 = "The Hearth" ships when:
+1. The operator (Volmarr) reviews this design tree.
+2. Maintainer drafts ADR-0015 from it.
+3. ADR-0015 is ratified.
+4. Phase-1 implementation begins per `docs/tui/roadmap/99_ROADMAP_PHASE_1_HEARTH.md`.
+
+Estimated Phase-1 effort: ~5-6 focused days, ~2,500 LOC of source +
+~1,500 LOC of tests, new `[tui]` pip extra (just `textual>=2.0`).
+
+The pets are the smile; the architecture is the substance; the
+research is the receipts. **This is how a good TUI gets designed
+before it gets built.**
+
+The Scribe's closing word: *"Seventy-four documents to design what
+will be roughly thirty source files. That ratio sounds backwards
+until you remember the iron law: every hour of design saves three
+hours of implementation drift. Stofa won't be invented from scratch
+twice — it'll be built once, by a team of Mythic roles, from a tree
+they all agreed to."*
+
+---
+
 ## 2026-05-21 — Batch J — stub-to-real implementation pass (no version bump).
 
 **Who:** Claude (Opus 4.7, 1M context). User: *"use all 6 of the Mythic Engineering subagents to look at all the code for any fake, temp, or stab code, and replace them all with real code."*
