@@ -5,15 +5,17 @@
 The storage adapter layer. Reads embeddings and chunks out, writes
 documents/chunks/episodes in. One adapter per supported backend.
 
-## Public entry points (planned, Phase 3 onward)
+## Public entry points (shipped Phase 3, 2026-05-21)
 
-- `ember.well.brunnr.handle.BrunnrHandle` — the Protocol every adapter
-  satisfies.
+- `ember.well.brunnr.handle.BrunnrHandle` — the `@runtime_checkable`
+  Protocol every adapter satisfies.
 - `ember.well.brunnr.handle.open(config) -> BrunnrHandle | Disconnected` —
-  the entry point Strengr calls. Returns `Disconnected` rather than
-  raising on failure.
+  the registry entry point Strengr calls. Dispatches on `config.backend`.
+  Returns `Disconnected` (typed value) rather than raising on failure.
 - `ember.well.brunnr.sqlite_vec.SqliteVecBrunnr` — first-slice default
-  backend (Phase 3).
+  backend, with FTS5 + sqlite-vec vec0 + RRF hybrid search.
+- `ember.well.brunnr.sqlite_vec.open(config)` — adapter-level open,
+  same return contract.
 - `ember.well.brunnr.pgvector.PgVectorBrunnr` — Gungnir-compatible
   backend (Phase 8).
 

@@ -8,6 +8,63 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 3 shipped: Well realm wired end-to-end.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices rotated: Architect (Brunnr handle Protocol), Forge Worker (sqlite_vec adapter + Smiðja modules), Auditor (test suite + bug fixes mid-phase), Scribe (this entry).
+**Scope:** Phase 3 of `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` §3 — the first end-to-end vertical that actually writes embeddings to disk and reads them back. Real `sqlite-vec` 0.1.9 in a `.venv`. No code beyond what the plan listed; integration test mocks the embedding endpoint with deterministic content-addressed vectors so no Ollama is required.
+
+### What shipped
+
+**Schemas (additive to Phase 2)**
+- `src/ember/schemas/ingest.py` — `IngestJob`, `IngestEntry`, `IngestSummary`, `ParsedFile`, `IngestSourceKind` enum, `IngestEntryStatus` enum.
+
+**Brunnr (the Well's storage layer)**
+- `src/ember/well/brunnr/handle.py` — `@runtime_checkable` `BrunnrHandle` Protocol plus `open(config)` registry. Dispatches on `config.backend`; unknown/unimplemented backends return `Disconnected(reason=CONFIG_INVALID)` rather than raising.
+- `src/ember/well/brunnr/sqlite_vec/adapter.py` — `SqliteVecBrunnr` implementing the protocol. Vec store via sqlite-vec `vec0` virtual table; FTS5 with insert/update/delete triggers; hybrid search via reciprocal rank fusion (k=60). Connection failure → `Disconnected`. Schema-mismatched embedding dim → `BrunnrError`.
+- `src/ember/well/brunnr/sqlite_vec/schema.sql` — DDL loaded via `importlib.resources`, `{embedding_dim}` substituted from `BrunnrConfig.embedding_dim` at apply time. Schema version marker.
+- `src/ember/well/brunnr/sqlite_vec/__init__.py` — re-exports.
+- `src/ember/well/brunnr/sqlite_vec/INTERFACE.md` — adapter contract; calls out the lock-at-first-apply behaviour for `embedding_dim`.
+
+**Smiðja (the Well's ingest forge)**
+- `src/ember/well/smidja/chunker.py` — paragraph → sentence → word → char fallback splitter. Returned chunks satisfy `chunk.text == original[chunk.char_start:chunk.char_end]` *exactly*, so original whitespace is preserved and `max_chars` is honored as a true ceiling (no silent over-runs from separator-length math).
+- `src/ember/well/smidja/embed_client.py` — `OllamaEmbedClient`, stdlib `urllib.request` only (no httpx dep). Batches per `EmbeddingConfig.batch_size`, exponential backoff, per-batch failure returns `EmbedResult` with `None`-vectors rather than raising. Embed-or-skip semantics per `SMIDJA_INGEST_PATTERNS.md` §4.
+- `src/ember/well/smidja/journal.py` — `Journal` with atomic writes (`NamedTemporaryFile` + `os.replace`), heartbeat every N updates or on-demand, `complete()` moves the file to `done/` subdir. Resume by matching `source_root`.
+- `src/ember/well/smidja/local_files/source.py` — `walk()` plus the orchestrator `run(brunnr, *, root, smidja_config, embed_client, ...)`. Walk → hash → check duplicate → chunk → embed → write. Each file is a journal entry; per-chunk embedding failures contribute to `IngestSummary.n_failed` without aborting the doc.
+- `src/ember/well/smidja/local_files/__init__.py` — re-exports.
+
+**Tests**
+- `tests/unit/test_brunnr_handle.py` — registry returns `Disconnected` for unimplemented backends; Protocol is `runtime_checkable`.
+- `tests/unit/test_brunnr_sqlite_vec.py` — 11 tests covering: open creates DB file, open returns Disconnected on missing sqlite_vec config, idempotent `add_document`, dim-mismatch refusal, vector/text/hybrid search ranking, embedding round-trip via `get_chunk`, episode persistence, initial counts. Skipped automatically if `sqlite-vec` isn't installed (`pytest.importorskip`).
+- `tests/unit/test_smidja_chunker.py` — 8 tests covering: short/empty text, paragraph preference, hard max ceiling, oversize-paragraph sentence fallback, pure-overlong char fallback, consecutive indexing, Gungnir-aligned defaults, char-boundary behaviour.
+- `tests/unit/test_smidja_embed_client.py` — 6 tests covering: empty input, single batch shape, multi-batch concatenation, URL-error → None-vectors, mismatched response size → None-vectors, invalid JSON → None-vectors. All mocked.
+- `tests/unit/test_smidja_journal.py` — 8 tests covering: file creation, status persistence, resume by source_root, distinct-roots get distinct jobs, failure recording, complete() move, `pending()`, atomic-write tmp-file cleanup.
+- `tests/unit/test_smidja_local_files.py` — 8 tests covering: include/exclude, suffix-based content_type, hash determinism, non-utf8 skip, missing-root error, file-as-root error, sorted-deterministic order.
+- `tests/integration/test_ingest_then_query.py` — 3 tests covering: full ingest → query round trip with a 32-dim deterministic content-addressed mock embedder; resume idempotency (hash-based at the Brunnr layer); per-chunk failure isolation.
+
+**Suite size: 128 tests, 0.20s, ruff clean.**
+
+**Config + docs**
+- `pyproject.toml` — `sqlite_vec = ["sqlite-vec>=0.1.6"]` added under `[project.optional-dependencies]`; planned-for-later list trimmed of `ollama` (stdlib urllib reaches the endpoint).
+- `src/ember/well/brunnr/INTERFACE.md` — updated from "(planned, Phase 3 onward)" to "(shipped Phase 3, 2026-05-21)".
+- `src/ember/well/smidja/INTERFACE.md` — same.
+- `src/ember/__init__.py` — module docstring updated to reflect Phases 1-3 complete.
+
+### What's next
+
+- **Phase 4 of the first slice:** `ember.thread.strengr` — wraps `ember.well.brunnr.handle.open()` with auth/retry/health-check policy and the typed-Disconnected contract enforced at the Spark↔Well boundary. Initially supports only `sqlite_vec`; the same handle shape will work for the Phase 8 `pgvector` adapter.
+- **Light root edits** still pending: Ember-descent rows in `ORIGINS.md`; check root `PHILOSOPHY.md` for Runa-specific phrasings.
+
+### Notes & gotchas
+
+- **Stdlib urllib over httpx for the embed client.** Vow of Smallness wins again. The Ollama endpoint is one POST; stdlib handles it. Saves ~5 MB of deps on a Pi.
+- **Chunker rewrite mid-phase.** First attempt computed chunk lengths from segment-body lengths plus a `"\n\n"` separator constant, which was off-by-one and produced chunks slightly over `max_chars` for some inputs. The fix was to track only `(start, end)` ranges into the original text and slice at the end — the slice's actual length is authoritative. Caught by the chunker shape-contract tests *before* integration.
+- **Walker rewrite mid-phase.** First attempt used `fnmatch.fnmatch(rel_path, "**/*.md")` patterns, but fnmatch doesn't understand the `**` glob (that's a pathlib-only feature). Rewrote to suffix-based filtering — simpler, matches the test contract, supports the same operator-facing semantics.
+- **`Disconnected` and `BrunnrError` split.** Connection-style failures (missing config, dir-create denied, sqlite-vec load failure, schema apply failure) return `Disconnected` rather than raising. Per-call programming errors (mismatched embedding dim, missing chunk lookup) raise `BrunnrError`. The split keeps the Vow of Graceful Offline distinct from the "your code is wrong" case.
+- **No mypy run this session** — mypy not installed on this host. Ruff is the only static check in CI for now; mypy belongs in a real CI loop with a fresh venv install.
+- **`.venv/` is gitignored.** Created for this session to install `sqlite-vec` and `pytest`; not committed.
+
+---
+
 ## 2026-05-21 — Phase 1 closure: skeleton-import test added.
 
 **Who:** Claude (Opus 4.7, 1M context). Voice: Auditor (Sólrún Hvítmynd).
