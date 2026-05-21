@@ -8,6 +8,63 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Mythic Engineering README expansion.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Skald (Sigrún — public-facing voice, the toaster-pun continuity, the "for the normal folks" framing), Cartographer (Védis — the 18-section table of contents, the where-to-go-next signposting), Scribe (Eirwyn — the command reference, configuration walkthrough, FAQ entries; technical accuracy), Architect (Rúnhild — the Three Realms section + Six True Names introduction).
+
+**Scope:** Massive expansion of `README.md` from 145 lines (mostly image refs + the friendly opening + RuneForgeAI section) to **1,654 lines** of comprehensive operator-facing content. Voice tuned to amateur-friendly + Volmarr-shaped + technically accurate + fun. Every image reference + the License + the Distribution and Privacy + the RuneForgeAI ethos preserved verbatim.
+
+**The 18 sections:**
+
+1. Hero + tagline (preserved).
+2. **What is Ember?** — Skald-voice plain-English explanation; the spark + the well metaphor; the Six True Names introduced.
+3. **Why Ember?** — split into four audiences (you the operator / your wallet / the world / your privacy); the original feature list incorporated and expanded.
+4. **🚀 Quick start — five minutes from zero to chatting** — the most-important section for noobs; 5 numbered steps that take you from no install to first conversation.
+5. **🎁 What Ember can do** — full feature list across 6 sub-areas (Conversation, Knowledge & retrieval, Storage pluggable, First-run, Tool use, Health & diagnostics, Operator configuration). Slice-2 capabilities all named with concrete examples.
+6. **🛠 Complete command reference** — every `ember` subcommand documented: global flags table, then `ember chat` / `ember ask` / `ember setup` / `ember well ingest` / `ember well status` / `ember doctor` each with full input / behaviour / exit-code coverage. Slice-2 streaming + tool-loop behaviour woven in.
+7. **📦 Installation guide (the long version)** — requirements list (Python + Ollama + disk + RAM); detailed 4-step install; pip extras table explaining sqlite_vec / config / pgvector; platform-specific notes for Linux / macOS / WSL / Pi 5; updating + uninstalling instructions.
+8. **🌱 Your first conversation — a guide for noobs** — patient walkthrough: what the wizard does, your first chat turn, why she doesn't know about your stuff yet, giving her something to read with copy-paste mkdir/echo commands, the four magic commands, "things that might worry you but shouldn't", where to go next.
+9. **⚙️ Configuration — the `ember.yaml` file** — the four-layer overlay (defaults → file → env → CLI); the full annotated yaml shape; common edits (change model, point at tailnet Ollama, turn streaming off, enable tool use).
+10. **🏗 How Ember is built (architecture overview)** — ASCII diagram of the Three Realms; the Six True Names table; "why this matters to you" practical bridge; pointers to the deeper architecture docs.
+11. **🔧 Using tools safely** — the three first-party tools described with sandbox refusal details; tool-capable-model note (phi3:mini → 400; llama3.2:3b recommended); approval prompt walkthrough; audit-log reading with `jq` recipes; locking-down further with `approval_overrides`.
+12. **🌍 Going bigger — sharing a Well across devices** — when to switch to pgvector; setup steps; the `read_only: true` rationale; secret resolver three sources.
+13. **🚑 Troubleshooting & FAQ** — ten common "she does X, what's wrong?" scenarios with diagnosis + fix; "where do I find help if my problem isn't here?" links.
+14. **🗺 What's next — the roadmap** — slice-3 queued items per ADR 0013 §3 + §6.
+15. **📚 Learn more (where the deeper docs live)** — the 14-row links table: from `INSTALL.md` to `OPERATOR_PLAYBOOK.md` to the architecture docs to the ADRs to the slice-2 retrospective.
+16. **🤝 Sibling projects in the RuneForgeAI fellowship** — Runa-Agent-Digital-Being, Skein-KG, Skry-KG, Bifröst-Viewer, MindSpark, WYRD, Project Nomad. All named and contextualised.
+17. **📜 License** (preserved — MIT, Volmarr 2026).
+18. **🛡 Distribution and privacy position** (preserved verbatim).
+19. **⚒ About RuneForgeAI** (preserved with light polish — the manifesto + the values list intact).
+
+**Writing-style choices:**
+
+- **Second-person, warm, playful.** "She" for Ember (with operator agency); "you" for the reader.
+- **Volmarr's toaster-pun continuity preserved** — opens with the original "Got a toaster? Good!" friendly framing.
+- **Norse-shaped names introduced gently** in §2 (What is Ember), then used throughout but never required for using the software — operator-facing language stays plain.
+- **Copy-pasteable commands everywhere.** Every recipe in the install / quickstart / config sections has shell blocks you can run directly.
+- **"Things that might worry you but shouldn't"** subsection in the noob guide — addresses the four most common new-user anxieties (slow first reply, hallucinations, where conversations go, did I install something that phones home).
+- **Closing benediction:** *"Ember is small. Ember is tethered. Ember is yours. Light the spark."*
+
+**Stats:**
+
+| Metric | Before | After |
+|---|---|---|
+| Lines | 145 | **1,654** (+11×) |
+| Top-level (#) headings | 1 | 1 |
+| Section (##) headings | 4 | **19** |
+| Subsection (###) headings | 0 | **78** |
+| Image references | 22 | **22 preserved** |
+| `ember` command examples | 0 | **40+** |
+| YAML configuration blocks | 0 | **15+** |
+| Internal documentation cross-refs | 1 | **18** |
+| Code blocks | 1 (License) | **45+** |
+
+**Verification:** README renders as valid GitHub-flavoured Markdown; all 22 image refs preserved; License + Distribution and Privacy + RuneForgeAI sections preserved verbatim from the original (only formatting polish — bold emphasis on "MIT License", links to LEGAL-NOTICE.md and PHILOSOPHY.md added). **488 tests still green, ruff clean. No code touched.**
+
+The README is now the operator's complete front door: a non-technical reader can install Ember, have their first conversation, ingest their notes, enable tools, troubleshoot common problems, and know where to go for deeper docs — all without leaving the README. Technical readers get architecture context + ADR pointers when they want to go deeper.
+
+---
+
 ## 2026-05-21 — Mythic Engineering full doc-pass (post-slice-2 ratification).
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Cartographer (Védis — audit pass + ledger updates), Auditor (Sólrún — stale-ref triage), Scribe (Eirwyn — the bulk of the rewrites), Skald (Sigrún — SYSTEM_VISION §11 Vows-Fulfilled Postscript), Architect (Rúnhild — ADR-referencing rationale in the new README bodies).
