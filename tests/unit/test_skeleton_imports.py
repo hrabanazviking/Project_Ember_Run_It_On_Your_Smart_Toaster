@@ -31,6 +31,7 @@ SKELETON_MODULES = (
     "ember.spark.munnr",
     "ember.thread",
     "ember.thread.strengr",
+    "ember.tools",
     "ember.well",
     "ember.well.brunnr",
     "ember.well.smidja",

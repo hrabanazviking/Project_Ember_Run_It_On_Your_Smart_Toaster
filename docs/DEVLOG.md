@@ -8,6 +8,59 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 15 shipped: first three first-party tools (`search_well`, `read_local_file`, `fetch_url`).
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (three tool implementations + sandbox logic), Auditor (41 new tests covering happy-path + every refusal mode), Scribe (this entry + README + memory).
+
+**Scope:** Second third of slice-2's tool-use work. Each first-party tool lives in `src/ember/tools/` and registers itself at import time via the Phase-14 registry. Munnr still doesn't drive them — Phase 16 ships the chat-loop integration and bumps to 0.2.0-rc1. No version bump this phase.
+
+**What shipped:**
+
+- **`src/ember/tools/`** — new subpackage. Three tool modules + a README + a package `__init__` that side-effect-imports all three (so `import ember.tools` is what wires the registry).
+- **`src/ember/tools/search_well.py`** — `STANDING` approval (read-only, the safest of the three).
+  - Calls `BrunnrHandle.hybrid_search` when an embedder is bound and the query embeds cleanly; otherwise falls back to `BrunnrHandle.text_search`. Falls back again if hybrid raises `BrunnrError` (dim mismatch on a shared Well, etc.).
+  - Bound via the **host-state pattern** documented in `ember/tools/README.md` §4: `bind_brunnr(handle, embedder=None)` called once by the host at chat-loop startup. The executor reads the module-level binding and returns a typed `ToolReply.error` if nothing is bound.
+  - `k` is clamped to `[1, 25]`; empty queries are refused; per-hit text preview is bounded at 240 chars with `...` suffix.
+- **`src/ember/tools/read_local_file.py`** — `PER_CALL` approval. Stdlib-only.
+  - Sandbox (in order): non-string path → string-shape refuse; symlink-resolve then check the *resolved* path is under `Path.home()`; denylist of `~/.ssh/`, `~/.ember/secrets/`, `~/.pgpass`, `~/.aws/`, `~/.kube/`, `~/.gnupg/`, `~/.password-store/`; directory refuse; non-existent refuse; size cap 256 KiB.
+  - Crucially: **resolve-before-check** defends against symlink escape (both outside-home and into-denylist symlinks are refused; both cases have unit tests).
+  - File body never appears in refusal messages — sandbox refusals carry path + reason only.
+- **`src/ember/tools/fetch_url.py`** — `PER_CALL` approval. Stdlib `urllib` + `ipaddress` + `urllib.robotparser`.
+  - Sandbox (in order): scheme must be http/https; host required; resolved IP must not be loopback / RFC1918 / link-local / multicast (unless `allow_private_addresses=true` per-call argument); robots.txt honored (missing robots → treated as allowed per standard interpretation); response capped at 1 MiB with truncation note.
+  - Three module-level test seams (`_set_url_opener`, `_set_address_resolver`, `_set_robots_fetcher`) plus `_reset_seams()` for teardown — tests drive happy-path + every refusal without any real network traffic.
+  - Custom `User-Agent` includes a project URL so site operators can identify the bot.
+- **Test seams `_BOUND_BRUNNR`, `_BOUND_EMBEDDER`, `_URL_OPENER`, `_ADDRESS_RESOLVER`, `_ROBOTS_FETCHER`** are module-level by design — production code calls the `bind_*` / `_set_*` setters once at startup. The registry contract (executor signature `Callable[[ToolCall], ToolReply]`) doesn't carry host context, so host-state-as-module-state is the canonical pattern for first-party tools that need a handle. README §4 documents this.
+- **`tests/unit/test_tool_search_well.py`** — 11 tests: registration shape; refuses-no-handle / empty-query; text-only path; hybrid path; fall-back-when-embedder-returns-none; fall-back-when-hybrid-raises-BrunnrError; no-results helpful-line; k-clamped-to-25; k-clamped-up-to-1; preview-bounded.
+- **`tests/unit/test_tool_read_local_file.py`** — 14 tests: registration shape; reads-utf8-under-home; resolves-tilde; refuses-non-string / empty / outside-home / .ssh / .ember/secrets / .pgpass / nonexistent / directory / above-size-cap; **symlink-escape outside home refused**; **symlink-into-denylist refused** (POSIX-only).
+- **`tests/unit/test_tool_fetch_url.py`** — 15 tests: registration shape; happy-path GET with content-type header; refuses-non-string / non-http-scheme / file-scheme / no-host / loopback-default / RFC1918-default; allow_private opens loopback; refuses-unresolvable-host; refuses-robots-disallow; missing-robots-treated-as-allowed; response-truncation; HTTPError-mapped-to-ToolReply.error; URLError-mapped.
+- **`tests/unit/test_skeleton_imports.py`** — `ember.tools` added to the import-cleanliness check; the import triggers all three registrations.
+
+**Total tests: 448 passed + 2 skipped, ruff clean.** That's 41 new tests this phase on top of Phase-14's 407.
+
+**Where Ember stands at end-of-Phase-15 (still 0.1.9):**
+
+| Capability | State |
+| --- | --- |
+| Hjarta first-run | shipped 0.1.0 |
+| Funi (Ollama) `complete()` + streaming | shipped 0.1.0 → 0.1.7 |
+| Brunnr sqlite_vec + pgvector | shipped 0.1.0 → 0.1.9 |
+| Munnr CLI + streaming + Ctrl-C | shipped 0.1.0 → 0.1.7 |
+| Config loader | shipped 0.1.5 |
+| Tool framework (schemas + registry + approval + audit) | shipped Phase 14 |
+| **First three first-party tools** | **shipped this phase — gated until Phase 16** |
+| Munnr tool-call integration | pending → 0.2.0-rc1 (Phase 16) |
+| Slice-2 acceptance + ratification | pending → 0.2.0 (Phase 17) |
+
+**Next:** Phase 16 — wire Munnr to consume `FuniReply.tool_calls`:
+- `chat.py` checks the streaming reply for tool calls; resolves approval per ADR 0011 §2.4; prompts the operator when needed; executes via the registry; audits everything; feeds `ToolReply` back into the next turn's context.
+- `render.py` gains `render_tool_call_proposal` + `render_tool_reply` helpers.
+- Hjarta's wizard gets a skippable "Advanced: enable tools?" branch writing the choice into `ember.yaml`.
+- `cli/main.py` adds `--allow-tools` / `--no-tools` per-invocation overrides.
+- Bump to **0.2.0-rc1 ("tools live")**.
+- Acceptance: operator can ask "what does pyproject.toml say about Python version?" and watch Ember propose `read_local_file({"path": "~/ai/ember/pyproject.toml"})`, approve, see the file content fed into a follow-up answer.
+
+---
+
 ## 2026-05-21 — Phase 14 shipped: ADR 0011 + tool framework (schemas + registry + approval + audit).
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0011's nine numbered decisions), Forge Worker (registry + approval + audit modules), Auditor (64 new tests), Scribe (this entry + INTERFACE.md + memory).
