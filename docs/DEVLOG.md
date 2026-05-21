@@ -8,6 +8,47 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 8 shipped: ADR 0008 + `ember.config` loader scaffold.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0008), Forge Worker (loader modules), Auditor (45 new tests + did-you-mean polish), Scribe (this entry).
+**Scope:** First phase of slice 2. Authors ADR 0008 (file format + overlay order + validation philosophy) and ships the loader subpackage `src/ember/config/`. Loader is **not yet wired into cli/main.py** — Phase 9 does that integration plus the Hjarta-writes-config piece.
+
+### What shipped
+
+- **`docs/decisions/0008-config-file-loader.md`** — ratifies nine decisions: YAML primary / TOML secondary, PyYAML optional extra, overlay order (defaults → file → env → CLI), partial files merged into defaults, unknown keys are errors with did-you-mean, dataclass tree IS the schema, stdlib coercion by default + pydantic opt-in, operator-readable error messages, loader subpackage location.
+
+- **`src/ember/config/` subpackage** — six modules:
+    - `__init__.py` — re-exports `load_ember_config` + `ConfigError`.
+    - `INTERFACE.md` — contract spec.
+    - `loader.py` — `load_ember_config(config_root, *, file_override=None, skip_env=False)`. Probes `~/.ember/config/ember.{yaml,toml}`, picks loader by suffix, warns if both files exist (YAML wins), returns `EmberConfig`.
+    - `toml_loader.py` — stdlib `tomllib`. Always available.
+    - `yaml_loader.py` — lazy PyYAML import; clear error pointing at `pip install ember-agent[config]` when missing.
+    - `overlay.py` — `merge_dicts` for recursive dict merge; `apply_env_overrides` for `OLLAMA_HOST` (Phase-7 escape hatch lives here now in addition to cli/main; Phase 9 removes the duplicate).
+    - `validate.py` — recursive `coerce_to_dataclass(cls, data, path)`. Handles StrEnum, Path, `X | None`, `tuple[X, ...]`, nested dataclasses, primitives. Unknown keys → `ConfigError` with `difflib.get_close_matches` did-you-mean suggestion. Strict bool/int separation. Empty files legal.
+
+- **pyproject.toml `[project.optional-dependencies]` will need `config = ["pyyaml>=6.0"]` added** — deferred to Phase 9's pyproject edit so this phase's commit stays minimal.
+
+**Tests (45 new, 267 pass + 2 skip, 0.33s, ruff clean):**
+- `tests/unit/test_config_validate.py` (19 tests) — defaults, partial merging, type coercion across every supported form, every error path, custom dataclasses for tuple/bool/enum edge cases.
+- `tests/unit/test_config_overlay.py` (12 tests) — `merge_dicts` semantics, `_normalise_ollama_host` shapes, `apply_env_overrides` purity + propagation.
+- `tests/unit/test_config_loader.py` (14 tests) — file probe, YAML/TOML symmetry, empty-file legality, `file_override` test seam, parse-error paths, env-overlay integration.
+
+### What's next
+
+- **Phase 9** wires the loader into `cli/main.py` (replaces `EmberConfig()` with `load_ember_config(config_root)`; removes duplicate `_apply_env_overrides`). Adds `write_ember_config` (Hjarta writes the file at WriteIdentity). Updates `config/ember.example.yaml` to the now-real shape. Adds `pyyaml` to `[project.optional-dependencies] config`.
+- After Phase 9: suggested intermediate release at `0.1.5` (config loader live).
+
+### Notes & gotchas
+
+- **Strict bool/int separation.** Python's `isinstance(True, int)` is True, which would silently let `flag: True` satisfy `count: int`. The coercer checks the precise type to avoid this.
+- **YAML 1.1 ambiguity sidestepped.** PyYAML 6 defaults to YAML 1.1 where bare `yes`/`no` parse as booleans. The operator-facing example documentation should always quote ambiguous strings; the loader makes no special accommodation.
+- **`Path` fields not expanduser'd.** Per ADR 0007 §2.6 — consumer expands at use time. Tests pin this behaviour with `"~/.ember/x.db"` → `str(path).startswith("~")`.
+- **Unknown-field suggestion** uses `difflib.get_close_matches(cutoff=0.7)`. Aggressive enough to catch `mdoel`/`model` typos, conservative enough not to misfire wildly.
+- **Loader is purely functional.** No side effects beyond reading the file path it's pointed at. `EmberConfig` is frozen + slots; the loader can return shared instances without aliasing risk.
+- **Phase 8 is intentionally NOT wired.** `cli/main.py` still uses `EmberConfig()` + its own `_apply_env_overrides`. Phase 9 unifies. This keeps the integration risk in a separate, reviewable commit.
+
+---
+
 ## 2026-05-21 — Slice 2 scope ratified. `EMBER_SECOND_SLICE_PLAN.md` authored.
 
 **Who:** Claude (Opus 4.7, 1M context). Voice: Architect (Rúnhild Svartdóttir), with Forge Worker (Eldra Járnsdóttir) notes on phasing.
