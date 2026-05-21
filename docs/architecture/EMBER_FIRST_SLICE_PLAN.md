@@ -3,7 +3,7 @@
 **Voice:** Forge Worker (Eldra Járnsdóttir), with Architect (Rúnhild Svartdóttir)
 **Status:** Proposed — for ratification. Bootstrap-stage. The plan is a *file-by-file* listing; the code is not in this commit.
 **Last touched:** 2026-05-21
-**Reads with:** `EMBER_ARCHITECTURE.md` (the shape), `EMBER_DOMAIN_MAP.md` (the ownership), `EMBER_DATA_FLOW.md` (the motion), `EMBER_FORK_DELTA.md` (the migration).
+**Reads with:** `ARCHITECTURE.md` (the shape), `DOMAIN_MAP.md` (the ownership), `DATA_FLOW.md` (the motion), `EMBER_FORK_DELTA.md` (the migration).
 
 ---
 

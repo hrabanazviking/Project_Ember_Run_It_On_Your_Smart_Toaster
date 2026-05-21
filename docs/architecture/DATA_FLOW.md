@@ -1,273 +1,273 @@
-# DATA_FLOW — How Runa Lives in Motion
+# DATA_FLOW — How Ember Lives in Motion
 
 **Voice:** Cartographer (Védis Eikleið)
-**Status:** Bootstrap-stage. The flows below are the *intended* paths; first code will conform to them and any deviation will be amended back into this document or recorded as an ADR.
-**Last touched:** 2026-05-17 (P8)
-**Reads with:** `docs/SYSTEM_VISION.md` (intent), `docs/architecture/DOMAIN_MAP.md` (ownership), `docs/architecture/ARCHITECTURE.md` (shape).
+**Status:** Ratified 2026-05-21 by Volmarr. Canonical. The Runa-shaped predecessor is preserved at `docs/archive/runa-inherited/architecture/DATA_FLOW.md` for lineage reference.
+**Last touched:** 2026-05-21 (promoted from `EMBER_DATA_FLOW.md` at ratification)
+**Reads with:** `ARCHITECTURE.md` (shape), `DOMAIN_MAP.md` (ownership), `docs/SYSTEM_VISION.md` (intent).
 
 ---
 
 ## 1. The grammar
 
-Every flow in Runa is built from a small set of primitives:
+Every flow in Ember is built from a small set of primitives:
 
 | Primitive | Type | Meaning |
 |---|---|---|
-| **Surface** | external | A face Runa is reachable through: Munnr, Auga, Rödd, Bifröst gateway, or one of the chat bridges. |
-| **Adapter** | `runa.adapters.*` | The translator between a surface and Runa's internal language. |
-| **Service shell** | `runa.services.*` | The host process for a surface. Owns lifecycle and IPC. |
-| **Event** | typed message on **VERÐANDI** | The unit of internal communication. Defined in `runa.schemas.events`. |
-| **Task** | row in **Skuld** | A durable promise the kernel has made. May span turns, sessions, or days. |
-| **Episode** | row in **Muninn** | A remembered moment: who spoke, what happened, what was felt, when. |
-| **Tool invocation** | call into **Smiðja** | A side-effectful action: filesystem, shell, git, browser, MCP, network. |
-| **Subagent dispatch** | call into **Hirð** | Delegation to a specialised retainer (Huginn / Völundr / Eir / etc.). |
-| **Model call** | call through **Heimskringla** | A turn of LLM inference, routed to the appropriate provider. |
+| **Operator input** | external | A line typed at `ember chat`, an argument to `ember ask "…"`, an answer to a Hjarta prompt. |
+| **Munnr call** | function | `Munnr` parses input into a typed command. |
+| **Strengr access** | function | `Strengr` hands back a `BrunnrHandle` (live) or a `Disconnected` value (honest failure). |
+| **Brunnr query** | function | A typed retrieval against the Well — vector, text, or hybrid. |
+| **Funi turn** | function | One LLM call with assembled context and optional tool slot. |
+| **Smiðja job** | function | A unit of ingest: chunk + embed + deposit. May be batched. |
+| **Episode** | a row written to Brunnr's `episodes` table | A remembered turn (operator input, Ember reply, retrieval hits, timestamps). |
 
-Every flow below is a sequence of these primitives.
+Every flow below is a sequence of these primitives. There are exactly **three** canonical flows in Ember:
+
+1. The **conversation turn** — operator asks, Ember answers.
+2. The **ingest job** — operator (or scheduler) adds new content to the Well.
+3. The **first-run rite** — Hjarta wires the realms together.
+
+There are no other flows that ship in the first slice. New flows require an ADR.
 
 ---
 
-## 2. The canonical turn — Volmarr asks, Runa replies
+## 2. Flow A — the conversation turn
 
-### 2.1 Sequence
+### 2.1 Happy path
 
 ```
-[1] Volmarr speaks
+[1] Operator types a line at `ember chat`
     │
     ▼
-[2] Surface (e.g. Bifröst gateway HTTP, Munnr CLI stdin)
-    │  raw input
-    ▼
-[3] Adapter (translates into a runa.schemas.events.Heard event)
+[2] Munnr parses the line into a typed `AskTurn(text, time)`
     │
     ▼
-[4] Service shell publishes Heard on VERÐANDI
+[3] Munnr asks Strengr for a Well handle.
+    │   ┌─────────────────────────────────────────────────────────────┐
+    │   │  Strengr.open(well_config) → BrunnrHandle | Disconnected     │
+    │   └─────────────────────────────────────────────────────────────┘
     │
     ▼
-[5] Kernel consumes Heard
-    │
-    ├─► reads Muninn  (recent episodes + relevant semantic recall)
-    ├─► reads Skuld   (currently-open promises that bear on this turn)
-    ├─► reads WYRD    (external world slice relevant to the moment)
-    ├─► reads Eldhugi (current emotional state)
-    └─► reads identity + policy (who am I, what may I do)
+[4] Munnr calls Funi.embed(text)  →  qvec  (or, if Funi cannot embed,
+    │                                       Strengr asks Smiðja's embed
+    │                                       client at the configured
+    │                                       endpoint.)
     │
     ▼
-[6] Kernel composes a plan
-    │
-    ├─ if plan = direct reply       → step 8
-    ├─ if plan = call a skill       → step 7a
-    ├─ if plan = dispatch subagent  → step 7b
-    └─ if plan = queue a task       → step 7c
-    │
-[7a] Kernel emits SkillInvoke; Smiðja-using skill executes; results
-     emitted as SkillCompleted (or SkillFailed); kernel resumes at [6]
-     with the new context.
-[7b] Kernel emits SubagentDispatch; Hirð routes to named retainer;
-     retainer runs its own narrow loop; emits SubagentReport;
-     kernel resumes at [6].
-[7c] Kernel emits TaskQueued; Skuld persists the task; kernel either
-     proceeds to [8] with a "working on it" reply or, if the turn
-     was a fire-and-forget instruction, emits Replied immediately.
+[5] Munnr calls BrunnrHandle.hybrid_search(qvec, text, k=8)
+    │       returns list[RetrievalHit] (chunk + document title + score)
     │
     ▼
-[8] Kernel composes Replied event
-    │  - text payload
-    │  - voice payload (if surface is Rödd)
-    │  - rich payload (if surface is Auga or a chat bridge)
+[6] Munnr assembles a Funi prompt:
+    │       · system prompt (from ~/.ember/identity/)
+    │       · last N episodes (read from Well)
+    │       · retrieved chunks, with attribution
+    │       · the operator's line
     │
     ▼
-[9] Kernel persists the turn:
-    │  - Muninn  ← new Episode (Volmarr-said + Runa-said + context delta)
-    │  - Skuld   ← any newly-opened or newly-closed tasks
-    │  - Eldhugi ← updated mood/energy/relational state delta
-    │  - audit   ← structured-log entry with full event trace
+[7] Munnr calls Funi.complete(prompt, context, tools=None)
+    │       returns FuniReply(text, tool_calls=None, finish_reason)
     │
     ▼
-[10] Service shell consumes Replied and routes to its surface
-     │
-     ▼
-[11] Adapter renders Replied for the surface
-     │
-     ▼
-[12] Volmarr hears / reads / sees the reply
+[8] Munnr renders the reply, with citations to retrieved chunks.
+    │
+    ▼
+[9] Munnr writes the Episode back to the Well (Brunnr.add_episode).
+    │
+    ▼
+[10] Loop back to [1] (REPL) or exit (one-shot ask).
 ```
 
-### 2.2 Latency budget
+The flow is **synchronous**. There is no event bus, no kernel, no concurrent retrieval+inference path. The Vow of Smallness allows this; if first-slice profiling on a Pi shows retrieval latency dominating, we add an *internal* parallelism in Munnr — not an event bus.
 
-- Step 5 → step 8 should be < 300 ms for non-LLM turns (lookups, greetings, status checks).
-- Step 5 → step 8 may take seconds for LLM turns; the kernel must emit an `Acknowledged` event within 300 ms so the surface can show typing/listening feedback.
-- Step 9 (persistence) must not block step 10. Persistence is fire-and-forget; failures are logged and retried by **Eir**.
+### 2.2 Sad path — the Well is unreachable
 
----
+```
+[3'] Strengr.open(well_config) → Disconnected(reason="conn_refused", since=…)
+    │
+    ▼
+[4'] Munnr notes the disconnect, sets a turn-local flag.
+    │
+    ▼
+[5'] Munnr skips retrieval. No hits.
+    │
+    ▼
+[6'] Funi prompt is assembled WITHOUT retrieval, WITH an explicit
+    │   system-side note: "Your well is unreachable. Do not invent
+    │   facts. If asked about specific content, name your limit
+    │   honestly."
+    │
+    ▼
+[7'] Funi.complete(prompt_without_retrieval, …)
+    │
+    ▼
+[8'] Munnr renders the reply AND a one-line banner:
+        "well: disconnected (conn_refused, since 03:42) — reply is
+         ungrounded; run `ember doctor` for diagnosis."
+    │
+    ▼
+[9'] Munnr writes the Episode locally to ~/.ember/state/pending_episodes/
+    │   (a tiny SQLite file). When the Well comes back, Hjarta or a
+    │   `ember well drain` flushes these in.
+```
 
-## 3. Event types on VERÐANDI
+This is the Vow of Graceful Offline in flow form. Ember **never** hides being disconnected. She **never** invents facts to fill the silence. The sad path is a first-class flow, not an afterthought.
 
-Defined in `runa.schemas.events`. Each carries: `event_id` (UUID), `timestamp` (UTC), `correlation_id` (turn-spanning), `causation_id` (the parent event that caused this one).
+### 2.3 Sad path — Funi is unavailable
 
-### 3.1 Input events
-| Event | Emitted by | Consumed by |
-|---|---|---|
-| `Heard` | adapter (via service shell) | kernel |
-| `Observed` | sensor adapter (file watcher, HA state change, …) | kernel |
-| `Awakened` | runtime (on first start after sleep) | kernel |
-
-### 3.2 Internal events
-| Event | Emitted by | Consumed by |
-|---|---|---|
-| `Acknowledged` | kernel | service shell (for typing/listening UX) |
-| `SkillInvoke` | kernel | skills/ |
-| `SkillCompleted` / `SkillFailed` | skills/ | kernel |
-| `SubagentDispatch` | kernel | core/subagents/ |
-| `SubagentReport` | subagent | kernel |
-| `ToolInvoke` | skill | core/tools/ |
-| `ToolCompleted` / `ToolFailed` | core/tools/ | originating skill |
-| `ModelCalled` | core/models/ | logging only (audit + budget tracking) |
-| `TaskQueued` / `TaskStarted` / `TaskCompleted` / `TaskFailed` | core/tasks/ | kernel, subagents |
-| `MemoryWritten` | core/memory/ | logging only |
-| `EmotionalDelta` | core/emotions/ | logging only, kernel for context next turn |
-| `WorldDelta` | core/world/ | kernel |
-| `IdentityUpdated` | core/identity/ | kernel, all surfaces |
-| `PolicyUpdated` | core/policy/ | kernel, smiðja |
-
-### 3.3 Output events
-| Event | Emitted by | Consumed by |
-|---|---|---|
-| `Replied` | kernel | service shell → adapter → surface |
-| `Notified` | kernel | service shell (proactive announcement, not in response to a `Heard`) |
-| `StatusChanged` | runtime, eir, kernel | logs, doctor command, dashboards |
-
-### 3.4 Lifecycle events
-| Event | Emitted by | Consumed by |
-|---|---|---|
-| `Started` | runtime | logs, all surfaces |
-| `Stopping` | runtime | all subsystems (graceful drain) |
-| `Crashed` | runtime supervisor | logs, restart logic |
-| `HealthCheck` | eir | logs, doctor command |
-| `RepairAttempted` / `RepairSucceeded` / `RepairFailed` | eir | logs |
-
-A complete table will live in `runa.schemas.events` once code lands; this section is the *intent*.
+If Funi cannot complete (model not loaded, OOM, runtime crashed), Munnr exits the turn with a clean error and continues to be usable for non-Funi commands. The operator can run `ember doctor` to see what is wrong.
 
 ---
 
-## 4. State writes — where memory crystallises
+## 3. Flow B — the ingest job
 
-Every state write happens through exactly one writer. There is no shared write path.
+### 3.1 Single-source ingest (a directory of `.md` files)
 
-| Store | Writer | Read path | Failure semantics |
+```
+[1] Operator: `ember well ingest ~/notes/`
+    │
+    ▼
+[2] Munnr parses into IngestJob(source=Path, options).
+    │
+    ▼
+[3] Munnr asks Strengr for the Well handle.
+    │   (Same Disconnected handling as Flow A: ingest cannot proceed
+    │    if the Well is unreachable; Munnr says so and exits.)
+    │
+    ▼
+[4] Munnr hands the job to Smiðja.local_files.run(handle, job).
+    │
+    ▼
+[5] Smiðja walks the source, producing a stream of (path, bytes,
+    │   content_type) tuples. Each goes through:
+    │       a. hash → check duplicate via Brunnr.has_document(hash)
+    │       b. parse to text per content_type
+    │       c. chunk to ~1684 chars (Gungnir-aligned default)
+    │       d. batch-embed via the configured embedding endpoint
+    │       e. write Document + Chunks via Brunnr.
+    │
+    ▼
+[6] Smiðja journals progress to ~/.ember/state/smidja_progress/<job>.json
+    │   (resumable: if killed at chunk 4000 of 12000, re-running the
+    │    same job continues from 4000).
+    │
+    ▼
+[7] On completion, Smiðja returns IngestSummary(n_docs, n_chunks,
+    │   n_failed, elapsed_s).
+    │
+    ▼
+[8] Munnr renders the summary to the operator.
+```
+
+### 3.2 Why this matters for the toaster story
+
+Smiðja is the most expensive flow in Ember. Embedding generation on a Pi is slow. The journal is what makes ingest *bearable*: the operator can leave a `ember well ingest ~/library/` running overnight, kill it, resume next day, and not lose work. Without the journal, the Vow of Smallness is broken — you cannot ingest a real library on a Pi without it.
+
+---
+
+## 4. Flow C — the first-run rite (Hjarta)
+
+```
+[1] Operator runs `ember chat` for the first time.
+    │
+    ▼
+[2] Munnr detects ~/.ember/identity/ is absent → launches Hjarta.
+    │
+    ▼
+[3] Hjarta state machine:
+    │   Greet
+    │     │
+    │     ▼
+    │   ChooseFuni  (Ollama? llama.cpp? LM Studio? auto-detect)
+    │     │
+    │     ▼
+    │   DiscoverFuni  (probe the chosen runtime, list available models,
+    │     │           recommend by host RAM)
+    │     │
+    │     ▼
+    │   ChooseWell  (local SQLite default? PG on the network? Gungnir?)
+    │     │
+    │     ▼
+    │   ConfigureWell  (file path for SQLite; URL + secret for remote)
+    │     │
+    │     ▼
+    │   TestRetrieval  (write a probe chunk, retrieve it, delete it)
+    │     │
+    │     ▼
+    │   NameEmber  ("What would you like to call me?" — defaults: Ember)
+    │     │
+    │     ▼
+    │   WriteIdentity  (atomic write to ~/.ember/identity/)
+    │     │
+    │     ▼
+    │   Done  → hands control back to `ember chat`
+```
+
+Each transition is a single typed function. Each state's prompt is in a data file under `config/hjarta_prompts/`, never hardcoded in source (Vow of Modular Authorship; RULES.AI.md §"no hardcoded data").
+
+If any state fails, Hjarta exits with a one-line cause and the operator's filesystem is unchanged. There is no half-configured state.
+
+---
+
+## 5. Where each datum lives at each moment
+
+Tracking *who owns the bytes at each step* is the Cartographer's job. Here is the table for the conversation turn:
+
+| Step | Datum | Lives in | Lifetime |
 |---|---|---|---|
-| **Muninn** (memory) | `core/memory/writer.py` | `core/memory/reader.py` + retrieval index | Write failure → retry queue (Eir handles); reads always succeed against last consistent snapshot. |
-| **Skuld** (tasks) | `core/tasks/ledger.py` | same module | Write-ahead-log + checkpoint; never partial. |
-| **WYRD bridge snapshot** | `core/world/bridge.py` | same module | Snapshot only — the authoritative world model lives in WYRD itself. Local snapshot is a cache. |
-| **Eldhugi** (emotions) | `core/emotions/journal.py` | same module | Append-only journal; recent N entries are read for context. |
-| **Identity** | `core/identity/store.py` | same module | Versioned writes; every change emits `IdentityUpdated`. |
-| **Policy** | `core/policy/store.py` | same module | Versioned writes; every change emits `PolicyUpdated`. |
-| **Audit log** | `core/logging/audit.py` | offline, via `runa logs` | Append-only; no in-process consumers other than mirroring to operator-facing logs. |
-| **Cache** | `core/<varies>/cache.py` (per subdomain) | same | Cache eviction is local; eviction is not an event. |
+| 1 | Operator's raw input | stdin / arg | This turn only. |
+| 2 | `AskTurn` | RAM (Munnr) | This turn only. |
+| 3 | `BrunnrHandle` | RAM (Strengr → Munnr) | Process lifetime. |
+| 4 | `qvec` (embedding) | RAM (Munnr) | This turn only. |
+| 5 | `RetrievalHit` list | RAM (Munnr) | This turn only. |
+| 6 | Assembled prompt | RAM (Munnr) | This turn only. |
+| 7 | `FuniReply` | RAM (Munnr) | This turn only. |
+| 8 | Rendered terminal output | stdout | This turn only. |
+| 9 | `Episode` row | Well (Brunnr) | Until operator deletes; persists across reboots and devices. |
 
-Multiple readers of the same store are fine. Multiple writers are forbidden. Writers expose a typed interface; everyone else reads.
-
----
-
-## 5. Crash and recovery
-
-### 5.1 What survives a crash
-
-Everything in `~/.runa/{memory,tasks,world,emotions,identity,policy,logs}/`. Caches and `state/` may be wiped during repair without harm.
-
-### 5.2 The recovery flow
-
-```
-[1] Supervisor (systemd / equivalent / runa runtime) detects exit
-[2] Supervisor reads ~/.runa/state/crashes/<timestamp>/ for the crash record
-[3] Supervisor invokes runa.runtime.start_recovery
-[4] runtime checks ~/.runa/state/version against expected; runs any
-    pending migrations from src/runa/migrations/
-[5] runtime starts the kernel
-[6] Kernel emits Started
-[7] Kernel loads Skuld; any task in 'in_progress' state is moved to
-    'interrupted' and the kernel decides per-task whether to resume,
-    abandon, or escalate to operator via Notified
-[8] Kernel loads identity, policy, emotional state (last journal entry)
-[9] Kernel reads Muninn last episode to re-orient
-[10] Kernel emits Awakened
-[11] Surfaces re-attach; in-flight conversations on stateful surfaces
-     (Auga, Rödd, gateway) are gently re-greeted; stateless surfaces
-     (CLI, chat bridges) wait for the next turn
-```
-
-### 5.3 What never recovers automatically
-
-- Secrets in `~/.runa/secrets/` are operator-managed.
-- A corrupted Muninn store requires `runa memory check --repair` (operator-invoked).
-- An identity rollback (e.g. Runa's persona was corrupted by a bug) requires explicit `runa state restore --identity <snapshot>`.
-
-These are operator-asked, never automatic, because they touch the agent's continuity directly.
+The discipline this enforces: **nothing of consequence lives in RAM**. Ember's RAM footprint is dominated by Funi (the model itself). Everything else is small and transient. This is what lets Ember run on a toaster.
 
 ---
 
-## 6. Multi-surface continuity
+## 6. Where each datum lives during ingest
 
-Runa is one being across many surfaces. The same conversation may pass through CLI now, voice in 20 minutes, Discord in an hour.
+| Step | Datum | Lives in | Lifetime |
+|---|---|---|---|
+| 1-2 | `IngestJob` | RAM (Munnr) | This job only. |
+| 3 | `BrunnrHandle` | RAM (Strengr → Smiðja) | This job only. |
+| 5a | Source bytes | RAM (one file at a time) | Released after chunking. |
+| 5b | Parsed text | RAM | Released after chunking. |
+| 5c | Chunk batch (≤ 64) | RAM | Released after embedding. |
+| 5d | Embedding batch | RAM | Released after Brunnr write. |
+| 5e | Document + Chunks | Well (Brunnr) | Persistent. |
+| 6 | Progress journal | `~/.ember/state/smidja_progress/<job>.json` | Until job completes successfully, then deleted. |
 
-### 6.1 The conversation key
-
-Every `Heard` carries a `conversation_id`. Adapters set it:
-
-- **Munnr (CLI):** one `conversation_id` per `runa shell` session.
-- **Auga (GUI):** one per open chat pane; persists across the GUI restart.
-- **Rödd (voice):** one per voice "wake-up window"; multiple turns in the same window share an id.
-- **Bifröst chat-bridge adapters:** one per platform-thread (Discord channel + user, Telegram chat, etc.).
-
-### 6.2 The reunion rule
-
-When Volmarr resumes a conversation on a *different surface*, the kernel:
-
-1. Looks up the most recent episodes in Muninn for the same speaker.
-2. Includes them in context for the next turn.
-3. Emits `Notified` on the new surface acknowledging the continuity ("As you said earlier today…") only when the gap is short and the continuity is naturally referenced.
-
-The Skald has the final say on the *voice* of these reunions; the kernel only ensures the *substance* is available.
-
-### 6.3 Cross-surface action handoff
-
-If a task is queued on one surface and completes while Volmarr is reachable on another, the kernel decides where to deliver `Notified`:
-
-1. The most recently active surface wins, if it is still healthy.
-2. Failing that, the surface marked as `preferred_for_notifications` in the operator config.
-3. Failing both, the audit log records the result and the task remains marked `delivery_pending` for the next surface activation.
+The discipline this enforces: **Smiðja's RAM working set is one batch**. A 50 000-chunk ingest does not require 50 000 chunks in RAM at any moment.
 
 ---
 
-## 7. Memory write granularity
+## 7. What is *not* in these flows
 
-A single turn typically writes:
+Listed so the negative space is explicit.
 
-- **1 Muninn episode** — the conversational unit.
-- **0–1 Skuld task transitions** — opened, advanced, closed.
-- **1 Eldhugi delta** — a small mood/energy/relational change. Most turns are gentle.
-- **1 audit-log entry** — the structured trace of the turn.
-
-A turn that involves a tool call additionally writes:
-
-- **1 Muninn episode addendum** linking the tool's effect (e.g. "wrote `~/notes/x.md`").
-- **1 audit-log entry per tool invocation.**
-
-A long-running task (e.g. a subagent research run) writes:
-
-- **1 Skuld task creation**, then **N Skuld transitions** as it progresses.
-- **N Muninn episode addenda** for major intermediate results.
-- **1 Skuld task completion** with a final summary that links to the addenda.
-
-Bulk memory writes are rare; the system prefers many small, dated rows over rare large ones because that is what makes recall *honest* — Runa can say "yesterday at 16:42 I…" rather than "sometime yesterday".
+- **No background reflection.** Ember does not silently re-read her own memory while idle. If the operator wants summarisation, they ask for it.
+- **No autonomous tool use.** Funi may produce a structured tool call only when the operator's turn explicitly invited one (e.g. `ember ask --allow-tools "…"`). No tools in the default first-slice path.
+- **No cross-operator flows.** Ember is single-operator. A shared Well between two operators is supported, but each operator runs their own Ember instance.
+- **No streaming in the first slice.** Funi returns whole replies. Streaming is a later slice.
 
 ---
 
-## 8. What this document deliberately does not specify
+## 8. How a flow becomes new code
 
-- Exact serialisation formats (JSON, MessagePack, SQLite blob columns) — those are slice-time ADRs.
-- Concurrency model for VERÐANDI (asyncio vs threads vs multiprocessing) — first-slice decision.
-- Whether subagents share the kernel's event bus or run on a sibling bus — first-slice decision.
-- The exact retrieval-index technology for Muninn (FAISS, sqlite-vss, lancedb) — Muninn-slice decision.
+When a future flow is proposed:
 
-When any of these is decided, the decision lives in `docs/decisions/` and this document is amended with a back-reference.
+1. The Skald names it.
+2. The Architect places it in the right realm and confirms boundaries.
+3. The Cartographer adds a section to *this* document with the grammar primitives.
+4. The Forge Worker implements it as a single function in the appropriate subpackage.
+5. The Auditor writes one happy-path test and one sad-path test.
+6. The Scribe writes the DEVLOG entry and the ADR.
+
+No flow ships without all six steps. Per `MYTHIC_ENGINEERING.md`'s core loop.
+
+— Védis Eikleið

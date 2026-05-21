@@ -3,7 +3,7 @@
 **Voice:** Cartographer (Védis Eikleið), with Architect (Rúnhild Svartdóttir)
 **Status:** Proposed — for ratification. Working document for the Architect's first pass called out in `docs/DEVLOG.md` (2026-05-19 entry, "What's next" item 1).
 **Last touched:** 2026-05-21
-**Reads with:** `EMBER_ARCHITECTURE.md`, `EMBER_DOMAIN_MAP.md`, `ORIGINS.md`, `docs/REPO_MAP.md`, `docs/archive/runa-inherited/`.
+**Reads with:** `ARCHITECTURE.md`, `DOMAIN_MAP.md`, `ORIGINS.md`, `docs/REPO_MAP.md`, `docs/archive/runa-inherited/`.
 
 ---
 
@@ -33,7 +33,7 @@ The discipline is the same as `ORIGINS.md`'s discipline for imports: every row i
 
 ## 2. The `src/` skeleton
 
-The inherited `src/runa/` skeleton is **Runa-shaped**, not Ember-shaped. It encodes the larger architecture: `core/`, `runtime/`, `services/`, `apps/`, `adapters/`, `plugins/`, `skills/`. Ember's shape is `spark/`, `thread/`, `well/`, `cli/` (see `EMBER_DOMAIN_MAP.md`).
+The inherited `src/runa/` skeleton is **Runa-shaped**, not Ember-shaped. It encodes the larger architecture: `core/`, `runtime/`, `services/`, `apps/`, `adapters/`, `plugins/`, `skills/`. Ember's shape is `spark/`, `thread/`, `well/`, `cli/` (see `DOMAIN_MAP.md`).
 
 | Item | Recommendation | Notes |
 |---|---|---|
@@ -57,12 +57,12 @@ No code beyond `__init__.py` + `__main__.py` has been written under `src/runa/`,
 
 | File | Status now | Recommendation |
 |---|---|---|
-| `docs/architecture/ARCHITECTURE.md` | Runa's shape | **Move to `docs/archive/runa-inherited/architecture/ARCHITECTURE.md`** once `EMBER_ARCHITECTURE.md` is ratified. |
-| `docs/architecture/DOMAIN_MAP.md` | Runa's shape | **Move similarly** once `EMBER_DOMAIN_MAP.md` is ratified. |
-| `docs/architecture/DATA_FLOW.md` | Runa's shape | **Move similarly** once `EMBER_DATA_FLOW.md` is ratified. |
-| `docs/architecture/EMBER_ARCHITECTURE.md` | New (this commit) | **Keep; promote to canonical `ARCHITECTURE.md` after ratification.** |
-| `docs/architecture/EMBER_DOMAIN_MAP.md` | New (this commit) | Promote similarly. |
-| `docs/architecture/EMBER_DATA_FLOW.md` | New (this commit) | Promote similarly. |
+| `docs/architecture/ARCHITECTURE.md` (Runa's shape, pre-2026-05-21) | — | **Done 2026-05-21:** moved to `docs/archive/runa-inherited/architecture/ARCHITECTURE.md`. Canonical path now holds Ember's shape. |
+| `docs/architecture/DOMAIN_MAP.md` (Runa's shape, pre-2026-05-21) | — | **Done 2026-05-21:** moved to archive similarly. |
+| `docs/architecture/DATA_FLOW.md` (Runa's shape, pre-2026-05-21) | — | **Done 2026-05-21:** moved to archive similarly. |
+| `docs/architecture/EMBER_ARCHITECTURE.md` | Renamed | **Done 2026-05-21:** promoted to canonical `docs/architecture/ARCHITECTURE.md`. |
+| `docs/architecture/EMBER_DOMAIN_MAP.md` | Renamed | **Done 2026-05-21:** promoted to canonical `docs/architecture/DOMAIN_MAP.md`. |
+| `docs/architecture/EMBER_DATA_FLOW.md` | Renamed | **Done 2026-05-21:** promoted to canonical `docs/architecture/DATA_FLOW.md`. |
 | `docs/architecture/EMBER_FORK_DELTA.md` | New (this commit, this file) | **Keep** — long-term lineage reference. |
 | `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` | New (this commit) | **Keep until the first slice ships**, then archive. |
 | `docs/architecture/ROBUST_AGENT_ENGINEERING_PLAN.md` | Runa source material | **Keep** as design heritage; the Bifröst/VERÐANDI/Skuld/Muninn material is the seed of the parent project's shape. |

@@ -3,7 +3,7 @@
 **Voice:** Cartographer (Védis Eikleið), with Scribe (Eirwyn Rúnblóm)
 **Status:** Reference. **Survey conducted live against the running Gungnir database on 2026-05-21**; numbers and schema below are real measurements, not aspirations.
 **Last touched:** 2026-05-21
-**Reads with:** `docs/SYSTEM_VISION.md` §8 (lineage — "the knowledge well on Gungnir"), `docs/architecture/EMBER_ARCHITECTURE.md` §3.3, `docs/adapters/BRUNNR_BACKEND_MATRIX.md`, `docs/adapters/SMIDJA_INGEST_PATTERNS.md`.
+**Reads with:** `docs/SYSTEM_VISION.md` §8 (lineage — "the knowledge well on Gungnir"), `docs/architecture/ARCHITECTURE.md` §3.3, `docs/adapters/BRUNNR_BACKEND_MATRIX.md`, `docs/adapters/SMIDJA_INGEST_PATTERNS.md`.
 
 ---
 

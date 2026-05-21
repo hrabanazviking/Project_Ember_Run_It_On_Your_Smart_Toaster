@@ -3,9 +3,9 @@ requires = ["hatchling>=1.18"]
 build-backend = "hatchling.build"
 
 [project]
-name = "runa-agent"
+name = "ember-agent"
 version = "0.0.0"
-description = "Runa Agent — a sovereign autonomous AI digital-being. See docs/SYSTEM_VISION.md."
+description = "Ember — a small, tethered, runs-anywhere AI companion. See docs/SYSTEM_VISION.md."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -14,15 +14,19 @@ authors = [
 ]
 keywords = [
     "ai-agent",
-    "digital-being",
-    "autonomous",
+    "ai-companion",
+    "edge-ai",
+    "local-llm",
+    "sovereign-ai",
     "mythic-engineering",
     "norse",
-    "runa",
+    "ember",
+    "raspberry-pi",
 ]
 classifiers = [
     "Development Status :: 1 - Planning",
     "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Operating System :: Microsoft :: Windows",
@@ -34,19 +38,23 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-# Dependencies will be declared as the first slice lands.
+# Dependencies will be declared as each first-slice phase lands.
+# See docs/architecture/EMBER_FIRST_SLICE_PLAN.md §1 for the planned pins.
 # Until then, only the standard library is assumed.
 dependencies = []
 
 [project.optional-dependencies]
-# Adapter dependency groups will be declared per adapter as each adapter
-# ships. Operators install only the adapters they need.
-# Example shape (to be filled in):
-#   discord    = ["discord.py>=2.3"]
-#   telegram   = ["python-telegram-bot>=21"]
-#   matrix     = ["matrix-nio>=0.24"]
-#   ollama     = ["ollama>=0.1"]
-#   openrouter = ["openai>=1.0"]  # OpenRouter speaks OpenAI protocol
+# Per-Brunnr and per-Funi adapter dependencies will be declared per adapter
+# as each ships, so operators install only what they need.
+# Planned shape (filled in as adapters land):
+#   sqlite_vec  = ["sqlite-vec>=0.1.6"]
+#   pgvector    = ["psycopg[binary]>=3.2", "pgvector>=0.3"]
+#   qdrant      = ["qdrant-client>=1.9"]
+#   chroma      = ["chromadb>=0.5"]
+#   lancedb     = ["lancedb>=0.6"]
+#   ollama      = ["httpx>=0.27"]
+#   llamacpp    = ["llama-cpp-python>=0.2"]
+#   lmstudio    = ["httpx>=0.27"]
 dev = [
     "pytest>=8",
     "pytest-cov>=5",
@@ -56,19 +64,19 @@ dev = [
 
 [project.scripts]
 # The single official CLI entry point — Munnr.
-runa = "runa.cli.main:main"
+ember = "ember.cli.main:main"
 
 [project.urls]
-Homepage = "https://github.com/hrabanazviking/Runa-Agent-Digital-Being"
-Source   = "https://github.com/hrabanazviking/Runa-Agent-Digital-Being"
-Issues   = "https://github.com/hrabanazviking/Runa-Agent-Digital-Being/issues"
+Homepage = "https://github.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster"
+Source   = "https://github.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster"
+Issues   = "https://github.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/issues"
 
 # ---------------------------------------------------------------------------
 # Tool configuration
 # ---------------------------------------------------------------------------
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/runa"]
+packages = ["src/ember"]
 
 [tool.ruff]
 line-length = 100
@@ -96,7 +104,7 @@ ignore = [
 [tool.mypy]
 python_version = "3.11"
 strict = true
-files = ["src/runa"]
+files = ["src/ember"]
 exclude = ["tests/", "docs/", "scripts/"]
 
 [tool.pytest.ini_options]
@@ -109,13 +117,14 @@ addopts = [
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "e2e: end-to-end tests through the real CLI / gateway (opt-in)",
+    "e2e: end-to-end tests through the real CLI / well (opt-in)",
     "requires_ollama: tests that need a local Ollama instance",
     "requires_lmstudio: tests that need a local LM Studio instance",
+    "requires_pi: tests that need to run on a Raspberry Pi class device",
 ]
 
 [tool.coverage.run]
-source = ["src/runa"]
+source = ["src/ember"]
 branch = true
 
 [tool.coverage.report]

@@ -3,13 +3,13 @@
 **Voice:** Cartographer (Védis Eikleið)
 **Status:** Proposed — for ratification. Bootstrap-stage reference.
 **Last touched:** 2026-05-21
-**Reads with:** `docs/architecture/EMBER_ARCHITECTURE.md`, `docs/architecture/EMBER_DOMAIN_MAP.md`, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`, `docs/SYSTEM_VISION.md` §"Vow of Pluggable Storage".
+**Reads with:** `docs/architecture/ARCHITECTURE.md`, `docs/architecture/DOMAIN_MAP.md`, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`, `docs/SYSTEM_VISION.md` §"Vow of Pluggable Storage".
 
 ---
 
 ## 1. Why a backend matrix exists
 
-The Vow of Pluggable Storage forbids single-backend binding. Every Brunnr adapter must satisfy the same `INTERFACE.md` (see `EMBER_DOMAIN_MAP.md` §2.1). This document picks the right adapter for each operator situation. The first slice ships `sqlite_vec` only; the others are sequenced.
+The Vow of Pluggable Storage forbids single-backend binding. Every Brunnr adapter must satisfy the same `INTERFACE.md` (see `docs/architecture/DOMAIN_MAP.md` §2.1). This document picks the right adapter for each operator situation. The first slice ships `sqlite_vec` only; the others are sequenced.
 
 ---
 
@@ -94,7 +94,7 @@ Backend selection is a `config/storage.example.yaml` decision, not a code change
 
 ## 4. The Brunnr interface as the shield
 
-Each backend is fronted by an adapter under `src/ember/well/brunnr/<backend>/`. The adapter implements the `BrunnrHandle` protocol declared in `src/ember/well/brunnr/handle.py` (see `EMBER_DOMAIN_MAP.md` §2.1 for the minimum surface).
+Each backend is fronted by an adapter under `src/ember/well/brunnr/<backend>/`. The adapter implements the `BrunnrHandle` protocol declared in `src/ember/well/brunnr/handle.py` (see `docs/architecture/DOMAIN_MAP.md` §2.1 for the minimum surface).
 
 The interface is the only thing Spark code sees. The choice of backend is invisible above the interface. **Any adapter that leaks backend-specific types upward is a release-blocking bug.**
 

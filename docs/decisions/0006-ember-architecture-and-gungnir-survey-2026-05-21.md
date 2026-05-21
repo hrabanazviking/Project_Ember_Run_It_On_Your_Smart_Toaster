@@ -1,10 +1,12 @@
 # ADR 0006 — Ember Architecture First Pass + Gungnir Survey
 
 **Date:** 2026-05-21
-**Status:** Proposed
+**Status:** **Ratified 2026-05-21 by Volmarr.** ("Go for Ember fork delta!")
 **Author:** Mythic-Engineering session driven by Volmarr — Cartographer / Architect / Forge Worker / Scribe (roles rotated through the writing)
 **Supersedes:** None
 **Superseded by:** —
+
+> **Update 2026-05-21 (post-ratification):** the `EMBER_*.md` filenames cited in §2 below have been promoted to the canonical names `ARCHITECTURE.md`, `DOMAIN_MAP.md`, `DATA_FLOW.md`. The Runa-shaped originals at those paths have moved to `docs/archive/runa-inherited/architecture/`. The promotion is recorded in the DEVLOG entry for the fork-delta commit. The text of §2 below is preserved in its as-proposed form for the historical record.
 
 ---
 

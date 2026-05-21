@@ -8,6 +8,66 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Ember fork-delta executed. Three Realms tree built. Runa skeleton archived.
+
+**Who:** Claude (Opus 4.7, 1M context) on the travel laptop, continuing the same session as the earlier 2026-05-21 entry below. Roles rotated: Architect (mostly), Forge Worker (the new `src/ember/` files), Cartographer (the archive mapping), Scribe (this entry).
+**Scope:** Execute step 6 of `docs/architecture/EMBER_FORK_DELTA.md` §7 after Volmarr's ratification ("good work buddy! Go for Ember fork delta!"). Bring the file tree into alignment with the ratified architecture. **No first-slice code in this commit — that is the next commit.**
+
+### What shipped
+
+- **`src/ember/` tree built** to match the Three Realms layout in `docs/architecture/DOMAIN_MAP.md`:
+    ```
+    src/ember/
+    ├── __init__.py, __main__.py, README.md
+    ├── schemas/         (+ INTERFACE.md, README.md)
+    ├── well/
+    │   ├── brunnr/      (+ INTERFACE.md, README.md)
+    │   └── smidja/      (+ INTERFACE.md, README.md)
+    ├── thread/
+    │   └── strengr/     (+ INTERFACE.md, README.md)
+    ├── spark/
+    │   ├── funi/        (+ INTERFACE.md, README.md)
+    │   ├── hjarta/      (+ INTERFACE.md, README.md)
+    │   └── munnr/       (+ INTERFACE.md, README.md)
+    └── cli/             (+ INTERFACE.md, README.md)
+    ```
+  Each subpackage has an empty `__init__.py`, a one-page `README.md`, and an `INTERFACE.md` draft that cites the matching `DOMAIN_MAP.md` section. **No code yet** beyond `__init__.py` and `__main__.py`.
+- **`src/ember/__main__.py`** raises a friendly `NotImplementedError` pointing at `EMBER_FIRST_SLICE_PLAN.md`. `python -m ember` and `ember` (once installed) both resolve to it.
+- **Archived the inherited Runa skeleton** to `docs/archive/runa-inherited/src-skeleton/runa/` via `git mv` (rename history preserved). Added `docs/archive/runa-inherited/src-skeleton/README.md` explaining the lineage.
+- **Promoted the EMBER-prefixed architecture docs to canonical names** via `git mv`:
+    - `docs/architecture/ARCHITECTURE.md` (was Runa's; Runa version → `docs/archive/runa-inherited/architecture/ARCHITECTURE.md`; Ember version promoted from `EMBER_ARCHITECTURE.md`).
+    - `docs/architecture/DOMAIN_MAP.md` (same shape).
+    - `docs/architecture/DATA_FLOW.md` (same shape).
+  Each canonical doc's header updated: **Status: Ratified 2026-05-21 by Volmarr**, "promoted from EMBER_*.md", inter-doc cross-refs rewritten to canonical names, `(parent Runa shape)` cross-refs rewritten to the archive path. ARCHITECTURE.md §8 rewritten in past tense to record the promotion event.
+- **Added `docs/archive/runa-inherited/architecture/README.md`** mapping each archived file to its canonical Ember replacement.
+- **`pyproject.toml` rewritten** for Ember:
+    - `name = "ember-agent"`
+    - entry point `ember = "ember.cli.main:main"`
+    - `[tool.hatch.build.targets.wheel] packages = ["src/ember"]`
+    - `[tool.mypy] files = ["src/ember"]`; `[tool.coverage.run] source = ["src/ember"]`
+    - planned optional-dependencies groups commented in for each Brunnr backend and each Funi runtime
+    - added `requires_pi` pytest marker
+- **`config/runa.example.yaml` → `config/ember.example.yaml`** via `git mv`, with contents rewritten to the Ember shape: identity (name + role), Funi (Ollama with phi3:mini default), Strengr (timeout + retry), Brunnr (sqlite_vec default + commented pgvector example for Gungnir), Smiðja (Gungnir-aligned chunker defaults: 2000-char max, 1684 target), logging.
+- **Cross-references updated** in `docs/adapters/{BRUNNR_BACKEND_MATRIX,FUNI_LOCAL_MODEL_OPTIONS,GUNGNIR_WELL_REFERENCE,SMIDJA_INGEST_PATTERNS}.md` and `docs/architecture/EMBER_{FIRST_SLICE_PLAN,FORK_DELTA}.md` from `EMBER_*.md` → canonical names. ADR 0006 retains its as-proposed snapshot text with a clearly-marked "Update 2026-05-21 (post-ratification)" footnote pointing forward.
+- **`docs/architecture/README.md`** rewritten to describe Ember-shape canonical docs and the living working docs (FORK_DELTA, FIRST_SLICE_PLAN), with a Runa-lineage section.
+- **`docs/REPO_MAP.md`** updated: `(planned)` removed from src/ember entries; src/runa entry rewritten as archived; `(planned)` removed from `config/ember.example.yaml`; archive entry expanded to mention the new subdirs.
+- **`docs/architecture/EMBER_FORK_DELTA.md` §3.1 table** updated: each "Move to archive" / "Promote to canonical" row marked **Done 2026-05-21**.
+
+### What's next (the next commit)
+
+- **First slice begins.** Per `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` §3 Phase 2: ship `ember.schemas.errors`, `ember.schemas.config`, `ember.schemas.chunks`, `ember.schemas.episode`, `ember.schemas.funi` — types only. Tests: shape contracts only.
+- **Skald's True Names ratification** (item 3 from 2026-05-19, still pending). The names Funi/Strengr/Brunnr/Smiðja/Hjarta/Munnr are now load-bearing across the file tree; final ratification would lock them.
+- **Light root edits** still pending: Ember-descent rows in `ORIGINS.md`; check root `PHILOSOPHY.md` for any Runa-specific phrasings worth softening.
+
+### Notes
+
+- Per the additive rule, **nothing was deleted in this session**. Every move was a `git mv`; every "new" file at a canonical path was the Ember version promoted from `EMBER_*.md`; every "deleted" entry git status shows is a rename git's similarity heuristic chose not to recognise (verified by content read at every old and new path before commit).
+- The Runa skeleton archive at `docs/archive/runa-inherited/src-skeleton/runa/` preserves all the per-subpackage `README.md` and `INTERFACE.md` drafts from the parent project. They remain reachable to anyone reading the inheritance.
+- `python -m ember` now resolves to a clean `NotImplementedError` with a friendly pointer — i.e. *honest failure*, the same shape the Vow of Graceful Offline asks of the runtime.
+- The Ember-shape `config/ember.example.yaml` includes a commented-in `pgvector` block that operators can uncomment to point Ember at Gungnir (or any Gungnir-compatible Postgres) once the `pgvector` Brunnr ships in Phase 8.
+
+---
+
 ## 2026-05-21 — Ember architecture first-pass + live Gungnir survey.
 
 **Who:** Claude (Opus 4.7, 1M context) working under Volmarr on the travel laptop — rotating through Cartographer, Architect, Forge Worker, and Scribe roles. Mythic Engineering activated at session start.

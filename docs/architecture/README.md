@@ -1,19 +1,43 @@
 # docs/architecture/
 
-The big-picture shape of Runa as a system. If a doc here changes, the corresponding code is expected to change with it (or vice versa) — these documents are load-bearing, not aspirational.
+The big-picture shape of Ember as a system. If a doc here changes, the
+corresponding code is expected to change with it (or vice versa) — these
+documents are load-bearing, not aspirational.
 
-## Canonical documents
+## Canonical documents (ratified 2026-05-21)
 
-- `DOMAIN_MAP.md` — every subsystem in `src/runa/` named in one sentence, ownership rules, boundary rules.
-- `ARCHITECTURE.md` — layer diagram, dependency direction, the kernel/event-bus/memory/world-model story.
-- `DATA_FLOW.md` — how events travel, where memory writes happen, request lifecycle.
+- `ARCHITECTURE.md` — Three Realms (Spark/Thread/Well), Six True Names,
+  dependency law, why-no-kernel-no-bus, first-slice anchor.
+- `DOMAIN_MAP.md` — per-subpackage ownership for `src/ember/{schemas,well,thread,spark,cli}/`.
+- `DATA_FLOW.md` — three canonical flows (turn / ingest / first-run rite)
+  with explicit happy and sad paths.
 
-## Imported plundered material
+## Living working documents
 
-Long-form architectural source documents migrated from repo root during the 2026-05-17 bootstrap:
+- `EMBER_FORK_DELTA.md` — Cartographer's per-file disposition record for
+  the migration from the inherited Runa parent. Long-term lineage
+  reference.
+- `EMBER_FIRST_SLICE_PLAN.md` — file-by-file plan for the minimum viable
+  Ember (~38 new files across seven phases). Archived once the first
+  slice ships.
 
-- `ROBUST_AGENT_ENGINEERING_PLAN.md` — the original Mythic Engineering build plan with the Bifröst / VERÐANDI / Skuld / Muninn architecture.
-- `Runa-Agent-Digital-Being.md`, `Runa_Agent_Digital_Being.md` — two large vision-stage agent designs (possible duplicates, review pending).
-- `Technical_Architecture_of_Volmarrs_AI_Ecosystem.md` — ecosystem context for how Runa fits with NSE, MindSpark, WYRD, Seidr-Smidja, HERETIC, etc.
+## Imported plundered material (Runa-era source material, preserved)
 
-These are the source material the canonical documents above will distill from.
+These are the long-form architectural source documents migrated from
+repo root during the 2026-05-17 bootstrap. They describe the parent
+project's shape and feed the design heritage Ember stands on.
+
+- `ROBUST_AGENT_ENGINEERING_PLAN.md` — original Mythic Engineering build
+  plan with the Bifröst / VERÐANDI / Skuld / Muninn architecture.
+- `Runa-Agent-Digital-Being.md`, `Runa_Agent_Digital_Being.md` — two
+  parallel large vision drafts (intentionally not merged — see ADR 0002).
+- `Technical_Architecture_of_Volmarrs_AI_Ecosystem.md` — cross-project
+  ecosystem context (NSE, MindSpark, WYRD, Seidr-Smidja, HERETIC, etc.).
+
+## Lineage — the Runa-shaped predecessors
+
+The Runa-shaped predecessors of the three canonical documents above were
+moved into `docs/archive/runa-inherited/architecture/` on 2026-05-21
+when the Ember versions were ratified and promoted. They are preserved
+there, not deleted. See `docs/archive/runa-inherited/architecture/README.md`
+for the mapping table.

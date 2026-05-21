@@ -3,7 +3,7 @@
 **Voice:** Forge Worker (Eldra Járnsdóttir)
 **Status:** Proposed — for ratification. Bootstrap-stage reference.
 **Last touched:** 2026-05-21
-**Reads with:** `docs/architecture/EMBER_ARCHITECTURE.md` §3.1, `docs/architecture/EMBER_DOMAIN_MAP.md` §5, `docs/AI_OS_Research/AI_OS_RESEARCH_2026.md` (inherited).
+**Reads with:** `docs/architecture/ARCHITECTURE.md` §3.1, `docs/architecture/DOMAIN_MAP.md` §5, `docs/AI_OS_Research/AI_OS_RESEARCH_2026.md` (inherited).
 
 ---
 
@@ -66,7 +66,7 @@ Hjarta reads the YAML, asks Ollama which of those models are already pulled, and
 
 ## 4. The Funi adapter interface in concrete
 
-(Detailed in `EMBER_DOMAIN_MAP.md` §5.1.)
+(Detailed in `docs/architecture/DOMAIN_MAP.md` §5.1.)
 
 A Funi adapter implements four functions:
 

@@ -3,7 +3,7 @@
 **Voice:** Forge Worker (Eldra Járnsdóttir)
 **Status:** Proposed — for ratification. Bootstrap-stage reference.
 **Last touched:** 2026-05-21
-**Reads with:** `docs/architecture/EMBER_DATA_FLOW.md` §3, `docs/architecture/EMBER_DOMAIN_MAP.md` §3, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`.
+**Reads with:** `docs/architecture/DATA_FLOW.md` §3, `docs/architecture/DOMAIN_MAP.md` §3, `docs/adapters/GUNGNIR_WELL_REFERENCE.md`.
 
 ---
 
