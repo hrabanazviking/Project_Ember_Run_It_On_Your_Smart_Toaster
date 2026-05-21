@@ -173,7 +173,198 @@ service.
 
 ---
 
-## 7. Update / reset
+## 7. Editing `ember.yaml` (slice 2)
+
+Hjarta wrote `~/.ember/config/ember.yaml` at first run. Every key is
+optional; absent keys fall through to the slice-shipped defaults in
+`src/ember/schemas/config.py`. Re-running `ember chat` after an edit
+picks up the new values immediately (no daemon to restart).
+
+A copy of the full template lives at
+[`config/ember.example.yaml`](../../config/ember.example.yaml) in the
+source tree — copy any section out of it.
+
+**Tip:** edit one thing at a time and verify with `ember doctor` after.
+A broken yaml fails loud with a clear error and Ember refuses to start
+rather than running on partial config.
+
+---
+
+## 8. Streaming on / off (slice 2 — 0.1.7)
+
+Default is **on**: tokens appear in `ember chat` as Funi generates
+them. Ctrl-C mid-stream tags the partial reply with
+`[interrupted by operator]` and returns to the next prompt — the REPL
+keeps going.
+
+To turn streaming off (e.g. when piping `ember ask "…"` into another
+tool that wants a single blob):
+
+```yaml
+funi:
+  streaming: false
+```
+
+The non-streaming path uses the same Funi backend; only the surface
+behaviour differs.
+
+---
+
+## 9. Switching to a shared Well (`pgvector`, slice 2 — 0.1.9)
+
+Default Well is single-file `sqlite_vec`. If you have a Postgres +
+pgvector instance on your tailnet (e.g. Gungnir), point Ember at it
+instead:
+
+1. Install the pgvector extra:
+
+   ```bash
+   pip install 'ember-agent[pgvector]'
+   ```
+
+2. Put your Well password in a mode-`0o600` file:
+
+   ```bash
+   mkdir -p ~/.ember/secrets
+   chmod 700 ~/.ember/secrets
+   editor ~/.ember/secrets/well.password
+   chmod 600 ~/.ember/secrets/well.password
+   ```
+
+3. Edit `~/.ember/config/ember.yaml`:
+
+   ```yaml
+   brunnr:
+     backend: pgvector
+     embedding_dim: 768          # must match chunks.embedding dim
+     pgvector:
+       url: "postgresql://volmarr@gungnir/knowledge"
+       secret_ref: "~/.ember/secrets/well.password"
+       schema: public
+       read_only: true   # IMPORTANT for shared Wells you don't own
+   ```
+
+4. Verify with `ember doctor` — the Well line will now say
+   `backend pgvector`.
+
+The pgvector adapter is schema-probe-first: if the configured schema
+already holds `documents` + `chunks` tables (the Gungnir shape), Ember
+reuses them. If they don't exist, Ember runs the DDL on first open.
+**Set `read_only: true`** when pointing at a database you didn't
+bootstrap — it mechanically refuses `add_document` / `add_chunks` /
+`add_episode`.
+
+Operator guide with every knob: `docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md`.
+Design rationale: `docs/decisions/0010-pgvector-brunnr.md`.
+
+---
+
+## 10. Enabling tools (slice 2 — 0.2.0)
+
+Default is **off** per the Vow of Sovereignty. To enable:
+
+```yaml
+tools:
+  enabled: true
+```
+
+Or as a per-invocation override:
+
+```bash
+ember --allow-tools chat
+ember --no-tools chat   # force off even when config says on
+```
+
+Three first-party tools ship in 0.2.0:
+
+| Tool | Approval | What it does | Refuses |
+|---|---|---|---|
+| `search_well` | `STANDING` (auto) | hybrid_search against the bound Well | empty query, dim mismatch |
+| `read_local_file` | `PER_CALL` | read a UTF-8 file under `$HOME` | paths outside `$HOME`, `~/.ssh/`, `~/.ember/secrets/`, `~/.pgpass`, files > 256 KiB |
+| `fetch_url` | `PER_CALL` | GET an http(s) URL via stdlib `urllib` | non-http(s) schemes, RFC1918/loopback (unless `allow_private_addresses=true`), robots.txt disallow, response > 1 MiB |
+
+Every tool call is recorded in an append-only JSONL audit log at
+`~/.ember/state/tool_audit/<YYYY-MM-DD>.jsonl` — including refusals
+and invalid-arguments rejections. Operator guide:
+`docs/decisions/0011-tool-use-framework.md`.
+
+### Approval policy (slice 2 — 0.2.0)
+
+When `tools.enabled: true`, Ember asks before every `PER_CALL` tool
+invocation:
+
+```
+[tool proposal] read_local_file  (call abc12345)
+  description: Read a UTF-8 text file from the operator's home directory...
+  arguments:
+    path: '/home/volmarr/notes/runes.md'
+approve this call? [y/n/always]
+```
+
+Three answers:
+
+- `y` — approve this call only.
+- `always` — approve this tool for the rest of this session (does NOT
+  persist; restart resets).
+- `n` (or anything else) — refuse. Funi sees a typed error reply and
+  usually summarises gracefully.
+
+`STANDING` tools (`search_well`) skip the prompt. To downgrade them to
+`PER_CALL`:
+
+```yaml
+tools:
+  enabled: true
+  approval_overrides:
+    search_well: per_call    # be strict about search too
+```
+
+You can also **forbid** a tool entirely — the registry refuses to even
+register it:
+
+```yaml
+tools:
+  enabled: true
+  approval_overrides:
+    fetch_url: forbidden
+```
+
+To flip the floor and auto-approve **every** `PER_CALL` tool (still
+audited):
+
+```yaml
+tools:
+  enabled: true
+  standing_trust: true     # "trust everything" mode
+```
+
+The descriptor is the **safety floor** — config can downgrade
+`STANDING` → `PER_CALL` (more strict) but cannot upgrade
+`PER_CALL` → `STANDING`. Pin the safer direction.
+
+### Tool-capable models
+
+Tools require a Funi runtime that supports OpenAI-style function
+calling. On the Ollama side, **not every small model does** — `phi3:mini`
+returns HTTP 400 when tools are supplied. **`llama3.2:3b`** is the
+recommended tool-capable model for slice 2 on Pi-class hardware:
+
+```bash
+ollama pull llama3.2:3b
+```
+
+```yaml
+funi:
+  ollama:
+    model: "llama3.2:3b"
+```
+
+If you keep `phi3:mini` as your default Funi, set `tools.enabled:
+false` (the default) — Ember stays useful without tools.
+
+---
+
+## 11. Update / reset
 
 To re-run the wizard from scratch:
 
@@ -233,10 +424,11 @@ want a smaller model:
 ollama pull qwen2.5:1.5b-instruct   # ~1.3 GB resident
 ```
 
-Until the config loader lands, edit Ember's behaviour by passing a
-different `EmberConfig` to the CLI dispatcher. For most operators this
-means waiting for Phase 9+; for now, `phi3:mini` is the recommended
-floor.
+Set the model under `funi.ollama.model` in
+`~/.ember/config/ember.yaml` (see §7-10 above for the editing flow).
+`phi3:mini` is the recommended floor for general use; **`llama3.2:3b`
+is the recommended floor when you want tool calls** (see §10 for
+why).
 
 See [`docs/adapters/FUNI_LOCAL_MODEL_OPTIONS.md`](../../docs/adapters/FUNI_LOCAL_MODEL_OPTIONS.md)
 for the full host-RAM-keyed model ladder.
@@ -250,17 +442,32 @@ for the full host-RAM-keyed model ladder.
 | `ember chat` says `Funi is unavailable (endpoint_unreachable)` | Ollama not running, or bound to a non-default host | `systemctl status ollama`; or set `OLLAMA_HOST`. |
 | Hjarta says `well disconnected: backend_reported_unavailable` | `sqlite-vec` extension not installed | `pip install sqlite-vec` in your venv. |
 | `ember well ingest` is very slow | Embedding model not loaded; first batch warms it up | Wait — subsequent batches are faster. |
-| Reply text ends with `[reply truncated — context limit reached]` | Default `num_predict` is 1024; model wanted more | Operator-tunable in Phase 9+; for now, ask more focused questions. |
+| Reply text ends with `[reply truncated — context limit reached]` | Default `num_predict` is 1024; model wanted more | Edit `funi.ollama.num_predict` in `~/.ember/config/ember.yaml`. |
 | `ember doctor` says `Well: ok` but `documents: 1` after a clean install | Hjarta probe left its harmless test chunk | Expected; safe to ignore or delete via SQL. |
+| `ember chat` with `tools.enabled: true` returns `[ollama unreachable: HTTP Error 400: Bad Request]` | Your Funi model does not support tool calls | Switch `funi.ollama.model` to `llama3.2:3b` (see §10); or set `tools.enabled: false`. |
+| Tool proposal renders but `ember chat` says `refused: path '~/...' is on the sandbox denylist` | Model proposed a path inside the read-only denylist (`~/.ssh/`, `~/.ember/secrets/`, etc.) | Expected sandbox behaviour. Move the file outside the denylist or read it via a different tool. |
+| `pip install ember-agent[pgvector]` fails | Postgres client headers missing | `apt install libpq-dev`; or use `psycopg[binary]` which bundles them. |
+| `ember doctor` says `Well: DISCONNECTED — auth_failed (no Well secret resolved …)` | pgvector secret file missing or wrong mode | Re-check `~/.ember/secrets/well.password` is mode `0o600` (not `0o644`). |
 
 ---
 
 ## What's next
 
-- **Phase 9+** brings a real config file loader, `pgvector` Brunnr for
-  shared household Wells (Gungnir-compatible), and more Funi runtimes
-  (`llamacpp`, `lmstudio`, Windows AI Foundry, Apple Foundation Models).
-- The first slice that ships with this install guide is `0.1.0`. See
-  `pyproject.toml` for the current version.
+The slice-2 release (0.2.0, ratified 2026-05-21 by ADR 0013) shipped:
+
+- The config loader (`~/.ember/config/ember.yaml`) — §7.
+- Streaming Funi replies with Ctrl-C-tags-partial — §8.
+- `pgvector` Brunnr for Gungnir-compatible shared Wells — §9.
+- Tool use: `search_well`, `read_local_file`, `fetch_url` with
+  per-call approval + audit log — §10.
+
+Slice 3 is queued (ADR 0012 — alternate surfaces: Auga GUI, Rödd
+voice, Bifröst HTTP gateway). It does NOT block any current
+deployment; this install guide is feature-complete for slice 2.
+
+The current version is in `pyproject.toml`. Slice ratification ADRs:
+
+- `docs/decisions/0007-first-slice-ratification-2026-05-21.md` — 0.1.0.
+- `docs/decisions/0013-second-slice-ratification.md` — 0.2.0.
 
 Welcome to the hearth.

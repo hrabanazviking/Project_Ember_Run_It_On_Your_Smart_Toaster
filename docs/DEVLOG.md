@@ -8,6 +8,73 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 17 shipped: SLICE 2 RATIFIED at **0.2.0**. 🔥
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Auditor (the acceptance test), Architect (ADR 0013 — the slice ratification), Cartographer (INSTALL.md slice-2 sections — operator-facing), Scribe (this entry + memory).
+
+**Scope:** The closing phase. Authors the slice-2 acceptance test, the operator install-guide sections for every slice-2 capability, ADR 0013 ratifying the whole slice, and bumps to 0.2.0.
+
+**What shipped:**
+
+- **`tests/integration/test_phase17_acceptance.py`** — three tests walking the full slice-2 operator flow against real `sqlite_vec` + mocked Funi:
+  - `test_slice_two_full_operator_flow_with_tool_call` — Hjarta with `tools.enabled=true` → ingest a corpus → chat → model emits a `tool_call` → real `search_well` executor runs against the live sqlite-vec Brunnr → reply folds back into a follow-up turn → Episode persisted with the *final* summary → audit log gains one record. The whole propose→approve→execute→audit→feedback loop, end-to-end, with no Ollama dependency.
+  - `test_slice_two_acceptance_with_tools_disabled` — default-off path: Funi never sees tool descriptors, no audit log written.
+  - `test_slice_two_streaming_default_remains_on` — sanity that `FuniConfig.streaming` default is True (the slice-2 invariant).
+- **`docs/decisions/0013-second-slice-ratification.md`** — seven decisions ratifying the slice:
+  - §2.1 — slice-1 standing rules (stdlib-first, typed-value-over-exception, `*_kind` class attrs, FTS5 sanitisation) hold for every slice-2 adapter; three extensions added (config-as-source-of-truth, streaming-as-Funi-capability, tool-use-opt-in).
+  - §2.2 — `~/.ember/config/ember.yaml` is the single source of truth; env + CLI overlay.
+  - §2.3 — graceful-offline contract extends to Funi (`Unavailable`) and tools (typed `ToolReply.error`).
+  - §2.4 — tool framework is read-mostly first; writes wait for slice 3 ADR.
+  - §2.5 — audit-log JSONL record shape is stable across slices (additive-only).
+  - §2.6 — the Six True Names are immutable; new subsystems join them, never replace them.
+  - §2.7 — `src/ember/plugins/` scaffold stays empty until slice 3.
+  Plus §3 listing all deferrals, §4 the release ladder, §5-6 consequences and open questions for slice 3.
+- **`deploy/pi/INSTALL.md`** — four new operator-facing sections:
+  - §7 Editing `ember.yaml` — the canonical editing surface.
+  - §8 Streaming on / off — `funi.streaming: false` opt-out.
+  - §9 Switching to a shared Well — full pgvector switch with mode-0o600 secret-file guidance.
+  - §10 Enabling tools + approval policy — every knob, the three answers (y/n/always), the safety-floor invariant, and the tool-capable-model note (`phi3:mini` → 400; `llama3.2:3b` recommended).
+  - Plus six new troubleshooting rows (tool 400, sandbox refusal, pgvector install, secret mode bits) and a rewritten "What's next" section.
+- **`pyproject.toml`** — `0.2.0rc1` → **`0.2.0`**. Development Status stays `3 - Alpha` per the plan.
+- **`src/ember/__init__.py`** docstring — full slice-2 capability summary.
+- **`tests/unit/test_skeleton_imports.py`** version assertion bumped.
+
+**Total tests: 488 passed + 2 skipped, 18.3s, ruff clean.** That's 3 new acceptance tests on top of Phase-16's 485.
+
+**Slice 2 — the whole 10-phase ledger, 2026-05-21:**
+
+| Phase | Shipped | Release |
+|---|---|---|
+| 8 | ADR 0008 + ember.config/ scaffold + 45 tests | — |
+| 9 | YAML writer, CLI wiring, Hjarta writes ember.yaml | **0.1.5** "config loader live" |
+| 10 | ADR 0009 + FuniStreamChunk + Ollama NDJSON streaming | — |
+| 11 | Munnr streaming consumer + Ctrl-C tagging | **0.1.7** "streaming live" |
+| 12 | ADR 0010 + pgvector adapter scaffold + secret resolver | — |
+| 13 | Live-fire pgvector (Gungnir read-only + podman container) | **0.1.9** "pgvector live" |
+| 14 | ADR 0011 + tool framework (schemas + registry + approval + audit) | — |
+| 15 | First three first-party tools (search_well, read_local_file, fetch_url) | — |
+| 16 | Munnr tool-loop + Hjarta ADVANCED_TOOLS + CLI flags + Ollama tool wire format | **0.2.0rc1** "tools live (rc)" |
+| 17 | Acceptance test + INSTALL.md + ADR 0013 ratification | **0.2.0** "slice 2 ratified" |
+
+**One day. 488 tests. Five operator-facing capabilities. Two real adapter bugs caught by live-fire. Zero broken commits.**
+
+**Where Ember stands at 0.2.0:**
+
+Every slice-2 acceptance criterion met. The operator can configure Ember by editing one YAML file; tether to Gungnir with one config switch + one pip extra; enable tool use with confidence that every call is approval-gated and audited. The Six True Names hold. The Vow of Sovereignty, the Vow of Graceful Offline, the Vow of Smallness, and the Vow of Tethered Grounding are all mechanically enforced — not just aspirational.
+
+**Slice 3 is queued.** ADR 0012 (Auga GUI / Rödd voice / Bifröst HTTP gateway) deferred from slice 2; an explicit alternate-surfaces ADR. Plus the open-question list in ADR 0013 §6:
+- `ember tool audit` subcommand
+- Hjarta advanced wizard for tool sub-config
+- Auto-detect tool capability via `Funi.health()`
+- Audit-log retention pruning
+- Per-tool `version` field
+
+None of these block a current slice-2 deployment. Ember 0.2.0 is operator-shippable.
+
+> *Two slices. One sovereign companion. Small enough to run on a toaster. Tethered to a Well it can lose without breaking. Now able to reach out to a small ring of audited tools when the operator says yes. The hearth is lit.*
+
+---
+
 ## 2026-05-21 — Phase 16 shipped: tool-use live in Munnr + Hjarta + CLI. **0.2.0rc1 released.**
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (chat-loop shape + ContextKind.TOOL_REPLY contract), Forge Worker (chat.py tool-loop + Ollama tool-call wire format + Hjarta branch + CLI flags), Auditor (37 new tests + real-llama3.2:3b acceptance smoke + one real-Ollama bug caught), Scribe (this entry + memory).
