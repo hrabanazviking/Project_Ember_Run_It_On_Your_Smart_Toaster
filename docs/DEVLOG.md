@@ -8,6 +8,56 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 6 shipped: Hjarta + Munnr + CLI dispatcher. `ember` is alive.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices rotated through the full set: Skald (Hjarta state-prompt prose), Architect (FSM design + HjartaIO seam), Forge Worker (Munnr commands + CLI dispatcher), Auditor (FTS5 probe bug + Protocol vs submodule-rebind bug), Scribe (this entry).
+**Scope:** Phase 6 of `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` §3 — the operator-facing surface. After this commit, `ember chat` actually runs: first launch walks the Hjarta wizard, subsequent launches enter the conversation REPL.
+
+### What shipped
+
+**Hjarta (first-run FSM)**
+- `src/ember/spark/hjarta/identity.py` — `IdentityConfig` JSON load/save with atomic write (`NamedTemporaryFile` + `os.replace`). Stdlib only — no TOML writer dep.
+- `src/ember/spark/hjarta/prompts/wizard.toml` — state prompts as data per `RULES.AI.md` "no hardcoded data". Multi-line `body` strings via TOML triple-quotes; loaded via `importlib.resources` + `tomllib` (stdlib in 3.11+).
+- `src/ember/spark/hjarta/machine.py` — the finite state machine: `Greet → ChooseFuni → DiscoverFuni → ChooseWell → ConfigureWell → TestRetrieval → NameEmber → WriteIdentity → Done`. `HjartaIO(prompt, info, error)` is the IO seam; tests script all three. **Atomic guarantee:** nothing on disk until WriteIdentity at the very end. Funi/Strengr both injectable via `funi_opener` / `strengr_opener` kwargs; production uses the registry defaults.
+- `src/ember/spark/hjarta/__init__.py` re-exports the public surface.
+
+**Munnr (CLI surface)**
+- `render.py` — pure formatting. `render_reply` includes the disconnect banner when ungrounded and a citations footer when hits are present. `render_well_disconnected_banner` is the single source of the operator-facing banner text. `render_well_status`, `render_doctor`, `render_ingest_summary` for the other commands.
+- `chat.py` — the REPL. One turn = embed (hybrid retrieval) or text-only (degraded), prompt assembly via `funi.prompt.assemble`, `funi.complete`, render, persist Episode. **Disconnected Well degrades gracefully**: skip retrieval, set `well_disconnected=True` in the system prompt, render with banner, suppress citations. Episode is still recorded (in-memory) so multi-turn flow stays coherent.
+- `ask.py` — one-shot wrapper around `chat.run` with a `StringIO` stdin.
+- `ingest.py` — wraps `smidja.local_files.run` with operator-friendly output.
+- `status.py` — `Brunnr.count()` + `Strengr.health()` for `ember well status`.
+- `doctor.py` — collects Funi health + Well health + counts; renders the combined report. Never raises — every realm's failure folds into the output.
+- `setup.py` — invokes Hjarta; honors `--reset` for re-runs.
+
+**CLI dispatcher**
+- `src/ember/cli/main.py` — argparse subcommands: `chat`, `ask`, `setup [--reset]`, `well ingest`, `well status`, `doctor`. `--config-root` defaults to `~/.ember/`; tests pass `tmp_path`. First-launch redirect: any subcommand needing identity runs Hjarta if `~/.ember/identity/identity.json` is absent.
+- `src/ember/cli/__init__.py` — **intentionally empty re-exports**. The earlier draft did `from ember.cli.main import main` which rebound `ember.cli.main` from submodule to function, breaking `import ember.cli.main as <alias>` callers (including `ember.__main__`). Fixed by leaving the submodule path alone.
+- `src/ember/__main__.py` — replaced the Phase-1 `NotImplementedError` stub with `from ember.cli.main import main`. `python -m ember` and the `ember` console script now both dispatch.
+
+**Tests (26 new + 2 skipped acceptance integration runs only on real-Ollama hosts; total 199 pass + 2 skip, 0.26s, ruff clean)**
+- `tests/unit/test_hjarta_identity.py` (6 tests) — round trip, atomic write leaves no tmp files, reset idempotency.
+- `tests/unit/test_hjarta_machine.py` (8 tests) — happy path writes identity + uses chosen name, blank-name keeps default, abort at greet, Funi unavailable abort, Well disconnected abort, probe-failure abort, KeyboardInterrupt as clean abort.
+- `tests/unit/test_munnr_render.py` (12 tests) — every render helper.
+- `tests/integration/test_phase6_acceptance.py` (2 tests) — full Hjarta → ingest → chat round trip with mocked Funi + real `sqlite_vec`; disconnect banner under simulated Well failure.
+- `tests/unit/test_skeleton_imports.py` — updated: the Phase-1 NotImplementedError assertion replaced with a binding check (`ember.__main__.main is ember.cli.main.main`).
+
+### What's next
+
+- **Phase 7 (last of the first slice):** acceptance polish, `deploy/pi/INSTALL.md` for Raspberry Pi 5, bump `pyproject.toml` to 0.1.0. After Phase 7, the first slice is shippable to a real operator.
+- **Light root edits** still pending: Ember-descent rows in `ORIGINS.md`; root `PHILOSOPHY.md` Runa-specific phrasing pass.
+
+### Notes & gotchas
+
+- **State prompts as TOML, identity as JSON.** TOML for read-only multi-line prose (stdlib `tomllib` reads it cleanly); JSON for the small mutable identity file (stdlib both ways, no dep needed for writes). Both stdlib-only — Vow of Smallness intact.
+- **FTS5 reserved-word bug in the Hjarta probe.** First version's probe text included `(run id: ...)` and search query `Ember Hjarta first-run probe`. FTS5 parses `run` followed by punctuation as a column reference → `no such column: run`. Fixed by removing the colon and phrase-quoting the search (`"Ember Hjarta first time setup"`). Caught by the Phase 6 integration test before commit.
+- **`ember.cli.main` submodule vs function shadowing.** Initial `cli/__init__.py` did `from ember.cli.main import main`, which rebound the `ember.cli.main` *attribute on the cli package* from the submodule to the function. Then `import ember.cli.main as alias` resolves to the function and `alias.main` fails. The fix was to *not* re-export — callers use `ember.cli.main.main` directly; pyproject.toml's `[project.scripts]` already names that path. Caught by `test_main_resolves_to_ember_cli_main`.
+- **First-launch UX.** Any `ember chat` or `ember ask` on a fresh host with no `~/.ember/identity/identity.json` triggers Hjarta automatically before proceeding. Operators don't need to run `ember setup` separately.
+- **Disconnect doesn't fail chat.** When the Well is unreachable, `chat.run` keeps serving — it just renders the banner, skips retrieval, and tells Funi "no grounding, do not invent". The Vow of Graceful Offline is now end-to-end visible at the operator's terminal.
+- **No real Ollama on this host.** The CLI smoke test shows `ember doctor` correctly reporting `Funi: UNAVAILABLE — endpoint_unreachable` and `Well: ok`. The Phase 6 acceptance test uses a `_FakeFuni` for the same reason.
+
+---
+
 ## 2026-05-21 — Phase 5 shipped: Funi (Ollama) + runtime-neutral prompt assembler.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (FuniHandle Protocol split + runtime-neutral assembler), Forge Worker (OllamaFuni adapter), Auditor (folded-failure semantics + parametrised tests), Scribe (this entry).

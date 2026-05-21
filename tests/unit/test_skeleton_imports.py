@@ -47,11 +47,15 @@ def test_ember_package_exposes_version() -> None:
 
 
 def test_main_module_defines_main_function() -> None:
-    # ``python -m ember`` raises NotImplementedError, but plain
-    # ``import ember.__main__`` should succeed and expose ``main``.
+    # ``import ember.__main__`` succeeds and exposes ``main`` — the
+    # actual dispatch is exercised by ``tests/unit/test_cli_main.py``.
     assert callable(_ember_main.main)
 
 
-def test_main_raises_notimplemented_with_pointer_to_the_plan() -> None:
-    with pytest.raises(NotImplementedError, match="EMBER_FIRST_SLICE_PLAN"):
-        _ember_main.main()
+def test_main_resolves_to_ember_cli_main() -> None:
+    # Phase 6 replaced the Phase-1 NotImplementedError stub with a
+    # passthrough to ``ember.cli.main.main``. Verify the binding rather
+    # than re-testing the dispatcher's behaviour (covered separately).
+    import ember.cli.main as cli_main_module  # noqa: PLC0415 — late import deliberate; see comment above
+
+    assert _ember_main.main is cli_main_module.main
