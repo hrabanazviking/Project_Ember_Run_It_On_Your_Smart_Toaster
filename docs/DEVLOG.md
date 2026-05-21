@@ -8,6 +8,40 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 2 shipped: ember.schemas populated, 66 shape tests green.
+
+**Who:** Claude (Opus 4.7, 1M context). Voice: Forge Worker (Eldra Járnsdóttir) for the code; Auditor (Sólrún Hvítmynd) for the tests; Scribe (Eirwyn Rúnblóm) for this entry.
+**Scope:** Execute Phase 2 of `EMBER_FIRST_SLICE_PLAN.md` §3 — the gravitational floor: typed schemas only. No behaviour, no I/O, no sibling-realm imports.
+
+### What shipped
+
+- **Five schema modules** under `src/ember/schemas/`, stdlib-only (`dataclasses` + `enum.StrEnum`, no pydantic dependency):
+    - **`errors.py`** — `EmberError` base; per-realm hierarchy: `SchemaError`, `ConfigError`, `WellError`/`BrunnrError`/`IngestError`, `ThreadError`/`StrengrError`, `SparkError`/`FuniError`/`HjartaError`/`MunnrError`. Plus the non-raised failure value **`Disconnected(reason, since, detail)`** with the `DisconnectReason` enum — Strengr's mechanical implementation of the Vow of Graceful Offline.
+    - **`config.py`** — `EmberConfig` (top-level) composing `IdentityConfig`, `FuniConfig` (+ `FuniOllamaConfig`), `StrengrConfig`, `BrunnrConfig` (+ `SqliteVecConfig`, `PgVectorConfig`), `SmidjaConfig` (+ `ChunkerConfig`, `EmbeddingConfig`, `JournalConfig`), `LoggingConfig` (+ `LoggingDestination`). Six enums: `BrunnrBackend`, `FuniRuntime`, `LogLevel`, `LogFormat`, `LogDestinationKind`, `BoundaryPreference`. **Defaults are Gungnir-aligned** where applicable (`embedding_dim=768`; chunker `max=2000` / `target=1684`; model `phi3:mini` / `nomic-embed-text`). Path fields use `pathlib.Path` *without* `expanduser()` — consumer expands at use time so `$HOME` isn't frozen at import.
+    - **`chunks.py`** — `Document`, `Chunk` (embedding as `tuple[float, ...]` to keep the dataclass truly frozen), `RetrievalHit`, `BrunnrStats`. Column-aligned with the Gungnir schema captured in `docs/adapters/GUNGNIR_WELL_REFERENCE.md` §3.
+    - **`episode.py`** — `Episode(operator_input, ember_reply, cited_chunk_ids, funi_model, well_disconnected, started_at, completed_at, id)`. The `well_disconnected` flag mirrors `DATA_FLOW.md` §2.2 — when the Well is unreachable the Episode records that fact for later flush-in.
+    - **`funi.py`** — `FuniReply`, `FuniHealth`, the non-raised failure value **`Unavailable(reason, detail)`** with `UnavailableReason` enum (parallel to `Disconnected`), `ContextItem` (+ `ContextKind` enum), `ToolCall`, `FinishReason` enum (includes `REFUSED` so Funi can stop cleanly per the Vow of Honest Memory).
+- **All dataclasses are `frozen=True, slots=True`.** All enums are `StrEnum` (Python 3.11+ stdlib).
+- **66 shape-contract tests** under `tests/unit/test_schemas_*.py`, organised one file per schema module plus `test_schemas_import.py` (verifies the gravitational floor — schemas import without reaching into any sibling realm). Suite runs in 0.09s. All green.
+- **`tests/conftest.py`** added — adds `src/` to `sys.path` so tests run without an editable install. Documented as a temporary ergonomic shim.
+- **`src/ember/schemas/INTERFACE.md`** updated from "(planned, Phase 2)" to "(shipped Phase 2, 2026-05-21)" with the full exported surface enumerated and the floor-test cited as the import-allowlist enforcer.
+- **`src/ember/__init__.py`** module docstring updated to reflect Phase 2 complete.
+- **Ruff clean.** No mypy run this session (mypy not installed on the travel laptop; strict mypy check belongs in CI per `pyproject.toml`).
+
+### What's next
+
+- **Phase 3 of the first slice** per `EMBER_FIRST_SLICE_PLAN.md` §3: the `sqlite_vec` Brunnr adapter, the `local_files` Smiðja, the chunker, the embed client, the resumable journal. First end-to-end vertical that actually writes embeddings to disk. Tests: write-then-query round trip, journal resume, chunk-size invariants.
+- **Light root edits** still pending: Ember-descent rows in `ORIGINS.md`; check root `PHILOSOPHY.md` for Runa-specific phrasings.
+
+### Notes
+
+- Stdlib `dataclasses` chosen over `pydantic` for Phase 2 to honour the Vow of Smallness. The cost is no runtime validation beyond the type system — but Phase 2 has no validation responsibility anyway (the loader's Phase 6). Easy to swap to `pydantic` per-module later if needed; the `__all__` exports are the public surface.
+- `tuple[float, ...]` is the right embedding type for a frozen dataclass; `list[float]` would be a mutable field on a "frozen" container. Phase 3's Brunnr adapter is where the practical perf trade against `numpy.ndarray` becomes worth re-evaluating.
+- `StrEnum` (Python 3.11+) replaces the older `class X(str, Enum)` pattern across all five modules. The values are still plain strings, comparison and serialisation behaviour are unchanged.
+- The schema test for non-sibling-imports walks every module's exported attribute and refuses any `__module__` that starts with `ember.well`, `ember.thread`, `ember.spark`, or `ember.cli`. If the floor is breached in a future phase, the test will name the breach.
+
+---
+
 ## 2026-05-21 — Six True Names formally ratified. EMBER_TRUE_NAMES.md added.
 
 **Who:** Claude (Opus 4.7, 1M context) continuing the same session. Voice: Skald (Sigrún Ljósbrá) for the new doc; Scribe (Eirwyn Rúnblóm) for this entry.
