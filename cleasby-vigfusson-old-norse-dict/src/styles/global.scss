@@ -1,0 +1,20 @@
+@import '~reset-css';
+@import 'variables';
+@import 'typography';
+@import 'containers';
+@import 'buttons';
+
+body,
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.blue {
+  color: $color-blue;
+}

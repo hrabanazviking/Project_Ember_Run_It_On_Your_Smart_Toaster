@@ -1,0 +1,427 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WordDefinition component Matches snapshot (older spelling variant) 1`] = `
+<article
+  className="section"
+>
+  <header>
+    <h1
+      lang="non"
+    >
+      Ör-væna
+    </h1>
+    <small
+      className="subHeading"
+    >
+      Old Norse Dictionary - 
+      ör-væna
+    </small>
+    <p>
+      Meaning of Old Norse word 
+      <em>
+        "
+        ör-væna
+        "
+      </em>
+       (or 
+      <em>
+        ǫr-væna
+      </em>
+      )
+       in English.
+    </p>
+  </header>
+  <p>
+    As defined by the Cleasby & Vigfusson Old Norse to English dictionary:
+  </p>
+  <dl
+    className="definitionList"
+  >
+    <dt>
+      <strong>
+        ör-væna
+      </strong>
+       
+      (
+      ǫr-væna
+      )
+    </dt>
+    <dd
+      className="itemDescription"
+      dangerouslySetInnerHTML={
+        {
+          "__html": "u, <abbr title="feminine.">f.</abbr> anything beyond hope; mér er Sveins á engri stundu örvæna, no hour at which I may not expect Sweyn, Ork<abbr title="neuter.">n.</abbr> 412 (örvænt, v. l.); margir menn mæla, at eigi sé örvæna at ek koma þar, that it is not past hope, that …, it may well be that …, Ld. 204.",
+        }
+      }
+    />
+  </dl>
+  <p>
+    <strong>
+      Orthography: 
+    </strong>
+    The Cleasby & Vigfusson book used letter 
+    <em>
+      ö 
+    </em>
+    to represent the original Old Norse vowel 
+    <em>
+      ǫ
+    </em>
+    . Therefore, 
+    <em>
+      ör-væna
+    </em>
+     may be more accurately written as 
+    <em>
+      ǫr-væna
+    </em>
+    .
+  </p>
+  <p>
+    Possible runic inscription in 
+    <em>
+      Younger Futhark
+    </em>
+    :
+    <span
+      className="rune"
+    >
+      ᚢᚱ-ᚢᛅᚾᛅ
+    </span>
+    <br />
+    <small>
+      Younger Futhark runes were used from 8th to 12th centuries in Scandinavia and their overseas settlements
+    </small>
+  </p>
+  <div
+    className="abbreviations"
+  >
+    <div
+      className="column"
+    >
+      <h4>
+        Abbreviations used:
+      </h4>
+      <dl
+        className="wrap"
+      >
+        <dt
+          className="abbreviation"
+        >
+          <strong>
+            f.
+          </strong>
+        </dt>
+        <dd
+          className="explanation"
+        >
+          feminine.
+        </dd>
+      </dl>
+      <dl
+        className="wrap"
+      >
+        <dt
+          className="abbreviation"
+        >
+          <strong>
+            n.
+          </strong>
+        </dt>
+        <dd
+          className="explanation"
+        >
+          neuter.
+        </dd>
+      </dl>
+    </div>
+    <div
+      className="column"
+    >
+      <h4>
+        Works & Authors cited:
+      </h4>
+      <dl
+        className="wrap"
+      >
+        <dt
+          className="abbreviation"
+        >
+          <strong>
+            Björn
+          </strong>
+        </dt>
+        <dd
+          className="explanation"
+        >
+          Biörn Halldórsson.
+        </dd>
+      </dl>
+    </div>
+    <a
+      className="link"
+      href="/source-list"
+      onClick={[Function]}
+      onMouseEnter={[Function]}
+      onTouchStart={[Function]}
+    >
+      ➞ See all works cited in the dictionary
+    </a>
+  </div>
+  <br />
+  <h4>
+    Also available in related dictionaries:
+  </h4>
+  <p>
+    This headword also appears in dictionaries of other languages descending from Old Norse.
+  </p>
+  <ul
+    className="list"
+  >
+    <li
+      className="listItem"
+    >
+      <a
+        href="https://old-icelandic.vercel.app/word/fadir"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Old Icelandic - Geir Zoëga's Dictionary
+      </a>
+    </li>
+    <li
+      className="listItem"
+    >
+      <a
+        href="https://old-norwegian-dictionary.vercel.app/word/fadir"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Old Norwegian - Johan Fritzner's Dictionary
+      </a>
+    </li>
+    <li
+      className="listItem"
+    >
+      <a
+        href="https://old-swedish-dictionary.vercel.app/word/fadhir"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Old Swedish - K.F Söderwall's Dictionary
+      </a>
+    </li>
+  </ul>
+</article>
+`;
+
+exports[`WordDefinition component Matches snapshot 1`] = `
+<article
+  className="section"
+>
+  <header>
+    <h1
+      lang="non"
+    >
+      Af-burðr
+    </h1>
+    <small
+      className="subHeading"
+    >
+      Old Norse Dictionary - 
+      af-burðr
+    </small>
+    <p>
+      Meaning of Old Norse word 
+      <em>
+        "
+        af-burðr
+        "
+      </em>
+       in English.
+    </p>
+  </header>
+  <p>
+    As defined by the Cleasby & Vigfusson Old Norse to English dictionary:
+  </p>
+  <p>
+    <dfn
+      className="capitalize"
+    >
+      af-burðr
+    </dfn>
+     Old Norse word can mean:
+  </p>
+  <dl
+    className="definitionList"
+  >
+    <dt>
+      <strong>
+        af-burðr
+      </strong>
+       
+    </dt>
+    <dd
+      className="itemDescription"
+      dangerouslySetInnerHTML={
+        {
+          "__html": "m. (also spelt abb-), <i>odds, balance, bias, success</i> (cp. bera af, <i>to prevail</i>); kvað honum eigi annat vænna til afburðar, <i>in order to get the better of it,</i> Sd. 166; sá hann at engi varð afburðrinn, <i>they fought ‘aequo Marte,’</i> Sturl. ii. 74; hann ætlaði sér afburð, <i>he meant to keep the odds in his own hand,</i> Ísl. ii. 450; skal nú faraí haustvíking, ok vilda ek, at hon yrði eigi með minnum afburðum, <i>less glorious,</i> Ork<abbr title="neuter.">n.</abbr> 464.",
+        }
+      }
+    />
+  </dl>
+  <dl
+    className="definitionList"
+  >
+    <dt>
+      <strong>
+        af-burðr
+      </strong>
+       
+    </dt>
+    <dd
+      className="itemDescription"
+      dangerouslySetInnerHTML={
+        {
+          "__html": "<strong>II.</strong> ge<abbr title="neuter.">n.</abbr> sing. and pl. <strong>afburðar-, a-,</strong> freq. used as a prefix in some COMPDS with the notion of <i>gloriously, with distinction.</i> <strong>afburðar-digr,</strong> adj. <i>very thick</i>, biðr. 24. <strong>afburða-fræknligr,</strong> adj. <i>very gallant,</i> Ísl. ii. 369. <strong>afburðar-járn,</strong> <abbr title="neuter.">n.</abbr> <i>excellent iron,</i> Fms. x. 173. <strong>afburðar-maðr,</strong> m. <i>a man of mark,</i> Rb. 316, Ork<abbr title="neuter.">n.</abbr> 474, Grett. 133, Finnb. 318. <strong>afburðar-mikill,</strong> adj. <i>conspicuous,</i> Fms. v. 181. <strong>afburðar-skip,</strong> <abbr title="neuter.">n.</abbr> <i>a fine ship,</i> Fas. iii. 106. <strong>afburðar-vel,</strong> adv. <i>very well</i>, Hkr. ii. 265, Fms. ix. 515. <strong>afburðar-vænn,</strong> adj. <i>very fine,</i> Fas. i. 182.",
+        }
+      }
+    />
+  </dl>
+  <p>
+    Possible runic inscription in 
+    <em>
+      Younger Futhark
+    </em>
+    :
+    <span
+      className="rune"
+    >
+      ᛅᚠ-ᛒᚢᚱᚦᚱ
+    </span>
+    <br />
+    <small>
+      Younger Futhark runes were used from 8th to 12th centuries in Scandinavia and their overseas settlements
+    </small>
+  </p>
+  <div
+    className="abbreviations"
+  >
+    <div
+      className="column"
+    >
+      <h4>
+        Abbreviations used:
+      </h4>
+      <dl
+        className="wrap"
+      >
+        <dt
+          className="abbreviation"
+        >
+          <strong>
+            f.
+          </strong>
+        </dt>
+        <dd
+          className="explanation"
+        >
+          feminine.
+        </dd>
+      </dl>
+      <dl
+        className="wrap"
+      >
+        <dt
+          className="abbreviation"
+        >
+          <strong>
+            n.
+          </strong>
+        </dt>
+        <dd
+          className="explanation"
+        >
+          neuter.
+        </dd>
+      </dl>
+    </div>
+    <div
+      className="column"
+    >
+      <h4>
+        Works & Authors cited:
+      </h4>
+      <dl
+        className="wrap"
+      >
+        <dt
+          className="abbreviation"
+        >
+          <strong>
+            Björn
+          </strong>
+        </dt>
+        <dd
+          className="explanation"
+        >
+          Biörn Halldórsson.
+        </dd>
+      </dl>
+    </div>
+    <a
+      className="link"
+      href="/source-list"
+      onClick={[Function]}
+      onMouseEnter={[Function]}
+      onTouchStart={[Function]}
+    >
+      ➞ See all works cited in the dictionary
+    </a>
+  </div>
+  <br />
+  <h4>
+    Also available in related dictionaries:
+  </h4>
+  <p>
+    This headword also appears in dictionaries of other languages descending from Old Norse.
+  </p>
+  <ul
+    className="list"
+  >
+    <li
+      className="listItem"
+    >
+      <a
+        href="https://old-icelandic.vercel.app/word/fadir"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Old Icelandic - Geir Zoëga's Dictionary
+      </a>
+    </li>
+    <li
+      className="listItem"
+    >
+      <a
+        href="https://old-norwegian-dictionary.vercel.app/word/fadir"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Old Norwegian - Johan Fritzner's Dictionary
+      </a>
+    </li>
+    <li
+      className="listItem"
+    >
+      <a
+        href="https://old-swedish-dictionary.vercel.app/word/fadhir"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Old Swedish - K.F Söderwall's Dictionary
+      </a>
+    </li>
+  </ul>
+</article>
+`;
