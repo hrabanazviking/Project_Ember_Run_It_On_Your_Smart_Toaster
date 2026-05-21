@@ -43,7 +43,8 @@ def test_subpackage_imports_cleanly(module_name: str) -> None:
 
 def test_ember_package_exposes_version() -> None:
     assert isinstance(ember.__version__, str)
-    assert ember.__version__ == "0.0.0"
+    # First-slice ratification bumped from 0.0.0 to 0.1.0.
+    assert ember.__version__ == "0.1.0"
 
 
 def test_main_module_defines_main_function() -> None:

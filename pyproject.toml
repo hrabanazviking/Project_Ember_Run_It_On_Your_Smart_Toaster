@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ember-agent"
-version = "0.0.0"
+version = "0.1.0"
 description = "Ember — a small, tethered, runs-anywhere AI companion. See docs/SYSTEM_VISION.md."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,7 +24,7 @@ keywords = [
     "raspberry-pi",
 ]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",

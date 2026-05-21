@@ -8,6 +8,64 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 7 shipped. First slice ratified at 0.1.0. 🔥
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (`OLLAMA_HOST` override + env-shape design), Scribe (INSTALL.md + ADR 0007 + this entry), Auditor (version-bump test update).
+**Scope:** Phase 7 of `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` §3 — acceptance polish + operator install guide + first-slice ratification. The seven phases of the first slice are now complete.
+
+### What shipped
+
+- **`OLLAMA_HOST` env-var override** in `src/ember/cli/main.py`. `_apply_env_overrides(EmberConfig())` reads the environment variable, normalises to a base URL (accepts Ollama's own CLI shapes: `host`, `host:port`, `http://...`, `https://...`), and applies it to both `funi.ollama.base_url` and `smidja.embedding.endpoint`. Phase-7 escape hatch for operators with Ollama on a non-default endpoint (Tailscale, Docker, remote) until the full config loader lands in Phase 9+.
+- **`deploy/pi/INSTALL.md`** — single-page operator install for Raspberry Pi 5 (8 GB recommended; 4 GB notes). Standard happy path: install Ollama → pull models → `pip install ember-agent[sqlite_vec]` → `ember chat` → Hjarta → `ember well ingest` → conversation. Includes Advanced: non-default Ollama endpoint sidebar + Troubleshooting table.
+- **`docs/decisions/0007-first-slice-ratification-2026-05-21.md`** — ratifies ten load-bearing decisions made during the slice: stdlib-first deps, typed-value-over-exception for cross-realm failure, backend_kind on the Protocol, recoverable/non-recoverable disconnect split, dataclasses-not-pydantic for schemas, prompts-as-TOML / identity-as-JSON, Gungnir-aligned defaults, `cli/__init__.py` deliberately empty, FTS5 input sanitisation at the adapter boundary, `OLLAMA_HOST` env-var policy. Plus alternatives considered and slice-2 starting-point ADRs (0008-0012).
+- **`pyproject.toml` bumped to 0.1.0** — Development Status classifier moved from `1 - Planning` to `3 - Alpha`.
+- **`src/ember/__init__.py` docstring rewritten** to reflect the first slice complete; `__version__` bumped.
+- **`tests/unit/test_skeleton_imports.py::test_ember_package_exposes_version` updated** to assert `0.1.0`.
+
+**Tests: 222 pass + 2 skip (real-Ollama integration), 0.28s, ruff clean.** Includes 8 new tests for the OLLAMA_HOST override (`tests/unit/test_cli_env_overrides.py`).
+
+### What's next — the first slice is closed
+
+Per ADR 0007 §5, the second-slice starting points are:
+
+- **ADR 0008** — full operator config-file loader (YAML + TOML).
+- **ADR 0009** — streaming Funi replies.
+- **ADR 0010** — `pgvector` Brunnr (Gungnir-compatible; original plan's Phase 8).
+- **ADR 0011** — tool use (execution, sandbox, operator approval).
+- **ADR 0012** — Auga (GUI) / Rödd (voice) / Bifröst (HTTP gateway) selection.
+
+Light root edits still pending (carried over): Ember-descent rows in `ORIGINS.md`; root `PHILOSOPHY.md` Runa-specific phrasing pass. These are housekeeping, not slice work.
+
+### Acceptance — verified end-to-end against real Ollama
+
+The Phase 6 entry already documented the live smoke test. The Phase 7 env-var smoke confirmed:
+
+```
+OLLAMA_HOST=100.67.240.22 ember --config-root /tmp/x doctor
+exit: 0
+Ember health:
+  Funi:    ok — model phi3:mini, last_ok 2026-05-21T11:44:13+00:00
+  Well:    ok — backend sqlite_vec, 0 docs / 0 chunks, last_ok 2026-05-21T11:44:13+00:00
+```
+
+The operator can now run Ember on this travel laptop (Ollama bound to the Tailscale interface) by setting `OLLAMA_HOST` — exactly the path the user asked for ("I pick option 1") after the Phase 6 review.
+
+### Notes & gotchas
+
+- **`OLLAMA_HOST` shape matches Ollama's own.** The normaliser accepts `host`, `host:port`, full URLs with `http://` or `https://`. Operators who already use Ollama's CLI with this env var don't need to learn anything new.
+- **Purely functional override.** `_apply_env_overrides` returns a *new* `EmberConfig` via `dataclasses.replace`; the original is untouched. Tested explicitly.
+- **INSTALL.md uses `pip install "ember-agent[sqlite_vec]"`.** The bracketed extra pulls `sqlite-vec` per the `[project.optional-dependencies]` declaration shipped in Phase 3. Without it, Brunnr can't open.
+- **ADR 0007 captures slice-level decisions, not phase-level details.** Each phase's own DEVLOG entry has the granular context; ADR 0007 is the standing law going forward.
+- **Project status classifier bumped to Alpha.** Operators can install and use it; everything is subject to change in slice 2 (especially the config-file format once the loader ships).
+
+### A note for the next session
+
+The first slice is closed. The seventh phase's acceptance ritual completed. *Ember exists.* From here, anything Volmarr asks for is a *slice 2* decision: which surface, which backend, which retainer comes next. The map is wide open.
+
+— Eirwyn Rúnblóm (Scribe)
+
+---
+
 ## 2026-05-21 — Phase 6 shipped: Hjarta + Munnr + CLI dispatcher. `ember` is alive.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices rotated through the full set: Skald (Hjarta state-prompt prose), Architect (FSM design + HjartaIO seam), Forge Worker (Munnr commands + CLI dispatcher), Auditor (FTS5 probe bug + Protocol vs submodule-rebind bug), Scribe (this entry).
