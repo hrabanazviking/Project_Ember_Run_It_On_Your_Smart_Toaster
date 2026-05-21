@@ -312,6 +312,12 @@ def _maybe_init_tools(  # noqa: PLR0913 — wires together the optional Phase-16
     if brunnr is not None:
         _search_well.bind_brunnr(brunnr, embedder=embedder)
 
+    # Wire operator-config `allow_private_addresses` default into the
+    # fetch_url tool (Batch J — previously declared on ToolsConfig but
+    # never read; the per-call arg always overrides).
+    from ember.tools import fetch_url as _fetch_url  # noqa: PLC0415
+    _fetch_url.bind_allow_private_default(config.tools.allow_private_addresses)
+
     descriptors = tuple(list_tools())
     overrides = _coerce_overrides(config.tools.approval_overrides)
     _warn_unknown_override_tools(overrides, descriptors, stdout=stdout)
@@ -534,14 +540,11 @@ def _run_tool_round(
             continue
 
         # Execute. The framework boundary turns any exception into a
-        # typed-error ToolReply per ADR 0011 §2.8.
-        try:
-            reply = executor(call)
-        except Exception as exc:
-            reply = ToolReply(
-                call_id=call.call_id,
-                error=f"{type(exc).__name__}: {exc}",
-            )
+        # typed-error ToolReply per ADR 0011 §2.8. The descriptor's
+        # ``timeout_s`` is enforced via a ThreadPoolExecutor (Batch J —
+        # previously declared on the descriptor but not honoured at
+        # call time; tools could hang the REPL indefinitely).
+        reply = _execute_with_timeout(executor, call, descriptor.timeout_s)
 
         _emit_reply(stdout, reply=reply, descriptor=descriptor, outcome=outcome)
         _safe_audit(
@@ -564,6 +567,55 @@ _APPROVE_OUTCOMES = frozenset({
     ApprovalOutcome.APPROVED_THIS_CALL,
     ApprovalOutcome.APPROVED_FOR_SESSION,
 })
+
+
+def _execute_with_timeout(
+    executor, call: ToolCall, timeout_s: float,
+) -> ToolReply:
+    """Run a tool executor under a per-descriptor timeout.
+
+    Cross-platform: uses ``concurrent.futures.ThreadPoolExecutor`` so
+    the timeout works on POSIX + macOS + Windows (``signal.alarm`` is
+    POSIX-only). Python threads can't actually be killed, so a runaway
+    tool keeps consuming CPU until it returns — but the REPL is
+    unblocked and the operator gets a typed timeout reply.
+
+    Any exception inside the executor is caught and turned into a
+    typed :class:`ToolReply` per ADR-0011 §2.8 — the framework boundary
+    never raises across into the chat loop.
+    """
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+    from concurrent.futures import TimeoutError as _FutTimeout  # noqa: PLC0415
+
+    # NB: deliberately NOT using `with ThreadPoolExecutor(...) as pool`
+    # here — the context manager's __exit__ calls shutdown(wait=True),
+    # which would block the REPL until the runaway worker finishes,
+    # defeating the timeout. We shutdown manually with wait=False so
+    # the REPL is unblocked the moment the timeout fires. The worker
+    # thread keeps running until the executor returns (Python threads
+    # can't be killed cooperatively); that's documented in the
+    # operator-facing error string.
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ember-tool")
+    try:
+        future = pool.submit(executor, call)
+        try:
+            return future.result(timeout=timeout_s)
+        except _FutTimeout:
+            future.cancel()
+            return ToolReply(
+                call_id=call.call_id,
+                error=(
+                    f"tool exceeded its declared timeout of {timeout_s}s; "
+                    f"the work may still be running in the background"
+                ),
+            )
+        except Exception as exc:
+            return ToolReply(
+                call_id=call.call_id,
+                error=f"{type(exc).__name__}: {exc}",
+            )
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 def _safe_audit(

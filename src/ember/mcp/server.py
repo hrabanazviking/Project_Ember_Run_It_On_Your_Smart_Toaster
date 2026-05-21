@@ -23,6 +23,7 @@ this via its built-in logger).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 from typing import TYPE_CHECKING, Any
@@ -143,7 +144,14 @@ def _register_tools(
         ),
     )
     def doctor() -> dict[str, Any]:
-        # Lightweight: only probe what we already hold.
+        """Cross-realm health snapshot.
+
+        Brunnr is probed via the live handle the MCP server was opened
+        with. Funi is probed by opening a one-shot handle, calling
+        ``health()``, and closing — this matches what ``ember doctor``
+        does on the CLI (Batch J — previously the MCP doctor stubbed
+        Funi to ``None``; now it's real).
+        """
         result: dict[str, Any] = {"realms": {}}
         if brunnr is None:
             result["realms"]["brunnr"] = {"ok": False, "detail": "disconnected"}
@@ -157,9 +165,7 @@ def _register_tools(
                 }
             except Exception as exc:
                 result["realms"]["brunnr"] = {"ok": False, "detail": str(exc)}
-        # Funi probe deferred — would need to open a Funi handle here.
-        # For V1, we report it as "unprobed" rather than block startup.
-        result["realms"]["funi"] = {"ok": None, "detail": "not probed in MCP doctor"}
+        result["realms"]["funi"] = _probe_funi(config)
         return result
 
     # Note: `recent_episodes` was scoped for V1 but BrunnrHandle currently
@@ -200,6 +206,40 @@ def _register_resources(
             return json.dumps({"error": str(exc)})
 
     # Episode resource deferred to V2 (see note on recent_episodes tool).
+
+
+def _probe_funi(config: EmberConfig) -> dict[str, Any]:
+    """Open a one-shot Funi handle, call ``health()``, close.
+
+    Mirrors what ``ember doctor`` does. Returns a dict matching the
+    schema used by the other realms in the doctor response so MCP
+    clients can rely on a consistent shape.
+    """
+    try:
+        from ember.spark.funi import open as funi_open  # noqa: PLC0415
+    except ImportError as exc:
+        return {"ok": False, "detail": f"funi open import failed: {exc}"}
+    handle_or_unavailable = funi_open(config.funi)
+    if not hasattr(handle_or_unavailable, "health"):
+        return {
+            "ok": False,
+            "detail": getattr(
+                handle_or_unavailable, "detail", str(handle_or_unavailable),
+            ),
+        }
+    handle = handle_or_unavailable
+    try:
+        health = handle.health()
+    except Exception as exc:
+        return {"ok": False, "detail": f"health() raised: {exc}"}
+    finally:
+        with contextlib.suppress(Exception):
+            handle.close()
+    return {
+        "ok": bool(getattr(health, "ok", False)),
+        "model_id": getattr(health, "model_id", None),
+        "detail": getattr(health, "detail", None),
+    }
 
 
 def run_stdio(*, config: EmberConfig, brunnr: BrunnrHandle | None) -> None:

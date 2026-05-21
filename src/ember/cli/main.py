@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
+from ember import logging as ember_logging
 from ember.config import load_ember_config
 from ember.schemas.errors import ConfigError
 from ember.spark.hjarta import has_identity
@@ -134,6 +135,10 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
         return 1
 
     config = _apply_tool_overrides(config, args)
+
+    # Wire up logging from config (Batch J — previously LoggingConfig
+    # was declared in the schema but no code read it).
+    ember_logging.configure_from(config.logging)
 
     # First-launch redirect: any subcommand that needs the operator's
     # identity launches Hjarta first if it hasn't been written yet.

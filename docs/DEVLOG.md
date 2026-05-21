@@ -8,6 +8,65 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Batch J — stub-to-real implementation pass (no version bump).
+
+**Who:** Claude (Opus 4.7, 1M context). User: *"use all 6 of the Mythic Engineering subagents to look at all the code for any fake, temp, or stab code, and replace them all with real code."*
+
+**Method:** Sweep #7. Cartographer ran the literal grep for stub markers (TODO, FIXME, NotImplementedError, "stub", "placeholder", "dummy", "fake", "mock", "deferred", "for now") across `src/`. Three parallel Auditors lensed for **stub-logic in functions**, **hardcoded-fake values in production code**, and **incomplete implementations**. Architect (me) triaged; Forge (me) shipped fixes; Scribe (me) wrote this entry.
+
+**The triage was honest:** two of three Auditor lenses returned **zero findings**. The stub-logic auditor checked every candidate (Protocols, sentinels, deferred features) and verified all were legitimate. The hardcoded-fakes auditor found zero — no test IDs / dummy URLs / planted credentials in `src/`. The incomplete-impls auditor found the **four real gaps below**.
+
+### What was genuinely half-shipped (and now isn't)
+
+| Surface | Before | After |
+|---|---|---|
+| **`LoggingConfig`** | `LoggingConfig.level / format / destinations` declared in `schemas/config.py` since slice 1; **no code read it**. Operators setting `logging.level: DEBUG` got nothing. | New `src/ember/logging.py` with `configure_from(cfg)` — idempotent root-logger setup honouring level + format (PLAIN single-line vs STRUCTURED JSON-per-line) + destinations (stderr / stdout / file with optional rotation). Wired into `cli/main.py` immediately after config load. Stdlib-only (Vow of Smallness — no structlog / loguru). |
+| **`ToolDescriptor.timeout_s`** | Declared on every descriptor since Phase 14; bridge translated it for MCP; **never enforced at execution time**. A runaway tool could lock the chat REPL until Ctrl-C. | New `_execute_with_timeout()` in `chat.py`: runs each tool in a one-shot `ThreadPoolExecutor` worker with `future.result(timeout=descriptor.timeout_s)`. On overrun → typed `ToolReply` with `error="tool exceeded its declared timeout"`. **Critically**: manual `pool.shutdown(wait=False, cancel_futures=True)` instead of `with` — the context-manager exit would block on the runaway worker, defeating the whole point. The worker thread keeps running until the executor returns (Python threads can't be killed cooperatively); the operator-facing error documents this. |
+| **`ToolsConfig.allow_private_addresses`** | Declared in the schema; per-call arg in `fetch_url` honoured it; **the operator-config default was never read**. Operator setting it to true in `ember.yaml` had no effect unless the model also passed it explicitly. | New `bind_allow_private_default(value)` setter on `fetch_url.py`; chat.py's `_maybe_init_tools()` now wires `config.tools.allow_private_addresses` into the tool at startup. Per-call arg still wins; absent arg now falls back to operator policy. |
+| **MCP doctor's Funi probe** | Returned a stub `{"ok": None, "detail": "not probed in MCP doctor"}`. | New `_probe_funi(config)` opens a one-shot Funi handle, calls `health()`, closes — mirrors what `ember doctor` does on the CLI. Returns real `ok` bool + `model_id` or `detail`. |
+| **`sqlite_vec` adapter `check_same_thread`** | Default `True` blocked the new tool-timeout `ThreadPoolExecutor` from calling `search_well` (worker thread can't reuse main-thread sqlite connection). | Passed `check_same_thread=False`. SQLite itself is thread-safe in its default serialized mode (SQLITE_THREADSAFE=1); only Python's wrapper enforced same-thread, and the timeout pattern guarantees one-thread-at-a-time access by design (main thread blocks on `future.result()` while the worker holds the connection). Comment in the adapter explains the safety reasoning. |
+| Cosmetic | Dead `if TYPE_CHECKING: pass` block + unused `TYPE_CHECKING` import in `sqlite_vec/adapter.py`. | Removed. |
+
+### Verified-clean: things that LOOK like stubs but aren't
+
+The Auditors checked these and confirmed each is legitimate, not a stub:
+
+- **`approval.py:202` `ApprovalOutcome.APPROVED_THIS_CALL,  # placeholder — set after prompt`** — the `outcome` field is paired with `needs_prompt=True`; the caller at `chat.py:509-511` checks `needs_prompt` first and replaces the outcome via `resolve_with_answer(answer)`. The sentinel value is never used directly. Comment is slightly misleading but the contract is correct.
+- **`mcp/server.py` `recent_episodes` deferral** — ADR-0014 explicitly documents this as V2 scope (depends on BrunnrHandle gaining a reader API). Not a stub; a phase-gate.
+- **`fetch_url._URL_OPENER / _ADDRESS_RESOLVER / _ROBOTS_FETCHER`** — test-injection seams with documented purpose. Defaults to None (real implementation runs); tests inject fakes.
+- **`fetch_url` test-seam comments and `ask.py`'s `fake_stdin = io.StringIO(text)`** — legitimate StringIO-as-stdin for one-shot queries.
+- **`BrunnrHandle` / `FuniHandle` Protocol bodies (`...`)** — Protocols ARE supposed to have empty bodies.
+- **`handle.py` `"backend not implemented"` error paths** — real error handling for enum values without registered adapters; not stubs.
+- **Hardcoded default URLs (`http://localhost:11434`)** — operator-overridable per ADR-0008 overlay system; the env-var `OLLAMA_HOST` + `ember.yaml` paths overlay on top. Documented as the local-development default.
+
+### Deferred (not Batch J scope)
+
+- **Unimplemented `BrunnrBackend` enum values** (QDRANT / CHROMA / LANCEDB) and **`FuniRuntime`** values (LLAMACPP / LMSTUDIO / PHI_SILICA / APPLE_FOUNDATION). These are *adapter-not-yet-shipped*, not stubs. Operators selecting them get a typed `Disconnected(reason=CONFIG_INVALID, detail="backend not implemented")` at open time — clear, typed, not a crash. Adding config-time validation that refuses them at load time is a slice-3 question.
+- **MCP `recent_episodes` tool + resource** — needs `BrunnrHandle.recent_episodes()` reader API first.
+- **Episode resource over MCP** — same reason.
+
+### Tests (+11 new in `tests/unit/test_hardening_batch_j.py`)
+
+- 4 tests pinning logging behaviour: root-level level honoured; idempotent re-configure; file destination writes UTF-8; structured format emits parseable JSON.
+- 3 tests for tool-timeout enforcement: overrun returns typed reply in <1s (not 2s); fast tool returns real reply; executor exception still typed-reply.
+- 2 tests for `bind_allow_private_default` semantics + default reset.
+- 1 test for MCP doctor's real Funi probe.
+- 1 test for `sqlite_vec` cross-thread connection (proves the `check_same_thread=False` fix actually enables the timeout wrapper).
+
+### Stats
+
+- **Before:** 592 pass + 2 skip, ruff clean.
+- **After:** **603 pass + 2 skip**, ruff clean. **+11 regression tests.**
+- **Files created:** `src/ember/logging.py`, `tests/unit/test_hardening_batch_j.py`.
+- **Files modified:** `src/ember/cli/main.py` (logging wire-up), `src/ember/spark/munnr/chat.py` (timeout helper + fetch_url binding), `src/ember/tools/fetch_url.py` (bind_allow_private_default), `src/ember/mcp/server.py` (real Funi probe), `src/ember/well/brunnr/sqlite_vec/adapter.py` (check_same_thread + dead-code removal), `tests/unit/test_mcp_server.py` (updated to assert real probe shape).
+- **No version bump.** Hygiene pass on top of Batch I.
+
+### Closing word
+
+When auditors say "this code is mostly clean" and they're right, the right response is to ship the genuinely-real things that were *almost* shipped and stop. The four fixes here turn four schema/descriptor declarations from aspirational into operational. Operators who set `logging.level: DEBUG` now get debug logs. Tools that hang past their `timeout_s` no longer hang the REPL. `allow_private_addresses: true` actually flips the default. The MCP doctor actually probes Funi. The system's promises now match its behaviour, across the surfaces that audit-#7 examined.
+
+---
+
 ## 2026-05-21 — Batch I — Bidirectional MCP integration (ADR-0014, Phase 18).
 
 **Who:** Claude (Opus 4.7, 1M context). User: *"give it robust and advanced mcp, buddy."* Scoped via single AskUserQuestion → chose "Client + Server, both today."

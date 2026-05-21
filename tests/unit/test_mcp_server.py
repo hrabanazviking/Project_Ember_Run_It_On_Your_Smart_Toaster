@@ -133,8 +133,12 @@ def test_doctor_tool_returns_realm_health() -> None:
     out = tool.fn()
     assert out["realms"]["brunnr"]["ok"] is True
     assert out["realms"]["brunnr"]["documents"] == 5
-    # Funi probe deferred in V1 — reports None.
-    assert out["realms"]["funi"]["ok"] is None
+    # Batch J: Funi is now really probed (was previously stubbed to
+    # None). In the unit-test environment there's typically no live
+    # Ollama, so it reports ok=False with a detail string. If the host
+    # happens to run Ollama, it reports ok=True with a model_id.
+    # Either way `ok` is a bool now, not the previous stubbed None.
+    assert isinstance(out["realms"]["funi"]["ok"], bool)
 
 
 def test_doctor_tool_reports_brunnr_disconnected_gracefully() -> None:

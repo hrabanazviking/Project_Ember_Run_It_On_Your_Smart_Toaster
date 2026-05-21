@@ -59,6 +59,14 @@ _URL_OPENER = None
 _ADDRESS_RESOLVER = None  # tests inject a fake host→ip resolver
 _ROBOTS_FETCHER = None    # tests inject a fake robots.txt parser
 
+# Operator-set default for the ``allow_private_addresses`` arg. When a
+# tool call doesn't pass the arg explicitly, fall back to this. Wired by
+# ``bind_allow_private_default()`` from the tool-context constructor in
+# chat.py once the EmberConfig is loaded (Batch J — previously
+# `config.tools.allow_private_addresses` was declared in the schema but
+# nothing read it).
+_ALLOW_PRIVATE_DEFAULT = False
+
 _DESCRIPTOR = ToolDescriptor(
     name=_NAME,
     description=(
@@ -111,10 +119,23 @@ def _set_robots_fetcher(fn) -> None:
 
 def _reset_seams() -> None:
     """Test-only teardown helper."""
-    global _URL_OPENER, _ADDRESS_RESOLVER, _ROBOTS_FETCHER  # noqa: PLW0603
+    global _URL_OPENER, _ADDRESS_RESOLVER, _ROBOTS_FETCHER, _ALLOW_PRIVATE_DEFAULT  # noqa: PLW0603
     _URL_OPENER = None
     _ADDRESS_RESOLVER = None
     _ROBOTS_FETCHER = None
+    _ALLOW_PRIVATE_DEFAULT = False
+
+
+def bind_allow_private_default(value: bool) -> None:
+    """Set the operator-config default for ``allow_private_addresses``.
+
+    Wired from the chat-loop's tool-context constructor when
+    ``config.tools.allow_private_addresses`` is true. The per-call arg
+    still wins if the LLM explicitly passes ``allow_private_addresses=true``,
+    but when it's absent we now respect the operator's standing policy.
+    """
+    global _ALLOW_PRIVATE_DEFAULT  # noqa: PLW0603 — host-wiring seam
+    _ALLOW_PRIVATE_DEFAULT = bool(value)
 
 
 # --------------------------------------------------------------------- #
@@ -125,7 +146,10 @@ def _reset_seams() -> None:
 def _execute(call: ToolCall) -> ToolReply:  # noqa: PLR0911 — each refusal is one clear early-return
     started = time.monotonic()
     raw_url = call.arguments.get("url")
-    allow_private = bool(call.arguments.get("allow_private_addresses", False))
+    # Per-call arg wins; otherwise fall back to operator-config default.
+    allow_private = bool(
+        call.arguments.get("allow_private_addresses", _ALLOW_PRIVATE_DEFAULT)
+    )
 
     if not isinstance(raw_url, str) or not raw_url:
         return _error(call, "fetch_url: 'url' must be a non-empty string", started)

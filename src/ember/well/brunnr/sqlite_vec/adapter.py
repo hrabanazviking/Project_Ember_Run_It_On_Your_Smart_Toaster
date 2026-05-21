@@ -23,7 +23,6 @@ from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
 from importlib import resources
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import sqlite_vec
 
@@ -36,10 +35,6 @@ from ember.schemas.errors import (
     DisconnectReason,
     SchemaError,
 )
-
-if TYPE_CHECKING:
-    pass
-
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +89,16 @@ class SqliteVecBrunnr:
             )
 
         try:
-            conn = sqlite3.connect(str(path))
+            # check_same_thread=False allows Ember's tool-timeout
+            # ThreadPoolExecutor wrapper to call into this connection
+            # from a one-shot worker thread (Batch J — without this,
+            # search_well in a timeout-wrapped context raises sqlite3's
+            # ProgrammingError). SQLite itself is thread-safe in its
+            # default serialized mode (SQLITE_THREADSAFE=1); only the
+            # Python wrapper enforces same-thread, and we maintain the
+            # one-thread-at-a-time invariant by virtue of the synchronous
+            # main-thread waiting on every tool's future.result().
+            conn = sqlite3.connect(str(path), check_same_thread=False)
             conn.execute("PRAGMA foreign_keys = ON")
             if config.sqlite_vec.wal_mode:
                 conn.execute("PRAGMA journal_mode = WAL")
