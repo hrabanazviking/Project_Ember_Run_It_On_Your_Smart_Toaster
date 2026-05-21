@@ -14,6 +14,10 @@ Got a toaster? Good! You could use it to run me, your very own useful AI Agent, 
 
 ---
 
+![https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/IMG_0861.jpeg](https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/IMG_0861.jpeg)
+
+---
+
 ## What is Ember?
 
 Ember is a sovereign AI companion that lives entirely on your device.
