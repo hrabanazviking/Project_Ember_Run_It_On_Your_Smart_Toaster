@@ -1,0 +1,329 @@
+[gd_scene load_steps=5 format=3 uid="uid://ckr01rwlxratn"]
+
+[ext_resource type="Script" path="res://scripts/map_tools.gd" id="1_0o8uf"]
+[ext_resource type="Texture2D" uid="uid://dig7sans2bidi" path="res://icons/select.png" id="2_n7e18"]
+[ext_resource type="ButtonGroup" uid="uid://c4u5dlx2ww4iq" path="res://resources/button_groups/measure_button_group.tres" id="2_p381y"]
+[ext_resource type="Texture2D" uid="uid://dbkauou8w7stw" path="res://icons/Timer.svg" id="4_vg5a8"]
+
+[node name="ToolBar" type="Control"]
+layout_mode = 3
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_vertical = 2
+script = ExtResource("1_0o8uf")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+offset_right = 71.0
+offset_bottom = 190.0
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+
+[node name="SnapPanelContainer" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/SnapPanelContainer"]
+layout_mode = 2
+
+[node name="SnapCheckBox" type="CheckBox" parent="MarginContainer/VBoxContainer/SnapPanelContainer/HBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+theme_override_font_sizes/font_size = 25
+text = "▦"
+
+[node name="SnapOptions" type="OptionButton" parent="MarginContainer/VBoxContainer/SnapPanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+focus_mode = 1
+
+[node name="SnapPopupPanel" type="PopupPanel" parent="MarginContainer/VBoxContainer"]
+title = "Snap Settings"
+position = Vector2i(0, 50)
+size = Vector2i(111, 104)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/SnapPopupPanel"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 108.0
+offset_bottom = 100.0
+
+[node name="SnapFractionLabel" type="Label" parent="MarginContainer/VBoxContainer/SnapPopupPanel/VBoxContainer"]
+layout_mode = 2
+text = "Snap fraction"
+
+[node name="SnapFractionOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/SnapPopupPanel/VBoxContainer"]
+layout_mode = 2
+item_count = 10
+selected = 0
+popup/item_0/text = "1/1"
+popup/item_0/id = 0
+popup/item_1/text = "1/2"
+popup/item_1/id = 1
+popup/item_2/text = "1/3"
+popup/item_2/id = 2
+popup/item_3/text = "1/4"
+popup/item_3/id = 3
+popup/item_4/text = "1/5"
+popup/item_4/id = 4
+popup/item_5/text = "1/6"
+popup/item_5/id = 5
+popup/item_6/text = "1/7"
+popup/item_6/id = 6
+popup/item_7/text = "1/8"
+popup/item_7/id = 7
+popup/item_8/text = "1/9"
+popup/item_8/id = 8
+popup/item_9/text = "1/10"
+popup/item_9/id = 9
+
+[node name="Select" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+focus_mode = 1
+mouse_filter = 1
+theme_override_constants/icon_max_width = 26
+theme_override_font_sizes/font_size = 25
+text = " "
+icon = ExtResource("2_n7e18")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Draw" type="OptionButton" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+mouse_filter = 1
+theme_override_font_sizes/font_size = 25
+alignment = 1
+item_count = 3
+selected = 0
+popup/item_0/text = "▧"
+popup/item_0/id = 0
+popup/item_1/text = "~"
+popup/item_1/id = 1
+popup/item_2/text = "○"
+popup/item_2/id = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Measure" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+focus_mode = 1
+mouse_filter = 1
+theme_override_font_sizes/font_size = 25
+text = "📏"
+
+[node name="MeasureOptions" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+focus_mode = 1
+
+[node name="MeasurePopupPanel" type="PopupPanel" parent="MarginContainer/VBoxContainer"]
+title = "Snap Settings"
+position = Vector2i(0, 190)
+size = Vector2i(165, 254)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MeasurePopupPanel"]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 161.0
+offset_bottom = 250.0
+
+[node name="MeasureLineRadio" type="CheckButton" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+layout_mode = 2
+button_pressed = true
+button_group = ExtResource("2_p381y")
+text = "Line"
+
+[node name="MeasureDiagonalLabel" type="Label" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+visible = false
+layout_mode = 2
+text = "Diagonal movement"
+
+[node name="SnapFractionOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+visible = false
+layout_mode = 2
+item_count = 3
+selected = 0
+popup/item_0/text = "5ft"
+popup/item_0/id = 0
+popup/item_1/text = "7.5ft"
+popup/item_1/id = 1
+popup/item_2/text = "10ft"
+popup/item_2/id = 2
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="MeasureCircleRadio" type="CheckButton" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+layout_mode = 2
+button_group = ExtResource("2_p381y")
+text = "Circle"
+
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="MeasureAngleRadio" type="CheckButton" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+layout_mode = 2
+button_group = ExtResource("2_p381y")
+text = "Angle"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="MeasureAngleLabel3" type="Label" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Angle "
+
+[node name="MeasureAngleLineEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(50, 30)
+layout_mode = 2
+text = "30"
+
+[node name="MeasureAngleLabel2" type="Label" parent="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "°"
+
+[node name="Text" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+focus_mode = 1
+mouse_filter = 1
+theme_override_font_sizes/font_size = 25
+text = "T"
+
+[node name="TurnOrder" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+mouse_filter = 1
+theme_override_constants/icon_max_width = 26
+theme_override_font_sizes/font_size = 25
+text = " "
+icon = ExtResource("4_vg5a8")
+icon_alignment = 1
+expand_icon = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+
+[node name="TextOptions" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 3
+
+[node name="Panel" type="PanelContainer" parent="VBoxContainer/TextOptions"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/TextOptions/Panel"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Text" type="Label" parent="VBoxContainer/TextOptions/Panel/VBoxContainer"]
+layout_mode = 2
+text = "Text"
+
+[node name="FontOptionButton" type="OptionButton" parent="VBoxContainer/TextOptions/Panel/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+item_count = 1
+selected = 0
+popup/item_0/text = "default"
+popup/item_0/id = 0
+
+[node name="FontSizeSpinBox" type="SpinBox" parent="VBoxContainer/TextOptions/Panel/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+min_value = 1.0
+value = 20.0
+allow_greater = true
+
+[node name="FontColorPickerButton" type="ColorPickerButton" parent="VBoxContainer/TextOptions/Panel/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+text = "C1"
+
+[node name="LineOptions" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 3
+
+[node name="Panel" type="PanelContainer" parent="VBoxContainer/LineOptions"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/LineOptions/Panel"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LinesLabel" type="Label" parent="VBoxContainer/LineOptions/Panel/VBoxContainer"]
+layout_mode = 2
+text = "Lines"
+
+[node name="LineSpinBox" type="SpinBox" parent="VBoxContainer/LineOptions/Panel/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+value = 10.0
+allow_greater = true
+
+[node name="LineColorPickerButton" type="ColorPickerButton" parent="VBoxContainer/LineOptions/Panel/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+text = "C1"
+
+[node name="FillLabel" type="Label" parent="VBoxContainer/LineOptions/Panel/VBoxContainer"]
+layout_mode = 2
+text = "Fill"
+
+[node name="FillColorPickerButton" type="ColorPickerButton" parent="VBoxContainer/LineOptions/Panel/VBoxContainer"]
+layout_mode = 2
+focus_mode = 1
+text = "C2"
+color = Color(1, 1, 1, 1)
+
+[connection signal="mouse_entered" from="MarginContainer" to="." method="_on_margin_container_mouse_entered"]
+[connection signal="mouse_exited" from="MarginContainer" to="." method="_on_margin_container_mouse_exited"]
+[connection signal="toggled" from="MarginContainer/VBoxContainer/SnapPanelContainer/HBoxContainer/SnapCheckBox" to="." method="_on_snap_check_box_toggled"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/SnapPanelContainer/HBoxContainer/SnapOptions" to="." method="_on_snap_options_pressed"]
+[connection signal="item_selected" from="MarginContainer/VBoxContainer/SnapPopupPanel/VBoxContainer/SnapFractionOptionButton" to="." method="_on_snap_fraction_option_button_item_selected"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/Select" to="." method="_on_select_pressed"]
+[connection signal="item_selected" from="MarginContainer/VBoxContainer/Draw" to="." method="_on_draw_item_selected"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/Draw" to="." method="_on_draw_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Measure" to="." method="_on_measure_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/MeasureOptions" to="." method="_on_measure_options_pressed"]
+[connection signal="toggled" from="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/MeasureLineRadio" to="." method="_on_measure_line_radio_toggled"]
+[connection signal="item_selected" from="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/SnapFractionOptionButton" to="." method="_on_snap_fraction_option_button_item_selected"]
+[connection signal="toggled" from="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/MeasureCircleRadio" to="." method="_on_measure_circle_radio_toggled"]
+[connection signal="toggled" from="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/MeasureAngleRadio" to="." method="_on_measure_angle_radio_toggled"]
+[connection signal="text_changed" from="MarginContainer/VBoxContainer/MeasurePopupPanel/VBoxContainer/HBoxContainer/MeasureAngleLineEdit" to="." method="_on_line_edit_text_changed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/Text" to="." method="_on_text_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/TurnOrder" to="." method="_on_turn_order_pressed"]
+[connection signal="item_selected" from="VBoxContainer/TextOptions/Panel/VBoxContainer/FontOptionButton" to="." method="_on_font_option_button_item_selected"]
+[connection signal="focus_entered" from="VBoxContainer/TextOptions/Panel/VBoxContainer/FontSizeSpinBox" to="." method="_on_spin_box_focus_entered"]
+[connection signal="value_changed" from="VBoxContainer/TextOptions/Panel/VBoxContainer/FontSizeSpinBox" to="." method="_on_font_size_spin_box_value_changed"]
+[connection signal="color_changed" from="VBoxContainer/TextOptions/Panel/VBoxContainer/FontColorPickerButton" to="." method="_on_font_color_picker_button_color_changed"]
+[connection signal="focus_entered" from="VBoxContainer/LineOptions/Panel/VBoxContainer/LineSpinBox" to="." method="_on_spin_box_focus_entered"]
+[connection signal="value_changed" from="VBoxContainer/LineOptions/Panel/VBoxContainer/LineSpinBox" to="." method="_on_line_spin_box_value_changed"]
+[connection signal="color_changed" from="VBoxContainer/LineOptions/Panel/VBoxContainer/LineColorPickerButton" to="." method="_on_line_color_picker_button_color_changed"]
+[connection signal="color_changed" from="VBoxContainer/LineOptions/Panel/VBoxContainer/FillColorPickerButton" to="." method="_on_fill_color_picker_button_color_changed"]

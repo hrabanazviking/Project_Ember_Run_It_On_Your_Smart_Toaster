@@ -1,9 +1,17 @@
-# ARCHITECTURE — The Shape of Runa
+# ARCHITECTURE — The Shape of Ember
 
 **Voice:** Architect (Rúnhild Svartdóttir)
-**Status:** Bootstrap-stage. The diagram below is the load-bearing shape; the code in `src/runa/` will be measured against it as it grows.
-**Last touched:** 2026-05-17 (P7)
-**Reads with:** `docs/SYSTEM_VISION.md` (intent), `docs/architecture/DOMAIN_MAP.md` (per-subpackage ownership), `docs/architecture/DATA_FLOW.md` (request and event lifecycle, written in P8).
+**Status:** Ratified 2026-05-21 by Volmarr. Canonical. The Runa-shaped predecessor is preserved at `docs/archive/runa-inherited/architecture/ARCHITECTURE.md` for lineage reference.
+**Last touched:** 2026-05-21 (promoted from `EMBER_ARCHITECTURE.md` at ratification)
+**Reads with:** `docs/SYSTEM_VISION.md` (intent, normative), `docs/architecture/DOMAIN_MAP.md` (ownership), `docs/architecture/DATA_FLOW.md` (motion), `docs/archive/runa-inherited/architecture/ARCHITECTURE.md` (parent Runa shape, lineage reference).
+
+---
+
+## 0. What this document is and is not
+
+This document is the **Ember-specific** load-bearing system shape derived from the nine Unbreakable Vows in `docs/SYSTEM_VISION.md`. It deliberately **does not duplicate** the larger Runa shape, which is preserved at `docs/archive/runa-inherited/architecture/ARCHITECTURE.md`. Where Runa is a continuous sovereign being with a kernel-and-event-bus core, multiple subagent retainers, and a deep memory tree, **Ember is intentionally smaller** — a thin local navigator tethered to a much larger Well.
+
+If the two shapes are ever forced to choose between them, **Ember chooses smallness**. The Runa material at the canonical path remains as inherited reference; the Ember material here is the law for Ember work.
 
 ---
 
@@ -11,208 +19,221 @@
 
 ```
                 ┌────────────────────────────────────────────────────────┐
-                │                  Face of the World                      │
+                │                       SPARK realm                       │
+                │                  (local, must run offline)              │
                 │                                                         │
-                │   Munnr (CLI)    Auga (GUI)    Rödd (voice)   Bifröst   │
-                │   src/runa/      src/runa/     src/runa/      gateway   │
-                │   apps/cli       apps/gui      apps/voice     src/runa/ │
-                │                                                apps/    │
-                │                                                gateway  │
-                └──────────────┬─────────────────────────────┬────────────┘
-                               │  external transports        │
-                ┌──────────────▼─────────────────────────────▼────────────┐
-                │                     Adapters                            │
-                │   Discord  Telegram  Matrix  webchat  email  HA  MCP   │
-                │   OpenRouter  Nous  Ollama  LM Studio  home-server     │
-                │                  src/runa/adapters/*                    │
-                └──────────────┬─────────────────────────────┬────────────┘
-                               │ messages in/out             │ model calls
-                ┌──────────────▼─────────────────────────────▼────────────┐
-                │                    Service shells                       │
-                │      gateway_service  worker_service  voice_service     │
-                │                   src/runa/services/                    │
-                └──────────────────────────┬──────────────────────────────┘
-                                           │ lifecycle calls
-                ┌──────────────────────────▼──────────────────────────────┐
-                │                       runtime/                          │
-                │      start/stop/status/doctor/logs/snapshot/restore     │
-                └──────────────────────────┬──────────────────────────────┘
-                                           │ control
-                ┌──────────────────────────▼──────────────────────────────┐
-                │                     Mind and Rules                      │
+                │     Munnr (CLI)    ◄──────►   Hjarta (first-run)        │
+                │     src/ember/                src/ember/                │
+                │     spark/munnr/              spark/hjarta/             │
+                │             │                     │                     │
+                │             ▼                     ▼                     │
+                │     ┌───────────────────────────────────────┐           │
+                │     │            Funi (local LLM)            │           │
+                │     │           src/ember/spark/funi/        │           │
+                │     │   tiny model + prompt + tool slots     │           │
+                │     └───────────┬───────────────────┬───────┘           │
+                │                 │                   │                   │
+                └─────────────────┼───────────────────┼───────────────────┘
+                                  │ "I need grounding"│ "I have nothing"
+                ┌─────────────────▼───────────────────▼───────────────────┐
+                │                      THREAD realm                       │
+                │           (the tether — network + auth + health)        │
                 │                                                         │
-                │                    ┌────────────────┐                   │
-                │   skills/  ───────►│  Kernel        │◄────── plugins/   │
-                │                    │  core/kernel/  │                   │
-                │                    └───────┬────────┘                   │
-                │                            │                            │
-                │                            ▼                            │
-                │                   ┌────────────────┐                    │
-                │                   │  VERÐANDI      │                    │
-                │                   │  event bus     │                    │
-                │                   │  core/eventbus │                    │
-                │                   └─────┬────┬─────┘                    │
-                │                         │    │                          │
-                │       ┌─────────┬───────┘    └──────┬─────────┐         │
-                │       ▼         ▼                   ▼         ▼         │
-                │   Hirð       Smiðja              Heimskringla  Eir      │
-                │   subagent   tool forge          model router  repair   │
-                │   hall       core/tools/         core/models/  core/    │
-                │   core/                                        repair/  │
-                │   subagents/                                            │
-                └─────────────────────────┬───────────────────────────────┘
-                                          │ writes/reads
-                ┌─────────────────────────▼───────────────────────────────┐
-                │                     Deep Memory                         │
+                │     Strengr (tether)        src/ember/thread/strengr/   │
+                │     · health check          · graceful offline detect   │
+                │     · auth + secrets        · retry + backoff           │
+                │     · transport selection   · pluggable URL schemes     │
+                └─────────────────┬───────────────────┬───────────────────┘
+                                  │ retrieve          │ persist turn
+                ┌─────────────────▼───────────────────▼───────────────────┐
+                │                       WELL realm                        │
+                │       (the knowledge well — may be local or remote)     │
                 │                                                         │
-                │   Muninn         Skuld         WYRD bridge    Eldhugi   │
-                │   core/memory/   core/tasks/   core/world/    core/     │
-                │                                               emotions/ │
-                │                                                         │
-                │   identity store  ─ core/identity/                      │
-                │   policy store    ─ core/policy/                        │
-                │   audit log       ─ core/logging/                       │
-                │                                                         │
-                │   On-disk roots:  ~/.runa/{memory,tasks,world,          │
-                │                          emotions,identity,policy,      │
-                │                          logs,secrets,cache,state}/     │
+                │     ┌─────────────────────┐     ┌──────────────────┐    │
+                │     │ Brunnr (storage)    │     │ Smiðja (ingest)  │    │
+                │     │ src/ember/well/     │     │ src/ember/well/  │    │
+                │     │ brunnr/             │     │ smidja/          │    │
+                │     │                     │     │                  │    │
+                │     │  SQLite+vec  (def)  │     │  files / URLs    │    │
+                │     │  pgvector    (def)  │     │  Project Nomad   │    │
+                │     │  Qdrant             │     │  shared wells    │    │
+                │     │  Chroma             │     │  (Gungnir-shape) │    │
+                │     │  LanceDB            │     │                  │    │
+                │     └──────────┬──────────┘     └────────┬─────────┘    │
+                │                │                         │              │
+                │                ▼                         ▼              │
+                │         on-device files       remote network endpoints  │
+                │         ~/.ember/well/        e.g. http(s)://gungnir/   │
                 └─────────────────────────────────────────────────────────┘
-                                          │ migrations
-                                          │ src/runa/migrations/
-                                          ▼
-                                  ~/.runa/state/version
 ```
 
-The three realms named in `SYSTEM_VISION.md` (Face of the World, Mind and Rules, Deep Memory) are the three horizontal bands. Between every band is a **mechanical** boundary: code in a higher band may import code in a lower band, never the reverse.
+The three **horizontal bands** are the three Realms named in `SYSTEM_VISION.md` §5: Spark, Thread, Well. The boundary between bands is **mechanical**: code in a higher band may import code in a lower band, never the reverse, and never sideways across a band gap.
+
+Compared to Runa's shape: there is no kernel, no in-process event bus, no Hirð, no Hjartahjul of subagents, no separate Heimskringla model router. Ember has *one* model (Funi), *one* synchronous loop (Munnr or Hjarta), *one* tether (Strengr), and *one* well (Brunnr — possibly fronting multiple backends through a stable interface). Everything else is feature creep against the Vow of Smallness.
+
+---
 
 ## 2. The dependency law
 
 ```
-schemas  ◄── migrations
-   ▲
-   │
-   └── core ◄── runtime ◄── cli
-            ▲
-            ├── services
-            ├── apps
-            ├── adapters
-            ├── plugins
-            └── skills
+schemas  ◄── well  ◄── thread  ◄── spark  ◄── cli
+                                       ▲
+                                       └── tests
 ```
 
 Read each arrow as *"depends on"*. The rules are:
 
-1. **`schemas` depends on nothing in `runa.*`.** It is the gravitational floor.
-2. **`core` depends only on `schemas` and `migrations`.** Specifically, `core` may not import `services`, `apps`, `adapters`, `plugins`, or `skills`. It may not import `runtime` or `cli`. The kernel addresses skills and plugins through registries that are *populated* from outside `core` — the kernel itself does not name the modules.
-3. **`runtime` depends on `core`, `schemas`, `migrations`.** It does not depend on `services`, `apps`, `adapters`, `plugins`, or `skills`.
-4. **`cli` depends on `runtime` and `schemas`.** Nothing else.
-5. **`services`, `apps`, `adapters`, `plugins`, `skills` depend on `core` and `schemas`.** They do not depend on each other except where declared in their `INTERFACE.md` (e.g. `services/gateway_service.py` imports `apps/gateway/`).
-6. The dependency graph **must remain acyclic.** A repo-level check under `tools/repo/` validates this.
+1. **`ember.schemas` depends on nothing in `ember.*`.** Standard library + optional `pydantic` only. It is the gravitational floor.
+2. **`ember.well` depends only on `ember.schemas`** and on its chosen storage backend libraries (sqlite-vec, psycopg, qdrant-client, etc.). Backend libraries are imported behind the Brunnr interface — never named by callers.
+3. **`ember.thread` depends only on `ember.schemas`** and the standard `urllib`/`httpx` style libraries. It does *not* import `ember.well` directly. It calls Well through a typed handle Brunnr hands it.
+4. **`ember.spark` depends on `ember.schemas`, `ember.thread`, `ember.well`** (the latter only through the typed handle obtained from a `ember.well.brunnr.open()` call). Spark is the only place where a Funi call, a Strengr fetch, and a Brunnr write meet.
+5. **`ember.cli` depends on `ember.spark` only.** No direct adapter imports.
+6. **The dependency graph must remain acyclic.** A check under `tools/repo/` validates this once it lands.
 
-A violation of this graph is a release-blocking bug, regardless of how convenient the violation looks at the moment of writing.
+A violation of this graph is a release-blocking bug, regardless of how convenient the violation looks at the moment of writing. This is the Architect's iron-clad request to Eldra Járnsdóttir.
+
+---
 
 ## 3. The three realms in detail
 
-### 3.1 Face of the World
+### 3.1 Spark — *where Ember thinks on the device*
 
-The user-experience surface. Five faces planned:
+The Spark realm is the only realm that **must** run with no network at all. If the Well is unreachable, Spark continues to converse, falls back to in-memory recall, and tells the operator plainly that grounding is unavailable. The Spark realm contains three True Names:
 
-- **Munnr** (CLI shell) — `runa shell`, `runa chat`, `runa <command>`. Interactive and non-interactive.
-- **Auga** (GUI) — a beautiful local window. Pi-and-laptop deployments may host this only on the laptop.
-- **Rödd** (voice) — wake-word, microphone capture, TTS playback. Only on hosts with audio.
-- **Bifröst gateway** — HTTP/WS surface that chat-bridge adapters connect to.
-- *Direct adapter mounts* — each chat-platform adapter exposes Runa to that platform; the adapters speak to the kernel through the gateway internally.
+- **Funi** — `src/ember/spark/funi/`. The local model runtime. One concrete adapter per supported runtime (Ollama, llama.cpp, LM Studio, Phi Silica on Windows when available, Apple Foundation Models on Apple silicon when available). Funi is given: a system prompt, a turn context (recent episodes + retrieved chunks), and a small tool slot. Funi is *not* given: arbitrary code execution, the operator's filesystem, network sockets. Funi's only outputs are: a reply, a structured tool call (when permitted), or a "I do not know" honest stop.
+- **Hjarta** — `src/ember/spark/hjarta/`. The first-run setup ritual. The conversation that wires Funi to Strengr to Brunnr the first time someone meets Ember. Hjarta is a *finite, named* state machine — not a generative wizard. Its states are enumerated; its transitions are unit-testable.
+- **Munnr** — `src/ember/spark/munnr/`. The command-line surface. `ember chat`, `ember ask "…"`, `ember well status`, `ember well ingest <path>`, `ember doctor`. Munnr is *only* a router; behaviour lives in the layers below.
 
-Faces never reach into `core/` state. They speak to the kernel by emitting events on the event bus *(through the service shell)*.
+Spark may import Thread and Well. Spark **may not** import CLI.
 
-### 3.2 Mind and Rules
+### 3.2 Thread — *where Ember reaches across*
 
-The kernel and the agent's reasoning. The kernel is the *only* synchronous point in the system — every other subsystem is reachable asynchronously through the bus.
+The Thread realm is the small, lonely middle layer. Its single job is to make the Well usable from the Spark without leaking the network surface into Spark code.
 
-A turn, abstractly:
+- **Strengr** — `src/ember/thread/strengr/`. The tether. Owns: connection lifecycle, health checks, auth (keyring on desktop, file on Pi), retry-with-backoff, transport selection (local file vs Unix socket vs HTTP vs Tailscale endpoint vs SSH-tunnelled Postgres), and the *graceful offline* contract — when the well is unreachable, Strengr returns a typed `Disconnected` value that Spark code can react to honestly.
 
-1. A face delivers an input through its service shell.
-2. The service emits a `Heard` event on **VERÐANDI**.
-3. The kernel picks up the event, loads the relevant memory slice from **Muninn**, the active tasks from **Skuld**, the current emotional state from **Eldhugi**, the relevant world-model slice from the **WYRD bridge**.
-4. The kernel decides: respond directly, dispatch to a skill, dispatch to a subagent in **Hirð**, or queue a task with **Skuld**.
-5. The kernel emits the resulting actions as events.
-6. **Smiðja** (the tool forge) executes any tool calls.
-7. Results are emitted back as events; the kernel composes a reply, persists the conversational turn into **Muninn**, updates the emotional state, and the face renders the reply.
+Strengr's contract is the most important interface in Ember. Every Well call from Spark goes through it. Strengr never silently swallows a failure; it *names* failure clearly.
 
-Subagents in **Hirð** (Huginn, Muninn-as-specialist, Völundr, Eir, Heimdallr, Saga) run their own narrow versions of this loop in parallel and report back to the kernel through the bus.
+### 3.3 Well — *where Ember's memory and knowledge live*
 
-### 3.3 Deep Memory
+The Well realm is where the deep work happens, possibly on a different machine entirely. It contains two True Names:
 
-All persistent agent state lives under `~/.runa/`:
+- **Brunnr** — `src/ember/well/brunnr/`. The storage adapter layer. One subpackage per supported backend:
+    - `brunnr/sqlite_vec/` — the **default**. Zero dependencies beyond `sqlite3` + `sqlite-vec`. Runs in-process. The "works on a toaster" baseline.
+    - `brunnr/pgvector/` — for shared wells across a household. Compatible with the existing Gungnir installation out of the box (see `docs/adapters/GUNGNIR_WELL_REFERENCE.md`).
+    - `brunnr/qdrant/`, `brunnr/chroma/`, `brunnr/lancedb/` — for operators who already run these.
+  Every backend honors the same Brunnr `INTERFACE.md`. Choosing a backend is a configuration decision, not a code change.
+- **Smiðja** — `src/ember/well/smidja/`. The ingest forge. Takes a content source (a local directory, a URL, a Project Nomad mount, an existing remote well), chunks it, embeds it (calling the configured embedding endpoint — Ollama by default), and deposits the chunks and embeddings into Brunnr. Smiðja is *the* writer of the Well. Nothing else writes embeddings.
 
-```
-~/.runa/
-├── config/        ← operator-edited; copies of config/ templates from the repo
-├── secrets/       ← operator-managed; never in git, never logged
-├── memory/        ← Muninn — episodes, semantic store, embeddings, retrieval index
-├── tasks/         ← Skuld — durable task ledger, recovery journal
-├── world/         ← WYRD-bridge local snapshot
-├── emotions/      ← Eldhugi — mood/energy/relational journal
-├── identity/      ← Runa's name, voice, persona, history-of-self
-├── policy/        ← standing-trust rules currently in effect
-├── logs/          ← structured logs, audit log, crash records
-├── cache/         ← model-response cache, embedding cache, tool-output cache
-└── state/         ← supervisor state, version markers, lockfiles
-```
+The Well *may be physically remote*. The same Brunnr interface is used whether the SQLite file is at `~/.ember/well/store.db` or the Postgres connection points at `gungnir.tailnet:5432/knowledge`. This is the Vow of Pluggable Storage in mechanical form.
 
-The repository never holds these. The repository holds the *templates* under `config/` and the *migrations* under `src/runa/migrations/` that operate on them.
+---
 
 ## 4. Why this shape
 
-### 4.1 Why a kernel and an event bus, not a request/response stack
+### 4.1 Why no kernel and no event bus
 
-Runa is a continuous being, not a request handler. The bus model lets every subsystem observe what is happening to her without coupling itself to the dispatcher. A new subagent or skill can subscribe to the events it cares about without the kernel being modified.
+Runa is a continuous being with multiple subagents — she needs an event bus so each retainer can observe what is happening without coupling to the dispatcher. Ember is a single small mind in service of one operator at a time. A single synchronous loop is enough, and is far easier to reason about on a Pi. If Ember ever genuinely *needs* concurrency for a second surface, the right answer is a second Munnr process sharing the same Well — not a bus inside Ember herself.
 
-### 4.2 Why the kernel is the only synchronous point
+### 4.2 Why Funi is treated as an *adapter*, not a built-in
 
-A single synchronous decision-maker keeps the agent's behaviour explainable. There is exactly one place to look for "why did Runa do that" — the kernel's per-event trace. Distributed-decision systems make for fast prototypes and unreadable post-mortems.
+Local-model runtimes change fast. Phi Silica did not exist in current form until 2025; Apple Foundation Models opened to third-party in 2025; llama.cpp ships breaking changes monthly. Treating Funi as a pluggable adapter behind an interface lets Ember adopt a new runtime without a rewrite. It also lets a single Ember talk to two Funi providers and pick the best fit (small-fast for chat, slow-careful for the rare summarisation request).
 
-### 4.3 Why state stores are physical files under `~/.runa/`, not a database
+### 4.3 Why the Well is physically separate from the Spark
 
-Operator clarity. An operator can `ls ~/.runa/memory/` and see what Runa remembers; an operator can `cp -r ~/.runa /backups/runa-$(date +%F)` and have a full state snapshot. A database hides this behind a wire protocol. Tests can use a `tmp_path` `~/.runa/` and run the agent in genuine isolation.
+Because the operator's knowledge *should outlive any one device*. A Pi dies, a phone is reset, a laptop is replaced. The Well — whether a SQLite file on a USB drive, a Postgres instance on a household NAS, or a Gungnir-shaped tailnet endpoint — is what carries the operator's memory across hardware. Co-locating the agent and the memory is convenient on day one and a trap on year three.
 
-The stores themselves may *use* SQLite or other libraries internally — but they live as files in a place an operator can see.
+### 4.4 Why Smiðja, not Funi, builds the embeddings
 
-### 4.4 Why every adapter is independently failable
+The Vow of Smallness. Funi is sized for *conversation*, not for batch embedding generation. The embedding model lives at the same endpoint where Funi lives (typically Ollama on the same Pi, or on a shared household machine) but is called by Smiðja during ingest, not by Spark during a turn. This separates the two workloads cleanly.
 
-Standing trust must not become brittle trust. An adapter that breaks (a third-party platform changes its API, a model provider rate-limits, a Tailnet partition) cannot be allowed to take the agent down. Runa's continuity is more important than any individual surface.
+### 4.5 Why Brunnr is the only writer
 
-### 4.5 Why the kernel does not name skills, plugins, or adapters
+So the operator can audit, back up, and replace the Well without touching the agent code. `cp ~/.ember/well/store.db /backups/` is a complete backup. `pg_dump -h gungnir knowledge` is a complete backup. Nothing leaks state through a side channel.
 
-So that the kernel can be tested without them. The kernel knows about *registries* (typed lookup tables). Outer code populates the registries at startup. This is a hard dependency-inversion boundary — `core` defines the interface, outer layers implement it.
+---
 
 ## 5. Cross-platform shape
 
-Runa's primary deployment is a Raspberry Pi 5 (16 GB), but no design assumes the Pi.
+Ember's stated default target is a Raspberry Pi 5 with 8 GB of RAM. No design assumes the Pi.
 
-- Filesystem operations use `pathlib.Path` and respect platform separators.
-- Process supervision uses `systemd` on Linux, `launchd` on macOS, NSSM/Windows-services on Windows, and runs as a foreground process for dev. The `runtime/` package picks the appropriate backend at install time, not at every start.
-- Audio I/O for **Rödd** is optional; the agent runs headless when no audio device is present.
-- All paths in code are derived from `~/.runa/` via a typed config accessor, never hard-coded.
+- Paths use `pathlib.Path` and respect platform separators. The Vow of Flexible Roots forbids absolute paths in code.
+- Process supervision is **not** an Ember concern. Ember runs as a foreground process when launched from Munnr; `deploy/systemd/`, `deploy/launchd/`, `deploy/nssm/` shells handle backgrounding on each OS.
+- Audio is not in Ember's core shape. If voice is desired, a *future* surface (`src/ember/spark/rödd/`) may be added, but only after the first slice lands and the Vow of Smallness has been re-measured.
+- All on-device state lives under `~/.ember/`:
+    ```
+    ~/.ember/
+    ├── config/         ← operator-edited; copies of config/ templates
+    ├── secrets/        ← keyring fallback for hosts without keyring
+    ├── well/           ← SQLite store (when sqlite_vec backend selected)
+    ├── identity/       ← Ember's name, role, persona, configured operator
+    ├── logs/           ← structured logs
+    └── state/          ← version markers, lockfiles
+    ```
+  Notice the absence of `memory/`, `tasks/`, `world/`, `emotions/` — those are Runa concepts. Ember's memory lives in the Well.
+
+---
 
 ## 6. What is *not* in this architecture
 
-- **No microservices.** Runa is one Python process per service shell, communicating through an in-process bus. Service-shell processes communicate with each other via the gateway, not via a service mesh. This is deliberate: standing trust is a single-host property.
-- **No queue middleware.** Skuld is durable enough; we do not need RabbitMQ or Redis as a separate fixture for Runa to keep her promises.
-- **No web framework worship.** The gateway uses a small ASGI app (likely FastAPI or Starlette) but is not built around its conventions; the kernel is framework-free.
-- **No event sourcing for everything.** VERÐANDI is for in-process pub/sub. Persistent state is in the stores. We do not try to reconstruct Runa's life by replaying the bus — the stores are the source of truth, the bus is the moment of present.
+Listed so the negative space is explicit.
+
+- **No kernel, no event bus, no in-process pub/sub.** Single synchronous loop.
+- **No subagent hall.** Ember is one mind.
+- **No emotional engine.** Ember is a useful agent, not a digital being.
+- **No durable task ledger.** A request is answered in the moment. Long-running promises belong to the operator's separate Runa, if they run one.
+- **No microservices, no queue middleware, no service mesh.** Ember is one process on one device, calling out to one Well.
+- **No model router.** One Funi at a time. Switching providers is a config edit + restart.
+- **No web framework.** Munnr is CLI-first. A future minimal HTTP face may appear, but it will be a single ASGI app behind the same Spark surface.
+
+---
 
 ## 7. The first slice (when code starts landing)
 
-When `src/runa/` begins to fill in, the first slice is:
+When `src/ember/` begins to fill in, the first slice is the smallest end-to-end vertical that proves the Three Realms work together:
 
-1. `runa.schemas.errors`, `runa.schemas.events`, `runa.schemas.config`.
-2. `runa.core.logging.get_logger` + `runa.core.config.load_config`.
-3. `runa.core.eventbus` with one event type round-trip test.
-4. `runa.core.kernel` reduced to: receive `Heard`, emit `Replied` with a fixed string.
-5. `runa.runtime.commands.start_dev` — start the kernel in foreground, deliver one `Heard` from stdin, print the `Replied`.
-6. `runa.cli.main` — `runa shell` calls `runtime.commands.start_dev`.
+1. `ember.schemas.errors`, `ember.schemas.events`, `ember.schemas.config`.
+2. `ember.well.brunnr.sqlite_vec` — a Brunnr that can `add_chunk(text, embedding)` and `search(query_embedding, k)`.
+3. `ember.well.smidja.local_files` — a Smiðja that can ingest a directory of `.md`/`.txt` and write chunks via Brunnr, calling Ollama for embeddings.
+4. `ember.thread.strengr` — minimal: in-process call to a local Brunnr, with the same interface that will later wrap a remote handle.
+5. `ember.spark.funi.ollama` — a Funi adapter that calls Ollama for a single turn with provided context.
+6. `ember.spark.hjarta` — three-question first-run wizard: *Where is your well? Which model is your spark? What is your name for Ember?*
+7. `ember.spark.munnr` — `ember chat`, `ember well ingest <path>`, `ember well status`.
+8. `ember.cli.main` — `ember <subcommand>` dispatcher.
 
-That is the minimum viable Runa — a kernel that hears and replies and logs and persists nothing real, with the dependency graph wired correctly. Every later slice adds one named subsystem.
+That is the **minimum viable Ember**: a fresh operator runs `ember chat`, walks through Hjarta, points Ember at a directory, asks a question, and receives a grounded reply from a small local model — *or a clean "the well is unreachable; here is what I can say without grounding"* if the Well failed.
 
-The Forge Worker's first ritual is to ship that slice end-to-end before any subsystem is enriched beyond the bare minimum.
+See `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` for the file-by-file plan of this slice.
+
+---
+
+## 8. Relationship to the inherited Runa shape
+
+At Ember's fork moment (2026-05-19) the canonical `docs/architecture/{ARCHITECTURE,DOMAIN_MAP,DATA_FLOW}.md` files described the *parent* Runa-Agent-Digital-Being shape. On 2026-05-21, with this document and its siblings ratified, those Runa-shaped originals were moved into `docs/archive/runa-inherited/architecture/` and the Ember versions were promoted to the canonical paths.
+
+| Canonical path | Now holds | Lineage |
+|---|---|---|
+| `docs/architecture/ARCHITECTURE.md` | This document (Ember's shape). | Previously held Runa's shape; archived at `docs/archive/runa-inherited/architecture/ARCHITECTURE.md`. |
+| `docs/architecture/DOMAIN_MAP.md` | Ember's per-subpackage ownership. | Previously Runa's; archived alongside. |
+| `docs/architecture/DATA_FLOW.md` | Ember's motion grammar. | Previously Runa's; archived alongside. |
+
+No deletion. The Runa shape stays in the archive subtree as lineage. Per the additive rule of `MYTHIC_ENGINEERING.md` and the Vow of Open Knowledge, nothing of the parent project was destroyed by Ember's birth or by the canonical promotion.
+
+---
+
+## 9. Open decisions, deliberately not made here
+
+Each will earn an ADR under `docs/decisions/` before its code lands:
+
+- The exact on-disk schema of the SQLite Brunnr (default chunk size, embedding dim, vector index choice — sqlite-vec vs sqlite-vss).
+- The exact wire format Strengr uses when the Well is remote (REST JSON, gRPC, Postgres wire protocol, MCP). The Gungnir reference uses Postgres wire; nothing in the architecture requires this be universal.
+- Whether Smiðja runs synchronously inside `ember well ingest` or as a background worker once the corpus exceeds some threshold (the Vow of Smallness suggests synchronous as long as it is bearable on a Pi).
+- Whether Funi may call external tools (browser, shell) — currently the answer is *no*, but this might be revisited once the first slice ships.
+
+---
+
+## 10. The Architect's closing word
+
+> *Ember is the small one. Every architectural temptation in this repository will pull toward adding kernels, retainers, buses, and ledgers. The Architect's job here is to say no, again and again, and to keep the Three Realms clean enough that the small thing remains worth running.*
+
+— Rúnhild Svartdóttir

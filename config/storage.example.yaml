@@ -1,0 +1,83 @@
+# Brunnr backend selection — operator-facing reference + worked examples.
+#
+# All keys here belong under the `brunnr:` section of `ember.yaml`
+# until per-realm split lands (deferred to slice 3+). This file exists
+# as a copy-paste reference for the most common Brunnr setups.
+#
+# Cross-reference:
+#   docs/adapters/BRUNNR_BACKEND_MATRIX.md     — choose-your-backend table
+#   docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md — pgvector operator guide
+#   docs/adapters/GUNGNIR_WELL_REFERENCE.md    — the canonical Well shape
+#   docs/decisions/0010-pgvector-brunnr.md     — ADR
+#
+# ---------------------------------------------------------------------------
+# Example 1 — sqlite_vec (the slice-1 default, the toaster baseline)
+# ---------------------------------------------------------------------------
+# brunnr:
+#   backend: sqlite_vec
+#   embedding_dim: 768
+#   sqlite_vec:
+#     path: "~/.ember/well/store.db"
+#     wal_mode: true
+#
+# Smallest possible Well: one file, zero auxiliary processes, runs on a
+# Pi 5. The default `pip install ember-agent[sqlite_vec]` is enough.
+#
+# ---------------------------------------------------------------------------
+# Example 2 — pgvector against a personal/household Gungnir-shape DB
+# ---------------------------------------------------------------------------
+# brunnr:
+#   backend: pgvector
+#   embedding_dim: 768
+#   pgvector:
+#     url: "postgresql://volmarr@gungnir/knowledge"
+#     secret_ref: "~/.ember/secrets/well.password"
+#     vector_index: hnsw
+#     vector_metric: cosine
+#     schema: public
+#     read_only: false   # Ember writes Episodes + ingested docs/chunks
+#
+# Use this when the Well lives on a tailnet host you control. Install
+# with `pip install ember-agent[pgvector]`. The pgvector extension is
+# created automatically on first open if absent.
+#
+# Schema-probe behaviour (ADR 0010 §2.2):
+#   - If the configured schema already has `documents` + `chunks` with
+#     the matching embedding_dim, Ember uses them as-is.
+#   - If only `episodes` is missing, Ember creates it (Episodes are
+#     Ember-side; Gungnir's pipeline doesn't write them).
+#   - If `documents` / `chunks` are missing, the full DDL applies
+#     (CREATE EXTENSION, tables, HNSW index, GIN tsv index).
+#
+# ---------------------------------------------------------------------------
+# Example 3 — pgvector against a SHARED operator-managed Gungnir (READ-ONLY)
+# ---------------------------------------------------------------------------
+# brunnr:
+#   backend: pgvector
+#   embedding_dim: 768
+#   pgvector:
+#     url: "postgresql://volmarr@gungnir/knowledge"
+#     secret_ref: "~/.ember/secrets/well.password"
+#     read_only: true    # mechanically refuses add_document / add_chunks
+#     schema: public
+#
+# Use this when the Well belongs to someone else's ingest pipeline (the
+# Gungnir iron warning: "do not write to documents or chunks directly").
+# Ember can still read; Episodes are blocked too unless an episodes
+# table already exists in the schema. Retrieval works fully.
+#
+# ---------------------------------------------------------------------------
+# Secret resolution order (pgvector backend, ADR 0010 §2.5)
+# ---------------------------------------------------------------------------
+# 1. Env var:      $EMBER_WELL_PASSWORD (overridable via secret_env)
+# 2. Keyring:      keyring.get_password("ember-well", <username>)
+# 3. Mode-600 file at `secret_ref` (refuses 0o644 / 0o604 / etc.)
+# 4. → typed Disconnected(AUTH_FAILED) with the operator-readable trail
+#    of which sources were tried.
+#
+# Override the env var name or disable keyring under `pgvector:`:
+#   pgvector:
+#     secret_env: "PG_WELL_PASSWORD"
+#     use_keyring: false
+#     keyring_service: "ember-well"
+#     username: "volmarr"

@@ -1,0 +1,95 @@
+# Hjarta state-machine prompts.
+#
+# Data file per RULES.AI.md "no hardcoded data". Each [section] is a
+# Hjarta state. The Forge Worker reads this via importlib.resources at
+# runtime; operators may copy it into ~/.ember/config/hjarta_prompts/
+# (planned) for customization.
+#
+# All text is plain — keep prose at a non-developer reading level.
+
+[greet]
+body = """
+Welcome.
+
+I'm Ember — a small, local AI companion. I live entirely on this device.
+Nothing leaves your machine without your say-so.
+
+Before we can talk, I need to be set up: I need a small language model to
+think with, and a Well to keep memory in. I'll walk you through it.
+
+You can press Ctrl-C any time to stop; nothing is written until the end.
+"""
+prompt = "Press Enter to begin."
+
+[choose_funi]
+body = """
+First: which language model runtime should I use?
+
+I'll be using Ollama (https://ollama.com) — a small local LLM server. If
+you have it running on this machine, I can connect. If not, install it
+and come back to this step.
+"""
+prompt = "Press Enter to use Ollama, or type 'cancel' to stop."
+
+[discover_funi]
+body = """
+Probing the Ollama endpoint...
+"""
+
+[choose_well]
+body = """
+Next: where should I keep my memory?
+
+By default, I keep everything in a single file on this device:
+  {sqlite_path}
+
+This is the simplest choice — no servers, no setup. The file is yours;
+back it up by copying it.
+"""
+prompt = "Press Enter to use the default, or type a different path."
+
+[configure_well]
+body = """
+Setting up the Well at {sqlite_path}...
+"""
+
+[test_retrieval]
+body = """
+Testing read/write against the Well...
+"""
+
+[name_ember]
+body = """
+Last question: what would you like to call me?
+
+The default is 'Ember'. You can give me any name you like — I'll answer
+to it.
+"""
+prompt = "Press Enter to keep 'Ember', or type a different name."
+
+[advanced_tools]
+body = """
+Optional: I can call a small set of operator-approved tools (search the
+Well, read a local file, fetch a URL). Tools are OFF by default; every
+call is approved per-invocation unless you say 'always'.
+
+You can change this later by editing ~/.ember/config/ember.yaml.
+"""
+prompt = "Enable tools? [y/N]"
+
+[write_identity]
+body = """
+Writing identity to {identity_path}...
+"""
+
+[done]
+body = """
+All set. I'm {name}, ready when you are.
+
+Try:
+  ember well ingest <directory>   # give me something to read
+  ember chat                      # talk to me
+  ember doctor                    # check my health
+
+Welcome to the hearth.
+"""

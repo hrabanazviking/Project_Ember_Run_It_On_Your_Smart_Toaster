@@ -1,0 +1,92 @@
+# Verðandi Heartbeat Configuration
+# The Pulse of Becoming — AGI-focused self-awareness daemon
+#
+# Every setting has a sensible default. This file is optional.
+# Override any setting with VERDANDI_<SECTION>_<KEY> env vars.
+# Example: VERDANDI_HEARTBEAT_INTERVAL_SECONDS=30
+
+heartbeat:
+  # How often to pulse (seconds). Default: 60 (1 minute)
+  interval_seconds: 60
+  # Add random jitter to prevent thundering herd (seconds)
+  jitter_seconds: 5
+  # Delay before first pulse after daemon start (seconds)
+  startup_delay_seconds: 10
+  # Timeout for a single pulse cycle (seconds)
+  max_pulse_time_seconds: 300
+  # Don't re-alert on same issue within this window (seconds)
+  dedup_window_seconds: 300
+
+thresholds:
+  # CPU temperature (Celsius)
+  cpu_temp_warning: 70
+  cpu_temp_critical: 80
+  # RAM usage (percent)
+  ram_warning_percent: 85
+  ram_critical_percent: 95
+  # Disk usage (percent)
+  disk_warning_percent: 80
+  disk_critical_percent: 90
+  # Service recovery
+  service_restart_attempts: 3
+  service_cooldown_minutes: 5
+  # Project (git) thresholds
+  unpushed_commits_warning: 5
+  unpushed_commits_critical: 20
+  stale_branch_days: 30
+
+checks:
+  # Enable/disable individual health checks
+  health: true            # CPU temp, RAM, disk
+  projects: true          # Git repo scanning
+  memory: true            # Mímir DB health
+  schedule: true           # Cron job monitoring
+  conversation_log: true   # Log growth monitoring
+
+projects:
+  # Auto-discover git repos in home directory
+  auto_discover: true
+  # Explicit paths to watch (in addition to auto-discovery)
+  watch_paths: []
+  # Paths to skip during auto-discovery
+  ignore_paths: []
+
+recovery:
+  # Auto-recovery actions (conservative defaults)
+  auto_push: true               # Auto-push unpushed commits
+  auto_restart_services: false  # Don't auto-restart services (too risky)
+  auto_cleanup_logs: true       # Trim oversized log files
+  auto_vacuum_db: true          # Vacuum SQLite databases periodically
+  max_log_size_mb: 50          # Trim logs above this size
+
+nerve:
+  # Nerve hub integration (Unix domain socket)
+  publish_pulses: true          # Send every pulse to nerve hub
+  publish_alerts: true          # Send alerts to nerve hub
+  socket_path: ""               # Empty = use default from paths
+  fallback_to_file: true        # Write to file if socket unavailable
+
+reactor:
+  # Reactor bridges checks → actions
+  enabled: true               # Enable the reactor
+  dry_run: true               # Start in dry-run (report only, no action)
+  rules:
+    # Custom rules override defaults. Format:
+    # - check: "projects"        # Which check triggers
+    #   action: "auto_push"      # Which action to invoke
+    #   min_severity: "warning"   # Minimum severity to trigger
+    #   conditions: {}           # Additional conditions on check details
+    #   enabled: true
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  file_max_bytes: 10485760      # 10MB
+  file_backup_count: 5
+  also_log_to_stderr: true      # For systemd/journal
+
+pi:
+  # Pi-specific optimizations
+  reduce_io_on_low_memory: true  # Skip disk-heavy checks if RAM is low
+  thermal_throttle_interval: 30   # Check CPU temp every 30s
+  sd_card_friendly: true          # Minimize writes to SD card

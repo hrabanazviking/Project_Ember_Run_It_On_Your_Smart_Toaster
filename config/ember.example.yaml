@@ -1,0 +1,140 @@
+# Ember Agent — main configuration template
+#
+# Copy this file to ~/.ember/config/ember.yaml and edit per your
+# deployment. Every key is optional; absent keys fall through to the
+# defaults in src/ember/schemas/config.py.
+#
+# Loaded by `ember.config.load_ember_config`. Environment variables
+# (e.g. OLLAMA_HOST) overlay on top of anything set here.
+#
+# Cross-reference:
+#   docs/architecture/{ARCHITECTURE,DATA_FLOW,DOMAIN_MAP}.md
+#   docs/architecture/EMBER_SECOND_SLICE_PLAN.md
+#   docs/decisions/0008-config-file-loader.md
+#   docs/adapters/{BRUNNR_BACKEND_MATRIX,FUNI_LOCAL_MODEL_OPTIONS,
+#                  SMIDJA_INGEST_PATTERNS,GUNGNIR_WELL_REFERENCE}.md
+
+# ---------------------------------------------------------------------------
+# Ember identity (written by Hjarta on first run; you may also edit here)
+# ---------------------------------------------------------------------------
+identity:
+  # The name you call Ember by in conversation. Default is "Ember".
+  # Public-friendly per the Vow of Public-Friendliness.
+  name: "Ember"
+
+  # A short one-line role statement Ember opens with on first conversation.
+  # Plain language; no mythic jargon for the operator-facing string.
+  role: "your small local AI companion"
+
+# ---------------------------------------------------------------------------
+# Funi — the local LLM
+# Defaults to Ollama with phi3:mini, the Pi5-8GB-recommended model.
+# See docs/adapters/FUNI_LOCAL_MODEL_OPTIONS.md for the host-RAM ladder.
+# ---------------------------------------------------------------------------
+funi:
+  runtime: ollama
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "phi3:mini"
+    # Operator-tunable; the model's own context limit applies first.
+    temperature: 0.7
+    top_p: 0.9
+    num_predict: 1024
+
+# ---------------------------------------------------------------------------
+# Strengr — the tether
+# Wraps Brunnr-handle acquisition with graceful-offline handling.
+# ---------------------------------------------------------------------------
+strengr:
+  # How long to wait for the Well to answer before declaring Disconnected.
+  health_check_timeout_s: 5.0
+  # Connection retry policy. Exponential backoff.
+  retry_attempts: 3
+  retry_backoff_max_s: 30.0
+
+# ---------------------------------------------------------------------------
+# Brunnr — pluggable storage (the Well)
+# Default is sqlite_vec on local disk (the toaster baseline).
+# Switch to pgvector to talk to a shared/household Well (e.g. Gungnir);
+# the pgvector adapter shipped in slice 2 Phase 13 (ADR 0010).
+# See docs/adapters/BRUNNR_BACKEND_MATRIX.md to choose; see
+# docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md for the operator guide.
+# ---------------------------------------------------------------------------
+brunnr:
+  backend: sqlite_vec
+  embedding_dim: 768   # nomic-embed-text default; must match Smiðja's
+  sqlite_vec:
+    path: "~/.ember/well/store.db"
+    wal_mode: true
+  # ─── pgvector ─────────────────────────────────────────────────────────
+  # Uncomment to switch to a Postgres + pgvector Well (e.g. Gungnir).
+  # Install with `pip install ember-agent[pgvector]`.
+  # See docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md for the full guide.
+  #
+  # To switch, also change `backend: sqlite_vec` above to `backend: pgvector`.
+  # pgvector:
+  #   url: "postgresql://volmarr@gungnir/knowledge"
+  #   secret_ref: "~/.ember/secrets/well.password"   # mode 600 enforced
+  #   secret_env: "EMBER_WELL_PASSWORD"              # checked first
+  #   use_keyring: true                              # set false to skip
+  #   keyring_service: "ember-well"
+  #   username: null                                  # null → parsed from URL
+  #   connect_timeout_s: 10.0
+  #   vector_index: hnsw
+  #   vector_metric: cosine
+  #   schema: public
+  #   read_only: false   # set true when pointing at an operator-managed
+  #                      # Gungnir to mechanically prevent Ember writes
+
+# ---------------------------------------------------------------------------
+# Smiðja — the ingest forge
+# See docs/adapters/SMIDJA_INGEST_PATTERNS.md for chunking + journal rules.
+# ---------------------------------------------------------------------------
+smidja:
+  embedding:
+    endpoint: "http://localhost:11434/api/embed"
+    model: "nomic-embed-text"
+    batch_size: 32
+  chunker:
+    max_chars: 2000        # Gungnir-aligned hard ceiling
+    target_chars: 1684     # Gungnir-aligned average
+    min_chars: 200
+    overlap_chars: 0
+    boundary_preference: paragraph   # paragraph / sentence / word / char
+  journal:
+    root: "~/.ember/state/smidja_progress/"
+    heartbeat_s: 30
+    stale_heartbeat_s: 600
+
+# ---------------------------------------------------------------------------
+# Tool use (slice-2 Phase 14-16 — ADR 0011)
+# Off by default per the Vow of Sovereignty — Ember does not reach
+# beyond the chat turn until you opt in. When enabled, every PER_CALL
+# tool prompts before invocation; STANDING tools auto-approve.
+# See docs/decisions/0011-tool-use-framework.md for the design.
+# ---------------------------------------------------------------------------
+tools:
+  enabled: false                # set true to allow tool-use during chat
+  standing_trust: false         # set true to auto-approve every PER_CALL tool (still audited)
+  allow_private_addresses: false  # affects fetch_url; RFC1918/loopback refused by default
+  # Per-tool approval override. Operator can downgrade STANDING → per_call
+  # (more strict). Operator cannot upgrade per_call → STANDING — descriptor
+  # is the safety floor.
+  approval_overrides: {}
+    # search_well: per_call    # example: be strict about search too
+    # fetch_url:   forbidden   # example: mechanically disable a tool
+  # Where the JSONL audit log lands. null → <config_root>/state/tool_audit/
+  audit_root: null
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+logging:
+  level: INFO       # DEBUG / INFO / WARNING / ERROR
+  format: structured   # structured / plain
+  destinations:
+    - kind: file
+      path: "~/.ember/logs/ember.log"
+      rotate_at_mb: 50
+      keep: 5
+    - kind: stderr

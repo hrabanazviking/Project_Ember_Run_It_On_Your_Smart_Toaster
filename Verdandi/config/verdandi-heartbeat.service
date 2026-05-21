@@ -1,0 +1,50 @@
+# Verðandi Heartbeat — systemd service unit
+# Place at: /etc/systemd/system/verdandi-heartbeat.service
+# OR: ~/.config/systemd/user/verdandi-heartbeat.service (user service)
+#
+# Install:
+#   sudo cp verdandi-heartbeat.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now verdandi-heartbeat
+#
+# Or as user service:
+#   mkdir -p ~/.config/systemd/user/
+#   cp verdandi-heartbeat.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now verdandi-heartbeat
+
+[Unit]
+Description=Verðandi Heartbeat — Self-Awareness Daemon (Hjartsláttur)
+Documentation=https://github.com/hrabanazviking/Verdandi
+After=network.target runa-nervous-system.service
+Wants=runa-nervous-system.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m heartbeat.cli pulse --loop
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+# Environment
+Environment=VERDANDI_HOME=/home/pi/.hermes/state
+WorkingDirectory=/home/pi/Verdandi
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=verdandi-heartbeat
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/pi/.hermes/state /home/pi/Verdandi /tmp
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=256M
+
+[Install]
+WantedBy=default.target

@@ -2,7 +2,7 @@
 
 **Purpose:** The operator's second stop after `README.md`. If you are lost in the repository, you read this file. Every folder gets one line; every line says what lives there and where to go for more.
 **Voice:** Cartographer (Védis Eikleið)
-**Last touched:** 2026-05-19 (fork day)
+**Last touched:** 2026-05-21 (post-fork-delta: src/ember/ realm tree built, canonical architecture docs ratified)
 **Reads with:** `docs/SYSTEM_VISION.md`, `ORIGINS.md`, `docs/archive/runa-inherited/REPO_MAP.md` (the parent project's larger map, preserved for reference).
 
 ---
@@ -30,7 +30,7 @@
 | `docs/SYSTEM_VISION.md` | Skald-written living vision statement for Ember: Primary Rite, Vows, True Names (Funi, Strengr, Brunnr, Smiðja, Hjarta, Munnr), Realms (Spark, Thread, Well). |
 | `docs/REPO_MAP.md` | *(this file)* |
 | `docs/DEVLOG.md` | Append-only per-session record. Started fresh for Ember on 2026-05-19. |
-| `docs/architecture/` | `ARCHITECTURE.md`, `DOMAIN_MAP.md`, `DATA_FLOW.md` — Ember's system shape. *(To be authored by the Architect in the next pass.)* |
+| `docs/architecture/` | `ARCHITECTURE.md`, `DOMAIN_MAP.md`, `DATA_FLOW.md` — Ember's system shape (ratified 2026-05-21). Plus `EMBER_FORK_DELTA.md` and `EMBER_FIRST_SLICE_PLAN.md` as living working docs. |
 | `docs/operations/` | Operator runbooks (planned: INSTALL, STARTUP, OBSERVABILITY, BACKUP_RESTORE). |
 | `docs/development/` | How to contribute, dev setup, testing, style. |
 | `docs/design/` | Long-form design explorations; deep dives that informed architecture but are not the spec. |
@@ -46,7 +46,7 @@
 | `docs/RunaUniversity2040/` | Volmarr's lecture series / AI curriculum material. **Inherited.** |
 | `docs/phd-2040/` | Volmarr's PhD-2040 framing material. **Inherited.** |
 | `docs/archive/` | Retired documents. Never deleted; superseded docs go here. |
-| `docs/archive/runa-inherited/` | Scrolls preserved from the parent project at the moment of fork (2026-05-19). See the subfolder's own README. |
+| `docs/archive/runa-inherited/` | Scrolls preserved from the parent project at the moment of fork (2026-05-19) and at fork-delta (2026-05-21). Includes `architecture/` (Runa-shaped predecessors of the canonical docs) and `src-skeleton/runa/` (the inherited Python package skeleton). See the subfolder's own README. |
 
 ## `config/`
 
@@ -54,7 +54,7 @@
 |---|---|
 | `config/README.md` | Rules for the config layer; what lives here vs in `~/.ember/`. |
 | `config/profiles/` | Named bundles of partial config for common deployment shapes. |
-| *(planned)* `config/ember.example.yaml` | Main agent configuration template. |
+| `config/ember.example.yaml` | Main agent configuration template (Ember-shaped 2026-05-21; replaces the inherited Runa template). |
 | *(planned)* `config/storage.example.yaml` | Brunnr backend selection and connection (SQLite / PG / Qdrant / Chroma / LanceDB). |
 | *(planned)* `config/sources.example.yaml` | Smiðja content-source registry (local files, Nomad, URLs, Gungnir-style remote wells). |
 
@@ -63,10 +63,14 @@
 | Path | One-line meaning |
 |---|---|
 | `src/README.md` | Why we use PEP-517 src-layout. |
-| `src/runa/` | **Inherited** Python package skeleton from the parent project. To be renamed `src/ember/` and re-shaped to match the Three Realms during the Architect's first pass. |
-| *(planned)* `src/ember/spark/` | The Spark realm — Funi (local model), Munnr (CLI), Hjarta (first-run wizard). |
-| *(planned)* `src/ember/thread/` | The Thread realm — Strengr (the tether). |
-| *(planned)* `src/ember/well/` | The Well realm — Brunnr (storage adapters) and Smiðja (ingest forge). |
+| `src/ember/README.md` | The Three Realms tree at a glance. |
+| `src/ember/__init__.py` / `__main__.py` | Package entry and `python -m ember` (Phase 1 stub; raises a friendly `NotImplementedError` pointing at the first-slice plan). |
+| `src/ember/schemas/` | Types only — the gravitational floor. |
+| `src/ember/well/{brunnr,smidja}/` | The Well realm — pluggable storage adapters (Brunnr) and the ingest forge (Smiðja). |
+| `src/ember/thread/strengr/` | The Thread realm — the tether to the Well; owns the graceful-offline contract. |
+| `src/ember/spark/{funi,hjarta,munnr}/` | The Spark realm — local LLM, first-run wizard, command-line surface. |
+| `src/ember/cli/` | The `ember` console-script entry point. |
+| *(archived)* `docs/archive/runa-inherited/src-skeleton/runa/` | The inherited Runa skeleton, preserved 2026-05-21. |
 
 ## `tests/`
 
@@ -108,8 +112,8 @@ Project_Ember_Run_It_On_Your_Smart_Toaster/
 │   ├── philosophy/ methodology/ ← inherited worldview + method
 │   └── archive/runa-inherited/  ← Runa's soul-layer scrolls
 │
-├── config/                   ← templates (never live)
-├── src/                      ← Python implementation (currently src/runa/; rename pending)
+├── config/                   ← templates (never live); ember.example.yaml is the Ember-shape main template
+├── src/ember/                ← Python implementation, Three Realms layout (Phase 1 scaffolding only)
 ├── tests/                    ← unit/integration/e2e (inherited skeleton)
 ├── scripts/ deploy/ tools/ examples/ vendor/ assets/  ← inherited
 ```

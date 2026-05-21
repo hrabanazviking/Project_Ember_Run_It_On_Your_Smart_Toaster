@@ -1,0 +1,72 @@
+[gd_scene load_steps=6 format=3 uid="uid://0gfii8buhxxb"]
+
+[ext_resource type="Script" path="res://scripts/token.gd" id="1_820ps"]
+[ext_resource type="Script" path="res://components/CustomTokenPolygon.gd" id="2_8lbiw"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_avtol"]
+light_mode = 1
+
+[sub_resource type="Gradient" id="Gradient_v27he"]
+offsets = PackedFloat32Array(0.375, 0.716667)
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sp4t2"]
+gradient = SubResource("Gradient_v27he")
+width = 1024
+height = 1024
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[node name="Token" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 1
+script = ExtResource("1_820ps")
+
+[node name="TokenPolygon" type="Control" parent="."]
+texture_repeat = 1
+layout_mode = 1
+anchors_preset = 0
+mouse_filter = 1
+script = ExtResource("2_8lbiw")
+
+[node name="RemoteTransform2D" type="RemoteTransform2D" parent="TokenPolygon"]
+remote_path = NodePath("../../UI")
+update_rotation = false
+update_scale = false
+
+[node name="UI" type="Node2D" parent="."]
+material = SubResource("CanvasItemMaterial_avtol")
+
+[node name="Bars" type="VBoxContainer" parent="UI"]
+offset_right = 39.43
+offset_bottom = 20.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+alignment = 2
+
+[node name="FovLight" type="PointLight2D" parent="UI"]
+range_z_min = -4096
+range_z_max = 4096
+range_layer_min = -512
+range_layer_max = 512
+range_item_cull_mask = 524288
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 1)
+texture = SubResource("GradientTexture2D_sp4t2")
+texture_scale = 10.0
+metadata/fov = false
+
+[node name="AttrBubbles" type="VBoxContainer" parent="UI"]
+visible = false
+use_parent_material = true
+clip_contents = true
+scale = Vector2(0.8, 0.8)
+
+[node name="BarBubbles" type="VBoxContainer" parent="UI"]
+visible = false
+use_parent_material = true
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+grow_horizontal = 0

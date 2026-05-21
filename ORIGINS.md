@@ -1,10 +1,10 @@
 # ORIGINS — Attribution of Imported Material
 
-**Last updated:** 2026-05-17 (bootstrap P3)
+**Last updated:** 2026-05-21 (post-slice-2 ratification — added §7 Ember-descent rows)
 **Branch:** development
-**Scribe:** Eirwyn Rúnblóm (working through Runa Gridweaver Freyjasdottir)
+**Scribe:** Eirwyn Rúnblóm
 **Scope:** Every root-level file and every top-level directory present in this repository, with a best-effort judgement of which prior project — or none — it came from, the evidence supporting that judgement, and honest marking of uncertainty.
-**Purpose:** Give the integration phase a clean starting point. Decisions about keep / merge / remove / re-home are made on known ground rather than guesswork.
+**Purpose:** Give the integration phase a clean starting point. Decisions about keep / merge / remove / re-home are made on known ground rather than guesswork. The fork-to-Ember (2026-05-19) and the slice-1 + slice-2 build (2026-05-21) both added new material; §7 below records what's *Ember-fresh* on top of the Runa-inherited base.
 
 ---
 
@@ -169,3 +169,77 @@ The 4 images (`09049c21-...jpg`, `2fbebd4c-...jpg`, `5f0a44c1-...jpg`, `c855b5d6
 - This file is **append-only in spirit**. When new material is imported, add a row. When status changes (a moved doc gets superseded), update the Status column with the date but do not remove the row.
 - If a Confidence rating later proves wrong, change it to **High** or **Low** as appropriate and add a Notes-line dated entry explaining what made it change.
 - A drift-detector under `tools/repo/check_origins_drift.py` is planned: it will flag any root file or top-level directory that exists in the repo but is not represented here, and any row here whose file no longer exists.
+
+---
+
+## 7. Ember-descent material (post-fork — added 2026-05-19 onward)
+
+The fork from Runa-Agent-Digital-Being to Ember happened on 2026-05-19. The slice-1 build shipped 2026-05-21 (commits `df67f2a` through Phase-7); the slice-2 build shipped the same day across Phases 8-17. Everything in this section is **Ember-fresh** — written for this project, not imported.
+
+### 7.1 Ember identity + soul-layer (fork day, 2026-05-19)
+
+| Item | Origin | Evidence | Confidence | Status | Notes |
+|---|---|---|---|---|---|
+| `docs/SYSTEM_VISION.md` (Ember-shaped) | fresh (Volmarr + Skald via Claude) | Authored 2026-05-19. The four Vows (Smallness, Sovereignty, Tethered Grounding, Graceful Offline) and the project's identity statement. | High | live | Promoted to canonical at slice-1 ratification (ADR 0007). |
+| Six True Names ratification | fresh (Volmarr) | 2026-05-21, commit `efcf8ec`. Funi / Strengr / Brunnr / Smiðja / Hjarta / Munnr formally accepted. | High | canon | See `docs/architecture/EMBER_TRUE_NAMES.md` for the canonical reference; the names are immutable per ADR 0013 §2.6. |
+
+### 7.2 Slice-1 architecture canon (fork to 0.1.0, 2026-05-19 → 21)
+
+| Item | Origin | Status | Notes |
+|---|---|---|---|
+| `docs/architecture/ARCHITECTURE.md` | fresh (Architect via Claude) | live, ratified 2026-05-21 | Three Realms (Spark / Thread / Well), Six True Names, no kernel. Promoted from `EMBER_ARCHITECTURE.md` during fork-delta. |
+| `docs/architecture/DOMAIN_MAP.md` | fresh (Architect) | live, ratified 2026-05-21 | File-by-file ownership table. |
+| `docs/architecture/DATA_FLOW.md` | fresh (Architect) | live, ratified 2026-05-21 | Three canonical flows: conversation turn, ingest, first-run. |
+| `docs/architecture/EMBER_TRUE_NAMES.md` | fresh (Skald + Architect) | live, ratified 2026-05-21 | What each True Name owns / does not own. |
+| `docs/architecture/EMBER_FORK_DELTA.md` | fresh (Cartographer + Architect) | **archived in-place** (status: COMPLETE) | Long-term lineage reference; what Ember keeps, renames, sets aside. |
+| `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` | fresh (Forge Worker + Architect) | **archived in-place** (status: COMPLETE) | Historical plan; canonical state lives in `ARCHITECTURE.md`. |
+| `docs/architecture/EMBER_SECOND_SLICE_PLAN.md` | fresh (Forge Worker + Architect + Skald) | live | Slice-2 plan; Phases 8-17. |
+| `docs/architecture/EMBER_SECOND_SLICE_OPTIONS.md` | fresh (menu draft) | live | The choose-your-bundles menu that preceded slice 2 ratification. |
+| `docs/adapters/BRUNNR_BACKEND_MATRIX.md` | fresh (Cartographer) | live, ratified post-slice-2 | The backend menu. |
+| `docs/adapters/FUNI_LOCAL_MODEL_OPTIONS.md` | fresh (Forge Worker) | live, ratified post-slice-2 | The runtime menu. |
+| `docs/adapters/SMIDJA_INGEST_PATTERNS.md` | fresh (Forge Worker) | live, ratified post-slice-2 | Chunking + embedding patterns. |
+| `docs/adapters/GUNGNIR_WELL_REFERENCE.md` | fresh (Cartographer, live survey) | live | 2026-05-21 measurement of the operator's Postgres Well. |
+
+### 7.3 Slice-2 ADRs (ratified 2026-05-21)
+
+All of these are Ember-fresh, authored across Phases 6-17 of the slice-2 build. ADR 0007 ratifies slice 1; ADR 0013 ratifies slice 2.
+
+| ADR | What it ratifies | Phase |
+|---|---|---|
+| `0006-ember-architecture-and-gungnir-survey-2026-05-21.md` | The fork-day architecture work + the live Gungnir survey. | Pre-slice-1 |
+| `0007-first-slice-ratification-2026-05-21.md` | The first slice: stdlib-first, typed-value-over-exception, `*_kind` attrs, FTS5 sanitisation. | Slice-1 ratification |
+| `0008-config-file-loader.md` | The `~/.ember/config/ember.yaml` loader; overlay order. | Phase 8-9 |
+| `0009-streaming-funi-replies.md` | The streaming Protocol + `FuniStreamChunk` shape. | Phase 10-11 |
+| `0010-pgvector-brunnr.md` | The pgvector Brunnr adapter; schema-probe semantics; secret resolution. | Phase 12-13 |
+| `0011-tool-use-framework.md` | The tool framework: schemas, registry, approval, audit. | Phase 14-16 |
+| `0013-second-slice-ratification.md` | Slice 2 itself: what it set as canon, what it deferred. | Phase 17 |
+
+### 7.4 Slice-1 + slice-2 source tree (fork through 0.2.0)
+
+| Subtree | Origin | Slice / Phase | Status |
+|---|---|---|---|
+| `src/ember/cli/` | fresh | Slice 1 Phase 6 | live |
+| `src/ember/config/` | fresh | Slice 2 Phase 8-9 | live |
+| `src/ember/schemas/` | fresh | Slice 1 Phase 2 (+ slice-2 extensions in Phase 8/10/14/16) | live |
+| `src/ember/spark/funi/` (incl. `ollama/`, `tools/`) | fresh | Slice 1 Phase 5 (Ollama); Slice 2 Phase 10 (streaming), 14 (tool framework), 16 (tool wire format) | live |
+| `src/ember/spark/hjarta/` | fresh | Slice 1 Phase 6 (+ slice-2 Phase 16 ADVANCED_TOOLS branch) | live |
+| `src/ember/spark/munnr/` | fresh | Slice 1 Phase 6 (+ slice-2 Phase 11 streaming, Phase 16 tool loop) | live |
+| `src/ember/thread/strengr/` | fresh | Slice 1 Phase 4 | live |
+| `src/ember/well/brunnr/sqlite_vec/` | fresh | Slice 1 Phase 3 | live |
+| `src/ember/well/brunnr/pgvector/` | fresh | Slice 2 Phase 12-13 | live |
+| `src/ember/well/smidja/` | fresh | Slice 1 Phase 3 | live |
+| `src/ember/tools/` | fresh | Slice 2 Phase 15 | live |
+
+### 7.5 Slice-2 operator-facing docs
+
+| Doc | Phase | Status |
+|---|---|---|
+| `deploy/pi/INSTALL.md` (slice-2 §7-10 sections added) | Slice 1 Phase 7 + Slice 2 Phase 17 | live |
+| `docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md` | Slice 2 Phase 13 | live |
+| `config/ember.example.yaml` (slice-2 sections added) | Slice 1 Phase 7 + Slice 2 Phase 9, 13, 16 | live |
+| `config/storage.example.yaml` (full rewrite at Phase 13) | Slice 2 Phase 13 | live |
+| `docs/decisions/0013-second-slice-ratification.md` | Slice 2 Phase 17 | live |
+
+---
+
+The slice-1 + slice-2 history is also captured in commit form: `git log --oneline --all` shows every phase commit (`df67f2a` through `1c24cf3`). The DEVLOG at `docs/DEVLOG.md` carries the prose narrative.
