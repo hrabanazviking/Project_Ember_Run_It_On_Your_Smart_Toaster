@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -38,6 +39,8 @@ from ember.schemas.errors import (
     SchemaError,
 )
 from ember.well.brunnr.pgvector import secrets as _secrets
+
+_logger = logging.getLogger(__name__)
 
 _RRF_K = 60  # ADR 0010 §2.4 — matches sqlite_vec, matches Gungnir.
 
@@ -575,7 +578,17 @@ class PgVectorBrunnr:
         k: int,
         filter: object | None = None,
     ) -> list[RetrievalHit]:
-        cleaned = query.strip()
+        # Mirror the sqlite_vec sanitiser: strip Unicode Cc + Cf bytes
+        # (NUL, bidi-overrides, format chars) before handing the query
+        # to plainto_tsquery. Without this, a U+202E in the query would
+        # land in audit logs and confuse operator-facing diagnostics in
+        # the same way the sqlite_vec hardening (Batch C) was guarding
+        # against. Postgres itself tolerates these bytes, but the audit
+        # contract is symmetric across both adapters.
+        from ember.well.brunnr.sqlite_vec.adapter import (  # noqa: PLC0415
+            _strip_unsafe_chars,
+        )
+        cleaned = _strip_unsafe_chars(query).strip()
         if not cleaned:
             return []
         try:
@@ -648,8 +661,16 @@ class PgVectorBrunnr:
     # ------------------------------------------------------------- close
 
     def close(self) -> None:
-        with contextlib.suppress(Exception):
+        # Mirror sqlite_vec.close(): log close-time failures rather than
+        # silently suppressing them. Operators inspecting the log can
+        # then see *why* close failed (idle-in-transaction holding a
+        # lock, backend already gone, etc.) instead of getting silence.
+        # The Protocol still says close-never-raises; we honour that
+        # by catching everything.
+        try:
             self._conn.close()
+        except Exception as exc:
+            _logger.warning("pgvector close failed: %s", exc)
 
     # ------------------------------------------------------------- internals
 

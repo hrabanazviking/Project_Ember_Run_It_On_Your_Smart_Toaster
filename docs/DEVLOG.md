@@ -8,6 +8,67 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Hardening sweep Batch G — fourth pass, fresh lenses (no version bump).
+
+**Who:** Claude (Opus 4.7, 1M context). Sweep #4 of the day, in response to *"call on the 6 Mythic Engineering agents and search code according to your current ideas where and how to look."*
+
+**The fresh lenses:** The previous three sweeps (A+B, C+D+E, F) had walked the tree question-by-question for input validation, error handling, dispatch, lifecycle, ANSI scrub. Batch G deliberately changed the *question* rather than the *surface*:
+
+- **Lens 1 — Cross-adapter parity.** Do `sqlite_vec` and `pgvector` actually behave identically for the same input? Different developers wrote them; subtle drift was likely.
+- **Lens 2 — Vow enforcement.** The 10 Vows in `docs/SYSTEM_VISION.md` are supposed to be mechanically enforced. Are they, or is the documentation more confident than the code?
+- **Lens 3 — Resource lifecycle invariants.** The typed-value-contract sweeps verified the *return* path; do all *cleanup* paths run on every interleaving?
+
+Cartographer (me) refreshed the philosophy + adapter contract docs; three parallel Auditors hit each lens; Architect (me) triaged honestly — most "potential findings" investigated and proven safe; this commit ships only the three concrete actionable fixes.
+
+**Scope:** No code-shape changes; no version bump; no ADR. Hygiene #4 on top of v0.2.0 + Batches A/B/C/D/E/F. **556 tests pass + 2 skipped** (was 550 + 2 after Batch F; +6 new tests in `test_hardening_batch_g.py`), ruff clean.
+
+### Batch G fixes (each with a pinning regression test)
+
+| File | Lens | Hardening |
+|---|---|---|
+| `src/ember/well/brunnr/pgvector/adapter.py` | Adapter parity | `text_search` now calls `_strip_unsafe_chars` (imported lazily from the sqlite_vec adapter) before passing the query to `plainto_tsquery`. sqlite_vec stripped Unicode Cc + Cf bytes in Batch C; pgvector did not. The audit log is now symmetric across both backends — a U+202E in a query gets removed before it can land in the operator's log on either path. |
+| `src/ember/well/brunnr/pgvector/adapter.py` | Adapter parity | `close()` now logs `pgvector close failed: <exc>` via `_logger.warning` instead of using `contextlib.suppress(Exception)`. sqlite_vec already logged close-time failures in Batch D; pgvector silently ate them. The Protocol contract ("close never raises") is still honored — the exception is caught — but operators inspecting the log can now see *why* close failed (idle-in-transaction holding a lock, backend already gone, etc.) instead of getting silence. |
+| `src/ember/well/smidja/journal.py` | Resource lifecycle | `_write_state` now unlinks the tempfile if `os.replace` fails. `NamedTemporaryFile(delete=False)` + `os.replace` is the standard atomic-write pattern, but the `delete=False` means a failed replace (cross-filesystem, EACCES, ENOSPC) leaves a `*.tmp` orphan in the journal directory. On a disk-pressured Pi, repeated ingest failures could accumulate enough orphans to fill the disk. The cleanup is wrapped in `contextlib.suppress(OSError)` so the *real* exception (the OSError from replace) is what propagates. |
+
+### Lenses that found nothing actionable (verified honestly)
+
+**Lens 1 — Adapter parity (additional findings investigated, not shipped):**
+- *Text-search score scales differ* (sqlite_vec returns negated FTS5 BM25 rank, ~1–100 range; pgvector returns `ts_rank`, [0, 1] range). Real divergence, but `text_search` is only called by `hybrid_search` which feeds the scores into RRF (reciprocal rank fusion, k=60) — the absolute scores never cross-compare. Operators using `text_search` directly would see different scales, but that's a single-line documentation fix in a follow-up. Not shipped.
+- *Read-only mode is pgvector-only.* sqlite_vec has no `read_only` config option — it's a single-user local store; the concept doesn't apply the way it does for shared Gungnir. This is an intentional asymmetry, not a parity gap.
+- *Vector-search `SELECT` column ordering differs* between adapters. Both adapters construct `RetrievalHit` correctly; the difference is cosmetic.
+
+**Lens 2 — Vow enforcement (9 of 10 Vows verified honored with file:line evidence):**
+- All 10 Vows from `docs/SYSTEM_VISION.md` checked. **9 are mechanically honored** in the code — Smallness (`pyproject.toml`: zero non-extra deps), Tethered Grounding (`prompt.py:46-93`: facts only from `hits` parameter), Graceful Offline (`prompt.py:107-108`: `_DISCONNECTED_INSTRUCTION` unconditional), Pluggable Storage (`handle.py:27-83`: Protocol + lazy imports), Unbroken Whole (`test_skeleton_imports.py:23-38`: independent realms), Public-Friendliness (`cli/main.py:96-130`: no raw tracebacks), Honest Memory (`prompt.py:27-43`: instruction is unconditional), Modular Authorship (no cross-realm reach-arounds), Open Knowledge (no feature drift in README).
+- **One ambiguous finding deliberately deferred:** *"Vow of Flexible Roots"* — Auditor B flagged that config defaults are hardcoded `~/.ember/*` rather than being relative to a `--config-root` parameter. The finding rests on a *hypothetical* `--config-root` flag the auditor didn't verify actually exists. Even if it does, making defaults config-root-relative would change behavior for any operator who currently relies on `~/.ember` resolution. This is an architectural decision that needs operator input before shipping, not a bug fix. Flagged in this DEVLOG entry as a thing-to-think-about for the next slice.
+
+**Lens 3 — Resource lifecycle (22 acquire-points verified clean, 1 real leak fixed):**
+- Of 22 resource-acquisition points audited (sqlite/psycopg connections, urllib responses, tempfiles, os.open fds, generator iteration), 21 were verified to clean up correctly under every realistic failure interleaving. The one real leak (journal tempfile) is now fixed above.
+- Auditor's initial flags on the Ollama streaming response, fetch_url opener, sqlite_vec open() multi-step setup, pgvector open() multi-step setup, audit log fd, and chat.py REPL finally block were each investigated and found to already have correct try/finally + early-close patterns from prior batches.
+
+### Why this sweep was the last whole-tree sweep of the day
+
+Three sweeps preceded Batch G. Each found progressively fewer real bugs:
+- **Batches A+B (sweep #1):** 13 Tier-1 + 4 Tier-2 fixes — bulk of real bugs caught here
+- **Batches C+D+E (sweep #2):** 7 Tier-1 (typed-value-contract seams) + 5 Tier-2 — deeper consistency
+- **Batch F (sweep #3):** 8 Tier-1/2 fixes — newly-audited surfaces (render, ingest, registry)
+- **Batch G (sweep #4, this entry):** 3 fixes — fresh *lenses* on the same surfaces, plus honest "this is genuinely clean" reports
+
+The lens-not-surface approach worked: 9 Vows verified, 21 resource paths verified, dozens of adapter methods verified — *that knowledge is the real product of this sweep*, even more than the three fixes shipped. The DEVLOG entry captures it so the next operator (or auditor, or me-tomorrow) doesn't have to re-derive what's already known clean.
+
+The next sweep should wait for a **new surface to land** (slice-3 HTTP gateway, Auga GUI, Rödd voice). Whole-tree re-sweeps after that have hit diminishing returns.
+
+### Stats
+
+- **Before:** 550 pass + 2 skip, ruff clean.
+- **After:** **556 pass + 2 skip**, ruff clean. **+6 regression tests.**
+- **Files touched:** 2 source files (`pgvector/adapter.py`, `smidja/journal.py`).
+- **Files created:** 1 regression test file (`test_hardening_batch_g.py`).
+- **No version bump.** Slice-2 is still 0.2.0; Batch G is hygiene #4.
+
+The Architect's closing word: *"Four sweeps in one day. The first found real bugs; the second tightened typed seams; the third opened new surfaces; the fourth changed the question entirely. The product is not just the 31 fixes shipped — it's the verified-clean catalogue logged across four DEVLOG entries. Next time someone asks 'should we audit this code?' the answer for these surfaces is 'we did, on 2026-05-21, four ways. Here's what we found and what we verified clean.'"*
+
+---
+
 ## 2026-05-21 — Hardening sweep Batch F — third pass, fresh Auditor surfaces (no version bump).
 
 **Who:** Claude (Opus 4.7, 1M context). Six-role Mythic-Engineering pass #3 of the day, in response to *"call on the 6 Mythic Engineering agents and search all code for any other bugs and code hardening."*

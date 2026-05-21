@@ -11,6 +11,7 @@ mid-job, rerun the same command, resume from the last committed entry.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
@@ -274,7 +275,12 @@ class Journal:
 
     @staticmethod
     def _write_state(path: Path, state: JournalState) -> None:
-        # Atomic write: NamedTemporaryFile + os.replace.
+        # Atomic write: NamedTemporaryFile + os.replace. The tempfile is
+        # created with delete=False so we own its lifetime; on a failed
+        # os.replace (cross-filesystem, EACCES, ENOSPC) the temp file
+        # would otherwise accumulate in the journal directory across
+        # repeated ingest runs and eventually fill the disk on a Pi.
+        # Hardening pass added the explicit unlink-on-failure.
         path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(
             mode="w",
@@ -286,7 +292,12 @@ class Journal:
         ) as tmp:
             json.dump(state.to_payload(), tmp, ensure_ascii=False, indent=2)
             tmp_path = Path(tmp.name)
-        os.replace(tmp_path, path)
+        try:
+            os.replace(tmp_path, path)
+        except OSError:
+            with contextlib.suppress(OSError):
+                tmp_path.unlink()
+            raise
 
     @staticmethod
     def _find_existing(
