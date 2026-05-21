@@ -5,12 +5,13 @@ The compact statement of method lives at ``MYTHIC_ENGINEERING.md``.
 The map of every subpackage lives at ``docs/architecture/DOMAIN_MAP.md``.
 The plan of the first slice lives at ``docs/architecture/EMBER_FIRST_SLICE_PLAN.md``.
 
-Phases 1-4 of the first slice are complete: typed schemas under
-:mod:`ember.schemas`; the Well realm is wired via
-:mod:`ember.well.brunnr.sqlite_vec` and :mod:`ember.well.smidja`; and
-the Thread realm's tether :mod:`ember.thread.strengr` wraps Brunnr-open
-with retry-on-recoverable-failures and a never-raising ``health()``
-probe. :mod:`ember.spark` and :mod:`ember.cli` remain scaffolds;
+Phases 1-5 of the first slice are complete: typed schemas under
+:mod:`ember.schemas`; the Well realm via
+:mod:`ember.well.brunnr.sqlite_vec` and :mod:`ember.well.smidja`; the
+Thread realm via :mod:`ember.thread.strengr`; and Funi via
+:mod:`ember.spark.funi.ollama` with a runtime-neutral prompt assembler
+in :mod:`ember.spark.funi.prompt`. :mod:`ember.spark.hjarta`,
+:mod:`ember.spark.munnr`, and :mod:`ember.cli` remain scaffolds;
 ``python -m ember`` still raises ``NotImplementedError``.
 """
 

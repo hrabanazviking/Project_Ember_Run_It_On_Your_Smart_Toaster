@@ -8,6 +8,50 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 5 shipped: Funi (Ollama) + runtime-neutral prompt assembler.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (FuniHandle Protocol split + runtime-neutral assembler), Forge Worker (OllamaFuni adapter), Auditor (folded-failure semantics + parametrised tests), Scribe (this entry).
+**Scope:** Phase 5 of `docs/architecture/EMBER_FIRST_SLICE_PLAN.md` §3 — the Spark realm's reasoner. Funi adapter for Ollama plus the runtime-neutral prompt assembler Munnr will call in Phase 6.
+
+### What shipped
+
+- `src/ember/spark/funi/handle.py` — `@runtime_checkable FuniHandle` Protocol (`runtime_kind`, `model_id`, `complete`, `health`, `close`) + `open(config)` registry. Unimplemented runtimes return `Unavailable(reason=RUNTIME_NOT_INSTALLED)`.
+- `src/ember/spark/funi/prompt.py` — `assemble(*, identity, episodes, hits, well_disconnected=False) -> list[ContextItem]`. Runtime-neutral. System prompt mechanically encodes the Vow of Honest Memory: explicit "do not invent" when `well_disconnected=True`, explicit "cite document titles" when hits present.
+- `src/ember/spark/funi/ollama/adapter.py` — `OllamaFuni`. `POST /api/chat` for completions, `GET /api/version` for open + health probes. **Stdlib `urllib.request` only** — no `httpx` dep, same shape as Smiðja's `OllamaEmbedClient`. Translates `ContextItem`s to role-tagged Ollama messages (SYSTEM/CHUNK → role:system, EPISODE → user+assistant pair, operator → final role:user).
+- `src/ember/spark/funi/ollama/INTERFACE.md` — adapter contract with translation table.
+- `src/ember/spark/funi/__init__.py` — re-exports `FuniHandle`, `open`.
+- `src/ember/spark/funi/INTERFACE.md` updated to "(shipped Phase 5)". Removed `embed()` from the Funi surface — embedding lives in Smiðja.
+- `src/ember/__init__.py` docstring updated to reflect Phases 1-5 complete.
+
+**Failure semantics**
+
+- `open()` returns `Unavailable` on probe failure; never raises.
+- `complete()` **always returns a `FuniReply`**. Mid-call URL-error / non-JSON-body / missing-message / error-payload responses fold into `FuniReply(finish_reason=ERROR, text=operator-readable)`.
+- `complete(tools=[...])` returns `FuniReply(finish_reason=ERROR)` cleanly — tool use reserved for a later slice.
+- `health()` never raises; on probe failure preserves the previous `last_ok` timestamp.
+
+**Tests (24 new, 173 pass + 2 skip, 0.24s, ruff clean)**
+
+- `tests/unit/test_funi_handle.py` (2 tests)
+- `tests/unit/test_funi_prompt.py` (8 tests) — order, honesty instruction, well-disconnected text, episode round-trip, hit metadata, untitled placeholder.
+- `tests/unit/test_funi_ollama.py` (14 tests) — open success/unreachable/non-JSON-version, payload shape, finish-reason mapping, folded-failure for every error mode, tool-call refusal, health live/degraded, wrong-runtime.
+- `tests/integration/test_funi_ollama_real.py` (2 tests, `requires_ollama` marker + socket reachability gate) — skipped on hosts without local Ollama (this host).
+
+### What's next
+
+- **Phase 6 of the first slice:** Hjarta (first-run FSM) + Munnr (CLI surface — `ember chat`, `ember ask`, `ember well ingest`, `ember well status`, `ember doctor`, `ember setup --reset`). After Phase 6 ships, the first end-to-end conversation turn becomes runnable.
+- **Light root edits** still pending: Ember-descent rows in `ORIGINS.md`; root `PHILOSOPHY.md` Runa-specific phrasing pass.
+
+### Notes & gotchas
+
+- **`embed()` removed from the Funi Protocol.** The Phase 2 INTERFACE.md draft had it as "optional"; that's awkward in a Protocol and tempts coupling between reasoning-model and embedding-model selection. Smiðja's `OllamaEmbedClient` is the single embedding entry. If a runtime is later able to embed cheaply, that's a Smiðja `embed_client` adapter, not a Funi method.
+- **`complete()` always returns `FuniReply`, never raises.** Mid-call failure folds into `FuniReply(finish_reason=ERROR, text="[ollama unreachable: …]")`. Same typed-value-over-exception pattern as Disconnected/Unavailable. Munnr's renderer can show the error text as a normal reply, honestly tagged.
+- **Stdlib `urllib` rather than `httpx`.** Two HTTP clients in the codebase now (Smiðja + Funi), both stdlib-only. The Vow of Smallness wins again.
+- **Episode message translation is *graceful*.** `_split_episode` parses the canonical `_episode_text` shape; if a caller built the `ContextItem` themselves with a different shape, the parser returns `("", "")` and the item is dropped rather than corrupting the conversation history.
+- **DEVLOG + `__init__.py` + memory edits initially failed silently** in the Phase-5 main commit because the Read-before-Write rule rejected them. Caught immediately when I checked the commit. This addendum + a small follow-up commit fix it. Reinforces the cycle: write code → test → re-read any doc before editing.
+
+---
+
 ## 2026-05-21 — Phase 4 shipped: Strengr wraps Brunnr-open with retry + honest health.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (recoverable-vs-non-recoverable reason split), Forge Worker (tether implementation), Auditor (parametrised retry tests), Scribe (this entry).
