@@ -8,6 +8,64 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 16 shipped: tool-use live in Munnr + Hjarta + CLI. **0.2.0rc1 released.**
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (chat-loop shape + ContextKind.TOOL_REPLY contract), Forge Worker (chat.py tool-loop + Ollama tool-call wire format + Hjarta branch + CLI flags), Auditor (37 new tests + real-llama3.2:3b acceptance smoke + one real-Ollama bug caught), Scribe (this entry + memory).
+
+**Scope:** Final third of slice-2's tool-use work. The framework from Phase 14 and the tools from Phase 15 are now caller-reachable through the chat loop. An operator with `tools.enabled: true` (or the `--allow-tools` flag) sees the full propose → approve → execute → audit → feedback cycle live in `ember chat`. **Bumped to 0.2.0rc1 — release candidate for the slice-2 ratification in Phase 17.**
+
+**What shipped:**
+
+- **`src/ember/schemas/config.py`** — new `ToolsConfig` dataclass: `enabled` (default False per Vow of Sovereignty), `standing_trust`, `approval_overrides`, `allow_private_addresses`, `audit_root`. Added `ContextKind.TOOL_REPLY` for the tool-output-back-into-context channel.
+- **`src/ember/schemas/stream.py`** — `FuniStreamChunk.tool_calls: tuple[ToolCall, ...]` extension. Final chunk surfaces what the model proposed.
+- **`src/ember/spark/funi/handle.py`** — Protocol signatures updated: `tools: Sequence[ToolDescriptor] | None` (was placeholder `Sequence[str] | None`). `wrap_complete_as_stream` follows suit.
+- **`src/ember/spark/funi/ollama/adapter.py`** — major Phase-16 extension:
+  - `_descriptor_to_ollama_tool` converts `ToolDescriptor` → OpenAI-style function spec (`{"type": "function", "function": {...}}`). PATH and URL kinds serialise as `string`; enums forwarded.
+  - `_parse_tool_calls` consumes the inverse: handles dict-or-string-JSON arguments, drops malformed entries, generates UUID `call_id` when Ollama doesn't supply one.
+  - Both `complete()` and `complete_streaming()` now forward `tools` to Ollama instead of refusing.
+  - `_messages_from_context` learned to emit `ContextKind.TOOL_REPLY` as `role="tool"` with the `name` field populated from `metadata["tool_name"]`. Empty operator-input is omitted so follow-up turns after a tool call are tool→reply only.
+  - The Phase-16 acceptance smoke caught a real Ollama-streaming bug: tool_calls arrive in a **non-`done`** NDJSON frame, before the final `done:true` summary. Fix: the adapter now accumulates tool_calls across frames and attaches the full list to the final chunk. This regression is locked in by `test_streaming_accumulates_tool_calls_from_non_done_chunk`.
+- **`src/ember/spark/munnr/chat.py`** — the load-bearing piece:
+  - `_maybe_init_tools` side-effect-imports `ember.tools` when enabled, binds `search_well` to the live `BrunnrHandle` + embedder, wires the `StdinApprovalPrompter`, and stands up an `AuditLog`.
+  - `_drive_turn_with_tools` orchestrates: stream → render deltas → if `tool_calls`, run `_run_tool_round` → extend context with `TOOL_REPLY` items → loop. Bounded by `_MAX_TOOL_TURNS = 8`. Hits the cap → operator-facing `[tool-loop max iterations reached]` message.
+  - `_run_tool_round` per call: render proposal → validate args (`INVALID_ARGUMENTS` → audit + skip + render reply) → resolve approval (`NO_SUCH_TOOL`, `FORBIDDEN_BY_REGISTRY`, `DENIED`, `AUTO_APPROVED`, `APPROVED_THIS_CALL`, `APPROVED_FOR_SESSION` → audit with corresponding outcome; refusals carry `reply=None` so the audit shape distinguishes "tool not called" from "tool called and replied") → execute (any exception folds into typed `ToolReply.error`) → audit → render reply.
+  - Session-level `always` approvals accumulate in `tool_ctx.session_standing` (not persisted; restart resets per ADR 0011 §2.4).
+  - Operator Ctrl-C mid-stream still short-circuits the loop (Phase 11 behavior preserved).
+- **`src/ember/spark/munnr/render.py`** — `render_tool_call_proposal(descriptor, call)` and `render_tool_reply(reply, descriptor, *, outcome)`. Both honor `descriptor.redacted_arg_names`. Reply renderer truncates at 2 KiB stdout preview (full output in audit log).
+- **`src/ember/spark/hjarta/machine.py` + `prompts/wizard.toml`** — new `HjartaState.ADVANCED_TOOLS` between `NAME_EMBER` and `WRITE_IDENTITY`. Asks "Enable tools? [y/N]" — empty answer / anything-but-yes leaves it off (Vow of Sovereignty default). When yes, Hjarta writes `tools: {enabled: true}` into the initial `ember.yaml` via the writer's existing `extras` channel.
+- **`src/ember/cli/main.py`** — `--allow-tools` / `--no-tools` mutually-exclusive flags. `_apply_tool_overrides` overlays the chosen value on `config.tools.enabled` after every config load (initial + post-Hjarta).
+- **`config/ember.example.yaml`** — full `tools:` section with every knob and inline guidance (operator can edit `enabled`, `standing_trust`, `allow_private_addresses`, `approval_overrides`, `audit_root`).
+- **`src/ember/__init__.py`** docstring — bump to 0.2.0rc1 narrative.
+- **`pyproject.toml`** — `0.1.9` → `0.2.0rc1`.
+- **`tests/unit/test_skeleton_imports.py`** — version assertion bumped.
+
+**37 new tests** (485 pass + 2 skip, 18.4s, ruff clean):
+- `test_funi_ollama_tool_calls.py` (12): descriptor↔Ollama format round-trip, malformed-entry skipping, JSON-string-argument handling, `TOOL_REPLY` context items → `role=tool` messages, **streaming tool-call accumulation across non-done frames**.
+- `test_munnr_render_tools.py` (9): proposal + reply rendering, redaction-on-display, output truncation, all seven `ApprovalOutcome` headline variants.
+- `test_phase16_tool_loop.py` (8): full propose-approve-execute-feedback flow with scripted Funi + scripted prompter, audit log records, denied-call-no-execution, unknown-tool path, invalid-args-short-circuits-prompt, standing-tool auto-approval, `tools.enabled=false` skips loop, `_MAX_TOOL_TURNS` cap.
+- `test_phase16_hjarta_tools.py` (3): yes/no/empty wizard answers correctly write (or don't write) `tools.enabled`.
+- `test_cli_tool_flags.py` (4): `--allow-tools` / `--no-tools` overlay, no-flag identity-preserve, argparse mutual-exclusion.
+- Existing test updates: 1 in `test_schemas_funi.py` (TOOL_REPLY in ContextKind set); 2 in `test_funi_ollama*.py` (refuse-tools tests replaced with forward-to-Ollama assertions).
+
+**Real-llama3.2:3b acceptance smoke against the tailnet** — operator asked for `read_local_file`-mediated lookup of `pyproject.toml` version; chat output showed the tool proposal, the sandbox refusal (model gave a malformed `~/home/...` path which the sandbox correctly caught), and the model's natural-language explanation of the failure in the follow-up turn. The full loop fires. (phi3:mini doesn't support tool calls natively — Ollama returned 400; this is documented in `INSTALL.md` as a model-capability constraint.)
+
+**Where Ember stands at 0.2.0rc1:**
+
+| Capability | State |
+| --- | --- |
+| Hjarta first-run (now includes ADVANCED_TOOLS) | shipped 0.1.0 → 0.2.0rc1 |
+| Funi (Ollama) `complete()` + streaming + tool_calls | shipped 0.1.0 → 0.2.0rc1 |
+| Brunnr sqlite_vec + pgvector | shipped 0.1.0 → 0.1.9 |
+| Munnr CLI + streaming + Ctrl-C + tool-loop | shipped 0.1.0 → 0.2.0rc1 |
+| Config loader (now includes tools section) | shipped 0.1.5 → 0.2.0rc1 |
+| Tool framework + first three tools | shipped Phase 14-15 |
+| **Munnr tool-call integration + Hjarta tools + CLI flags** | **shipped this phase — 0.2.0rc1** |
+| Slice-2 acceptance + ADR 0013 ratification | pending → 0.2.0 (Phase 17) |
+
+**Next:** Phase 17 — author the full slice-2 acceptance test (`test_phase17_acceptance.py`) walking the operator-flow against real sqlite_vec + mocked Funi + a real first-party tool execution; touch `deploy/pi/INSTALL.md` with slice-2 sections; author `docs/decisions/0013-second-slice-ratification.md` (parallel to ADR 0007); bump to **0.2.0** and ship.
+
+---
+
 ## 2026-05-21 — Phase 15 shipped: first three first-party tools (`search_well`, `read_local_file`, `fetch_url`).
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (three tool implementations + sandbox logic), Auditor (41 new tests covering happy-path + every refusal mode), Scribe (this entry + README + memory).

@@ -70,6 +70,7 @@ class HjartaState(StrEnum):
     CONFIGURE_WELL = "configure_well"
     TEST_RETRIEVAL = "test_retrieval"
     NAME_EMBER = "name_ember"
+    ADVANCED_TOOLS = "advanced_tools"
     WRITE_IDENTITY = "write_identity"
     DONE = "done"
 
@@ -119,7 +120,7 @@ def _load_prompts() -> dict[str, dict[str, str]]:
 # --------------------------------------------------------------------- #
 
 
-def run(  # noqa: PLR0911,PLR0915 — explicit FSM with one return per abort state and one per success state
+def run(  # noqa: PLR0911,PLR0912,PLR0915 — explicit FSM with one return per abort state, one per success state, and one branch per state
     *,
     config: EmberConfig,
     config_root: Path,
@@ -229,6 +230,17 @@ def run(  # noqa: PLR0911,PLR0915 — explicit FSM with one return per abort sta
         if name_answer:
             chosen_name = name_answer
 
+        # ------------------------------------------------- ADVANCED_TOOLS
+        # Phase 16 (ADR 0011) — opt-in tool use; default is off per Vow
+        # of Sovereignty. Operators can change this later by editing
+        # ``~/.ember/config/ember.yaml``.
+        current_state = HjartaState.ADVANCED_TOOLS
+        _emit(io, prompts[HjartaState.ADVANCED_TOOLS])
+        tools_answer = io.prompt(
+            prompts[HjartaState.ADVANCED_TOOLS].get("prompt", "")
+        ).strip().lower()
+        tools_enabled = tools_answer in {"y", "yes"}
+
         # -------------------------------------------------- WRITE_IDENTITY
         current_state = HjartaState.WRITE_IDENTITY
         identity = IdentityConfig(name=chosen_name, role=config.identity.role)
@@ -242,8 +254,14 @@ def run(  # noqa: PLR0911,PLR0915 — explicit FSM with one return per abort sta
         # step — Phase 9 part of ADR 0008. Failure here is non-fatal: the
         # operator can still chat; they just won't have a config file to
         # edit until they re-run setup or hand-write one.
+        extras: dict[str, dict[str, object]] = {}
+        if tools_enabled:
+            extras["tools"] = {"enabled": True}
         try:
-            written_config = write_ember_config(config_root, identity)
+            written_config = write_ember_config(
+                config_root, identity,
+                extras=extras or None,
+            )
             io.info(f"  → also wrote operator config at {written_config}")
         except Exception as exc:
             io.error(

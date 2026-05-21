@@ -281,15 +281,54 @@ def test_streaming_ends_without_done_yields_synthetic_error() -> None:
     assert "without done" in chunks[-1].text_delta.lower()
 
 
-def test_streaming_tool_request_refuses_immediately() -> None:
-    handle = _opened({"/api/version": _MockJsonResp({"version": "0.1.32"})})
-    # Note: no urlopen patch here — we should refuse BEFORE making the call.
-    chunks = list(
-        handle.complete_streaming("hi", context=[], tools=["search_well"])
+def test_streaming_includes_tools_in_payload_when_supplied() -> None:
+    """Phase 16 (ADR 0011) — tools are forwarded to Ollama in streaming
+    mode too, not refused outright."""
+    from ember.schemas.tool import (  # noqa: PLC0415
+        ToolDescriptor,
+        ToolParameter,
+        ToolParameterKind,
     )
-    assert len(chunks) == 1
-    assert chunks[0].done is True
-    assert chunks[0].finish_reason is FinishReason.ERROR
+
+    handle = _opened({"/api/version": _MockJsonResp({"version": "0.1.32"})})
+
+    captured_payloads: list[dict] = []
+
+    import contextlib  # noqa: PLC0415 — narrowly scoped
+
+    def _capture(req, timeout):
+        body = req.data
+        if body:
+            with contextlib.suppress(json.JSONDecodeError):
+                captured_payloads.append(json.loads(body))
+        return _MockStreamingResp([
+            {"message": {"content": "ok"}, "done": False, "model": "phi3:mini"},
+            {
+                "message": {"content": ""}, "done": True, "done_reason": "stop",
+                "model": "phi3:mini",
+            },
+        ])
+
+    descriptor = ToolDescriptor(
+        name="search_well",
+        description="search the well",
+        parameters_schema={
+            "query": ToolParameter(
+                kind=ToolParameterKind.STRING, description="q",
+            ),
+        },
+    )
+    with patch("urllib.request.urlopen", side_effect=_capture):
+        chunks = list(
+            handle.complete_streaming("hi", context=[], tools=[descriptor])
+        )
+    assert chunks[-1].done is True
+    assert chunks[-1].finish_reason is FinishReason.STOP  # no tool_calls in mock reply
+    chat_payloads = [p for p in captured_payloads if "messages" in p]
+    assert chat_payloads
+    payload = chat_payloads[-1]
+    assert "tools" in payload
+    assert payload["tools"][0]["function"]["name"] == "search_well"
 
 
 # --------------------------------------------------------------------- #

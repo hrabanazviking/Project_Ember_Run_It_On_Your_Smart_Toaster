@@ -41,6 +41,19 @@ def _build_parser() -> argparse.ArgumentParser:
         default=_DEFAULT_CONFIG_ROOT,
         help="Where Ember's identity, secrets, well, and state live (default: ~/.ember/).",
     )
+    # Phase 16 (ADR 0011) — per-invocation tool override. Mutually
+    # exclusive; either flag wins over the config-file value.
+    tool_group = parser.add_mutually_exclusive_group()
+    tool_group.add_argument(
+        "--allow-tools",
+        action="store_true",
+        help="Enable tools for this invocation (overrides config.tools.enabled).",
+    )
+    tool_group.add_argument(
+        "--no-tools",
+        action="store_true",
+        help="Disable tools for this invocation (overrides config.tools.enabled).",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("chat", help="Open an interactive conversation.")
@@ -83,6 +96,8 @@ def main(  # noqa: PLR0911 — top-level dispatcher legitimately returns from ma
         stdout.write(f"Config error: {exc}\n")
         return 1
 
+    config = _apply_tool_overrides(config, args)
+
     # First-launch redirect: any subcommand that needs the operator's
     # identity launches Hjarta first if it hasn't been written yet.
     needs_identity = args.command in {"chat", "ask"}
@@ -99,6 +114,7 @@ def main(  # noqa: PLR0911 — top-level dispatcher legitimately returns from ma
         except ConfigError as exc:
             stdout.write(f"Config error after setup: {exc}\n")
             return 1
+        config = _apply_tool_overrides(config, args)
 
     if args.command == "chat":
         return chat.run(config=config, config_root=config_root, stdout=stdout)
@@ -124,6 +140,25 @@ def main(  # noqa: PLR0911 — top-level dispatcher legitimately returns from ma
     # exit-code anyway.
     parser.print_help(stdout)
     return 2
+
+
+def _apply_tool_overrides(
+    config,  # type: ignore[no-untyped-def]
+    args: argparse.Namespace,
+):
+    """Apply the per-invocation ``--allow-tools`` / ``--no-tools`` flag.
+
+    Returns the same ``EmberConfig`` if neither flag was set, or a new
+    one with ``tools.enabled`` flipped. Argparse's mutually-exclusive
+    group means at most one of the two flags is true.
+    """
+    from dataclasses import replace  # noqa: PLC0415 — narrowly scoped
+
+    if not getattr(args, "allow_tools", False) and not getattr(args, "no_tools", False):
+        return config
+    enabled = bool(args.allow_tools)
+    new_tools = replace(config.tools, enabled=enabled)
+    return replace(config, tools=new_tools)
 
 
 __all__ = ["main"]

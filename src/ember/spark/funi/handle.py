@@ -32,6 +32,7 @@ from ember.schemas.funi import (
     UnavailableReason,
 )
 from ember.schemas.stream import FuniStreamChunk
+from ember.schemas.tool import ToolDescriptor
 
 
 @runtime_checkable
@@ -45,13 +46,13 @@ class FuniHandle(Protocol):
         self,
         prompt: str,
         context: Sequence[ContextItem],
-        tools: Sequence[str] | None = None,
+        tools: Sequence[ToolDescriptor] | None = None,
     ) -> FuniReply: ...
     def complete_streaming(
         self,
         prompt: str,
         context: Sequence[ContextItem],
-        tools: Sequence[str] | None = None,
+        tools: Sequence[ToolDescriptor] | None = None,
     ) -> Iterator[FuniStreamChunk]: ...
     def health(self) -> FuniHealth: ...
     def close(self) -> None: ...
@@ -86,7 +87,7 @@ def wrap_complete_as_stream(
     handle: FuniHandle,
     prompt: str,
     context: Sequence[ContextItem],
-    tools: Sequence[str] | None = None,
+    tools: Sequence[ToolDescriptor] | None = None,
 ) -> Iterator[FuniStreamChunk]:
     """Default ``complete_streaming`` implementation for runtimes that
     can't stream natively.

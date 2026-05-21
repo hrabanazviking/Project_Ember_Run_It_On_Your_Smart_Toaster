@@ -271,15 +271,55 @@ def test_complete_returns_error_reply_when_ollama_reports_error_payload() -> Non
     assert "model" in reply.text.lower()
 
 
-def test_complete_refuses_tool_calls_cleanly() -> None:
-    urlopen, _ = _make_routing_opener(
-        {"/api/version": _Resp({"version": "0.1.32"})}
+def test_complete_includes_tools_in_payload_when_supplied() -> None:
+    """Phase 16 (ADR 0011) — tools are forwarded to Ollama as descriptors,
+    not refused."""
+    from ember.schemas.tool import (  # noqa: PLC0415
+        ToolDescriptor,
+        ToolParameter,
+        ToolParameterKind,
     )
-    with patch("urllib.request.urlopen", side_effect=urlopen):
+
+    captured_payloads: list[dict] = []
+
+    import contextlib  # noqa: PLC0415 — narrowly scoped
+
+    def _capture(req, timeout):
+        body = req.data
+        if body:
+            with contextlib.suppress(json.JSONDecodeError):
+                captured_payloads.append(json.loads(body))
+        url = req.get_full_url() if hasattr(req, "get_full_url") else getattr(req, "full_url", "")
+        if url.endswith("/api/version"):
+            return _Resp({"version": "0.1.32"})
+        return _Resp({
+            "message": {"content": "noop"},
+            "done": True,
+            "done_reason": "stop",
+            "model": "phi3:mini",
+        })
+
+    descriptor = ToolDescriptor(
+        name="search_well",
+        description="search the well",
+        parameters_schema={
+            "query": ToolParameter(
+                kind=ToolParameterKind.STRING, description="q",
+            ),
+        },
+    )
+    with patch("urllib.request.urlopen", side_effect=_capture):
         handle = ollama_open(_funi_config())
         assert isinstance(handle, OllamaFuni)
-        reply = handle.complete("hi", context=[], tools=["search_well"])
-    assert reply.finish_reason is FinishReason.ERROR
+        handle.complete("hi", context=[], tools=[descriptor])
+
+    # Find the /api/chat call (version probe is also in the list).
+    chat_payloads = [p for p in captured_payloads if "messages" in p]
+    assert chat_payloads, captured_payloads
+    payload = chat_payloads[-1]
+    assert "tools" in payload
+    assert payload["tools"][0]["function"]["name"] == "search_well"
+    assert "query" in payload["tools"][0]["function"]["parameters"]["properties"]
 
 
 # --------------------------------------------------------------------- #

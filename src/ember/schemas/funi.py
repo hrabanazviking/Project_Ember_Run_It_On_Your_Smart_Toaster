@@ -30,6 +30,7 @@ class ContextKind(StrEnum):
     EPISODE = "episode"
     CHUNK = "chunk"
     SYSTEM = "system"
+    TOOL_REPLY = "tool_reply"   # Phase 16 — feeds ToolReply back into next turn
 
 
 @dataclass(frozen=True, slots=True)

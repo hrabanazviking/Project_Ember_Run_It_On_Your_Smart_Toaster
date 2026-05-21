@@ -107,6 +107,26 @@ smidja:
     stale_heartbeat_s: 600
 
 # ---------------------------------------------------------------------------
+# Tool use (slice-2 Phase 14-16 — ADR 0011)
+# Off by default per the Vow of Sovereignty — Ember does not reach
+# beyond the chat turn until you opt in. When enabled, every PER_CALL
+# tool prompts before invocation; STANDING tools auto-approve.
+# See docs/decisions/0011-tool-use-framework.md for the design.
+# ---------------------------------------------------------------------------
+tools:
+  enabled: false                # set true to allow tool-use during chat
+  standing_trust: false         # set true to auto-approve every PER_CALL tool (still audited)
+  allow_private_addresses: false  # affects fetch_url; RFC1918/loopback refused by default
+  # Per-tool approval override. Operator can downgrade STANDING → per_call
+  # (more strict). Operator cannot upgrade per_call → STANDING — descriptor
+  # is the safety floor.
+  approval_overrides: {}
+    # search_well: per_call    # example: be strict about search too
+    # fetch_url:   forbidden   # example: mechanically disable a tool
+  # Where the JSONL audit log lands. null → <config_root>/state/tool_audit/
+  audit_root: null
+
+# ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
 logging:

@@ -27,10 +27,12 @@ def test_context_item_minimal_construction() -> None:
     assert ctx.metadata == {}
 
 
-def test_context_kinds_cover_the_three_documented_sources() -> None:
+def test_context_kinds_cover_the_documented_sources() -> None:
     # Per DATA_FLOW.md §2.1 step 6: Munnr assembles system prompt +
-    # last N episodes + retrieved chunks.
-    expected = {"episode", "chunk", "system"}
+    # last N episodes + retrieved chunks. Phase 16 (ADR 0011) added
+    # ``tool_reply`` so executed tool replies fold back into the next
+    # turn's context.
+    expected = {"episode", "chunk", "system", "tool_reply"}
     actual = {kind.value for kind in ContextKind}
     assert actual == expected
 

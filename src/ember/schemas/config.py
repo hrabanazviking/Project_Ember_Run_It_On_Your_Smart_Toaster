@@ -16,6 +16,7 @@ This keeps the schema pure and avoids freezing ``$HOME`` at import time.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -218,6 +219,38 @@ class LoggingConfig:
 
 
 # --------------------------------------------------------------------- #
+# Tools (slice-2 Phase 14-16 — ADR 0011)                                #
+# --------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class ToolsConfig:
+    """Operator-facing tool-use config (ADR 0011).
+
+    ``enabled`` is False by default per the Vow of Sovereignty —
+    Ember does not reach beyond the chat turn unless the operator
+    opts in. The ``--allow-tools`` / ``--no-tools`` CLI flags
+    (Phase 16) overlay a single-invocation override on top of this.
+
+    ``approval_overrides`` is a per-tool dict. Per ADR 0011 §2.4 the
+    descriptor is the safety floor — config can downgrade STANDING to
+    PER_CALL but cannot upgrade.
+
+    ``standing_trust`` flips every PER_CALL tool to AUTO_APPROVED
+    (the "trust everything" knob); still audited.
+
+    ``audit_root`` overrides where the JSONL audit log lands.
+    None → ``<config_root>/state/tool_audit/``.
+    """
+
+    enabled: bool = False
+    standing_trust: bool = False
+    approval_overrides: Mapping[str, str] = field(default_factory=dict)
+    allow_private_addresses: bool = False
+    audit_root: Path | None = None
+
+
+# --------------------------------------------------------------------- #
 # Top-level                                                             #
 # --------------------------------------------------------------------- #
 
@@ -229,6 +262,7 @@ class EmberConfig:
     strengr: StrengrConfig = field(default_factory=StrengrConfig)
     brunnr: BrunnrConfig = field(default_factory=BrunnrConfig)
     smidja: SmidjaConfig = field(default_factory=SmidjaConfig)
+    tools: ToolsConfig = field(default_factory=ToolsConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
 
@@ -253,4 +287,5 @@ __all__ = [
     "SmidjaConfig",
     "SqliteVecConfig",
     "StrengrConfig",
+    "ToolsConfig",
 ]

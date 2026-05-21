@@ -23,6 +23,7 @@ import json
 import logging
 import urllib.error
 import urllib.request
+import uuid
 from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime
 
@@ -37,6 +38,11 @@ from ember.schemas.funi import (
     UnavailableReason,
 )
 from ember.schemas.stream import FuniStreamChunk
+from ember.schemas.tool import (
+    ToolCall,
+    ToolDescriptor,
+    ToolParameterKind,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,30 +113,25 @@ class OllamaFuni:
         self,
         prompt: str,
         context: Sequence[ContextItem],
-        tools: Sequence[str] | None = None,
+        tools: Sequence[ToolDescriptor] | None = None,
     ) -> FuniReply:
         """Send one turn through ``/api/chat`` and return the reply.
 
         Errors are folded into ``FuniReply(finish_reason=ERROR)`` rather
-        than raised — see module docstring.
+        than raised — see module docstring. ``tools`` (Phase 16 / ADR
+        0011) become Ollama tool descriptors; ``message.tool_calls``
+        in the response surfaces as :attr:`FuniReply.tool_calls`.
         """
-        if tools:
-            # Tool use is reserved for a later slice; refuse cleanly.
-            return FuniReply(
-                text="",
-                finish_reason=FinishReason.ERROR,
-                model_id=self.model_id,
-            )
-
         messages = _messages_from_context(context, prompt)
-        payload = json.dumps(
-            {
-                "model": self.model_id,
-                "messages": messages,
-                "stream": False,
-                "options": self._options,
-            }
-        ).encode("utf-8")
+        request_body: dict[str, object] = {
+            "model": self.model_id,
+            "messages": messages,
+            "stream": False,
+            "options": self._options,
+        }
+        if tools:
+            request_body["tools"] = [_descriptor_to_ollama_tool(d) for d in tools]
+        payload = json.dumps(request_body).encode("utf-8")
 
         url = f"{self._base_url}/api/chat"
         try:
@@ -169,21 +170,34 @@ class OllamaFuni:
             )
 
         message = (parsed or {}).get("message") or {}
-        text = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(message, dict):
+            message = {}
+        text = message.get("content")
+        # Tool calls may arrive even when text is empty (model emits only a call).
+        tool_calls = _parse_tool_calls(message.get("tool_calls"))
         if not isinstance(text, str):
+            text = ""
+        if not text and not tool_calls:
             return FuniReply(
                 text="[ollama returned no message content]",
                 finish_reason=FinishReason.ERROR,
                 model_id=self.model_id,
             )
 
-        finish = _OLLAMA_DONE_REASON_TO_FINISH.get(
-            str(parsed.get("done_reason") or "stop"), FinishReason.STOP
-        )
+        # If Ollama yields tool_calls, force the finish reason — some
+        # local models forget to set ``done_reason="tool_calls"`` even
+        # when they emit a call.
+        if tool_calls:
+            finish = FinishReason.TOOL_CALL
+        else:
+            finish = _OLLAMA_DONE_REASON_TO_FINISH.get(
+                str(parsed.get("done_reason") or "stop"), FinishReason.STOP
+            )
         self._last_ok = _now_utc()
         return FuniReply(
             text=text,
             finish_reason=finish,
+            tool_calls=tool_calls,
             model_id=str(parsed.get("model") or self.model_id),
             prompt_tokens=_safe_int(parsed.get("prompt_eval_count")),
             completion_tokens=_safe_int(parsed.get("eval_count")),
@@ -195,32 +209,26 @@ class OllamaFuni:
         self,
         prompt: str,
         context: Sequence[ContextItem],
-        tools: Sequence[str] | None = None,
+        tools: Sequence[ToolDescriptor] | None = None,
     ) -> Iterator[FuniStreamChunk]:
         """Stream a turn via ``/api/chat`` with ``stream=True``.
 
         Yields one :class:`FuniStreamChunk` per Ollama NDJSON line.
         Mid-stream errors fold into a final ERROR chunk per ADR 0009
-        §2.4. Tool requests refuse immediately per §2.5.
+        §2.4. ``tools`` (Phase 16 / ADR 0011) become Ollama tool
+        descriptors; any ``message.tool_calls`` on the final chunk
+        surface as :attr:`FuniStreamChunk.tool_calls`.
         """
-        if tools:
-            yield FuniStreamChunk(
-                text_delta="",
-                done=True,
-                finish_reason=FinishReason.ERROR,
-                model_id=self.model_id,
-            )
-            return
-
         messages = _messages_from_context(context, prompt)
-        payload = json.dumps(
-            {
-                "model": self.model_id,
-                "messages": messages,
-                "stream": True,
-                "options": self._options,
-            }
-        ).encode("utf-8")
+        request_body: dict[str, object] = {
+            "model": self.model_id,
+            "messages": messages,
+            "stream": True,
+            "options": self._options,
+        }
+        if tools:
+            request_body["tools"] = [_descriptor_to_ollama_tool(d) for d in tools]
+        payload = json.dumps(request_body).encode("utf-8")
         url = f"{self._base_url}/api/chat"
 
         try:
@@ -249,6 +257,12 @@ class OllamaFuni:
             response.close()
 
     def _iter_ndjson_chunks(self, response) -> Iterator[FuniStreamChunk]:
+        # Ollama emits ``message.tool_calls`` on a non-``done`` line (the
+        # frame before the final ``done:true`` summary). We accumulate
+        # them across the stream so the consumer sees them all attached
+        # to the final chunk — that's the contract documented in
+        # ``schemas/stream.py`` and consumed by Munnr's tool loop.
+        accumulated_tool_calls: list[ToolCall] = []
         seen_done = False
         try:
             for raw_line in response:
@@ -275,17 +289,23 @@ class OllamaFuni:
                     )
                     return
 
-                message = (parsed or {}).get("message") or {}
-                text_delta = (
-                    message.get("content") if isinstance(message, dict) else ""
-                ) or ""
+                raw_message = (parsed or {}).get("message")
+                message = raw_message if isinstance(raw_message, dict) else {}
+                text_delta = message.get("content") or ""
+                this_chunks_tool_calls = _parse_tool_calls(message.get("tool_calls"))
+                if this_chunks_tool_calls:
+                    accumulated_tool_calls.extend(this_chunks_tool_calls)
                 done = bool(parsed.get("done"))
                 if done:
                     seen_done = True
-                    finish = _OLLAMA_DONE_REASON_TO_FINISH.get(
-                        str(parsed.get("done_reason") or "stop"),
-                        FinishReason.STOP,
-                    )
+                    final_calls = tuple(accumulated_tool_calls)
+                    if final_calls:
+                        finish = FinishReason.TOOL_CALL
+                    else:
+                        finish = _OLLAMA_DONE_REASON_TO_FINISH.get(
+                            str(parsed.get("done_reason") or "stop"),
+                            FinishReason.STOP,
+                        )
                     self._last_ok = _now_utc()
                     yield FuniStreamChunk(
                         text_delta=text_delta,
@@ -294,6 +314,7 @@ class OllamaFuni:
                         model_id=str(parsed.get("model") or self.model_id),
                         prompt_tokens=_safe_int(parsed.get("prompt_eval_count")),
                         completion_tokens=_safe_int(parsed.get("eval_count")),
+                        tool_calls=final_calls,
                     )
                     return
                 yield FuniStreamChunk(
@@ -385,17 +406,25 @@ def open(config: FuniConfig) -> OllamaFuni | Unavailable:
 
 def _messages_from_context(
     context: Sequence[ContextItem], operator_input: str
-) -> list[dict[str, str]]:
+) -> list[dict[str, object]]:
     """Translate the runtime-neutral context items into Ollama messages.
 
     Strategy: keep system items as ``role="system"`` (Ollama supports
     multiple); episodes become alternating ``user``/``assistant`` pairs
     when they parse cleanly from our ``_episode_text`` shape; chunk
     hits become ``role="system"`` messages so they ground the model
-    rather than appearing as conversation history. Finally, the
-    operator's current input is a ``role="user"`` message.
+    rather than appearing as conversation history.
+
+    Phase 16 (ADR 0011) — ``ContextKind.TOOL_REPLY`` items are emitted
+    as ``role="tool"`` messages with the originating tool's name in
+    ``metadata["tool_name"]`` so the model can correlate the reply
+    with the call it just made. If the operator added a turn after
+    the tool reply (a follow-up loop), the operator_input is appended
+    last as the standard ``role="user"``. Empty operator_input is
+    omitted so the follow-up turn after a tool call is just
+    ``tool`` → next reply.
     """
-    messages: list[dict[str, str]] = []
+    messages: list[dict[str, object]] = []
     for item in context:
         if item.kind is ContextKind.SYSTEM or item.kind is ContextKind.CHUNK:
             messages.append({"role": "system", "content": item.text})
@@ -405,7 +434,16 @@ def _messages_from_context(
                 messages.append({"role": "user", "content": op})
             if em:
                 messages.append({"role": "assistant", "content": em})
-    messages.append({"role": "user", "content": operator_input})
+        elif item.kind is ContextKind.TOOL_REPLY:
+            messages.append(
+                {
+                    "role": "tool",
+                    "content": item.text,
+                    "name": str(item.metadata.get("tool_name", "tool")),
+                }
+            )
+    if operator_input:
+        messages.append({"role": "user", "content": operator_input})
     return messages
 
 
@@ -436,6 +474,100 @@ def _safe_int(value: object) -> int | None:
     with contextlib.suppress(TypeError, ValueError):
         return int(value)  # type: ignore[arg-type]
     return None
+
+
+# --------------------------------------------------------------------- #
+# Tool-use ↔ Ollama format (ADR 0011 Phase 16)                          #
+# --------------------------------------------------------------------- #
+
+
+_PARAM_KIND_TO_JSON_TYPE: dict[ToolParameterKind, str] = {
+    ToolParameterKind.STRING: "string",
+    ToolParameterKind.INTEGER: "integer",
+    ToolParameterKind.FLOAT: "number",
+    ToolParameterKind.BOOLEAN: "boolean",
+    # PATH and URL are strings on the wire; the framework's
+    # validate_arguments enforces the extra constraints when the call
+    # comes back.
+    ToolParameterKind.PATH: "string",
+    ToolParameterKind.URL: "string",
+}
+
+
+def _descriptor_to_ollama_tool(descriptor: ToolDescriptor) -> dict[str, object]:
+    """Convert an Ember :class:`ToolDescriptor` to Ollama's tool shape.
+
+    Ollama's ``/api/chat`` ``tools`` field follows the OpenAI-style
+    function-tool spec: ``{"type": "function", "function": {"name",
+    "description", "parameters": {"type": "object", "properties":
+    {...}, "required": [...]}}}``. Optional parameters with defaults
+    are emitted as non-required.
+    """
+    properties: dict[str, object] = {}
+    required: list[str] = []
+    for name, param in descriptor.parameters_schema.items():
+        prop: dict[str, object] = {
+            "type": _PARAM_KIND_TO_JSON_TYPE.get(param.kind, "string"),
+            "description": param.description,
+        }
+        if param.enum is not None:
+            prop["enum"] = list(param.enum)
+        properties[name] = prop
+        if param.required and param.default is None:
+            required.append(name)
+    function_def: dict[str, object] = {
+        "name": descriptor.name,
+        "description": descriptor.description,
+        "parameters": {
+            "type": "object",
+            "properties": properties,
+            "required": required,
+        },
+    }
+    return {"type": "function", "function": function_def}
+
+
+def _parse_tool_calls(raw: object) -> tuple[ToolCall, ...]:
+    """Parse the ``message.tool_calls`` array out of an Ollama reply.
+
+    The expected shape is a list of objects::
+
+        {"function": {"name": "search_well", "arguments": {...}}}
+
+    Ollama doesn't supply a call_id, so the adapter generates a UUID4
+    per call. Malformed entries are skipped rather than raised — a
+    tool that produced no parseable calls reads as ``finish_reason
+    != TOOL_CALL`` to the consumer.
+    """
+    if not isinstance(raw, list):
+        return ()
+    out: list[ToolCall] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            continue
+        function = entry.get("function") or entry
+        if not isinstance(function, dict):
+            continue
+        name = function.get("name")
+        if not isinstance(name, str) or not name:
+            continue
+        arguments = function.get("arguments")
+        if isinstance(arguments, str):
+            # Some Ollama builds emit the arg blob as a JSON string.
+            try:
+                arguments = json.loads(arguments)
+            except json.JSONDecodeError:
+                arguments = {}
+        if not isinstance(arguments, dict):
+            arguments = {}
+        out.append(
+            ToolCall(
+                call_id=str(entry.get("id") or uuid.uuid4()),
+                name=name,
+                arguments=arguments,
+            )
+        )
+    return tuple(out)
 
 
 __all__ = ["OllamaFuni", "open"]

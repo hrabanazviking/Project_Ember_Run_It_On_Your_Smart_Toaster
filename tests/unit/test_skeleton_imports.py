@@ -45,10 +45,11 @@ def test_subpackage_imports_cleanly(module_name: str) -> None:
 
 def test_ember_package_exposes_version() -> None:
     assert isinstance(ember.__version__, str)
-    # Slice-2 Phase 9  (config loader live) bumped from 0.1.0 → 0.1.5.
-    # Slice-2 Phase 11 (streaming live)     bumped from 0.1.5 → 0.1.7.
-    # Slice-2 Phase 13 (pgvector live)      bumped from 0.1.7 → 0.1.9.
-    assert ember.__version__ == "0.1.9"
+    # Slice-2 Phase 9  (config loader live) bumped from 0.1.0  → 0.1.5.
+    # Slice-2 Phase 11 (streaming live)     bumped from 0.1.5  → 0.1.7.
+    # Slice-2 Phase 13 (pgvector live)      bumped from 0.1.7  → 0.1.9.
+    # Slice-2 Phase 16 (tools live, rc1)    bumped from 0.1.9  → 0.2.0rc1.
+    assert ember.__version__ == "0.2.0rc1"
 
 
 def test_main_module_defines_main_function() -> None:

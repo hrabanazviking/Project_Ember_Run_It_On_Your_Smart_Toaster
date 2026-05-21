@@ -23,8 +23,15 @@ from ember.schemas.funi import FinishReason, FuniHealth, FuniReply
 from ember.schemas.ingest import IngestSummary
 from ember.schemas.stream import FuniStreamChunk
 from ember.schemas.thread import StrengrHealth
+from ember.schemas.tool import (
+    ApprovalOutcome,
+    ToolCall,
+    ToolDescriptor,
+    ToolReply,
+)
 
 INTERRUPTED_TAG = "[interrupted by operator]"
+TOOL_OUTPUT_PREVIEW_BYTES = 2 * 1024  # 2 KiB shown on stdout; full text persisted in audit
 
 # --------------------------------------------------------------------- #
 # Conversation                                                          #
@@ -139,6 +146,101 @@ def stream_finish_tag(
 
 
 # --------------------------------------------------------------------- #
+# Tool use (Phase 16, ADR 0011)                                         #
+# --------------------------------------------------------------------- #
+
+
+def render_tool_call_proposal(
+    descriptor: ToolDescriptor | None,
+    call: ToolCall,
+) -> str:
+    """Format Funi's proposed tool call for the operator to see.
+
+    Renders the tool name, a one-line description (when a descriptor
+    is known), and the argument map. Arguments named in
+    ``descriptor.redacted_arg_names`` print as ``<redacted>`` so
+    secrets don't appear on stdout.
+    """
+    lines = [
+        f"[tool proposal] {call.name}  (call {call.call_id[:8]})",
+    ]
+    if descriptor is not None:
+        lines.append(f"  description: {descriptor.description}")
+    if call.arguments:
+        lines.append("  arguments:")
+        redacted = (
+            set(descriptor.redacted_arg_names) if descriptor is not None else set()
+        )
+        for name, value in call.arguments.items():
+            shown = "<redacted>" if name in redacted else _short_repr(value)
+            lines.append(f"    {name}: {shown}")
+    else:
+        lines.append("  arguments: (none)")
+    return "\n".join(lines)
+
+
+def render_tool_reply(
+    reply: ToolReply,
+    descriptor: ToolDescriptor | None,
+    *,
+    outcome: ApprovalOutcome | None = None,
+) -> str:
+    """Format the executed (or refused) tool reply for the operator.
+
+    Lead line names the tool + the resolution (auto-approved / approved
+    / denied / refused / errored). Body shows the bounded output or the
+    error string. The full output goes to the audit log; the rendered
+    line is truncated so a 4 KB tool output doesn't dominate the chat.
+    """
+    name = descriptor.name if descriptor is not None else "(unknown tool)"
+    head = _outcome_headline(name, reply, outcome)
+    if reply.error and not reply.output:
+        return f"{head}\n  error: {reply.error}"
+    body = reply.output or ""
+    if len(body.encode("utf-8")) > TOOL_OUTPUT_PREVIEW_BYTES:
+        body = body.encode("utf-8")[:TOOL_OUTPUT_PREVIEW_BYTES].decode(
+            "utf-8", errors="ignore",
+        ) + "..."
+    body_block = "\n".join(f"  {line}" for line in body.splitlines()) or "  (no output)"
+    parts = [head, body_block]
+    if reply.error:
+        parts.append(f"  (with error: {reply.error})")
+    return "\n".join(parts)
+
+
+def _outcome_headline(  # noqa: PLR0911 — one early-return per outcome is the readable shape
+    name: str, reply: ToolReply, outcome: ApprovalOutcome | None,
+) -> str:
+    """One-line summary of the call's resolution."""
+    elapsed = f" ({reply.elapsed_s * 1000:.0f} ms)" if reply.elapsed_s else ""
+    if outcome is None:
+        return f"[tool reply] {name}{elapsed}"
+    if outcome is ApprovalOutcome.AUTO_APPROVED:
+        return f"[tool reply: auto-approved] {name}{elapsed}"
+    if outcome is ApprovalOutcome.APPROVED_THIS_CALL:
+        return f"[tool reply: approved] {name}{elapsed}"
+    if outcome is ApprovalOutcome.APPROVED_FOR_SESSION:
+        return f"[tool reply: approved-for-session] {name}{elapsed}"
+    if outcome is ApprovalOutcome.DENIED:
+        return f"[tool refused: operator denied] {name}"
+    if outcome is ApprovalOutcome.INVALID_ARGUMENTS:
+        return f"[tool refused: invalid arguments] {name}"
+    if outcome is ApprovalOutcome.FORBIDDEN_BY_REGISTRY:
+        return f"[tool refused: forbidden by registry] {name}"
+    if outcome is ApprovalOutcome.NO_SUCH_TOOL:
+        return f"[tool refused: no such tool] {name}"
+    return f"[tool reply: {outcome.value}] {name}{elapsed}"
+
+
+def _short_repr(value: object) -> str:
+    """Compact repr for arg display — keeps the proposal one screen."""
+    text = repr(value)
+    if len(text) > 200:
+        return text[:200] + "..."
+    return text
+
+
+# --------------------------------------------------------------------- #
 # Status / doctor / ingest                                              #
 # --------------------------------------------------------------------- #
 
@@ -231,11 +333,14 @@ def _human_bytes(n: int) -> str:
 
 __all__ = [
     "INTERRUPTED_TAG",
+    "TOOL_OUTPUT_PREVIEW_BYTES",
     "render_citations",
     "render_doctor",
     "render_ingest_summary",
     "render_reply",
     "render_stream_chunk",
+    "render_tool_call_proposal",
+    "render_tool_reply",
     "render_well_disconnected_banner",
     "render_well_status",
     "stream_finish_tag",

@@ -67,6 +67,16 @@ to it.
 """
 prompt = "Press Enter to keep 'Ember', or type a different name."
 
+[advanced_tools]
+body = """
+Optional: I can call a small set of operator-approved tools (search the
+Well, read a local file, fetch a URL). Tools are OFF by default; every
+call is approved per-invocation unless you say 'always'.
+
+You can change this later by editing ~/.ember/config/ember.yaml.
+"""
+prompt = "Enable tools? [y/N]"
+
 [write_identity]
 body = """
 Writing identity to {identity_path}...
