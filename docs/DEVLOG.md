@@ -8,6 +8,30 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 1 closure: skeleton-import test added.
+
+**Who:** Claude (Opus 4.7, 1M context). Voice: Auditor (Sólrún Hvítmynd).
+**Scope:** Volmarr asked whether Phase 1 had been fully completed. The four structural bullets (`src/runa/` archived, `src/ember/` built, `pyproject.toml` rewritten, `__main__.py` raises clean `NotImplementedError`) all landed in commit `045fda6`. The fifth bullet — *"Tests: import-only"* — had been rolled forward into Phase 2's `tests/unit/test_schemas_import.py`, which only covers the schemas subpackage. This entry closes the gap for the full Three Realms tree.
+
+### What shipped
+
+- **`tests/unit/test_skeleton_imports.py`** — parametrised import test over the 12 importable subpackages of `src/ember/`: `ember`, `ember.cli`, `ember.schemas`, `ember.spark` (+ `funi`, `hjarta`, `munnr`), `ember.thread` (+ `strengr`), `ember.well` (+ `brunnr`, `smidja`). Plus three specific assertions:
+    - `ember.__version__` is `"0.0.0"`.
+    - `ember.__main__` imports cleanly and exposes a callable `main`.
+    - `ember.__main__.main()` raises `NotImplementedError` with a message that mentions `EMBER_FIRST_SLICE_PLAN`.
+- **Suite size:** 81 tests (was 66 after Phase 2), 0.09s, ruff clean.
+
+### What's next
+
+Phase 3 of the first slice — the `sqlite_vec` Brunnr adapter, `local_files` Smiðja, chunker, embed client, resumable journal. First end-to-end vertical that writes embeddings to disk.
+
+### Notes
+
+- Phase 1 is now strictly complete per the plan's bullet list. No code or doc change required beyond the new test file; the scaffolding it tests was already correct.
+- Failure of any parametrised case in this test would name the breach — typically a circular import, a typo in an `__init__.py`, or a stray top-level statement that fails at import time.
+
+---
+
 ## 2026-05-21 — Phase 2 shipped: ember.schemas populated, 66 shape tests green.
 
 **Who:** Claude (Opus 4.7, 1M context). Voice: Forge Worker (Eldra Járnsdóttir) for the code; Auditor (Sólrún Hvítmynd) for the tests; Scribe (Eirwyn Rúnblóm) for this entry.
