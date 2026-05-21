@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS {schema}.documents (
     title        text,
     content_type text,
     hash         text UNIQUE,
-    metadata     jsonb NOT NULL DEFAULT '{{}}'::jsonb,
+    metadata     jsonb NOT NULL DEFAULT '{}'::jsonb,
     ingested_at  timestamptz NOT NULL DEFAULT now()
 );
 

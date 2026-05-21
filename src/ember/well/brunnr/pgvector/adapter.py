@@ -107,7 +107,7 @@ class PgVectorBrunnr:
     # ------------------------------------------------------------- open
 
     @classmethod
-    def open(  # noqa: PLR0911,PLR0912 — open() is the failure-classification surface
+    def open(  # noqa: PLR0911,PLR0912,PLR0915 — open() is the failure-classification surface
         cls,
         config: BrunnrConfig,
     ) -> PgVectorBrunnr | Disconnected:
@@ -161,6 +161,26 @@ class PgVectorBrunnr:
                 since=_now_utc(),
                 detail=f"URL parse error: {exc}",
             )
+
+        # Ensure the pgvector extension exists *before* registering the
+        # codec — `register_vector` looks up the `vector` type by name and
+        # fails if the extension hasn't been created in this database. On
+        # Gungnir the extension always exists (the schema uses it); on a
+        # fresh ephemeral container we create it on first open.
+        try:
+            ext_outcome = _ensure_pgvector_extension(conn, read_only=pg_cfg.read_only)
+        except psycopg.Error as exc:
+            with contextlib.suppress(Exception):
+                conn.close()
+            return Disconnected(
+                reason=DisconnectReason.BACKEND_REPORTED_UNAVAILABLE,
+                since=_now_utc(),
+                detail=f"pgvector extension probe failed: {exc}",
+            )
+        if ext_outcome is not None:
+            with contextlib.suppress(Exception):
+                conn.close()
+            return ext_outcome
 
         # Register the pgvector codec on this connection.
         try:
@@ -648,6 +668,55 @@ class _SchemaProbe:
     chunks_present: bool
     episodes_present: bool
     embedding_dim: int | None
+
+
+def _ensure_pgvector_extension(conn, *, read_only: bool) -> Disconnected | None:
+    """Make sure the ``vector`` extension exists in this database.
+
+    Returns None on success, or a typed :class:`Disconnected` value when
+    the extension is missing and we can't (or shouldn't) create it.
+
+    Order of operations:
+
+    - Probe ``pg_extension`` for the extension.
+    - If present → return None (codec can register).
+    - If absent + ``read_only=True`` → refuse rather than mutate.
+    - If absent + writable → ``CREATE EXTENSION IF NOT EXISTS vector``;
+      report the error verbatim if the role lacks CREATE privilege.
+    """
+    with conn.cursor() as cur:
+        cur.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
+        row = cur.fetchone()
+    if row is not None:
+        return None
+
+    if read_only:
+        return Disconnected(
+            reason=DisconnectReason.BACKEND_REPORTED_UNAVAILABLE,
+            since=_now_utc(),
+            detail=(
+                "pgvector extension missing and read_only=true; "
+                "operator must `CREATE EXTENSION vector` separately"
+            ),
+        )
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        conn.commit()
+    except Exception as exc:
+        with contextlib.suppress(Exception):
+            conn.rollback()
+        return Disconnected(
+            reason=DisconnectReason.BACKEND_REPORTED_UNAVAILABLE,
+            since=_now_utc(),
+            detail=(
+                f"could not CREATE EXTENSION vector: {exc} "
+                f"(operator-level fix: GRANT CREATE on database, or "
+                f"create the extension as a superuser once)"
+            ),
+        )
+    return None
 
 
 def _probe_schema(conn, *, schema: str) -> _SchemaProbe:

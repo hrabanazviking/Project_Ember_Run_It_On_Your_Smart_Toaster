@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ember-agent"
-version = "0.1.7"
+version = "0.1.9"
 description = "Ember — a small, tethered, runs-anywhere AI companion. See docs/SYSTEM_VISION.md."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -123,6 +123,9 @@ markers = [
     "requires_ollama: tests that need a local Ollama instance",
     "requires_lmstudio: tests that need a local LM Studio instance",
     "requires_pi: tests that need to run on a Raspberry Pi class device",
+    "requires_postgres: tests that need a Postgres + pgvector instance (ADR 0010)",
+    "requires_gungnir: tests that need the live Gungnir tailnet endpoint",
+    "requires_podman: tests that spin up a local container via podman",
 ]
 
 [tool.coverage.run]

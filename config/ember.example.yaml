@@ -56,8 +56,9 @@ strengr:
 # Brunnr — pluggable storage (the Well)
 # Default is sqlite_vec on local disk (the toaster baseline).
 # Switch to pgvector to talk to a shared/household Well (e.g. Gungnir);
-# the pgvector adapter ships in slice 2 (ADR 0010).
-# See docs/adapters/BRUNNR_BACKEND_MATRIX.md to choose.
+# the pgvector adapter shipped in slice 2 Phase 13 (ADR 0010).
+# See docs/adapters/BRUNNR_BACKEND_MATRIX.md to choose; see
+# docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md for the operator guide.
 # ---------------------------------------------------------------------------
 brunnr:
   backend: sqlite_vec
@@ -65,13 +66,25 @@ brunnr:
   sqlite_vec:
     path: "~/.ember/well/store.db"
     wal_mode: true
-  # pgvector example (uncomment + edit to use; recommended for Gungnir):
+  # ─── pgvector ─────────────────────────────────────────────────────────
+  # Uncomment to switch to a Postgres + pgvector Well (e.g. Gungnir).
+  # Install with `pip install ember-agent[pgvector]`.
+  # See docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md for the full guide.
+  #
+  # To switch, also change `backend: sqlite_vec` above to `backend: pgvector`.
   # pgvector:
   #   url: "postgresql://volmarr@gungnir/knowledge"
-  #   secret_ref: "~/.ember/secrets/well.password"   # mode 600
+  #   secret_ref: "~/.ember/secrets/well.password"   # mode 600 enforced
+  #   secret_env: "EMBER_WELL_PASSWORD"              # checked first
+  #   use_keyring: true                              # set false to skip
+  #   keyring_service: "ember-well"
+  #   username: null                                  # null → parsed from URL
+  #   connect_timeout_s: 10.0
   #   vector_index: hnsw
   #   vector_metric: cosine
   #   schema: public
+  #   read_only: false   # set true when pointing at an operator-managed
+  #                      # Gungnir to mechanically prevent Ember writes
 
 # ---------------------------------------------------------------------------
 # Smiðja — the ingest forge

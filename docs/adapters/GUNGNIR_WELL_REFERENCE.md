@@ -9,9 +9,7 @@
 
 ## 1. Why this document exists
 
-`docs/SYSTEM_VISION.md` names Gungnir as the **first concrete Well Ember can be tethered to**. Until Ember's own `pgvector` Brunnr adapter ships in Phase 8, Gungnir is also the **best living reference** for what a working Ember Well looks like — schema, sizes, latencies, content shape, KG-layer architecture.
-
-This document captures what Gungnir *is*, today, against the live database, so future Ember work has ground truth.
+`docs/SYSTEM_VISION.md` names Gungnir as the **first concrete Well Ember can be tethered to**. As of slice-2 Phase 13 (2026-05-21), Ember's own `pgvector` Brunnr adapter is **shipped** — see `docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md` for the operator-facing guide and `docs/decisions/0010-pgvector-brunnr.md` for the design rationale. Gungnir remains the canonical example of a working Ember Well; this document captures *what it is*, today, against the live database, so future Ember work has ground truth.
 
 ---
 
@@ -249,13 +247,13 @@ ORDER BY f.rrf_score DESC
 LIMIT $k;
 ```
 
-The constant 60 is the standard RRF dampener. This is the pattern Ember's `pgvector` Brunnr will inherit when it ships in Phase 8.
+The constant 60 is the standard RRF dampener. This is the pattern Ember's `pgvector` Brunnr inherits — see `src/ember/well/brunnr/pgvector/adapter.py`'s `hybrid_search` (shipped 2026-05-21 in slice-2 Phase 13, ADR 0010).
 
 ---
 
 ## 7. Configuration shape Ember should expect
 
-When the `pgvector` Brunnr ships, the operator's `config/storage.yaml` for a Gungnir-connected Ember will look approximately like:
+The `pgvector` Brunnr has shipped (slice-2 Phase 13). The operator's `~/.ember/config/ember.yaml` for a Gungnir-connected Ember looks like:
 
 ```yaml
 # config/storage.yaml — pgvector against Gungnir

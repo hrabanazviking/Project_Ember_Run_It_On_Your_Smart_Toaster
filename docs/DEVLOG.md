@@ -8,6 +8,56 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 13 shipped: live-fire pgvector against Gungnir + container. **0.1.9 released.**
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (2 real adapter-bugs found and fixed + container fixture), Auditor (14 new live-backend tests + extension probe), Cartographer (`PGVECTOR_BRUNNR_REFERENCE.md` + Gungnir-ref forward-reference cleanup), Scribe (this entry + operator example yaml + memory).
+
+**Scope:** Second half of slice-2's pgvector work. The Phase-12 scaffold is now operator-flippable: an operator with Gungnir on their tailnet can edit `~/.ember/config/ember.yaml`, set `brunnr.backend: pgvector`, install `[pgvector]` extras, and have working retrieval out of the box. Acceptance criterion from `EMBER_SECOND_SLICE_PLAN.md` §3 Phase 13 met.
+
+**Real adapter bugs caught by live-fire (this is why the test was load-bearing):**
+
+1. **`register_vector` ran before `CREATE EXTENSION`.** `pgvector.psycopg.register_vector(conn)` looks up the `vector` type by name; on a fresh container without the extension it fails with `vector type not found in the database`. Fix: new `_ensure_pgvector_extension(conn, read_only=)` helper probes `pg_extension` first; creates the extension when writable; refuses cleanly on read-only Wells where the extension is missing (operator must `CREATE EXTENSION vector` once as DB owner). The helper sits between `psycopg.connect` and `register_vector` in `open()`.
+2. **`{{}}` in schema.sql was a format-string escape that never got escaped.** I wrote it during Phase 12 when the renderer used `.format()`; switched to `.replace()` for the named substitutions but forgot to un-double the braces. Result: `metadata jsonb NOT NULL DEFAULT '{{}}'::jsonb` landed in Postgres as a JSON parse error. Fix: `metadata jsonb NOT NULL DEFAULT '{}'::jsonb`.
+
+Both bugs would have been silent until an operator tried it, which is exactly the case the live-fire test exists to catch.
+
+**What shipped:**
+
+- **`tests/integration/test_pgvector_real_backend.py`** — 14 tests across two classes:
+  - `TestContainerWritePath` (10 tests, marked `requires_podman` + `requires_postgres`): module-scoped podman fixture spins up `pgvector/pgvector:pg18` on `127.0.0.1:55432` (loopback only, never tailnet-exposed). Tests cover empty-schema apply, document round-trip + idempotency on hash, dim-mismatch rollback, vector_search nearest-first ordering, text_search via generated `tsv` column, hybrid_search RRF fusion (Frigg chunk excluded when query is Odin-shaped), close-then-reopen schema probe finds existing tables, dim-mismatch on reopen refuses, read-only mode refuses writes with ADR-pointer error.
+  - `TestGungnirRetrieval` (4 tests, marked `requires_gungnir` + `requires_postgres`): module-scoped fixture opens read-only against the real `100.67.240.22:5432/knowledge` corpus with the secret pulled from `~/.pgpass` (never echoed into test source). Confirms schema probe finds 201 docs / 37 111 chunks at dim=768, text_search "Odin Allfather" returns Norse-corpus hits, hybrid_search works against the live 37k-chunk index, write attempts raise `BrunnrError("... ADR 0010 ...")`.
+- **`src/ember/well/brunnr/pgvector/adapter.py`** — `_ensure_pgvector_extension()` helper (the bugfix above). `open()`'s noqa updated to include `PLR0915` since failure classification naturally adds statements.
+- **`src/ember/well/brunnr/pgvector/schema.sql`** — `'{}'::jsonb` (not `'{{}}'`).
+- **`pyproject.toml`** — three new markers: `requires_postgres`, `requires_gungnir`, `requires_podman` (informational; gating happens via fixture reachability probes, same pattern as `requires_ollama`). Version bumped to **0.1.9**.
+- **`config/ember.example.yaml`** — pgvector subsection expanded to show every knob from `PgVectorConfig`, with inline comments on which are required vs optional, and a pointer to the operator-facing reference doc. The two-line switch is `backend: pgvector` + uncomment the `pgvector:` block.
+- **`config/storage.example.yaml`** — replaces the empty placeholder with three worked examples: sqlite_vec default, pgvector against personal Gungnir, pgvector read-only against shared Gungnir. Plus the secret resolution order spelled out.
+- **`docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md`** — 11-section operator-facing reference paralleling `GUNGNIR_WELL_REFERENCE.md`: install, config minimum, every knob, the schema Ember will see or apply, search semantics, secret resolver order, the full Disconnected-reason → operator-action matrix, Gungnir-specific read-only mode, Phase-12-vs-13 archaeology.
+- **`docs/adapters/GUNGNIR_WELL_REFERENCE.md`** — three forward-reference "ships in Phase 8" entries updated to point at the now-shipped pgvector adapter + reference doc.
+- **`src/ember/__init__.py`** docstring — slice-2 Phase 13 (pgvector live) entry.
+- **`tests/unit/test_skeleton_imports.py`** version assertion bumped to 0.1.9.
+
+**Total test count: 343 passed + 2 skipped, ruff clean.** That's 14 new live-backend tests on top of Phase-12's 329.
+
+**Where Ember stands at 0.1.9:**
+
+| Capability | State |
+| --- | --- |
+| Hjarta first-run | shipped 0.1.0 |
+| Funi (Ollama) `complete()` | shipped 0.1.0 |
+| Brunnr SQLite-vec | shipped 0.1.0 |
+| Munnr CLI surface | shipped 0.1.0 |
+| Config loader | shipped 0.1.5 |
+| Streaming Funi + Munnr live tokens | shipped 0.1.7 |
+| **Brunnr pgvector — Gungnir-compatible, operator-flippable** | **shipped 0.1.9** |
+| Tool framework (ADR 0011) | pending → 0.2.0-rc1 (Phase 14-16) |
+| Slice-2 acceptance + ratification | pending → 0.2.0 (Phase 17) |
+
+**Acceptance verified:** An operator with Gungnir on their tailnet can now (a) `pip install ember-agent[pgvector]`, (b) write a 4-key pgvector block in `ember.yaml`, (c) run `ember chat`, and (d) get grounded answers against the live 37k-chunk corpus — with `read_only: true` mechanically protecting Gungnir from any write.
+
+**Next:** Phase 14 — author ADR 0011 + `ember.schemas.tool` (ToolDescriptor / ToolCall / ToolReply / ApprovalPolicy) + `ember.spark.funi.tools/` registry, approval, audit log. No version bump; the operator can't yet call a tool. Phase 15 ships first-party tools (`search_well`, `read_local_file`, `fetch_url`); Phase 16 wires Munnr + Hjarta to the tool framework and bumps to 0.2.0-rc1.
+
+---
+
 ## 2026-05-21 — Phase 12 shipped: ADR 0010 + pgvector Brunnr scaffold + secret resolver.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0010 + Protocol parity + connection-per-handle decision), Cartographer (schema mapping against the live Gungnir survey), Forge Worker (adapter + secrets + DDL), Auditor (36 new tests), Scribe (this entry + INTERFACE.md + memory).
