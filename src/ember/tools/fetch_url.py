@@ -155,7 +155,25 @@ def _execute(call: ToolCall) -> ToolReply:  # noqa: PLR0911 — each refusal is 
             started,
         )
 
-    refusal = _check_address_class(parsed.hostname, allow_private=allow_private)
+    # Normalise the hostname to ASCII via IDNA (Internationalised Domain
+    # Names) encoding. A homoglyph attack hides a Cyrillic letter inside
+    # what looks like ``example.com``; IDNA-encoding makes the actual
+    # bytes that hit DNS visible. We also use the IDNA-encoded form as
+    # the host argument to the sandbox check so attackers can't smuggle
+    # a different host through DNS than the one the sandbox approved.
+    try:
+        canonical_host = parsed.hostname.encode("idna").decode("ascii")
+    except (UnicodeError, UnicodeDecodeError):
+        return _error(
+            call,
+            (
+                f"fetch_url: refused: hostname {parsed.hostname!r} cannot "
+                f"be IDNA-encoded; it may contain disallowed characters"
+            ),
+            started,
+        )
+
+    refusal = _check_address_class(canonical_host, allow_private=allow_private)
     if refusal is not None:
         return _error(call, refusal, started)
 

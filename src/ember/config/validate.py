@@ -167,7 +167,12 @@ def _coerce_value(  # noqa: PLR0911,PLR0912 — one return + one branch per supp
             raise ConfigError(
                 _msg(path, f"expected path string, got {type(value).__name__}")
             )
-        return Path(value)
+        # Expand ``~`` automatically so operators can write
+        # ``path: "~/.ember/well/store.db"`` in YAML and have it Just
+        # Work. Without this, the literal string would be treated as
+        # a directory called ``~`` in the current working directory —
+        # a surprising operator footgun. Hardening pass added this.
+        return Path(value).expanduser()
 
     # Nested dataclass
     if dataclasses.is_dataclass(target_type) and isinstance(target_type, type):

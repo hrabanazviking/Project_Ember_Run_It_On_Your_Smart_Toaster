@@ -585,9 +585,13 @@ def _parse_tool_calls(raw: object) -> tuple[ToolCall, ...]:
         arguments = function.get("arguments")
         if isinstance(arguments, str):
             # Some Ollama builds emit the arg blob as a JSON string.
+            # Broaden the catch: malformed unicode escapes raise
+            # ValueError (not JSONDecodeError); type-confused payloads
+            # raise TypeError. Either way, treat as empty args so the
+            # call surfaces to the framework's argument validator.
             try:
                 arguments = json.loads(arguments)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 arguments = {}
         if not isinstance(arguments, dict):
             arguments = {}

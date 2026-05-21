@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import sqlite3
 import struct
 from collections.abc import Iterable, Sequence
@@ -39,6 +40,8 @@ from ember.schemas.errors import (
 if TYPE_CHECKING:
     pass
 
+
+logger = logging.getLogger(__name__)
 
 _RRF_K = 60  # standard RRF dampener
 
@@ -124,20 +127,30 @@ class SqliteVecBrunnr:
         existing = self.has_document(doc.hash)
         if existing is not None:
             return existing
-        cur = self._conn.execute(
-            """
-            INSERT INTO documents (source, title, content_type, hash, metadata)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                doc.source,
-                doc.title,
-                doc.content_type,
-                doc.hash,
-                json.dumps(dict(doc.metadata)),
-            ),
-        )
-        self._conn.commit()
+        # Wrap the insert in BrunnrError per the typed-value contract.
+        # Hardening pass added this — previously a sqlite3.OperationalError
+        # (e.g. disk full, schema drift, locked DB) would propagate raw
+        # and Smiðja's caller had no clean way to mark the document
+        # failed in its journal.
+        try:
+            cur = self._conn.execute(
+                """
+                INSERT INTO documents (source, title, content_type, hash, metadata)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    doc.source,
+                    doc.title,
+                    doc.content_type,
+                    doc.hash,
+                    json.dumps(dict(doc.metadata)),
+                ),
+            )
+            self._conn.commit()
+        except sqlite3.Error as exc:
+            with contextlib.suppress(sqlite3.Error):
+                self._conn.rollback()
+            raise BrunnrError(f"add_document failed: {exc}") from exc
         assert cur.lastrowid is not None
         return cur.lastrowid
 
@@ -188,8 +201,23 @@ class SqliteVecBrunnr:
                         (chunk_id, blob),
                     )
         except sqlite3.Error as exc:
-            self._conn.rollback()
+            # Wrap rollback in suppress — if rollback itself fails
+            # (connection already broken), the original failure should
+            # still surface as BrunnrError rather than be replaced by
+            # the rollback's secondary exception.
+            with contextlib.suppress(sqlite3.Error):
+                self._conn.rollback()
             raise BrunnrError(f"add_chunks failed: {exc}") from exc
+        except (ValueError, struct.error) as exc:
+            # sqlite_vec.serialize_float32 can raise ValueError or
+            # struct.error on NaN / Inf embeddings (bad embedding model
+            # output). Same rollback + BrunnrError wrap as the
+            # sqlite-error path.
+            with contextlib.suppress(sqlite3.Error):
+                self._conn.rollback()
+            raise BrunnrError(
+                f"add_chunks failed during embedding serialisation: {exc}"
+            ) from exc
         self._conn.commit()
         return ids
 
@@ -260,22 +288,30 @@ class SqliteVecBrunnr:
         )
 
     def has_document(self, content_hash: str) -> int | None:
-        row = self._conn.execute(
-            "SELECT id FROM documents WHERE hash = ?",
-            (content_hash,),
-        ).fetchone()
+        # Wrap in BrunnrError so a closed/broken connection surfaces
+        # under the typed contract, the same way add_* does.
+        try:
+            row = self._conn.execute(
+                "SELECT id FROM documents WHERE hash = ?",
+                (content_hash,),
+            ).fetchone()
+        except sqlite3.Error as exc:
+            raise BrunnrError(f"has_document failed: {exc}") from exc
         return None if row is None else row[0]
 
     def count(self) -> BrunnrStats:
-        n_docs = self._conn.execute(
-            "SELECT COUNT(*) FROM documents"
-        ).fetchone()[0]
-        n_chunks = self._conn.execute(
-            "SELECT COUNT(*) FROM chunks"
-        ).fetchone()[0]
-        n_embedded = self._conn.execute(
-            "SELECT COUNT(*) FROM chunk_vectors"
-        ).fetchone()[0]
+        try:
+            n_docs = self._conn.execute(
+                "SELECT COUNT(*) FROM documents"
+            ).fetchone()[0]
+            n_chunks = self._conn.execute(
+                "SELECT COUNT(*) FROM chunks"
+            ).fetchone()[0]
+            n_embedded = self._conn.execute(
+                "SELECT COUNT(*) FROM chunk_vectors"
+            ).fetchone()[0]
+        except sqlite3.Error as exc:
+            raise BrunnrError(f"count failed: {exc}") from exc
         size_bytes = 0
         for db_path in self._db_paths():
             with contextlib.suppress(OSError):
@@ -408,8 +444,16 @@ class SqliteVecBrunnr:
     # ------------------------------------------------------------- close
 
     def close(self) -> None:
-        with contextlib.suppress(sqlite3.Error):
+        # Suppress to honour the "close never raises" Protocol contract,
+        # but log any error so an operator can investigate silent
+        # close-time failures (e.g. WAL-flush failure on a full disk).
+        try:
             self._conn.close()
+        except sqlite3.Error as exc:
+            logger.warning(
+                "sqlite_vec: close() suppressed error: %s: %s",
+                type(exc).__name__, exc,
+            )
 
     # ------------------------------------------------------------- internals
 
@@ -479,12 +523,43 @@ def _escape_fts5_query(query: str) -> str:
     the operator's natural-language input becomes an OR over the words
     they typed. Empty / whitespace-only input returns the empty string;
     callers treat that as "no results".
+
+    Hardening pass (Batch C): also strips control characters and Unicode
+    bidirectional override marks from each token before quoting. Without
+    this, a newline inside a token could break the audit log's per-line
+    parsing, and a U+202E (Right-to-Left Override) could reorder how the
+    query reads in operator-facing logs so a malicious search looks
+    benign on inspection.
     """
-    tokens = [t for t in query.split() if t.strip()]
+    tokens = [_strip_unsafe_chars(t) for t in query.split() if t.strip()]
+    tokens = [t for t in tokens if t]  # drop tokens that became empty
     if not tokens:
         return ""
     escaped = ['"' + t.replace('"', '""') + '"' for t in tokens]
     return " OR ".join(escaped)
+
+
+# Unicode general categories whose bytes can confuse log readers or
+# terminal renderers: Cc (control chars), Cf (format chars — includes
+# the bidirectional overrides RLE/LRE/PDF/RLO/LRO etc.). The latter
+# matters because audit-log readers and CLI render layers display the
+# query back to the operator; a Cf char hidden in a token can reorder
+# how the query appears on screen vs what's actually queried.
+_UNSAFE_UNICODE_CATEGORIES = frozenset({"Cc", "Cf"})
+
+
+def _strip_unsafe_chars(token: str) -> str:
+    """Remove control + bidirectional-override characters from a token.
+
+    Stdlib-only — uses ``unicodedata.category`` which classifies every
+    codepoint.
+    """
+    import unicodedata  # noqa: PLC0415 — only needed here
+
+    return "".join(
+        c for c in token
+        if unicodedata.category(c) not in _UNSAFE_UNICODE_CATEGORIES
+    )
 
 
 __all__ = ["SqliteVecBrunnr", "open"]

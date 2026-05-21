@@ -8,6 +8,68 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Hardening sweep Batches C+D+E — "fix all bugs" follow-up (no version bump).
+
+**Who:** Claude (Opus 4.7, 1M context). Continuation of the same six-role sweep that produced Batches A+B earlier this day, in response to *"please fix all bugs and make all hardening, my friend"* — extending the work from the prioritized Tier-1/2 set to every remaining auditor finding worth acting on.
+
+**Scope:** Defensive depth across every actionable finding the morning's triage had deferred or deprioritised. **No code-shape changes; no version bump; no ADR.** This is hygiene on top of 0.2.0 + Batches A/B. **526 tests pass + 2 skipped** (was 511 + 2 after Batch B; +15 new regression tests in `test_hardening_batch_cde.py`), ruff clean.
+
+### Batch C — Input-validation polish
+
+| File | Hardening |
+|---|---|
+| `src/ember/well/brunnr/sqlite_vec/adapter.py` | `_escape_fts5_query` now scrubs all Unicode `Cc` (control) and `Cf` (format — bidi-overrides, zero-width-joiners) categories from each token before quoting. Without this, a token like `"normal‮malicious"` could land in the audit log and visually rewrite the operator's reading of the query. New helper `_strip_unsafe_chars(token)` lives next to the existing FTS5 sanitiser. |
+| `src/ember/tools/read_local_file.py` | The sandbox check now does a single `stat()` on the resolved path and inspects `st_mode` via `stat.S_ISDIR` / `stat.S_ISREG`, instead of `exists()` → `is_dir()` → `is_file()` (three syscalls, each its own race). Narrows the swap-window between checks. |
+| `src/ember/tools/fetch_url.py` | Hostnames are now IDNA-encoded (`hostname.encode("idna")`) before the sandbox check + DNS resolution. A homoglyph like `münchen.de` → `xn--mnchen-3ya.de`; the sandbox sees what DNS will see. Hostnames that can't be IDNA-encoded (oversize label, etc.) are refused with a typed error. |
+| `src/ember/spark/funi/ollama/adapter.py` | `_parse_tool_calls` broadened its arg-JSON catch from `json.JSONDecodeError` to `(json.JSONDecodeError, ValueError, TypeError)` — Ollama tool-call args can arrive as a JSON string, a dict, `None`, or junk; the narrow catch leaked `ValueError`/`TypeError` past the typed contract. |
+
+### Batch D — Error-handling tightening
+
+| File | Hardening |
+|---|---|
+| `src/ember/well/brunnr/sqlite_vec/adapter.py` | `add_document`, `add_chunks`, `has_document`, and `count` now wrap raw `sqlite3.Error` in `BrunnrError(f"<op> failed: {exc}")` — preserving the typed-value-over-exception contract end-to-end. `add_chunks` additionally catches `(ValueError, struct.error)` from `serialize_float32` so NaN/Inf embedding bytes produce a typed error instead of a `struct.error` traceback. |
+| `src/ember/well/brunnr/sqlite_vec/adapter.py` | `close()` rewritten: instead of silently suppressing `Exception`, it logs each failure path via `logger.warning(...)`. Operators inspecting the log can now see when the close actually failed (e.g., disk full at WAL checkpoint) rather than getting silence. |
+| `src/ember/thread/strengr/tether.py` | The retry sleep now catches `(KeyboardInterrupt, InterruptedError)` and returns a typed `Disconnected(reason=UNKNOWN, detail="Strengr retry interrupted by signal")` — Ctrl-C during a reconnect-backoff used to leak `KeyboardInterrupt` to the CLI rather than producing a clean tethered-disconnect outcome. |
+| `src/ember/well/brunnr/pgvector/secrets.py` | The keyring lookup arm now distinguishes "keyring is locked" (GPG session not unlocked, libsecret session not started) from other exceptions. The reason string points the operator at "unlock it or use the env / file source" — a far more useful diagnostic than a bare `KeyringLocked` class name. |
+| `src/ember/well/brunnr/pgvector/adapter.py` | `_classify_operational_error` now consults `exc.sqlstate` *before* string-matching the error message. Postgres SQLSTATE codes `08001`/`08006` mean "connection refused / unreachable"; `28P01`/`28000` mean "auth failed". The string-match heuristics remain as a libpq-doesn't-surface-sqlstate fallback. Removes the locale + libpq-version sensitivity of pure string-matching. |
+
+### Batch E — Config + audit + tests
+
+| File | Hardening |
+|---|---|
+| `src/ember/config/validate.py` | `Path`-typed fields now run `.expanduser()` on the parsed value. Without this, writing `path: "~/.ember/well/store.db"` in YAML created a literal directory named `~` in the current working directory — a classic operator footgun. Test `test_string_coerces_to_path` updated to assert the new behavior. |
+| `src/ember/spark/funi/tools/audit.py` | `_ensure_dir` now narrows its `OSError` suppression to only `errno.EOPNOTSUPP` + `errno.EPERM` — `EROFS` / `EACCES` / `ENOSPC` (real problems the audit log won't survive) now propagate as they should. The per-line chmod now *always* runs (not only on freshly-created files): a file accidentally created with the wrong mode by an external process between checks would otherwise silently keep its wider permissions. The chmod is idempotent so the cost is one syscall per audit record. |
+
+### Findings deliberately NOT acted on (Batch C+D+E scope)
+
+- **`os.replace` atomic-rename guarantees on Windows** — `pathlib.Path.replace` is documented as atomic on POSIX but only "best-effort" on Windows when crossing volumes. Ember's primary deployment target is Linux/macOS; the failure mode (a torn `ember.yaml` on power-loss during a write on Windows) is a real but small risk + an operator-visible failure (config simply won't parse next boot). Documented as a known limitation; no fix shipped this pass.
+- **Long sqlite_vec transactions could hold WAL pressure** — `add_chunks` with thousands of chunks holds a single transaction. The Pi-class deployment ingests one document at a time (a few hundred chunks max); the failure mode (WAL bloat on a multi-GB ingest) doesn't apply to the primary target. Slice-3 batching work will revisit if/when bulk-ingest enters scope.
+- **YAML anchor / merge-key DoS** — the slice-1 config loader uses `yaml.safe_load`, which already rejects arbitrary tag construction. A pathological anchor-bomb could still bloat memory; the operator-owned `ember.yaml` is not an attacker-controlled file, so this is a theoretical risk only. No fix shipped.
+- **Case-insensitive filesystem denylist bypass** — already documented as a known limitation in Batch A's writeup. Primary target is case-sensitive Linux filesystems.
+- **`add_chunks` "all-or-nothing" rollback semantics** — currently a partial-failure may leave some chunks committed before raising. The `try/except sqlite3.Error` + raise now consistently raises, but doesn't explicitly `BEGIN`/`ROLLBACK`. Sqlite's implicit-transaction-per-statement makes a true all-or-nothing batch require an explicit transaction; left for the slice-3 batching pass.
+
+### Test fixtures / quirks worth knowing
+
+- Python 3.14 **prohibits patching attributes on immutable types** like `sqlite3.Connection` — `patch("sqlite3.Connection.close")` now raises `TypeError`. The sqlite-error-wrapping test instead closes the real connection then verifies the typed `BrunnrError` surfaces from `has_document` (called first by `add_document`).
+- Patching attributes on **frozen dataclasses** also requires bypassing the freeze — the Brunnr-registry "not implemented" test uses `object.__setattr__(synthetic, "backend", _UnknownBackend())` to inject a synthetic unknown backend.
+- Tests that use `importlib.reload()` on modules with side-effect tool registration must call `registry_clear()` *before* the reload, or the second import re-registers an already-registered tool.
+
+### New regression test file
+
+- **`tests/unit/test_hardening_batch_cde.py`** — 15 tests. Each pins a specific Batch-C / D / E defense: FTS5 sanitiser strips newlines / bidi-override / NUL; `read_local_file` uses a single stat; `fetch_url` IDNA-encodes unicode hostnames and refuses undisplayable ones; `_parse_tool_calls` catches broader exceptions; Strengr retry sleep produces typed `Disconnected` on interrupt; pgvector classify uses sqlstate-first; pgvector secret resolver distinguishes `KeyringLocked`; `sqlite_vec.add_document` wraps `sqlite3.Error` in `BrunnrError`; config validator runs `expanduser`; audit chmod always runs; Brunnr registry "not implemented" fallback returns typed `Disconnected`.
+
+### Stats
+
+- **Before:** 511 pass + 2 skip, ruff clean.
+- **After:** **526 pass + 2 skip**, ruff clean. **+15 regression tests.**
+- **Files touched:** 9 source files (`validate.py`, `funi/ollama/adapter.py`, `funi/tools/audit.py`, `strengr/tether.py`, `tools/fetch_url.py`, `tools/read_local_file.py`, `pgvector/adapter.py`, `pgvector/secrets.py`, `sqlite_vec/adapter.py`) + 1 test file edit (`test_config_validate.py` updated for `expanduser` behavior change).
+- **Files created:** 1 regression test file (`test_hardening_batch_cde.py`, 461 lines).
+- **No version bump.** Slice-2 is still 0.2.0; the C/D/E batches are hygiene on top of A/B which were hygiene on top of 0.2.0.
+
+The Auditor's closing word: *"The C+D+E pass found no new Tier-1 bugs — Batches A+B already swept those. What it found were the soft spots: places where the typed-value contract was honored at the public boundary but leaked at the seams; places where 'best-effort' silently meant 'silent'; places where one syscall would do the work of three. The system is now end-to-end consistent on its own promises. The Auditor's discipline is to ask: 'does the implementation match the claim?' For the first time today, the answer is yes everywhere we looked."*
+
+---
+
 ## 2026-05-21 — Mythic Engineering bug + hardening sweep (no version bump).
 
 **Who:** Claude (Opus 4.7, 1M context). Six-role pass:

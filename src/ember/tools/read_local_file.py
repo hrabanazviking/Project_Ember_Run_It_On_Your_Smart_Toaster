@@ -183,9 +183,25 @@ def _sandbox_check(raw_path: str) -> _SandboxResult:  # noqa: PLR0911 — each r
             ),
         )
 
-    if not resolved.exists():
+    # Single stat call (follow symlinks via resolve already done above,
+    # so a plain stat is enough). Doing this in one shot — rather than
+    # the old exists() then is_dir() then is_file() trio — narrows the
+    # TOCTOU window where the file could be swapped for a directory or
+    # special file between the existence check and the type check.
+    import stat as _stat  # noqa: PLC0415 — narrow scope
+
+    try:
+        st_mode = resolved.stat().st_mode
+    except FileNotFoundError:
         return _SandboxResult(
             refusal=f"read_local_file: refused: path does not exist: {resolved}",
+        )
+    except OSError as exc:
+        return _SandboxResult(
+            refusal=(
+                f"read_local_file: refused: stat failed during sandbox "
+                f"check: {type(exc).__name__}"
+            ),
         )
 
     home = Path.home().resolve()
@@ -234,12 +250,14 @@ def _sandbox_check(raw_path: str) -> _SandboxResult:  # noqa: PLR0911 — each r
             ),
         )
 
-    # Reject non-regular files (directories, special files, broken symlinks).
-    if resolved.is_dir():
+    # Reject non-regular files using the st_mode captured by the single
+    # stat() call above. This closes the swap-window between the
+    # historical exists() / is_dir() / is_file() trio.
+    if _stat.S_ISDIR(st_mode):
         return _SandboxResult(
             refusal=f"read_local_file: refused: {resolved} is a directory",
         )
-    if not resolved.is_file():
+    if not _stat.S_ISREG(st_mode):
         return _SandboxResult(
             refusal=f"read_local_file: refused: {resolved} is not a regular file",
         )

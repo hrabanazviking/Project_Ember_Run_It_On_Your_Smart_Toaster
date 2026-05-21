@@ -97,7 +97,23 @@ def resolve(  # noqa: PLR0912 — secret resolution is naturally branchy; each b
                 try:
                     value = kr.get_password(service, username)  # type: ignore[attr-defined]
                 except Exception as exc:
-                    notes.append(f"keyring lookup raised: {type(exc).__name__}")
+                    # The keyring's "is locked" state (operator hasn't
+                    # unlocked their GPG/libsecret session) is a
+                    # transient + actionable failure; surface it as a
+                    # distinct note so the operator's error message
+                    # points at "unlock the keyring" instead of "no
+                    # entry exists". Other exceptions remain
+                    # type-named.
+                    exc_name = type(exc).__name__
+                    if "Locked" in exc_name:
+                        notes.append(
+                            f"keyring is locked ({exc_name}); "
+                            f"unlock it or use the env / file source"
+                        )
+                    else:
+                        notes.append(
+                            f"keyring lookup raised: {exc_name}",
+                        )
                     value = None
                 if value:
                     return SecretResolution.found(value)

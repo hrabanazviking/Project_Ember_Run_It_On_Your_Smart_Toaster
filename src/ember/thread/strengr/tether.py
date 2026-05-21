@@ -97,7 +97,22 @@ def open(
             delay,
             attempt + 1,
         )
-        sleeper(delay)
+        try:
+            sleeper(delay)
+        except (KeyboardInterrupt, InterruptedError):
+            # An operator Ctrl-C during the backoff sleep should surface
+            # as a typed Disconnected (UNKNOWN) so the calling Spark
+            # code always sees a typed return value. Re-raising
+            # KeyboardInterrupt here would violate the
+            # typed-value-over-exception contract (ADR 0007 §2.2).
+            return Disconnected(
+                reason=DisconnectReason.UNKNOWN,
+                since=datetime.now(tz=UTC),
+                detail=(
+                    f"strengr: backoff sleep interrupted on attempt "
+                    f"{attempt + 1}; last result was {result.reason.value}"
+                ),
+            )
 
     # Defensive: the loop above always returns. If retry_attempts was 0
     # we never opened; surface a synthetic Disconnected so callers always

@@ -42,7 +42,12 @@ from ember.well.brunnr.pgvector import secrets as _secrets
 _RRF_K = 60  # ADR 0010 §2.4 — matches sqlite_vec, matches Gungnir.
 
 # Postgres SQLSTATE classes that mean "auth failed" vs "host unreachable".
+# SQLSTATE classifications per PostgreSQL's documented error codes.
+# These are precise (PostgreSQL has held them stable across major
+# versions); the string-match fallbacks below are last-resort heuristics
+# for libpq paths that don't surface a sqlstate at all.
 _AUTH_SQLSTATES = frozenset({"28P01", "28000"})
+_CONN_REFUSED_SQLSTATES = frozenset({"08001", "08006"})
 _TIMEOUT_HINT = "timeout"
 
 
@@ -813,22 +818,43 @@ def open(config: BrunnrConfig) -> PgVectorBrunnr | Disconnected:
 # --------------------------------------------------------------------- #
 
 
-def _classify_operational_error(exc: Exception) -> Disconnected:
+def _classify_operational_error(
+    exc: Exception,
+) -> Disconnected:
     """Map a ``psycopg.OperationalError`` to a typed Disconnected.
 
     Per ADR 0010 §2.8 — Strengr's reconnect policy depends on the
     distinction between recoverable (CONN_REFUSED / TIMEOUT) and
     non-recoverable (AUTH_FAILED / CONFIG_INVALID) reasons.
+
+    **Sqlstate-first** (hardening pass): PostgreSQL ships stable
+    sqlstate codes that don't change wording across major versions.
+    The string-match fallbacks below cover libpq paths that don't
+    populate sqlstate (TCP failure before the wire protocol speaks,
+    DNS resolution, etc.).
     """
-    msg = str(exc).lower()
     sqlstate = getattr(exc, "sqlstate", None)
     detail = str(exc)
+
+    # Sqlstate-first classification — stable across psycopg + Postgres
+    # versions.
     if sqlstate in _AUTH_SQLSTATES:
         return Disconnected(
             reason=DisconnectReason.AUTH_FAILED,
             since=_now_utc(),
             detail=detail,
         )
+    if sqlstate in _CONN_REFUSED_SQLSTATES:
+        return Disconnected(
+            reason=DisconnectReason.CONN_REFUSED,
+            since=_now_utc(),
+            detail=detail,
+        )
+
+    # Fallback to message-based heuristics for pre-handshake failures
+    # (TCP refused, DNS unresolved, timeout) where libpq doesn't
+    # populate sqlstate.
+    msg = detail.lower()
     if _TIMEOUT_HINT in msg:
         return Disconnected(
             reason=DisconnectReason.TIMEOUT,

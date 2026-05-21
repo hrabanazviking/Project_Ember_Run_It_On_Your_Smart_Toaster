@@ -80,9 +80,13 @@ def test_string_coerces_to_path() -> None:
         {"path": "/tmp/test.db"},
     )
     assert cfg.path == Path("/tmp/test.db")
-    # Loader does NOT expanduser — consumer expands.
+    # Hardening pass (2026-05-21): the loader DOES expanduser() now,
+    # so an operator writing ``path: ~/data.db`` in YAML gets a real
+    # absolute path. Without this, the literal ``~/data.db`` was being
+    # treated as a directory called ``~`` in the cwd — a footgun.
     cfg2 = coerce_to_dataclass(SqliteVecConfig, {"path": "~/.ember/x.db"})
-    assert str(cfg2.path).startswith("~")
+    assert not str(cfg2.path).startswith("~")
+    assert str(cfg2.path).startswith(str(Path.home()))
 
 
 def test_int_coerces_to_float_field() -> None:

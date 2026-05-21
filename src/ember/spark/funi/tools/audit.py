@@ -101,7 +101,6 @@ class AuditLog:
             # the payload exceeds PIPE_BUF or the disk is filling up).
             # The hardening pass added a write-until-complete loop so
             # a short write is retried rather than corrupting the line.
-            existed = path.exists()
             fd = os.open(
                 str(path),
                 os.O_WRONLY | os.O_CREAT | os.O_APPEND,
@@ -111,11 +110,13 @@ class AuditLog:
                 _write_all(fd, payload)
             finally:
                 os.close(fd)
-            # Tighten perms on freshly-created files; chmod is idempotent
-            # so repeated calls on existing files don't churn.
-            if not existed:
-                # Windows / unusual filesystems may refuse chmod; the
-                # audit record itself is already on disk.
+            # Always chmod — even on existing files. Hardening pass
+            # tightened this from "only on freshly-created files",
+            # because a file accidentally created with the wrong mode
+            # (e.g. by an external process between our checks) would
+            # silently keep its wider permissions. The chmod is
+            # idempotent so the cost is one syscall per audit record.
+            if os.name != "nt":
                 import contextlib  # noqa: PLC0415 — narrowly scoped
                 with contextlib.suppress(OSError):
                     os.chmod(path, FILE_MODE)
@@ -132,13 +133,20 @@ class AuditLog:
     def _ensure_dir(self) -> None:
         directory = self.root_dir
         directory.mkdir(parents=True, exist_ok=True)
-        import contextlib  # noqa: PLC0415 — narrowly scoped
-        # Don't fail the audit just because chmod failed; the directory
-        # exists and we'll proceed.
-        with contextlib.suppress(OSError):
+        if os.name == "nt":
+            return  # Windows ACLs don't carry Unix mode bits meaningfully.
+        # Narrow OSError suppression — chmod failing with EOPNOTSUPP
+        # (unusual FS) is fine, but EROFS / EACCES / ENOSPC are real
+        # problems the operator needs to see (the audit log won't
+        # work). Hardening pass tightened this.
+        import errno  # noqa: PLC0415 — narrowly scoped
+        try:
             current = stat.S_IMODE(directory.stat().st_mode)
-            if os.name != "nt" and current != DIR_MODE:
+            if current != DIR_MODE:
                 os.chmod(directory, DIR_MODE)
+        except OSError as exc:
+            if exc.errno not in {errno.EOPNOTSUPP, errno.EPERM}:
+                raise
 
 
 # --------------------------------------------------------------------- #
