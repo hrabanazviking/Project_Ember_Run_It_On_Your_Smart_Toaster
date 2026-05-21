@@ -24,7 +24,7 @@ keywords = [
     "raspberry-pi",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
@@ -35,6 +35,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
@@ -79,6 +80,35 @@ Issues   = "https://github.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ember"]
+
+# Keep the sdist focused on what actually constitutes Ember-the-package:
+# source, tests, architecture + adapter docs, and the operator-facing
+# top-level files. The inherited corpora (RunaUniversity2040, phd-2040,
+# research, python, philosophy, methodology, AI_OS_Research, archive)
+# are intellectual heritage preserved in the repo, but they would
+# bloat the PyPI sdist from ~200 KB to ~33 MB and add no value to
+# someone running `pip install ember-agent`. Same for the repo-root
+# hero images (large PNG/JPEG files used by the rendered README).
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "docs/RunaUniversity2040",
+    "docs/phd-2040",
+    "docs/research",
+    "docs/python",
+    "docs/AI_OS_Research",
+    "docs/philosophy",
+    "docs/methodology",
+    "docs/archive",
+    "assets",
+    "*.png",
+    "*.jpeg",
+    "*.jpg",
+    "Yggdrasil_and_Huginn_and_Muninn_Theory.md",
+    ".venv",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+]
 
 [tool.ruff]
 line-length = 100
