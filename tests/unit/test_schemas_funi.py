@@ -59,8 +59,14 @@ def test_funi_reply_finish_reasons_include_refused() -> None:
     assert "refused" in {fr.value for fr in FinishReason}
 
 
-def test_tool_call_holds_name_and_arguments() -> None:
-    call = ToolCall(name="search_well", arguments={"query": "Odin"})
+def test_tool_call_holds_call_id_name_and_arguments() -> None:
+    # Phase 14 (ADR 0011 §2.1) promoted ToolCall to ember.schemas.tool
+    # and added the join-key ``call_id``. The funi.py re-export still
+    # works, so this test continues to use the historical import path.
+    call = ToolCall(
+        call_id="abc-123", name="search_well", arguments={"query": "Odin"},
+    )
+    assert call.call_id == "abc-123"
     assert call.name == "search_well"
     assert call.arguments["query"] == "Odin"
 

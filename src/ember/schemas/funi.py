@@ -14,6 +14,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 
+# Re-export the canonical ToolCall from ember.schemas.tool. The
+# Phase-14 promotion (ADR 0011 §5) moves the dataclass under
+# ember.schemas.tool but preserves the funi-side import path so
+# existing callers (FuniReply.tool_calls, integration tests) keep
+# working without churn.
+from ember.schemas.tool import ToolCall
+
 # --------------------------------------------------------------------- #
 # Prompt context                                                        #
 # --------------------------------------------------------------------- #
@@ -39,18 +46,8 @@ class ContextItem:
 # --------------------------------------------------------------------- #
 
 
-@dataclass(frozen=True, slots=True)
-class ToolCall:
-    """A structured tool invocation produced by Funi.
-
-    Tools are not executed in the first slice (per
-    ``docs/architecture/EMBER_FIRST_SLICE_PLAN.md`` §4). When the first
-    slice ships, ``tools=None`` is the only mode used; this type is
-    reserved for the later slice that introduces tool use.
-    """
-
-    name: str
-    arguments: Mapping[str, object]
+# ``ToolCall`` is defined in :mod:`ember.schemas.tool` per ADR 0011 §5
+# and re-exported at the top of this module for backwards-compat.
 
 
 # --------------------------------------------------------------------- #

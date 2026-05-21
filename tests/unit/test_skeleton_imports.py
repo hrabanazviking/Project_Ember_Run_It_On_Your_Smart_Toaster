@@ -26,6 +26,7 @@ SKELETON_MODULES = (
     "ember.schemas",
     "ember.spark",
     "ember.spark.funi",
+    "ember.spark.funi.tools",
     "ember.spark.hjarta",
     "ember.spark.munnr",
     "ember.thread",

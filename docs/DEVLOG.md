@@ -8,6 +8,60 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 14 shipped: ADR 0011 + tool framework (schemas + registry + approval + audit).
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0011's nine numbered decisions), Forge Worker (registry + approval + audit modules), Auditor (64 new tests), Scribe (this entry + INTERFACE.md + memory).
+
+**Scope:** First third of slice-2's tool-use work. The framework now exists end-to-end — schemas, process-global registry, policy resolver, interactive prompter, append-only JSONL audit log — but no caller wires through it yet. Phase 15 adds the first three first-party tools; Phase 16 wires Munnr to consume `FuniReply.tool_calls` and bumps to 0.2.0-rc1.
+
+**What shipped:**
+
+- **`docs/decisions/0011-tool-use-framework.md`** — nine numbered decisions covering:
+  - Five schemas (`ToolDescriptor`, `ToolCall`, `ToolReply`, `ToolParameter`, `ToolParameterKind`) plus two enums (`ApprovalPolicy`, `ApprovalOutcome`) and one error (`ToolError`).
+  - `parameters_schema` is a stdlib `Mapping[str, ToolParameter]` — no jsonschema dep (§2.2). Six kinds: STRING / INTEGER / FLOAT / BOOLEAN / PATH / URL.
+  - Registry is process-global, import-time, refuses `FORBIDDEN` at registration, RLock-protected. Re-registration is an error.
+  - **`PER_CALL` is the default** approval policy. Config can downgrade `STANDING` to `PER_CALL` (more strict) but cannot upgrade — descriptor is the safety floor. `standing_trust_all` is the operator's "trust everything" knob; `FORBIDDEN` is the absolute floor on the floor.
+  - Typed `ApprovalOutcome` distinguishes denied / invalid-args / forbidden / no-such-tool / three approve flavours. Audit log uses this as its primary classifier.
+  - `ApprovalPrompter` is a runtime-checkable Protocol; `StdinApprovalPrompter` is the concrete CLI surface (defaults to refuse on EOF or unknown input — safer than silent approve).
+  - Audit log is one file per UTC day at `<config_root>/state/tool_audit/<date>.jsonl`. Atomic per line via single `os.write` to an `O_APPEND` fd. Dir mode `0o700`, file mode `0o600`. Reply output truncated to 4 KiB with a truncation flag. Redaction per `descriptor.redacted_arg_names`.
+- **`src/ember/schemas/tool.py`** — the schemas above. ToolCall promoted from the placeholder in `ember.schemas.funi` (re-exported there for backwards-compat per ADR §5; existing callers don't break).
+- **`src/ember/spark/funi/tools/`** — new subpackage:
+  - `registry.py` — `register`, `lookup`, `list_tools`, `is_registered`, `clear`, `validate_arguments` (six-kind stdlib validator, precise bool/int handling per ADR 0011 §2.2).
+  - `approval.py` — `resolve(descriptor, *, config_overrides, session_standing, standing_trust_all)` pure policy resolver; `resolve_with_answer(answer)` post-prompt mapper; `StdinApprovalPrompter` interactive surface with redaction-on-display.
+  - `audit.py` — `AuditLog(config_root, *, ember_version)` with daily-rotation path, single-write atomicity, UTF-8-safe truncation, NO_SUCH_TOOL → no-descriptor-still-writes path, OSError → ToolError surfacing.
+  - `INTERFACE.md` — operator-facing surface contract.
+  - `__init__.py` — re-exports.
+- **`src/ember/schemas/funi.py`** — Phase-14 promotion: `ToolCall` now lives in `ember.schemas.tool`, re-exported here so historical imports keep working. Inline class removed; one-line `from ember.schemas.tool import ToolCall` keeps `FuniReply.tool_calls` typed the same.
+- **`tests/unit/test_skeleton_imports.py`** — adds `ember.spark.funi.tools` to the import-cleanliness check.
+- **64 new tests** (407 pass + 2 skip, 18.2s, ruff clean):
+  - `test_schemas_tool.py` (12): every dataclass's defaults, frozen-ness, every enum's value set, the re-export-from-funi shim.
+  - `test_funi_tools_registry.py` (18): register/lookup/list_tools/clear, re-registration error, FORBIDDEN refuses at registration, six-kind validation including the precise int-vs-bool check from ADR 0011 §2.2 (`isinstance(True, int)` would silently pass; we reject), URL scheme requirement, path-empty refusal, enum constraints.
+  - `test_funi_tools_approval.py` (17): STANDING auto-approves, PER_CALL signals prompt-needed, FORBIDDEN resolves as forbidden_by_registry, session-standing skips prompt, standing-trust-all skips prompt, config-can-downgrade-but-not-upgrade (the safety-floor invariant), config-can-forbid-an-otherwise-standing-tool, scripted-IO prompter for y/n/always/eof/unknown, redaction-on-display.
+  - `test_funi_tools_audit.py` (17): one-record append, daily rotation across midnight, multi-record append-only, redaction never leaves the file body, output truncation at 4 KiB, mode-0o700 dir / mode-0o600 file (POSIX only), NO_SUCH_TOOL writes a no-descriptor record, denied calls have no reply field, OSError → ToolError surfacing.
+
+**Where Ember stands at end-of-Phase-14 (still 0.1.9):**
+
+| Capability | State |
+| --- | --- |
+| Hjarta first-run | shipped 0.1.0 |
+| Funi (Ollama) `complete()` + streaming | shipped 0.1.0 → 0.1.7 |
+| Brunnr sqlite_vec + pgvector | shipped 0.1.0 → 0.1.9 |
+| Munnr CLI + streaming + Ctrl-C | shipped 0.1.0 → 0.1.7 |
+| Config loader | shipped 0.1.5 |
+| **Tool-use framework (schemas + registry + approval + audit)** | **shipped this phase — gated until Phase 16** |
+| First three tools | pending → Phase 15 (no bump) |
+| Munnr tool-call integration | pending → 0.2.0-rc1 (Phase 16) |
+| Slice-2 acceptance + ratification | pending → 0.2.0 (Phase 17) |
+
+**Next:** Phase 15 — three first-party tools at `src/ember/tools/`:
+- `search_well` (STANDING, `BrunnrHandle.hybrid_search` / `text_search`),
+- `read_local_file` (PER_CALL, sandbox rejects `~/.ssh/`, `~/.ember/secrets/`, absolute-outside-home),
+- `fetch_url` (PER_CALL, robots.txt, refuses non-http(s) + RFC1918/loopback unless config allows).
+
+Each tool ships with happy-path + every refusal-mode unit test. No version bump for Phase 15 either; the bump lands when Munnr can actually call them in Phase 16.
+
+---
+
 ## 2026-05-21 — Phase 13 shipped: live-fire pgvector against Gungnir + container. **0.1.9 released.**
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (2 real adapter-bugs found and fixed + container fixture), Auditor (14 new live-backend tests + extension probe), Cartographer (`PGVECTOR_BRUNNR_REFERENCE.md` + Gungnir-ref forward-reference cleanup), Scribe (this entry + operator example yaml + memory).
