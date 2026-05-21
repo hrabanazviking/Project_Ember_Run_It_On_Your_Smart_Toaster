@@ -74,12 +74,20 @@ def open(config: BrunnrConfig) -> BrunnrHandle | Disconnected:
 
         return sqlite_vec_open(config)
 
+    if config.backend is BrunnrBackend.PGVECTOR:
+        # Phase 12 (ADR 0010) — psycopg + pgvector live behind the
+        # `pgvector` pip extra. Lazy import keeps Ember importable
+        # without the extra; missing deps surface as Disconnected.
+        from ember.well.brunnr.pgvector import open as pgvector_open  # noqa: PLC0415
+
+        return pgvector_open(config)
+
     return Disconnected(
         reason=DisconnectReason.CONFIG_INVALID,
         since=datetime.now(tz=UTC),
         detail=(
             f"Brunnr backend {config.backend.value!r} is not implemented "
-            f"in this build. See docs/architecture/EMBER_FIRST_SLICE_PLAN.md "
+            f"in this build. See docs/architecture/EMBER_SECOND_SLICE_PLAN.md "
             f"for the phase that ships it."
         ),
     )

@@ -130,11 +130,25 @@ class SqliteVecConfig:
 
 @dataclass(frozen=True, slots=True)
 class PgVectorConfig:
+    """Operator-facing config for the ``pgvector`` Brunnr (ADR 0010).
+
+    ``url`` and ``secret_ref`` are required when this backend is selected;
+    the rest carry Gungnir-aligned defaults. See ADR 0010 §2.5 for the
+    secret-resolution order documented for ``secret_env`` / ``use_keyring`` /
+    ``secret_ref``.
+    """
+
     url: str
-    secret_ref: Path
+    secret_ref: Path = Path("~/.ember/secrets/well.password")
+    secret_env: str = "EMBER_WELL_PASSWORD"
+    use_keyring: bool = True
+    keyring_service: str = "ember-well"
+    username: str | None = None  # None → parsed from URL
+    connect_timeout_s: float = 10.0
     vector_index: str = "hnsw"
     vector_metric: str = "cosine"
     schema: str = "public"
+    read_only: bool = False  # ADR 0010 §4 open-question; opt-in hardening for shared Gungnirs.
 
 
 @dataclass(frozen=True, slots=True)

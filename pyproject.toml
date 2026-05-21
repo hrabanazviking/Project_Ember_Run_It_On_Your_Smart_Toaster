@@ -48,8 +48,8 @@ dependencies = []
 # install only the extras they need.
 sqlite_vec = ["sqlite-vec>=0.1.6"]
 config = ["pyyaml>=6.0"]   # Enables YAML config files. TOML config works without this.
+pgvector = ["psycopg[binary]>=3.2", "pgvector>=0.3"]   # ADR 0010 — Postgres + pgvector Brunnr.
 # Planned for later phases (filled in as they land):
-#   pgvector    = ["psycopg[binary]>=3.2", "pgvector>=0.3"]
 #   qdrant      = ["qdrant-client>=1.9"]
 #   chroma      = ["chromadb>=0.5"]
 #   lancedb     = ["lancedb>=0.6"]

@@ -8,6 +8,55 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 12 shipped: ADR 0010 + pgvector Brunnr scaffold + secret resolver.
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0010 + Protocol parity + connection-per-handle decision), Cartographer (schema mapping against the live Gungnir survey), Forge Worker (adapter + secrets + DDL), Auditor (36 new tests), Scribe (this entry + INTERFACE.md + memory).
+
+**Scope:** First half of slice-2's pgvector work. The adapter, the DDL, the secret resolver, and the registry wiring all ship now; the live-fire integration test against real Gungnir and the operator-facing reference doc are Phase 13 (which also bumps to **0.1.9 "pgvector live"**). No version bump this phase — the adapter is built but the operator can't flip the switch yet, per the standing rule from Phase 7 that we bump when the operator can actually use what's new.
+
+**What shipped:**
+
+- **`docs/decisions/0010-pgvector-brunnr.md`** — the design ADR. Nine numbered decisions covering:
+  - Same `BrunnrHandle` Protocol — the slice-1 Protocol holds, no abstract base, no Spark-side branching. (§2.1)
+  - **Schema-probe first** — if `documents`+`chunks` exist in the configured schema, use them as-is and verify embedding-dim; never DDL into discovered tables. Episodes (Ember-only) is created when missing. (§2.2-2.3)
+  - **RRF `k=60`** matching sqlite_vec and Gungnir's `ingest.py` exactly, so results are commensurate across backends. (§2.4)
+  - **Secret resolution order** — env → keyring → mode-600 file → typed `AUTH_FAILED`; secret value never logged, even on error. (§2.5)
+  - **Connection-per-handle, no pool** — explicit deferral with the future-hook factory pattern documented. (§2.6)
+  - **`tsv` as GENERATED column** — not a trigger; simpler, matches Gungnir. (§2.7)
+  - **Eight typed `DisconnectReason` classifications** — Strengr's reconnect policy depends on the recoverable/non-recoverable split being correct. (§2.8)
+- **`src/ember/schemas/config.py`** — `PgVectorConfig` extended with `secret_env`, `use_keyring`, `keyring_service`, `username`, `connect_timeout_s`, `read_only`; `secret_ref` got a default (`~/.ember/secrets/well.password`).
+- **`src/ember/well/brunnr/pgvector/`** — new subpackage:
+  - `schema.sql` — Gungnir-compatible DDL with `{embedding_dim}` and `{schema}` substitution; `CREATE EXTENSION IF NOT EXISTS vector`, HNSW cosine index, GIN tsv index, generated tsv column, episodes table.
+  - `secrets.py` — `resolve(config) -> SecretResolution`, mode-600 enforcement with operator-readable refusal messages, URL-username parser, fake-keyring-injectable design for tests.
+  - `adapter.py` — `PgVectorBrunnr` implementing the full `BrunnrHandle` Protocol. `open()` is the failure-classification surface: lazy psycopg/pgvector import → typed disconnect on miss; secret resolution → `AUTH_FAILED`; `psycopg.OperationalError` → `_classify_operational_error` mapping (auth/timeout/conn_refused/DNS/unknown). Schema probe via `information_schema.tables` + `pg_attribute` for embedding dim. Hybrid search RRF identical-shape to sqlite_vec. `_quote_ident` escapes schema names safely (rejects NUL bytes).
+  - `INTERFACE.md` — operator-facing surface contract; spells out schema-probe semantics, secret resolution order, read-only mode, and the Phase-12 limitations (no live integration test yet, no example config yet).
+  - `__init__.py` — re-exports `PgVectorBrunnr` and `open`.
+- **`src/ember/well/brunnr/handle.py`** — registry now dispatches `BrunnrBackend.PGVECTOR` to the new adapter (lazy import so the extras stay opt-in).
+- **`pyproject.toml`** — `pgvector = ["psycopg[binary]>=3.2", "pgvector>=0.3"]` extra added under `[project.optional-dependencies]`.
+- **36 new tests** (329 pass + 2 skip, 14.4s, ruff clean):
+  - `tests/unit/test_brunnr_pgvector_secrets.py` (16 tests): env-wins-over-keyring-and-file, custom env-var name, empty-env-treated-as-missing, keyring fallback flow, `use_keyring=False` skip, URL-without-username falls through, explicit username override, custom keyring service, keyring exception → miss, mode-0o600 resolves, mode-0o644 refused, mode-0o604 refused, empty file treated as missing, trailing-newline stripped, total-miss reason aggregates every source, **secret body never leaks into `.reason`**.
+  - `tests/unit/test_brunnr_pgvector_schema.py` (20 tests): DDL substitution, episodes table presence, CREATE EXTENSION, HNSW + cosine, GENERATED tsv, custom schema name, double-quote escaping, NUL-byte refusal, registry dispatches PGVECTOR (not "not implemented"), missing-psycopg → `BACKEND_REPORTED_UNAVAILABLE`, misconfigured-backend → `CONFIG_INVALID`, missing-pgvector-subconfig → `CONFIG_INVALID`, Protocol method presence, read-only refusal mentions ADR §, OperationalError classification (auth/timeout/conn_refused/DNS/unknown), Disconnected.since is recent.
+
+**Failures the adapter classifies precisely:** `pgvector` extra not installed; URL malformed; host unreachable (CONN_REFUSED); TCP timeout; auth failed (SQLSTATE 28P01 / 28000); schema-probe mismatch (embedding-dim drift); `pgvector` extension missing; everything else → UNKNOWN with `detail` carrying the original message.
+
+**Where Ember stands at end-of-Phase-12 (still 0.1.7):**
+
+| Capability | State |
+| --- | --- |
+| Hjarta first-run | shipped 0.1.0 |
+| Funi (Ollama) `complete()` | shipped 0.1.0 |
+| Brunnr SQLite-vec | shipped 0.1.0 |
+| Munnr CLI surface | shipped 0.1.0 |
+| Config loader | shipped 0.1.5 |
+| Streaming Funi + Munnr live tokens | shipped 0.1.7 |
+| **pgvector Brunnr adapter + secret resolver** | **shipped (this phase) — gated until Phase 13** |
+| pgvector live (operator can flip the switch) | pending → 0.1.9 (Phase 13) |
+| Tool framework | pending → 0.2.0-rc1 |
+
+**Next:** Phase 13 — live-fire test against real Gungnir (`requires_postgres` marker, same shape as `requires_ollama`); confirm bytewise schema compat; hybrid-search RRF against the live 35 682-chunk corpus; `config/ember.example.yaml` + `config/storage.example.yaml` operator switches; `docs/adapters/PGVECTOR_BRUNNR_REFERENCE.md`; pyproject bump to **0.1.9 ("pgvector live")**.
+
+---
+
 ## 2026-05-21 — Phase 11 shipped: streaming Munnr REPL + Ctrl-C tagging. **0.1.7 released.**
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (chat.py + render helpers + Ctrl-C handler), Auditor (15 new tests + tailnet-Ollama visual smoke), Scribe (this entry + memory + INSTALL.md note).
