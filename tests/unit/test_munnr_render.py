@@ -8,6 +8,7 @@ from ember.schemas.chunks import BrunnrStats, RetrievalHit
 from ember.schemas.errors import Disconnected, DisconnectReason
 from ember.schemas.funi import FinishReason, FuniHealth, FuniReply
 from ember.schemas.ingest import IngestSummary
+from ember.schemas.stream import FuniStreamChunk
 from ember.schemas.thread import StrengrHealth
 from ember.spark.munnr import render
 
@@ -107,6 +108,67 @@ def test_doctor_renders_disconnected_well() -> None:
     )
     assert "DISCONNECTED" in out
     assert "conn_refused" in out
+
+
+def test_render_stream_chunk_passes_text_delta_through_unchanged() -> None:
+    chunk = FuniStreamChunk(text_delta="Hello ", done=False)
+    assert render.render_stream_chunk(chunk) == "Hello "
+
+
+def test_render_stream_chunk_returns_empty_string_for_empty_delta() -> None:
+    # The final ``done=True`` Ollama chunk often has no new text — the
+    # consumer decides whether to skip; the helper must not normalise.
+    final = FuniStreamChunk(text_delta="", done=True, finish_reason=FinishReason.STOP)
+    assert render.render_stream_chunk(final) == ""
+
+
+def test_stream_finish_tag_stop_returns_none() -> None:
+    assert render.stream_finish_tag(FinishReason.STOP) is None
+
+
+def test_stream_finish_tag_length_returns_truncated_tag() -> None:
+    tag = render.stream_finish_tag(FinishReason.LENGTH)
+    assert tag is not None
+    assert "truncated" in tag
+
+
+def test_stream_finish_tag_error_returns_error_tag() -> None:
+    tag = render.stream_finish_tag(FinishReason.ERROR)
+    assert tag is not None
+    assert "error" in tag.lower()
+
+
+def test_stream_finish_tag_refused_returns_declined_tag() -> None:
+    tag = render.stream_finish_tag(FinishReason.REFUSED)
+    assert tag is not None
+    assert "declined" in tag.lower()
+
+
+def test_stream_finish_tag_interrupted_overrides_finish_reason() -> None:
+    # Operator Ctrl-C wins over any finish reason — it's a stronger signal.
+    tag = render.stream_finish_tag(FinishReason.LENGTH, interrupted=True)
+    assert tag == render.INTERRUPTED_TAG
+
+
+def test_stream_finish_tag_interrupted_with_none_finish_reason() -> None:
+    # Operator pressed Ctrl-C before any ``done`` chunk arrived.
+    tag = render.stream_finish_tag(None, interrupted=True)
+    assert tag == render.INTERRUPTED_TAG
+
+
+def test_render_citations_alone_matches_render_reply_citations_block() -> None:
+    """The Phase 11 promotion preserves the existing format exactly."""
+    hits = [
+        RetrievalHit(
+            chunk_id=7, document_id=1, document_title="Vafþrúðnismál",
+            text="...", score=0.42,
+        )
+    ]
+    out = render.render_citations(hits)
+    assert out.startswith("citations:")
+    assert "Vafþrúðnismál" in out
+    assert "chunk 7" in out
+    assert "0.420" in out
 
 
 def test_ingest_summary_renders_counts_and_elapsed() -> None:

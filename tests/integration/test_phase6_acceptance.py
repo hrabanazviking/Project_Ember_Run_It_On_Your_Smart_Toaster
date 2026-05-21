@@ -39,6 +39,7 @@ from ember.schemas.funi import (
     FuniHealth,
     FuniReply,
 )
+from ember.spark.funi.handle import wrap_complete_as_stream
 from ember.spark.hjarta import HjartaIO, save_identity_atomic
 from ember.spark.hjarta import run as hjarta_run
 from ember.spark.munnr import chat, ingest
@@ -68,6 +69,13 @@ class _FakeFuni:
             finish_reason=FinishReason.STOP,
             model_id=self.model_id,
         )
+
+    def complete_streaming(self, prompt, context, tools=None):
+        # Phase 11: the chat REPL calls complete_streaming when
+        # config.funi.streaming is True (the default). Use the
+        # wrap_complete_as_stream helper so the double also satisfies
+        # the streaming Protocol slot.
+        yield from wrap_complete_as_stream(self, prompt, context, tools)
 
     def health(self) -> FuniHealth:
         return FuniHealth(model_id=self.model_id, last_ok=datetime.now(tz=UTC))

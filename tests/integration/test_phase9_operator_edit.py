@@ -30,6 +30,10 @@ class _FakeFuni:
     def complete(self, *a, **kw):  # pragma: no cover — not exercised in Hjarta
         raise AssertionError("not used here")
 
+    def complete_streaming(self, *a, **kw):  # pragma: no cover — not exercised in Hjarta
+        raise AssertionError("not used here")
+        yield  # make this a generator function
+
     def health(self) -> FuniHealth:
         return FuniHealth(model_id=self.model_id, last_ok=datetime.now(tz=UTC))
 

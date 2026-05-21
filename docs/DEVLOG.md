@@ -8,6 +8,51 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Phase 11 shipped: streaming Munnr REPL + Ctrl-C tagging. **0.1.7 released.**
+
+**Who:** Claude (Opus 4.7, 1M context). Voices: Forge Worker (chat.py + render helpers + Ctrl-C handler), Auditor (15 new tests + tailnet-Ollama visual smoke), Scribe (this entry + memory + INSTALL.md note).
+
+**Scope:** Second half of slice-2 streaming work. The Funi-side streaming Protocol shipped in Phase 10 is now wired through Munnr to the operator's terminal. Acceptance criterion from `EMBER_SECOND_SLICE_PLAN.md` §3 Phase 11 met: tokens appear live; Ctrl-C produces a tagged partial reply; the REPL returns for the next prompt.
+
+**What shipped:**
+
+- `src/ember/spark/munnr/render.py` — three new public helpers per ADR 0009 §2.3:
+  - `render_stream_chunk(chunk)` — pass-through of `chunk.text_delta` (the Funi adapter preserves whitespace, so the renderer must too).
+  - `stream_finish_tag(finish_reason, *, interrupted=False)` — operator-facing tag string for the post-stream line; operator-interrupt wins over any finish reason.
+  - `render_citations(hits)` — promoted from `_render_citations`; chat.py prints it *after* the streamed body, only when the Well is reachable.
+  - `INTERRUPTED_TAG = "[interrupted by operator]"` exported.
+- `src/ember/spark/munnr/chat.py` — REPL branches on `config.funi.streaming`:
+  - **Streaming branch** (default): `_run_streaming_turn()` drives the live token loop. Disconnect banner prints first, then deltas land one-by-one, then optional finish tag, then citations. The full joined text is reconstructed for the persisted Episode. `_StreamedTurn` dataclass holds the aggregate.
+  - **KeyboardInterrupt** caught inside the streaming loop. Partial text is preserved; `_tag_interrupted()` appends `[interrupted by operator]` to the Episode's `ember_reply`. REPL returns to the next `> ` prompt — Ctrl-C does not tear down the session.
+  - **Non-streaming branch** (`streaming: false`): the slice-1 `funi.complete()` path is unchanged. Operators who prefer the old behaviour can opt out via `~/.ember/config/ember.yaml`.
+- **Test doubles updated** per ADR 0009 §2.2 — `tests/integration/test_phase6_acceptance.py::_FakeFuni` routes `complete_streaming` through `wrap_complete_as_stream`. The Hjarta-only doubles (`test_phase9_operator_edit.py`, `test_hjarta_machine.py`) get raising `complete_streaming` stubs for Protocol completeness; Hjarta never calls them.
+- **15 new tests** (293 pass + 2 skip, ruff clean):
+  - `tests/unit/test_munnr_render.py` — 9 new cases covering `render_stream_chunk`, `stream_finish_tag` across all `FinishReason` values + interrupted override, public `render_citations`.
+  - `tests/integration/test_phase11_streaming.py` — 6 acceptance cases: streaming default takes stream path, full reply persists to Episode, Ctrl-C tags partial + REPL keeps going, `streaming=False` falls back to `complete()`, disconnect banner precedes tokens, `FinishReason.LENGTH` appends truncation tag.
+- `pyproject.toml` bumped to **0.1.7**.
+- `src/ember/__init__.py` docstring updated — slice-2 Phase 11 (streaming live) entry.
+- `tests/unit/test_skeleton_imports.py` version assertion bumped.
+
+**Real-Ollama visual smoke (tailnet phi3:mini, OLLAMA_HOST=100.67.240.22):** Drove `chat.run` with a timestamping `_StampedStdout` proxy. Four streamed chunks landed at +1843, +1856, +1869, +1882 ms (≈13ms inter-chunk) — full reply "Streaming Ready" assembled live from deltas, not buffered. The streaming cadence is visible at the operator's terminal as designed.
+
+**Where Ember stands at 0.1.7:**
+
+| Capability | State |
+| --- | --- |
+| Hjarta first-run | shipped 0.1.0 |
+| Funi (Ollama) `complete()` | shipped 0.1.0 |
+| Brunnr SQLite-vec | shipped 0.1.0 |
+| Munnr CLI surface | shipped 0.1.0 |
+| Config loader (`~/.ember/config/ember.yaml`) | shipped 0.1.5 |
+| Funi streaming Protocol + Ollama NDJSON | shipped 0.1.7 (Phase 10) |
+| Munnr live token render + Ctrl-C | **shipped 0.1.7 (Phase 11)** |
+| pgvector Brunnr (ADR 0010) | pending → 0.1.9 |
+| Tool framework (ADR 0011) | pending → 0.2.0-rc1 |
+
+**Next:** Phase 12 — pgvector Brunnr scaffold (ADR 0010 §1: connection pool, schema migrations, `add_document` / `add_chunks` parity). Phase 13 wires it into the Strengr opener and bumps to 0.1.9.
+
+---
+
 ## 2026-05-21 — Phase 10 shipped: ADR 0009 + streaming Funi protocol + Ollama native streaming.
 
 **Who:** Claude (Opus 4.7, 1M context). Voices: Architect (ADR 0009 + Protocol shape), Forge Worker (OllamaFuni native streaming), Auditor (13 new tests + real-Ollama smoke), Scribe (this entry).

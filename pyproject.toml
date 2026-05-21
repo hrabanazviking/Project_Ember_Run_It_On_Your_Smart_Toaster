@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ember-agent"
-version = "0.1.5"
+version = "0.1.7"
 description = "Ember — a small, tethered, runs-anywhere AI companion. See docs/SYSTEM_VISION.md."
 readme = "README.md"
 requires-python = ">=3.11"
