@@ -8,6 +8,130 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-22 — Klóinn Codex (57 docs) — OpenClaw research → Ember adoption plan.
+
+**Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering
+session: six roles operating across `docs/kloinn/`. Design-only; no
+source code changes; tests still at 612 + 2 skipped.
+
+### What got designed
+
+A 57-document tree at `docs/kloinn/` (plus `INDEX.md`)
+researching [**OpenClaw**](https://github.com/openclaw/openclaw)
+— the 373k-star peer/competitor sovereign-AI-assistant project
+("Your own personal AI assistant. Any OS. Any Platform. The
+lobster way. 🦞" — mascot Molty, TypeScript/Node.js, local-first
+Gateway, multi-channel + voice + mobile + sandboxing).
+
+Klóinn (KLOH-in; Old Norse "the Clawed One") is the Ember-side
+adoption plan. Each pattern labeled with a recommendation:
+🔵 Borrow as-is / 🟢 Adapt to Ember Vows / 🟡 Defer / 🔴 Reject.
+
+Sections:
+
+- **research/** (8 docs): what OpenClaw is, Molty mascot,
+  Gateway architecture, multi-agent routing, technology stack,
+  tool ecosystem, deployment/development, project health/scale.
+- **patterns/** (12 docs): local-first Gateway, multi-agent
+  workspaces, prompt injection files, sandbox backend
+  abstraction, voice wake + talk mode, Live Canvas + A2UI,
+  multi-channel messaging, companion app pairing, skill
+  registry + bundles, onboarding-driven setup, development
+  channels, per-agent session history.
+- **lessons/** (8 docs): divergence of philosophies, when to
+  depart from OpenClaw, the price of popularity, TypeScript
+  vs Python trade-offs, the sandbox question, the voice
+  question, the channel proliferation question, the mobile
+  question.
+- **applications/** (12 docs): bridges to messaging channels,
+  voice wake for Rödd, Live Canvas for Auga, sandboxing layer
+  for tools, multi-agent for Ember personas, workspace prompt
+  files, skill bundles for operators, onboarding flow
+  refinement, development channels for Ember, companion app
+  pairing design, Docker default sandbox for LARGE profiles,
+  menu bar presence.
+- **invented-methods/** (8 docs): **Humarr Gateway** (named
+  Gateway pattern), **Shed Protocol** (deprecation/migration),
+  **Pincer Loop** (plan-then-execute), **Tide Routing**
+  (adaptive federation), **Moult Cycle** (monthly maintenance),
+  **Claw Negotiation** (structured disagreement), **Deep Water
+  Federation** (resilient slow-link multi-device), **Carapace
+  Defense** (7-layer security in depth).
+- **integrations/** (4 docs): adding voice wake, adding
+  Telegram bridge, adding sandbox backend, adding Live Canvas.
+- **roadmap/** (4 docs): three-phase plan — Observe and Borrow
+  → Bridges and Voice → Canvas and Channels.
+
+### Key recommendations
+
+**Borrow as-is** (cheap, high-value):
+- Workspace prompt files (AGENTS.md, SOUL.md, TOOLS.md)
+- Sessions with /new, /sessions, etc.
+- Three release channels (stable/beta/dev on PyPI)
+- Pre-commit hooks + CI discipline
+
+**Adapt to Vows** (with modifications):
+- Gateway → Humarr (profile-aware; ephemeral-or-daemon)
+- 2-3 channel bridges (Matrix + Telegram; not 23)
+- Voice wake (local-only; not ElevenLabs)
+- Sandbox backends (subprocess default; Docker opt-in)
+- Skills as pip packages (no centralized registry)
+- Web companion (PWA over tailnet; not native apps)
+
+**Reject** (incompatible):
+- Centralized skill registry (ClawHub) — violates Modular
+  Authorship
+- Cloud-deploy configs in core — violates Sovereignty
+- WhatsApp/iMessage bridges — vendor-controlled, not sovereign
+- Native mobile apps — too expensive; web companion suffices
+- ElevenLabs default TTS — cloud dependency for voice
+
+### Why this matters
+
+OpenClaw shows that a sovereign AI assistant *can* reach mass
+adoption (373k stars). They did it via abundance: 23+
+messaging channels, voice wake, mobile companions, mainstream-
+friendly UX. Ember chooses the opposite path: scarcity-by-
+design, sovereignty-by-default, Pi-class friendliness, Norse-
+coded architecture.
+
+There is enormous to learn from a peer that succeeded at the
+same problem we're solving — *without* abandoning the Vows
+that make Ember worth building.
+
+The codex's thesis: **borrow the patterns, reject the
+philosophy, keep the Vows**.
+
+### Three-phase roadmap
+
+- **Phase 1 (V1.0)**: workspace prompt files, sessions,
+  release channels, Humarr rename, refined onboarding, Shed
+  Protocol bones.
+- **Phase 2 (V2.0)**: Matrix + Telegram bridges, Talk Mode +
+  Voice Wake, sandbox backends, Pincer Loop, skills
+  infrastructure, daemon mode.
+- **Phase 3 (V3.0)**: OdinUI / Live Canvas, web companion
+  (PWA), Deep Water Federation, personas, Tide Routing, Menu
+  Bar Presence, Moult Cycle, Claw Negotiation, Auga sibling.
+
+Each Klóinn phase follows the corresponding Yggdrasil phase
+by ~1 step. Cumulative scope: ~100 weeks calendar.
+
+### What's next
+
+Operator-ratification of the Klóinn codex. Iðunn / Volmarr /
+Sigrún walkthroughs. Once ratified, Klóinn Phase 1 begins
+*after* Yggdrasil Phase 1 ships.
+
+Until ratification: no source code work on Klóinn. The codex
+itself is the deliverable.
+
+This is the third major design tree (Yggdrasil + Stofa +
+Klóinn). Together: **197+ design documents** across three
+trees. Ember is a *deeply considered* project.
+
+---
+
 ## 2026-05-21 — Yggdrasil design tree (66 docs) — the master integration plan.
 
 **Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session: six
