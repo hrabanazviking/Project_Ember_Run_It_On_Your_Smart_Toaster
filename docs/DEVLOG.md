@@ -8,6 +8,86 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Yggdrasil design tree (66 docs) — the master integration plan.
+
+**Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session: six
+roles operating in concert across `docs/yggdrasil/`. Design-only; no
+source code changes; tests still at 612 + 2 skipped, ruff clean.
+
+### What got designed
+
+A 66-document tree at `docs/yggdrasil/` (plus `INDEX.md`) covering how
+to wire together all of Ember's sibling projects — Bifrǫst, mimir-well,
+Verdandi, Seiðr, Kista, Hamr, CloakBrowser, Astrology, MemPalace,
+Norse-Dict, Open-VTT — into one coherent Norse-coded constellation.
+
+Sections:
+
+- **vision/** (6 docs): grand vision, naming, philosophy, personas,
+  family-of-siblings, futuristic horizon
+- **siblings/** (12 docs): one deep-dive per sibling + a matrix
+- **architecture/** (10 docs): nine realms, protocol layer, Bifrǫst
+  gateway, Kista secret plane, Mímir knowledge plane, Seiðr generation
+  plane, CloakBrowser web plane, Astrology rhythm plane, observability,
+  reconciliation receipts
+- **ai-capabilities/** (10 docs): self-awareness, emotional intelligence,
+  reasoning audit, long-horizon memory, meta-learning, dreamstate,
+  intuition, curiosity-driven ingest, emotional palette, Norse naming
+- **robustness/** (8 docs): self-healing philosophy, gossip health
+  protocol, recovery playbooks, crash-bounded design, Norns backup,
+  bug-resistance invariants, observability as first-class, testing
+- **cross-platform/** (8 docs): device detection, resource budgeting,
+  tiered defaults, GPU portability, offline guarantees, distributed
+  coordination, high-perf + tiny profiles
+- **invented-methods/** (6 docs): Borg Protocol (capability discovery),
+  Heimdall (cross-realm gate), Well of Replay (event sourcing),
+  Rhythmic Computation, Bifrǫst Trinity Fusion (3-way mutual-
+  reinforcement search), Mirror of Ginnungagap (operator-mediated
+  introspection)
+- **roadmap/** (6 docs): five-phase plan — Roots → Branches → Crown →
+  Network → Constellation Ratified
+
+### Novel methods introduced
+
+- **Bifrǫst Trinity Fusion**: extends RRF with mutual reinforcement
+  across Mímir + Huginn + Muninn — chunks that *all three* vaguely
+  agree on outrank chunks one retriever loudly favors. Yggdrasil-
+  original; not standard practice elsewhere.
+- **Mirror of Ginnungagap**: weekly introspection report; system
+  proposes tuning; operator decides. No autonomous drift.
+- **Heimdall Pattern**: every cross-realm call through one mediator
+  — auth + rate limits + circuit-breakers + audit in one place.
+- **Well of Replay**: append-only event log; current state derives
+  from projections; time-travel + forensics first-class.
+- **Rhythmic Computation**: background work scheduled by lulls +
+  rhythms, not flat cron.
+- **Borg Protocol**: capabilities advertised + indexed; agent finds
+  composite paths through them.
+
+### Why this matters
+
+Until now the eleven sibling projects existed but Ember could only
+talk to ~3 of them. The Yggdrasil tree is the *architecture* for
+wiring all of them in *without losing the Vow of Smallness or
+Sovereignty*. Each sibling stays an optional pip extra; the operator
+chooses what they want.
+
+The tree is **design-only** — ratification gate must pass before any
+of Phase 1's code work begins. Each phase ships value before the next
+starts.
+
+### What's next
+
+Operator-ratification of the Yggdrasil tree. Iðunn / Volmarr / Sigrún
+walkthroughs of the docs. Once ratified, Phase 1 (The Roots) work can
+begin: Bifrǫst + Mímir + Huginn integration; Kista mediation;
+Verdandi event bus; updated Doctor screen.
+
+Until ratification: no source code work on Yggdrasil. The tree itself
+is the deliverable.
+
+---
+
 ## 2026-05-21 — Batch K — wired the last two orphan schema fields (no version bump).
 
 **Who:** Claude (Opus 4.7, 1M context). Continuation of the unwired-
