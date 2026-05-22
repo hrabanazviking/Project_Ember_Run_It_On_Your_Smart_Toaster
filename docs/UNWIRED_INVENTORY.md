@@ -1,7 +1,7 @@
 # Unwired Inventory
 
-**As of 2026-05-21 (HEAD `02ded16`).** A canonical list of everything in
-this repo that is **defined but not currently wired into Ember-the-project**,
+**Last updated 2026-05-21 (post Batch K).** A canonical list of everything
+in this repo that is **defined but not currently wired into Ember-the-project**,
 plus the recommended action for each.
 
 The audit was performed by the Mythic-Engineering Auditor (Sólrún) using
@@ -9,63 +9,22 @@ the Explore subagent + manual grep verification. Re-running it should
 produce the same list — update this file when something here gets wired,
 removed, or new orphans appear.
 
+✅ **Both previously-listed orphan schema fields** (`health_check_timeout_s`
++ `stale_heartbeat_s`) **were wired up in Batch K**; they now appear in
+the Historical section at the bottom. `src/ember/` currently has **zero
+known orphan fields**.
+
 ---
 
-## 1. Orphan fields inside `src/ember/` — TWO ACTIONABLE ITEMS
+## 1. Orphan fields inside `src/ember/` — NONE
 
-These are real schema fields the operator can write into `ember.yaml`
-**but the code never reads them**. Operator setting these gets nothing.
+✅ **As of Batch K (2026-05-21), `src/ember/` has zero known orphan
+schema fields.** Every field in `EmberConfig` is read by at least one
+non-test code path.
 
-### 1.1 `StrengrConfig.health_check_timeout_s`
-
-- **Declared:** `src/ember/schemas/config.py:116`
-- **Default:** `5.0`
-- **Documented in:** `src/ember/thread/strengr/README.md:76`
-- **Read by production code:** **zero callers**
-- **Read by tests:** `tests/unit/test_strengr_tether.py:82` (only sets it
-  as a config value; the test never asserts that the timeout actually
-  fired)
-
-**Status:** declared as if it controls Strengr's health-check timeout,
-but `tether.health()` doesn't reference the field. Operator-misleading.
-
-**Recommended action:** **wire it.** In `tether.health()`, wrap the
-`brunnr.count()` probe in a timeout that uses `config.health_check_timeout_s`.
-The signature already exists; the plumbing is one `signal.alarm` or
-`concurrent.futures.ThreadPoolExecutor.result(timeout=...)` call.
-
-Alternatively: **delete the field** + update the strengr README. Less
-work, but operators who saw the README will lose a documented capability.
-
-**Estimated effort:** 30 min to wire + a regression test that simulates
-a slow probe. Or 5 min to delete.
-
-### 1.2 `JournalConfig.stale_heartbeat_s`
-
-- **Declared:** `src/ember/schemas/config.py:191`
-- **Default:** `600` (10 minutes)
-- **Documented in:** nowhere — not even in the journal README
-- **Read by production code:** **zero callers**
-- **Read by tests:** **zero callers**
-
-**Status:** ghost field. The most-orphan field in the schema.
-Presumably intended for "if a journal's last_heartbeat is older than N
-seconds, treat the journal as crashed and recover." But there's no
-crash-recovery code path that uses it.
-
-**Recommended action:** **wire it.** Two options:
-
-- (a) In `Journal._find_existing()`, when resuming, check if the
-  journal's `last_heartbeat` is older than `stale_heartbeat_s`. If so,
-  log a warning and refuse to resume (start fresh) — protects against
-  a crashed-ingest journal from yesterday that's no longer truthful.
-- (b) Add a CLI command `ember well clean-stale` that walks
-  journals and removes ones older than the threshold.
-
-Or: **delete the field**. Lowest effort.
-
-**Estimated effort:** 1-2 hours for option (a) with tests. 5 min to
-delete.
+The two previously-orphan fields (`StrengrConfig.health_check_timeout_s`
++ `JournalConfig.stale_heartbeat_s`) are now wired up — see the
+Historical section at the bottom of this file.
 
 ---
 
@@ -197,6 +156,18 @@ repo at any given commit.
 Orphans we previously found and wired up — DO NOT re-add unless
 they re-orphan:
 
+- **`StrengrConfig.health_check_timeout_s`** — wired in **Batch K**
+  via `strengr.health(handle, timeout_s=...)`. Uses
+  ThreadPoolExecutor + `shutdown(wait=False)` so a hanging backend
+  doesn't block the doctor flow. Both `doctor.py` and `status.py`
+  pass `config.strengr.health_check_timeout_s`. Pinned by
+  `tests/unit/test_hardening_batch_k.py`.
+- **`JournalConfig.stale_heartbeat_s`** — wired in **Batch K** via
+  `Journal.open()`. When resuming, if `last_heartbeat` is older
+  than the threshold, the journal is archived (renamed with
+  `.stale-<timestamp>` suffix) and a fresh job is started. Defends
+  against duplicate-ingest hazards from yesterday's crashed runs.
+  Pinned by `tests/unit/test_hardening_batch_k.py`.
 - `LoggingConfig.level/format/destinations` — wired in Batch J via
   `src/ember/logging.py`.
 - `ToolDescriptor.timeout_s` — enforced in Batch J via chat.py's
@@ -212,7 +183,7 @@ they re-orphan:
 
 ## Audit metadata
 
-- **Last audited:** 2026-05-21 at HEAD `02ded16`.
+- **Last audited:** 2026-05-21 (post Batch K).
 - **Auditor:** Mythic-Engineering Sólrún + Explore subagent.
 - **Method:** grep for declarations vs grep for callers across `src/`
   + manual verification of suspect findings.

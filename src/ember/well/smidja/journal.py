@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import tempfile
 import uuid
@@ -24,6 +25,8 @@ from pathlib import Path
 from ember.schemas.config import JournalConfig
 from ember.schemas.errors import IngestError
 from ember.schemas.ingest import IngestEntry, IngestEntryStatus, IngestSourceKind
+
+logger = logging.getLogger(__name__)
 
 _DONE_SUBDIR = "done"
 
@@ -137,9 +140,32 @@ class Journal:
             existing = cls._find_existing(root_dir, source_root)
             if existing is not None:
                 path, state = existing
-                state.last_heartbeat = _now_iso()
-                cls._write_state(path, state)
-                return cls(path, state, config)
+                # Stale-heartbeat check (wires up
+                # JournalConfig.stale_heartbeat_s which was previously
+                # declared in the schema but never read). If the
+                # existing journal's last heartbeat is older than the
+                # configured threshold, treat it as crashed — log a
+                # warning, archive the stale file, and start fresh.
+                # Without this, resuming a journal from a crashed run
+                # that's hours/days old can produce confusing results
+                # (the previously-in-progress entries may have already
+                # been re-ingested via a separate run, leading to
+                # duplicate chunks).
+                if _heartbeat_is_stale(
+                    state.last_heartbeat, config.stale_heartbeat_s,
+                ):
+                    logger.warning(
+                        "journal %s is stale "
+                        "(last heartbeat %s, threshold %ds); "
+                        "archiving and starting fresh",
+                        path.name, state.last_heartbeat,
+                        config.stale_heartbeat_s,
+                    )
+                    cls._archive_stale(path)
+                else:
+                    state.last_heartbeat = _now_iso()
+                    cls._write_state(path, state)
+                    return cls(path, state, config)
             job_id = str(uuid.uuid4())
 
         now = _now_iso()
@@ -312,9 +338,50 @@ class Journal:
                 return candidate, JournalState.from_payload(payload)
         return None
 
+    @staticmethod
+    def _archive_stale(path: Path) -> None:
+        """Move a stale journal aside with a `.stale-<timestamp>` suffix.
+
+        We don't delete it — an operator inspecting their journal
+        directory should be able to see what was abandoned and when.
+        """
+        suffix = f".stale-{int(datetime.now(tz=UTC).timestamp())}"
+        archive_path = path.with_suffix(path.suffix + suffix)
+        try:
+            path.rename(archive_path)
+        except OSError as exc:
+            logger.warning(
+                "journal stale-archive failed for %s: %s; "
+                "leaving file in place", path.name, exc,
+            )
+
 
 def _now_iso() -> str:
     return datetime.now(tz=UTC).isoformat()
+
+
+def _heartbeat_is_stale(last_heartbeat: str, threshold_s: int) -> bool:
+    """Return True if ``last_heartbeat`` (ISO-8601 string) is older than
+    ``threshold_s`` seconds from now.
+
+    Defensive: a malformed timestamp is treated as NOT stale (we'd rather
+    attempt resume than wrongly discard work). The malformed case is
+    logged at debug level.
+    """
+    try:
+        last = datetime.fromisoformat(last_heartbeat)
+    except (ValueError, TypeError) as exc:
+        logger.debug(
+            "journal heartbeat unparseable (%r); treating as fresh: %s",
+            last_heartbeat, exc,
+        )
+        return False
+    # ISO-8601 from _now_iso() always carries tz; if a legacy file has
+    # a naive timestamp, normalize to UTC for the comparison.
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=UTC)
+    age_s = (datetime.now(tz=UTC) - last).total_seconds()
+    return age_s > threshold_s
 
 
 __all__ = ["Journal", "JournalState"]
