@@ -126,31 +126,75 @@ def open(
     return last_result
 
 
-def health(handle: BrunnrHandle) -> StrengrHealth:
+def health(
+    handle: BrunnrHandle,
+    *,
+    timeout_s: float | None = None,
+) -> StrengrHealth:
     """Probe the Well via the handle and return an honest health snapshot.
 
-    Never raises. If the probe fails, the returned :class:`StrengrHealth`
-    has ``last_ok=None`` and a populated ``detail`` so ``ember doctor``
-    can show the operator what went wrong.
+    Never raises. If the probe fails or exceeds ``timeout_s``, the
+    returned :class:`StrengrHealth` has ``last_ok=None`` and a populated
+    ``detail`` so ``ember doctor`` can show the operator what went wrong.
+
+    ``timeout_s`` (when not None) wraps the ``handle.count()`` call in a
+    one-shot ``ThreadPoolExecutor`` so a hanging backend doesn't block
+    the doctor flow. The Python thread can't be killed, but
+    ``shutdown(wait=False)`` returns control to the caller immediately
+    — the same pattern chat.py uses for tool-timeout enforcement (see
+    ``ember.spark.munnr.chat._execute_with_timeout``). Wires up
+    ``StrengrConfig.health_check_timeout_s`` (was previously declared
+    in the schema but never read).
     """
-    try:
-        stats = handle.count()
-    except Exception as exc:
-        logger.debug("strengr.health probe failed: %s", exc)
+    def _probe() -> StrengrHealth:
+        try:
+            stats = handle.count()
+        except Exception as exc:
+            logger.debug("strengr.health probe failed: %s", exc)
+            return StrengrHealth(
+                backend_kind=getattr(handle, "backend_kind", "unknown"),
+                last_ok=None,
+                detail=f"probe failed: {exc}",
+            )
         return StrengrHealth(
             backend_kind=getattr(handle, "backend_kind", "unknown"),
-            last_ok=None,
-            detail=f"probe failed: {exc}",
+            last_ok=datetime.now(tz=UTC),
+            documents=stats.documents,
+            chunks=stats.chunks,
+            embedded_chunks=stats.embedded_chunks,
+            size_bytes=stats.size_bytes,
         )
 
-    return StrengrHealth(
-        backend_kind=getattr(handle, "backend_kind", "unknown"),
-        last_ok=datetime.now(tz=UTC),
-        documents=stats.documents,
-        chunks=stats.chunks,
-        embedded_chunks=stats.embedded_chunks,
-        size_bytes=stats.size_bytes,
-    )
+    if timeout_s is None:
+        return _probe()
+
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+    from concurrent.futures import TimeoutError as _FutTimeout  # noqa: PLC0415
+
+    # See note on chat.py's _execute_with_timeout: deliberately NOT
+    # `with ThreadPoolExecutor()` because the context exit would
+    # block on the runaway probe and defeat the timeout. Manual
+    # shutdown(wait=False) so the caller is unblocked immediately.
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ember-strengr-health")
+    try:
+        future = pool.submit(_probe)
+        try:
+            return future.result(timeout=timeout_s)
+        except _FutTimeout:
+            future.cancel()
+            logger.debug(
+                "strengr.health probe exceeded timeout of %.2fs", timeout_s,
+            )
+            return StrengrHealth(
+                backend_kind=getattr(handle, "backend_kind", "unknown"),
+                last_ok=None,
+                detail=(
+                    f"probe exceeded timeout of {timeout_s}s; "
+                    f"the work may still be running in the background"
+                ),
+            )
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 __all__ = ["Opener", "health", "open"]

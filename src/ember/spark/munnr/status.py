@@ -28,7 +28,9 @@ def run(
 
     try:
         stats = well.count()
-        health = strengr.health(well)
+        health = strengr.health(
+            well, timeout_s=config.strengr.health_check_timeout_s,
+        )
     finally:
         well.close()
 

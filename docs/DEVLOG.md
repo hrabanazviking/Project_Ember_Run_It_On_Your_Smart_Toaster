@@ -8,6 +8,182 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-21 — Yggdrasil design tree (66 docs) — the master integration plan.
+
+**Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session: six
+roles operating in concert across `docs/yggdrasil/`. Design-only; no
+source code changes; tests still at 612 + 2 skipped, ruff clean.
+
+### What got designed
+
+A 66-document tree at `docs/yggdrasil/` (plus `INDEX.md`) covering how
+to wire together all of Ember's sibling projects — Bifrǫst, mimir-well,
+Verdandi, Seiðr, Kista, Hamr, CloakBrowser, Astrology, MemPalace,
+Norse-Dict, Open-VTT — into one coherent Norse-coded constellation.
+
+Sections:
+
+- **vision/** (6 docs): grand vision, naming, philosophy, personas,
+  family-of-siblings, futuristic horizon
+- **siblings/** (12 docs): one deep-dive per sibling + a matrix
+- **architecture/** (10 docs): nine realms, protocol layer, Bifrǫst
+  gateway, Kista secret plane, Mímir knowledge plane, Seiðr generation
+  plane, CloakBrowser web plane, Astrology rhythm plane, observability,
+  reconciliation receipts
+- **ai-capabilities/** (10 docs): self-awareness, emotional intelligence,
+  reasoning audit, long-horizon memory, meta-learning, dreamstate,
+  intuition, curiosity-driven ingest, emotional palette, Norse naming
+- **robustness/** (8 docs): self-healing philosophy, gossip health
+  protocol, recovery playbooks, crash-bounded design, Norns backup,
+  bug-resistance invariants, observability as first-class, testing
+- **cross-platform/** (8 docs): device detection, resource budgeting,
+  tiered defaults, GPU portability, offline guarantees, distributed
+  coordination, high-perf + tiny profiles
+- **invented-methods/** (6 docs): Borg Protocol (capability discovery),
+  Heimdall (cross-realm gate), Well of Replay (event sourcing),
+  Rhythmic Computation, Bifrǫst Trinity Fusion (3-way mutual-
+  reinforcement search), Mirror of Ginnungagap (operator-mediated
+  introspection)
+- **roadmap/** (6 docs): five-phase plan — Roots → Branches → Crown →
+  Network → Constellation Ratified
+
+### Novel methods introduced
+
+- **Bifrǫst Trinity Fusion**: extends RRF with mutual reinforcement
+  across Mímir + Huginn + Muninn — chunks that *all three* vaguely
+  agree on outrank chunks one retriever loudly favors. Yggdrasil-
+  original; not standard practice elsewhere.
+- **Mirror of Ginnungagap**: weekly introspection report; system
+  proposes tuning; operator decides. No autonomous drift.
+- **Heimdall Pattern**: every cross-realm call through one mediator
+  — auth + rate limits + circuit-breakers + audit in one place.
+- **Well of Replay**: append-only event log; current state derives
+  from projections; time-travel + forensics first-class.
+- **Rhythmic Computation**: background work scheduled by lulls +
+  rhythms, not flat cron.
+- **Borg Protocol**: capabilities advertised + indexed; agent finds
+  composite paths through them.
+
+### Why this matters
+
+Until now the eleven sibling projects existed but Ember could only
+talk to ~3 of them. The Yggdrasil tree is the *architecture* for
+wiring all of them in *without losing the Vow of Smallness or
+Sovereignty*. Each sibling stays an optional pip extra; the operator
+chooses what they want.
+
+The tree is **design-only** — ratification gate must pass before any
+of Phase 1's code work begins. Each phase ships value before the next
+starts.
+
+### What's next
+
+Operator-ratification of the Yggdrasil tree. Iðunn / Volmarr / Sigrún
+walkthroughs of the docs. Once ratified, Phase 1 (The Roots) work can
+begin: Bifrǫst + Mímir + Huginn integration; Kista mediation;
+Verdandi event bus; updated Doctor screen.
+
+Until ratification: no source code work on Yggdrasil. The tree itself
+is the deliverable.
+
+---
+
+## 2026-05-21 — Batch K — wired the last two orphan schema fields (no version bump).
+
+**Who:** Claude (Opus 4.7, 1M context). Continuation of the unwired-
+inventory audit. The two orphan fields documented in
+`docs/UNWIRED_INVENTORY.md` are now real working features instead of
+schema decoration.
+
+### What got wired
+
+**1. `StrengrConfig.health_check_timeout_s`** (was: declared in schema,
+documented in strengr README, but `tether.health()` never read it).
+
+- New signature: `strengr.health(handle, *, timeout_s=None)`.
+  Backward-compatible — existing callers without `timeout_s` get the
+  previous synchronous behavior.
+- When `timeout_s` is set, `_probe()` runs inside a one-shot
+  `ThreadPoolExecutor` with `future.result(timeout=...)`. On
+  overrun → typed `StrengrHealth(last_ok=None, detail="probe
+  exceeded timeout of ...s")`.
+- **Critically:** manual `pool.shutdown(wait=False, cancel_futures=True)`
+  instead of `with ThreadPoolExecutor()`. The context-manager exit
+  would block on the runaway probe and defeat the timeout. Same
+  pattern as chat.py's `_execute_with_timeout` from Batch J.
+- Callers updated: `src/ember/spark/munnr/status.py` and
+  `src/ember/spark/munnr/doctor.py` both now pass
+  `config.strengr.health_check_timeout_s` (defaults to 5.0 seconds).
+
+**2. `JournalConfig.stale_heartbeat_s`** (was: declared with default
+600, zero references anywhere in src/tests/docs — most-orphan field
+in the schema).
+
+- New `_heartbeat_is_stale(last_heartbeat, threshold_s)` helper in
+  `src/ember/well/smidja/journal.py`. Parses the ISO-8601 timestamp,
+  compares age-in-seconds to threshold. Defensive on malformed
+  timestamps (treats as fresh — better to attempt resume than
+  wrongly discard work).
+- New `Journal._archive_stale(path)` helper. Renames a stale journal
+  to `<original>.json.stale-<unix_timestamp>` so the operator can
+  inspect what was abandoned without it being silently deleted.
+- `Journal.open()` now checks the existing journal's heartbeat
+  before resuming. If older than `config.stale_heartbeat_s`: logs a
+  warning, archives the file, starts a fresh journal. Otherwise:
+  proceeds to resume as before.
+- Operator can opt out by setting `stale_heartbeat_s` very high
+  (e.g., `10_000_000`); ancient journals still resume.
+
+### Why this matters
+
+Both fields were the kind of latent footgun where an operator could
+set them in `ember.yaml` and get *nothing*. After Batch J fixed four
+similar fields (Logging, ToolDescriptor.timeout_s,
+allow_private_addresses, MCP doctor probe), these were the last two
+known orphans. Now: **`src/ember/` has zero known orphan schema
+fields**, per the updated `docs/UNWIRED_INVENTORY.md`.
+
+The stale-heartbeat check additionally defends against a real
+operational hazard: a crashed ingest run from days ago, when
+resumed, would attempt to skip files that may have been re-ingested
+through a separate run in between — producing duplicate chunks in
+the Well. The archive-and-fresh-start behavior eliminates that
+risk.
+
+### Tests
+
+`tests/unit/test_hardening_batch_k.py`, +9 tests:
+
+- 3 for `strengr.health()`: no-timeout backward-compat, with-timeout
+  overrun produces typed reply in <1s (not 2s), exception still
+  produces typed reply.
+- 3 for `_heartbeat_is_stale()`: old timestamp → stale, fresh → not
+  stale, malformed → not stale (defensive).
+- 3 for `Journal.open()` resume behavior: fresh existing journal
+  resumes, stale journal archives + starts fresh, huge-threshold
+  disables check.
+
+### Stats
+
+- **Before:** 603 pass + 2 skip, ruff clean.
+- **After:** **612 pass + 2 skip**, ruff clean. **+9 regression tests.**
+- **Files modified:** 4 source files (`tether.py`, `journal.py`,
+  `status.py`, `doctor.py`).
+- **Files created:** 1 test file (`test_hardening_batch_k.py`).
+- **Docs updated:** `docs/UNWIRED_INVENTORY.md` — both fields moved
+  to Historical; "0 known orphan fields" promoted to the lead.
+- **No version bump.** Hygiene on top of Batch J.
+
+### Closing word
+
+The unwired-inventory audit named two fields; Batch K wired them.
+Now the inventory's "actionable items" section is empty. Every
+schema field declared in `ember.yaml`-readable form actually does
+something. **The promise the schema makes is the promise the code
+keeps.**
+
+---
+
 ## 2026-05-21 — Design tree for Stofa (the TUI) — `docs/tui/` shipped, no code.
 
 **Who:** Claude (Opus 4.7, 1M context). User asked the 6 Mythic-Engineering
