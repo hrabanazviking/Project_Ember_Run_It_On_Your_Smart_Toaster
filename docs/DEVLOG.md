@@ -8,6 +8,92 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-24 — SAP Codex (Wave 3, 83 docs) — Super Agent Party research → embodiment, reach, and affect plan.
+
+**Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session with **seven parallel agents** (six roles; Forge doubled to absorb per-platform breadth). Design-only; no source code changes.
+
+### What got designed
+
+An 83-document tree at `docs/sap_codex/` (77 content + 6 meta), plus the `TASK_SUPER_AGENT_PARTY_CODEX.md` at repo root. Total ~205,000 words; 1.8 MB on disk; eight commits on `development` (`e393d0b` scaffold → `eb700de` meta finalization).
+
+Subject: [**heshengtao/super-agent-party**](https://github.com/heshengtao/super-agent-party) v0.4.2-preview (cloned `/tmp/super-agent-party/`) — an Electron+Python desktop AI companion with VRM avatars, Live2D, VTube Studio, 8 IM bots, 3 livestream platforms, computer control, MCP, A2A, and `affection_*` modules. Hermes Codex and Peer Codex gave Ember almost nothing on embodiment, reach, or affect — three axes where SAP is uniquely instructive among open-source agent frameworks.
+
+Each agent wrote with explicit `path:line` citations and the mandatory `## What This Means for Ember` closer (Adopt / Adapt / Avoid / Invent).
+
+Layers and owners:
+
+- **`00_vision/`** (Skald — Sigrún Ljósbrá, 5 docs, ~20k words): OVERTURE, SAP_ESSENCE, THE_PARTY_METAPHOR, ANTI_SAP, VISION_SYNTHESIS. The Skald's `03_ANTI_SAP` thirteen-refusal table becomes the template for grounded criticism across the codex.
+- **`10_domain/`** (Architect — Rúnhild Svartdóttir, 14 docs, ~30k words): DOMAIN_MAP through ROUTING. Identifies SAP's "Server-Eaten Codebase" antipattern — `server.py` is 11,652 LOC; `py/agent.py` is misleadingly named tool-allowlist code.
+- **`20_interface/`** (Architect 6 + Auditor 6, 12 docs, ~28k words): MCP, OpenAI-compat, A2A, Skill, Extension, Avatar, IM-bot, Streaming, Browser-CDP, Tool-type, Voice, Retrieval.
+- **`30_execution/`** (Forge-A 12 + Forge-B 11, 23 docs, ~49k words): core execution + per-platform deep dives (8 IM bots × deep doc; 3 livestream platforms × deep doc).
+- **`50_verification/`** (Auditor — Sólrún Hvítmynd, 10 docs, ~24k words): SELF_HEALING through CONFIG_DRIFT. The Auditor's Avoid list is the longest of any role.
+- **`60_synthesis/`** (Cartographer 6 + Scribe 7, 13 docs, ~49k words): True-Name reassignment, five new Vows, Party Protocol, Performance Tier Engine, Affection Engine Reimagined, Meta-Awareness, 20 Inventions, slice-plan revisions, 12 ADRs, integration roadmap, multi-Ember party, low-power embodiment, Wave-3 slice.
+- **`meta/`** (Scribe — Eirwyn Rúnblóm, 6 docs, ~14k words): SHARED_CONTEXT, MANIFEST, STYLE_GUIDE, INDEX, READING_ORDER, CROSS_AGENT_NOTES.
+
+### Load-bearing findings
+
+**1. The affection-framing correction.** SAP's `affection_system.py` is **64 lines of regex parsing** LLM-emitted `<user=X love=N>` tags at line 44 (`server.py:2611-2670` is the system-prompt block instructing the LLM to write those tags). No decay, no state machine, no bounds, no lock — the LLM is both author and judge of its own affect. Architect, Skald, and Cartographer independently surfaced this; it contradicts the SAP README's framing. Now load-bearing for `60_synthesis/64_AFFECTION_ENGINE_REIMAGINED.md`. Ember's Hjarta will need real state.
+
+**2. Real shipping bug in SAP** (caught by Forge-B): `twitch_service.py:171-181` has `_send` and `_close_socket` indented inside `_handle_line` instead of at class level. Calls likely raise `AttributeError`, swallowed by broad `except`. The Twitch bot may be non-functional as shipped. Catalogued in `30_execution/36c_LIVESTREAM_TWITCH.md`; not yet filed upstream.
+
+**3. SAP's "yolo" permission mode** that the LLM can self-elevate to via `update_workspace_settings` (`py/mode_change.py:34, 86`). The agent can disarm its own seatbelt. Load-bearing for the Surface Without Surveillance Vow.
+
+**4. Server-Eaten Codebase confirmed twice.** Hermes's `cli.py` (14,560 LOC) and SAP's `server.py` (11,652 LOC). Wave-3 slice (`6C_EMBER_WAVE_3_SLICE.md`) is explicitly anti-monolith — no Ember module exceeds 400 LOC without architecture review.
+
+### Key recommendations (from `meta/CROSS_AGENT_NOTES.md §3 Ratification Queue`)
+
+**Tier-1 ratification** (small, high-value, individually shippable in slice 3):
+- **Surface Without Surveillance Vow** — every reach carries explicit, revocable scope
+- **Affective Restraint Vow** — affect biases behavior but never overrides consent or safety
+- **Tiered Presence Vow** — Ember scales down gracefully (T0 workstation → T4 toaster)
+- **Hugarsýn** adopted as full True Name (mind-sight / introspection surface)
+- **TrustClass enum** + per-adapter telemetry budget
+- **Failsafe Default-Quiet Mode** — opt-in for every channel
+- **persona_id seed** — federated identity primitive
+
+**Tier-2 (slice 3 candidates with more design surface):**
+- Embodied Honesty Vow
+- Federated Self Vow
+- Party Protocol (multi-device coordination)
+- Affection Engine reimagined (Well-tethered, consent-gated, gacha-free)
+
+**Argued against:** Vinátta (Hermes-proposed) — Hjarta scope-expansion is cheaper and more honest than a new True Name.
+
+**Reserve, do not yet adopt:** Andlit (face), Rödd (voice) — paired pair; adoption follows the embodiment slice.
+
+### Pending follow-ups
+
+1. Amend `docs/sap_codex/meta/SHARED_CONTEXT.md §1` to reflect the affection-framing correction (one-line fix; load-bearing for future readers).
+2. Tier-1 ratification ceremony.
+3. Slice-3 shape decision: ship as one slice or sub-slice 3a (Hermes-portion) / 3b (SAP-portion).
+4. Author Peer Codex synthesis layer (Wave 4) — SAP cross-refs to Peer slugs are pending.
+5. Author Hermes glossary index — so SAP-codex concept refs resolve cleanly.
+6. File the Twitch indentation bug upstream as a courtesy (Open Knowledge Vow suggests it).
+7. Low-priority maintenance: 4 malformed `[[#5]]`/`[[66]]`/`[[6A]]`/`[[6B]]` refs + 2 typos + add YAML frontmatter to Forge-B per-platform docs.
+
+### Commits
+
+```
+eb700de docs(sap_codex): Wave 3 meta finalization — INDEX, READING_ORDER, CROSS_AGENT_NOTES
+729b4b3 docs(sap_codex): Wave 3 layer 60 — synthesis (Cartographer+Scribe, 13 docs, ~49k words)
+f8acd8d docs(sap_codex): Wave 3 layer 50 — verification (Auditor, 10 docs, ~24k words)
+85681f1 docs(sap_codex): Wave 3 layer 30 — execution (Forge-A+B, 23 docs, ~49k words)
+4e9c95c docs(sap_codex): Wave 3 layer 20 — interface (Architect+Auditor, 12 docs, ~28k words)
+1963616 docs(sap_codex): Wave 3 layer 10 — domain (Architect, 14 docs, ~30k words)
+5ec8ebd docs(sap_codex): Wave 3 layer 00 — vision (Skald, 5 docs, ~20k words)
+e393d0b docs(sap_codex): Wave 3 scaffold — 82-doc Super Agent Party corpus
+```
+
+### What still feels right
+
+The Refusal-Citation Discipline (every Avoid cites file:line) produced a corpus where the same truth is reachable from multiple agents' independent reads. The affection-framing correction is the strongest evidence: four roles surfaced it from four different angles, all pointing to the same line. The discipline works.
+
+### What still feels wrong
+
+The Peer Codex synthesis layer is still empty. Until Wave 4 lands, SAP-codex cross-refs to Peer slugs are pending. The codex collection is now imbalanced: Hermes complete, SAP complete, Peer scaffold-only, Klóinn doc-rich-but-not-cross-linked to the others.
+
+---
+
 ## 2026-05-22 — Klóinn Codex (57 docs) — OpenClaw research → Ember adoption plan.
 
 **Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering
