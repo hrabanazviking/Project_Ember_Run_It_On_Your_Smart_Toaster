@@ -8,6 +8,75 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-25 — Waifu Codex (Wave 4, 21 docs) — waifu-chat-starter-kit research → realtime cloud embodiment plan.
+
+**Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session with six parallel agents (single Forge — no split this time). Document-only; no source code changes. Honors the Absolute Boundary Directive added to RULES.AI.md mid-session.
+
+### What got designed
+
+A 21-document tree at `docs/waifu_codex/` (15 content + 6 meta), plus `TASK_WAIFU_CODEX.md` at repo root. Total ~64,000 words; eight commits on `development` (`4bffa51` scaffold → `df47af2` meta finalization).
+
+Subject: [**ZeroWeight-Engineering/waifu-chat-starter-kit**](https://github.com/ZeroWeight-Engineering/waifu-chat-starter-kit) — a 846-LOC React+Vite glue layer between LiveKit (MIT, realtime media via WebRTC) and ZeroWeight's proprietary cloud avatar SDK. Five source files total; 7 commits on remote (local mirror showed 1, suggesting squashed history); 74 GitHub stars; **no LICENSE file**.
+
+This is **intentionally smaller than SAP Wave 3** (15 vs 83 docs). Honest 15 docs beat padded 50+ — source is 846 LOC, scope is right-sized. The codex fills one specific gap SAP did not address: **the realtime cloud embodiment axis** for Andlit and Rödd.
+
+Layers and owners:
+
+- **`00_vision/`** (Skald, 2 docs, ~6.5k words): OVERTURE, VISION_SYNTHESIS. Proposes "The Cloud Reading" as the Wave-4 frame; sub-names Andlit-realtime and Rödd-realtime under the SAP-reserved True Names; **zero new Vows** (the Wave-3 lattice was prescient).
+- **`10_domain/`** (Architect, 3 docs, ~9.6k words): DOMAIN_MAP, DUAL_MODE_PATTERN, DEPENDENCY_STACK. Names the brittleness inversion (the kit's hardest dependency is its least replaceable).
+- **`20_interface/`** (Architect 2 + Auditor 1, 3 docs, ~9.4k words): ZEROWEIGHT_SURFACE (from-outside-in catalog of 17 untyped members), LIVEKIT_INTEGRATION (kit uses ~5% of LiveKit's offered surface), ACTION_PROTOCOL (three hardcoded action strings, no negotiation).
+- **`30_execution/`** (Forge, 2 docs, ~5.9k words): BASIC_MODE_FLOW (full quote of 31-LOC `BasicMode.tsx`), ADVANCED_MODE_FLOW (188-LOC walk). The 1:1000 code-you-see-to-code-that-runs ratio in basic mode.
+- **`50_verification/`** (Auditor, 3 docs, ~8.5k words): DEPENDENCY_HEALTH, SECURITY_AND_PRIVACY, NO_LICENSE_RISK. Severity-ranked attack catalog; license rubric (cite-yes, vendor-no, reimplement-from-scratch-yes).
+- **`60_synthesis/`** (Cartographer 1 + Scribe 1, 2 docs, ~7.3k words): REALTIME_TIER_FOR_ANDLIT (Tier-CLOUD as parallel axis to T0-T4 ladder, 4-mode decision matrix, consent-token shape), DECISIONS_AND_INVENTIONS (5 ADRs WAIFU-001..005 + 10 inventions).
+- **`meta/`** (Scribe finalization, 6 docs total, ~5.8k words including starter): SHARED_CONTEXT, MANIFEST, STYLE_GUIDE, INDEX (5,325w), READING_ORDER (2,623w), CROSS_AGENT_NOTES (8,306w).
+
+### Load-bearing findings
+
+**1. SAP tier-naming collision surfaced and catalogued.** The Cartographer noticed that `sap:63_PERFORMANCE_TIER_ENGINE` uses T-1/T0/T1/T2/T3 (Pi at T0, workstation at T3) while `sap:6B_LOW_POWER_EMBODIMENT` uses T0/T1/T2/T3/T4 (workstation at T0, toaster at T4). **Inverse ladders, same five rungs.** Both sibling SAP synthesis docs are currently presumed-canonical. Future Ember docs need one chosen. Surfaced in `waifu_codex/meta/CROSS_AGENT_NOTES.md §2`.
+
+**2. Hardcoded API keys in client source — in BOTH modes.** `BasicMode.tsx:20-21` and `AdvancedMode.tsx:11-12` both ship the operator's ZeroWeight billing credential in every bundle to every visitor. Advanced mode does not fix Basic mode's worst foot-gun. Anyone copying the kit pattern leaks billing credentials. Surfaced independently by *six* of the 15 docs.
+
+**3. Tier-CLOUD as PARALLEL AXIS, not hierarchical rung.** Cartographer and Scribe converged independently: cloud presence is a different axis from host-capability (modest host + rich cloud rendering vs powerful host + local rendering). Naming it parallel preserves the Vow shape; placing it on the T-ladder breaks Surface-Without-Surveillance.
+
+**4. Wave-3 Vow lattice validated.** Wave 4 needed *zero new Vows*. Two near-misses (Defended System Prompt → Defended Credential Surface; Closed Default + Tiered Presence → "Cloud as Named Context") resolved as *sharpenings* of existing Vows rather than additions. The Wave-3 design instinct was prescient.
+
+**5. The `handleToogleCharacter` typo (sic) ships in production-flagged source.** Catalogued by four roles independently. Indicative of the kit's polish level — useful tutorial, not production-grade.
+
+### Key recommendations (from `meta/CROSS_AGENT_NOTES.md §7`)
+
+Ratification queue, in priority order:
+
+1. **License-Aware Study Posture** — costs nothing; one paragraph in `PHILOSOPHY.md` or `RULES.AI.md`; applies retroactively to unlicensed corpora study
+2. **SAP tier-naming amendment** — one Scribe evening; recommend canonical T-1/T0/T1/T2/T3; should land before any tier-engine code ships
+3. **Tier-CLOUD structural ratification bundle** — four items together: parallel-axis (ADR-WAIFU-003), four-mode matrix, consent token (ADR-WAIFU-005), canonical Andlit vocabulary (ADR-WAIFU-004)
+4. **Sub-name reservations** — Andlit-local + Andlit-realtime; Rödd-local + Rödd-realtime
+5. **Peer Codex synthesis layer (Wave 5)** — still incomplete; cross-codex links from Wave 3 + Wave 4 await it
+
+### Commits
+
+```
+df47af2 docs(waifu_codex): meta finalization — INDEX, READING_ORDER, CROSS_AGENT_NOTES
+c9f8ea9 docs(waifu_codex): layer 60 — synthesis (Cartographer+Scribe, 2 docs, ~7.3k words)
+d6b4248 docs(waifu_codex): layer 50 — verification (Auditor, 3 docs, ~8.5k words)
+3b88d16 docs(waifu_codex): layer 30 — execution (Forge, 2 docs, ~5.9k words)
+0448fcb docs(waifu_codex): layer 20 — interface (Architect+Auditor, 3 docs, ~9.4k words)
+11c1e3b docs(waifu_codex): layer 10 — domain (Architect, 3 docs, ~9.6k words)
+b62b3bb docs(waifu_codex): layer 00 — vision (Skald, 2 docs, ~6.5k words)
+4bffa51 docs(waifu_codex): scaffold — 15-doc waifu-chat-starter-kit corpus
+```
+
+### What still feels right
+
+The honest-size decision (15 docs not 50+) produced a *denser* codex than SAP. Cross-agent convergence was unusually high — the same defects surfaced from 4-6 independent agent reads. With 846 LOC and six parallel agents, convergence stops being coincidence and becomes structural evidence.
+
+### What still feels wrong
+
+Peer Codex is still synthesis-empty. SAP and Waifu codexes both ended with "next is Peer Wave 5" recommendations. The Wave-3 → Wave-4 cadence skipped Peer. That gap is now twice-deferred.
+
+The kit's no-LICENSE state means the Adopt-list is shaped by what we *can't* adopt as much as what we *should*. LiveKit MIT bears more weight than usual; if upstream LiveKit ever changes governance, Ember's realtime tier is exposed.
+
+---
+
 ## 2026-05-24 — SAP Codex (Wave 3, 83 docs) — Super Agent Party research → embodiment, reach, and affect plan.
 
 **Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session with **seven parallel agents** (six roles; Forge doubled to absorb per-platform breadth). Design-only; no source code changes.
