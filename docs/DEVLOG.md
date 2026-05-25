@@ -8,6 +8,93 @@ The DEVLOG of the parent project Runa-Agent-Digital-Being is preserved at `docs/
 
 ---
 
+## 2026-05-25 — Chatdoll Codex (Wave 5, 70 docs) — ChatdollKit research → Unity-native local embodiment + three-corpus triangulation complete.
+
+**Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session with seven parallel agents (six roles; Forge doubled for execution breadth). Document-only; honors the Absolute Boundary Directive. **Survived a mid-run Claude subscription session limit cleanly** via the clean-resume discipline.
+
+### What got designed
+
+A 70-document tree at `docs/chatdoll_codex/` (63 content + 6 meta + 1 TASK at root). Total ~225,000 words. Eleven commits on `development` (`c67b331` scaffold → `80cf62d` meta finalization).
+
+Subject: [**uezo/ChatdollKit**](https://github.com/uezo/ChatdollKit) v0.8.16 — Apache-2.0 licensed Unity SDK, 18,221 C# LOC across 121 files, 1,157 commits, 1.2k stars, 13 named subsystems, 6+ LLM providers (ChatGPT/Claude/Gemini/Dify/Grok/Command R), 10+ TTS providers (including the deep Japanese voice stack), STT pipeline with Silero ML-VAD, multi-platform reach (Win/Mac/Linux/iOS/Android/VR/AR/WebGL), sister projects ecosystem (ChatMemory, AIAvatarKit, AITuber Controller, OshaberiAI iOS app).
+
+Apache-2.0 means adopt-friendly — distinct from Waifu's study-only stance.
+
+**The three-corpus embodiment triangulation completes here:**
+
+| Axis | Source | Codex | Runtime |
+|---|---|---|---|
+| Electron desktop | SAP | Wave 3 | Electron + Python |
+| Cloud streaming | Waifu | Wave 4 | Browser + WebRTC + cloud avatar |
+| **Unity-native local** | **ChatdollKit** | **Wave 5** | **Unity + VRM + local rendering** |
+
+### Session-limit interruption (worth noting)
+
+The original 7-agent dispatch hit a Claude subscription session limit mid-run (each agent had completed 21-67 tool uses; 38 of 63 content docs landed before the limit; all boundary docs ended cleanly with proper closers, no truncation). After reset, a follow-up 5-agent dispatch completed the remaining 28 docs. The clean-resume worked: cross-dispatch voice matching was exemplary (the Architect docs written pre-limit and post-limit are stylistically indistinguishable). This validated the Mythic-Engineering process under stress.
+
+### Layers and owners
+
+- **`00_vision/`** (Skald, 5 docs, ~22.5k words): OVERTURE, CDK_ESSENCE, UNITY_AS_RUNTIME, ANTI_CDK, VISION_SYNTHESIS. Completes the three-corpus triangulation.
+- **`10_domain/`** (Architect, 14 docs, ~47k words): 8 Scripts/ subsystems + AIAvatar + Memory + Animation + Unity-Lifecycle + Multi-Platform. Identifies `AIAvatar.cs` as CDK's lone SAP-style monolith (664 LOC, 10 responsibilities).
+- **`20_interface/`** (Architect 5 + Auditor 5, 10 docs, ~33k words): LLM/VAD/Animation-tag/Tool/VRM (Architect); TTS-Western/TTS-Japanese/STT/Socket/JS-Bridge (Auditor). The Japanese-TTS doc is unique-teaching.
+- **`30_execution/`** (Forge-A 8 + Forge-B 6, 14 docs, ~42k words): core pipeline (Unity bootstrap, main loop, STT, TTS prefetch, animation, lip-sync, function-call exec, barge-in) + sister projects (ChatMemory, AIAvatarKit, AITuber) + platform builds (WebGL, Mobile, XR).
+- **`50_verification/`** (Auditor, 8 docs, ~21k words): dependency health, security, performance, multi-LLM consistency, multi-TTS quality, WebGL gotchas, sister integration risks, failure taxonomy (42 ranked failure modes).
+- **`60_synthesis/`** (Cartographer 6 + Scribe 6, 12 docs, ~58k words): three-corpus triangulation, Andlit-unity tier, mobile-and-XR tier, multimodal pipeline, function-calling for embodied, memory integration (Hjarta-Brunnr Rule), Japanese voice integration, decision records (12 ADRs CDK-001..012), invented methods (21 inventions), slice plan revisions, integration roadmap, Wave 5 slice.
+- **`meta/`** (6 docs, ~22.9k words): SHARED_CONTEXT, MANIFEST, STYLE_GUIDE, INDEX, READING_ORDER, CROSS_AGENT_NOTES.
+
+### Load-bearing findings
+
+**1. Server-Held-Keys-Only elevated to Vow-candidate** — three corpora now reject the client-side LLM API key pattern (Waifu, CDK, Hermes implicit alignment). Three-corpus convergence justifies promotion to standing Vow.
+
+**2. The Hjarta-Brunnr Rule** — the 15:1 line-count ratio between ChatMemory's Unity client (96 LOC) and FastAPI service (1,451 LOC) is **the design statement, not an accident**. The boundary is the lesson. Episodic state in Hjarta (in-process, fast); durable memory in Brunnr (Gungnir PG18+pgvector); boundary at typed messages.
+
+**3. CDK's barge-in is two structurally different algorithms** — duration-based (fires after 1.5s) vs partial-transcript-length-based (fires after ~300ms). The 1.2s gap is what makes barge-in feel conversational. The merge window is implicit and unbounded — biggest UX invention opportunity for Ember.
+
+**4. VOICEVOX is structurally unique among TTS providers** — 30-80ms latency floor, offline CPU, zero-credential, 50+ voices, free-with-attribution. Adopt-priority for Ember Rödd-unity desktop default. The Japanese voice ecosystem (10+ providers) is **unique teaching** that Western codexes have missed.
+
+**5. CDK ships `AITuberMessageHandler.cs:217-272`** — allows API-key + system-prompt + model-URL reassignment over unauth TCP. Single most consequential line in CDK.
+
+**6. The Validation-Slice Pattern (new invention)** — when a prior slice ships an abstraction, the next slice can validate it by adding a *second* concrete implementation as a small focused sub-slice. Wave 5a is precisely this.
+
+### Key recommendations (from `meta/CROSS_AGENT_NOTES.md §Recommendations`)
+
+1. **Ratify Server-Held-Keys-Only as a Vow** — highest priority; three-corpus convergence
+2. **Ratify the Clean-Resume Discipline** as ME practice update — validated by Wave 5's session-limit stress test
+3. **Surface Klóinn Codex's eventual subject** before Wave 6 — the Klóinn-pending markers in 6A_INTEGRATION_ROADMAP are honest gaps
+4. **Run Hermes glossary index** — three waves of pending concept-references is enough
+5. **Slice-3/Slice-5 sub-slicing decision** — ~2,780 LOC across three codex contributions; sub-slicing 3a/3b/3c recommended
+6. **File AIAvatarKit streaming protocol versioning upstream** — Open Knowledge Vow suggests it
+7. **Form-factor axis** (desktop/mobile/XR/WebGL) folded into Hugarsýn's tier projection before any tier-engine code ships
+
+### Commits
+
+```
+80cf62d  docs(chatdoll_codex): meta finalization
+7991864  docs(chatdoll_codex): layer 60 completion — synthesis (+5)
+c907c79  docs(chatdoll_codex): layer 50 completion — verification (+2)
+1333c6d  docs(chatdoll_codex): layer 30 completion — execution (+2)
+7c0bff5  docs(chatdoll_codex): layer 20 — interface (10 docs)
+5a15d3b  docs(chatdoll_codex): layer 10 completion — domain (+9)
+009044d  docs(chatdoll_codex): layer 60 — synthesis partial (7 of 12)
+e028e46  docs(chatdoll_codex): layer 50 — verification partial (6 of 8)
+0981026  docs(chatdoll_codex): layer 30 — execution partial (12 of 14)
+a04fc76  docs(chatdoll_codex): layer 10 — domain partial (5 of 14)
+23e5214  docs(chatdoll_codex): layer 00 — vision (5 docs)
+c67b331  docs(chatdoll_codex): scaffold — 63-doc corpus
+```
+
+The split pattern (partial → completion) is the git-history artifact of the session-limit recovery — preserved honestly rather than rewritten.
+
+### What still feels right
+
+The Mythic-Engineering process survived the session-limit stress test. The clean-resume discipline (briefing-first, manifest-authoritative, disjoint-file-ownership) meant the follow-up agents picked up exactly where the previous agents stopped, with no voice drift, no scope confusion, no duplicate work. The Wave-3 Vow lattice continues to hold (no new Vows needed across Waves 4 and 5; sharpenings only). The three-corpus triangulation actually closed — Andlit-electron + Andlit-realtime + Andlit-unity is a real design surface now.
+
+### What still feels wrong
+
+Peer Codex synthesis layer is now thrice-deferred (SAP, Waifu, and CDK codexes all depend on it for cross-codex links and end with "next is Peer Wave"). Klóinn-pending markers are honest gaps but they're accumulating. The Hermes glossary index has been pending since Wave 3 — three waves of inherited pending status.
+
+---
+
 ## 2026-05-25 — Waifu Codex (Wave 4, 21 docs) — waifu-chat-starter-kit research → realtime cloud embodiment plan.
 
 **Who:** Claude (Opus 4.7, 1M context). Mythic-Engineering session with six parallel agents (single Forge — no split this time). Document-only; no source code changes. Honors the Absolute Boundary Directive added to RULES.AI.md mid-session.
