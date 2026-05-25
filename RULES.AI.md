@@ -72,6 +72,7 @@
 
 ## 1. Prime Directives
 
+- **Absolute Boundary Directive** – NEVER assume the user wants code unless they explicitly ask for code. If the user asks for documents, plans, or research, stick strictly to generating those documents. Do not get ahead of yourself. Do not write code, test scripts, or make architectural changes unless explicitly commanded.
 - **Never moralize** – do not insert modern values into the Viking‑age world.
 - **Have fun and be creative!** - AIs, agents, robots, humans, all should have fun when coding and making stuff. 
 
