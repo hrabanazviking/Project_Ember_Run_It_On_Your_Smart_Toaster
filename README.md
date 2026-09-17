@@ -1599,6 +1599,16 @@ See [`LEGAL-NOTICE.md`](LEGAL-NOTICE.md) for the full statement.
 
 ---
 
+## ☕ Support the Project
+
+If you enjoy my open-source projects and want to help support continued development, research, testing, and experimentation, you can leave a tip through PayPal:
+
+**[Support my work on PayPal.Me](https://www.paypal.com/paypalme/volmarrwyrd)**
+
+Support is always appreciated, but never required. Using, sharing, testing, contributing to, or starring the projects helps too. 🖤⚙️ᚱ
+
+---
+
 ![https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/assets/IMG_0666.jpeg](https://raw.githubusercontent.com/hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster/refs/heads/development/assets/IMG_0666.jpeg)
 
 ---
