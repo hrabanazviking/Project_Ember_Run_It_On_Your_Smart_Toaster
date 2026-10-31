@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 14:05 EDT
-Status: IN PROGRESS — E-056 (regression armour: budget tests join the permanent gate) being built by the 13:52 keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055
-Next slice: E-056 — Regression armour: budget tests join the permanent gate
+Last updated: 2026-10-31 14:24 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-057
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056
+Next slice: E-057 — Member budget table: every member's cost per profile
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2224,3 +2224,40 @@ Top-level members present (size / file count, working tree excl. .git):
   remote moved bd9991f → 86d3d0c, verified via ls-remote (remote head =
   86d3d0ce0797dacdf74ef6e27cc353993d56f155 = local HEAD at push time).
 - E-056 next — regression armour: budget tests join the permanent gate.
+
+## E-056 — Regression armour (DONE, 2026-10-31)
+
+- Record filed at `docs/architecture/E-056_REGRESSION_ARMOUR.md`: Part III's
+  budget tests (fifteen files, one per slice E-041–E-055) joined the
+  permanent gate as ONE command — `python3 scripts/dev/run_budget_gate.py`
+  (in `scripts/dev/`, the scaffold's stated purpose; `--help` + docstring
+  per the scripts rules). The script's `BUDGET_TEST_FILES` manifest is the
+  single enrolment list, in roadmap order; the command is
+  `sys.executable -m pytest <manifest> -q` at the repo root with `src/`
+  leading PYTHONPATH, exit code propagated unchanged; `--list` prints the
+  manifest, `--collect-only` checks wiring, args after `--` pass to pytest.
+  The armour now stands in BOTH gates: the one-command budget gate and the
+  whole-suite Runs B/D (every enrolled file lives under `tests/unit/`).
+- Keeper tests: `tests/unit/test_budget_armour_e056.py` — **7 passed**
+  (default env): manifest exactly 15, no duplicates; every enrolled file
+  real, under `tests/unit/`, holding ≥1 test; completeness — every
+  `tests/unit/` file with a Part III suffix `_e041`–`_e055` is enrolled in
+  slice-number order (a future unenrolled budget file fails here, not
+  silently); command == manifest + `-q`; `--list` == manifest;
+  `--collect-only` through the real script collects every enrolled file.
+  The keeper is deliberately NOT in the manifest (it re-measures nothing;
+  enrolling it would be circular). One defect in the slice's own test
+  found and fixed in scope: discovery first sorted alphabetically and
+  failed against the roadmap-ordered manifest — that failure is the
+  completeness test proving it bites; discovery now sorts by slice number.
+- The permanent gate itself, run both shapes: default env **122 passed,
+  7 skipped**, exit 0 (the 7 are the honest sqlite_vec-absent guards —
+  E-042 ×2, E-045 ×4, E-046 ×1); extras shape **129 passed, 0 skipped**,
+  exit 0 (122 + 7 reconciles exactly). No ceiling moved, no anchor
+  changed, no `src/` code touched, no new docket items. No README touched.
+- Slice gate: Run B **1047 passed, 6 failed, 25 skipped, 1 warning**
+  (1040 E-055 baseline + 7 new; the 6 are the proven environment failures,
+  identical set). Run D **1104 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1097 + 7 — reconciles exactly). Logs in
+  `~/workspace/.verify-tmp/ember-e056/gate/`.
+- E-057 next — member budget table: every member's cost per profile.
