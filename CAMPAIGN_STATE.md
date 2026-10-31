@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 22:15 EDT
+Last updated: 2026-10-30 22:17 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001
-Next slice: E-002 — Member census
+Banked: E-001, E-002
+Next slice: E-003 — ORIGINS concordance
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -68,7 +68,30 @@ Top-level members present (size / file count, working tree excl. .git):
 - Note: many member dirs carry large numbers of loose image files at their roots (Verdandi, Hamr,
   astrology-engine) — census detail for E-002/E-014, not a verdict.
 
+## E-002 — Member census (DONE, 2026-10-30)
+
+- Census filed at `docs/audit/E-002_MEMBER_CENSUS.md`: all 21 top-level directories
+  + root loose files (45 files, ~36 MB), each with purpose, byte-sum size, file count,
+  main code language, entry points, strict test-file count, and last-evidence-of-life
+  from `git log` (method stated in the doc; strict test counts reproduce the E-001
+  snapshot exactly for every member it listed).
+- Headline evidence: every roadmap §2 member is PRESENT; 11 members (Verdandi, kista,
+  mempalace, mimir-well, seidr_engine, astrology-engine, bifrost, Hamr, Open-VTT,
+  CloakBrowser, dictionary) have exactly ONE commit — their 2026-05-21 import — while
+  src/ + tests/ show real development (28/27 commits through Batch K). Weight is data
+  and images, not code (mempalace 59.0 MB incl. ~38.5 MB benchmark .jsonl; dictionary
+  24.2 MB incl. 18.6 MB Jest snapshot; Verdandi 16.8 MB incl. ~15.2 MB loose images).
+  Test presence uneven: astrology-engine and Open-VTT have ZERO test files; kista and
+  seidr_engine one each. Scaffolding dirs (scripts/tools/examples/deploy/vendor) are
+  near-empty Markdown-only shells — concordance items for E-003/E-014. Root images
+  have recurred since ORIGINS §2's move to assets/ (19 IMG_*.jpeg + 3 large PNGs).
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline; the 6
+  failures are the proven environment failures. Doc-only slice, no code touched,
+  no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
-- E-002 next — member census in depth.
+- E-002 DONE (2026-10-30) — member census in depth, filed at docs/audit/E-002_MEMBER_CENSUS.md.
+- E-003 next — ORIGINS concordance.
