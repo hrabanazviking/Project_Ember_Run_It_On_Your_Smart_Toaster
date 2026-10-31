@@ -307,6 +307,38 @@ MEASURED_WELL_STEADY_BYTES_PER_EPISODE = 585.4
 MEASURED_ESSAY_BYTES_PER_EPISODE = 6_144
 
 
+# --------------------------------------------------------------------- #
+# Measured anchors (update weight — E-052)                              #
+# --------------------------------------------------------------------- #
+
+#: **Update weight, measured (E-052).** An update of the
+#: core is a wheel: the package tree deflated. Weighed on
+#: the VM with ``ember.updates``' own functions on the
+#: final tree of the E-052 slice (this module's anchors
+#: included): the download — the wheel shape built in
+#: memory, entries sorted, deflate level 9 — is 293,387 B
+#: (~0.28 MiB), and the package it unpacks to weighs
+#: 775,675 B installed (bytecode caches excluded, the
+#: book's standing rule). Method and the per-profile
+#: table live in
+#: ``docs/architecture/E-052_UPDATE_WEIGHT.md``.
+MEASURED_UPDATE_DOWNLOAD_BYTES = 293_387
+
+#: The installed weight of the package tree the update
+#: carries, measured the same way at the same moment.
+MEASURED_UPDATE_INSTALLED_BYTES = 775_675
+
+#: Peak disk while applying: the wheel still on disk, the
+#: new package unpacked beside the old, the old not yet
+#: removed — download + 2 × installed, the formula
+#: ``ember.updates.UpdateCost`` states. 1,844,737 B
+#: (~1.76 MiB): inside every profile's room many times
+#: over, and the download itself fits every profile's
+#: download ceiling (its install ceiling, read from this
+#: book) — the toaster's 2 MiB ceiling with ~7x headroom.
+MEASURED_UPDATE_APPLY_PEAK_BYTES = 1_844_737
+
+
 def storage_bytes_per_turn() -> int:
     """The on-disk cost of one ordinary turn, in bytes.
 
@@ -501,6 +533,9 @@ __all__ = [
     "MEASURED_MONTH_TURNS",
     "MEASURED_MONTH_WELL_GROWTH_BYTES",
     "MEASURED_TURN_RAM_MIB",
+    "MEASURED_UPDATE_APPLY_PEAK_BYTES",
+    "MEASURED_UPDATE_DOWNLOAD_BYTES",
+    "MEASURED_UPDATE_INSTALLED_BYTES",
     "MEASURED_WELL_STEADY_BYTES_PER_EPISODE",
     "PROFILE_ORDER",
     "REFERENCE_TURNS_PER_DAY",
