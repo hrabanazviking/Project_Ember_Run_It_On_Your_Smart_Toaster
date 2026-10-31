@@ -201,6 +201,11 @@ def wrap_complete_as_stream(
         model_id=reply.model_id,
         prompt_tokens=reply.prompt_tokens,
         completion_tokens=reply.completion_tokens,
+        # E-028 (docket 83): the wrapped chunk must carry the reply's
+        # tool calls — dropping them here silently disarmed the tool
+        # loop for every WRAPPED backend, the same defect the
+        # non-streaming chat path had.
+        tool_calls=reply.tool_calls,
     )
 
 

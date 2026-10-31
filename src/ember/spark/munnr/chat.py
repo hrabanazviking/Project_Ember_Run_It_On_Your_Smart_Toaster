@@ -27,6 +27,15 @@ a banner. The Episode is written locally.
   approval → optionally prompts → executes → audits → folds each
   :class:`ToolReply` back into the next turn's context. The loop is
   bounded by ``_MAX_TOOL_TURNS`` per operator input.
+* **E-028** completes the interruption shape: the companion can be
+  talked over at *every* waiting point — at the prompt, during
+  retrieval, mid-stream, at a tool-approval prompt, during tool
+  execution, and inside a non-streaming ``complete()`` — and the
+  session stays coherent (see
+  ``docs/architecture/E-028_STREAMING_INTERRUPTION.md``). E-028 also
+  closes docket 83: the non-streaming path now executes returned
+  ``tool_calls`` through the same bounded loop instead of dropping
+  them.
 """
 
 from __future__ import annotations
@@ -47,6 +56,7 @@ from ember.schemas.funi import (
     ContextItem,
     ContextKind,
     FinishReason,
+    FuniReply,
     Unavailable,
 )
 from ember.schemas.stream import FuniStreamChunk
@@ -211,7 +221,15 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         while True:
             stdout.write("> ")
             stdout.flush()
-            line = stdin.readline()
+            try:
+                line = stdin.readline()
+            except KeyboardInterrupt:
+                # E-028: Ctrl-C at the prompt talks over an empty
+                # line, not over the session — re-prompt. Leaving is
+                # /exit or EOF, never an accidental interrupt.
+                stdout.write("\n")
+                stdout.flush()
+                continue
             if not line:
                 break  # EOF
             text = line.rstrip("\n").strip()
@@ -221,7 +239,16 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 break
 
             started = datetime.now(tz=UTC)
-            hits = _retrieve(text, brunnr, embedder)
+            try:
+                hits = _retrieve(text, brunnr, embedder)
+            except KeyboardInterrupt:
+                # E-028: talked over during retrieval — before any
+                # reply existed. The turn is abandoned (nothing is
+                # persisted; there is no partial reply to tag) and
+                # the session continues at the next prompt.
+                stdout.write("\n" + render.INTERRUPTED_TAG + "\n")
+                stdout.flush()
+                continue
             windowed = window_history(episodes, config.conversation)
             context = funi_prompt.assemble(
                 identity=identity,
@@ -254,28 +281,44 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     persona_id=persona.id,
                 )
             else:
-                # Non-streaming opt-out path. Tool use here is intentionally
-                # one-shot: we honour tool_calls but do not loop, since the
-                # legacy path is meant to be the "give me a single blob"
-                # mode for piped callers.
-                reply = funi.complete(
-                    text,
-                    context,
-                    tools=tuple(tool_ctx.descriptors) if tool_ctx else None,
+                # Non-streaming opt-out path ("give me a single blob"
+                # mode for piped callers). E-028 (docket 83): returned
+                # tool_calls are executed through the same bounded
+                # loop as the streaming path — before E-028 they were
+                # silently dropped while the old comment claimed they
+                # were honoured. Interruption inside complete() or a
+                # tool round yields the tagged partial, never a crash.
+                reply, was_interrupted = _drive_complete_turn_with_tools(
+                    funi=funi,
+                    operator_input=text,
+                    initial_context=context,
+                    disconnect=disconnect,
+                    stdout=stdout,
+                    tool_ctx=tool_ctx,
                 )
                 completed = datetime.now(tz=UTC)
-                rendered = render.render_reply(
-                    reply,
-                    hits=hits,
-                    well_disconnected=disconnect is not None,
-                )
-                stdout.write(rendered + "\n")
-                stdout.flush()
+                if was_interrupted:
+                    final_text = _tag_interrupted(reply.text if reply else "")
+                    stdout.write(final_text + "\n")
+                    stdout.flush()
+                    episode_text = final_text
+                    episode_model = reply.model_id if reply else funi.model_id
+                else:
+                    assert reply is not None  # noqa: S101 — driver invariant
+                    rendered = render.render_reply(
+                        reply,
+                        hits=hits,
+                        well_disconnected=disconnect is not None,
+                    )
+                    stdout.write(rendered + "\n")
+                    stdout.flush()
+                    episode_text = reply.text
+                    episode_model = reply.model_id
                 episode = Episode(
                     operator_input=text,
-                    ember_reply=reply.text,
+                    ember_reply=episode_text,
                     cited_chunk_ids=tuple(h.chunk_id for h in hits),
-                    funi_model=reply.model_id,
+                    funi_model=episode_model,
                     well_disconnected=disconnect is not None,
                     started_at=started,
                     completed_at=completed,
@@ -476,11 +519,23 @@ def _drive_turn_with_tools(  # noqa: PLR0913 — one whole turn naturally fans i
         if not turn.tool_calls or tool_ctx is None:
             break
 
-        round_outcome = _run_tool_round(
-            calls=turn.tool_calls,
-            tool_ctx=tool_ctx,
-            stdout=stdout,
-        )
+        try:
+            round_outcome = _run_tool_round(
+                calls=turn.tool_calls,
+                tool_ctx=tool_ctx,
+                stdout=stdout,
+            )
+        except KeyboardInterrupt:
+            # E-028: talked over while approving or executing a tool
+            # call. Calls already executed in this round stand (they
+            # were emitted + audited as they completed); no further
+            # call runs, no follow-up generation happens, and the
+            # streamed text is persisted with the interrupt tag —
+            # the same shape as a mid-stream interrupt.
+            stdout.write("\n" + render.INTERRUPTED_TAG + "\n")
+            stdout.flush()
+            final_text = _tag_interrupted(turn.text)
+            break
         context.extend(round_outcome.context_extension)
         for promoted in round_outcome.session_added:
             tool_ctx.session_standing.add(promoted)
@@ -493,6 +548,76 @@ def _drive_turn_with_tools(  # noqa: PLR0913 — one whole turn naturally fans i
         stdout.flush()
 
     return final_text, model_id_seen
+
+
+def _drive_complete_turn_with_tools(  # noqa: PLR0913 — mirrors the streaming driver's shape
+    *,
+    funi: FuniHandle,
+    operator_input: str,
+    initial_context: Sequence[ContextItem],
+    disconnect: Disconnected | None,
+    stdout: TextIO,
+    tool_ctx: _ToolContext | None,
+) -> tuple[FuniReply | None, bool]:
+    """Drive one non-streaming turn, looping on tool_calls (E-028).
+
+    Returns ``(reply, interrupted)``. ``reply`` is the last Funi
+    reply produced (None only when the *first* ``complete()`` was
+    interrupted before returning anything). ``interrupted`` is True
+    when the operator talked over the turn — inside ``complete()``,
+    at a tool-approval prompt, or during tool execution — in which
+    case the caller persists ``reply.text`` with the interrupt tag
+    and no further generation or tool call happens.
+
+    Before E-028 (docket 83) this path passed descriptors to
+    ``complete()`` and silently dropped any returned ``tool_calls``.
+    Now a reply carrying calls runs the same propose → approve →
+    execute → feedback round as streaming, bounded by
+    ``_MAX_TOOL_TURNS``. A non-final reply that carries both text
+    and tool calls is rendered before its round runs, mirroring
+    what the streaming operator already saw live.
+    """
+    context: list[ContextItem] = list(initial_context)
+    current_input = operator_input
+    last_reply: FuniReply | None = None
+
+    for iteration in range(_MAX_TOOL_TURNS):
+        tools_arg = tuple(tool_ctx.descriptors) if tool_ctx is not None else None
+        try:
+            reply = funi.complete(current_input, context, tools=tools_arg)
+        except KeyboardInterrupt:
+            return last_reply, True
+        last_reply = reply
+
+        if not reply.tool_calls or tool_ctx is None:
+            return reply, False
+
+        if reply.text:
+            rendered = render.render_reply(
+                reply,
+                hits=(),
+                well_disconnected=disconnect is not None and iteration == 0,
+            )
+            stdout.write(rendered + "\n")
+            stdout.flush()
+
+        try:
+            round_outcome = _run_tool_round(
+                calls=reply.tool_calls,
+                tool_ctx=tool_ctx,
+                stdout=stdout,
+            )
+        except KeyboardInterrupt:
+            return reply, True
+        context.extend(round_outcome.context_extension)
+        for promoted in round_outcome.session_added:
+            tool_ctx.session_standing.add(promoted)
+        current_input = ""
+    else:
+        stdout.write("\n[tool-loop max iterations reached]\n")
+        stdout.flush()
+
+    return last_reply, False
 
 
 def _run_tool_round(
@@ -699,6 +824,11 @@ def _safe_prompt(
     A closed-stdin / disconnected-terminal IOError mid-prompt should
     refuse the call rather than crash the loop. The Vow of Sovereignty
     says ambiguity defaults to refusal.
+
+    ``KeyboardInterrupt`` is deliberately NOT caught here (E-028):
+    Ctrl-C at an approval prompt is the operator talking over the
+    whole turn, not answering "n" to one call — it propagates to the
+    turn driver, which ends the turn with the interrupt tag.
     """
     try:
         return prompter.prompt(descriptor, call)
@@ -777,9 +907,6 @@ def _run_streaming_turn(  # noqa: PLR0913 — one open turn naturally takes the 
         stdout.write(render.render_well_disconnected_banner(disconnect) + "\n\n")
         stdout.flush()
 
-    stream: Iterator[FuniStreamChunk] = funi.complete_streaming(
-        prompt, context, tools=tools,
-    )
     chunks_text: list[str] = []
     finish_reason: FinishReason | None = None
     model_id = ""
@@ -788,8 +915,14 @@ def _run_streaming_turn(  # noqa: PLR0913 — one open turn naturally takes the 
     tool_calls: tuple[ToolCall, ...] = ()
     interrupted = False
     last_delta_was_empty = True  # so we don't double-newline an empty body
+    stream: Iterator[FuniStreamChunk] | None = None
 
     try:
+        # E-028: creating the stream is inside the interrupt guard
+        # too — an adapter may do real work (or block) before it
+        # returns its iterator, and Ctrl-C there is still just the
+        # operator talking over this turn.
+        stream = funi.complete_streaming(prompt, context, tools=tools)
         for chunk in stream:
             delta = render.render_stream_chunk(chunk)
             if delta:

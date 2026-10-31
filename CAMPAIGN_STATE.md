@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 04:48 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-027 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027
-Next slice: E-028 — Streaming + interruption: the companion can be talked over; state stays coherent
+Last updated: 2026-10-31 05:10 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-028 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028
+Next slice: E-029 — Offline truth: with the network cut, the core's full local life works — proven, with the degraded set listed honestly
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1099,6 +1099,50 @@ Top-level members present (size / file count, working tree excl. .git):
   (remote head = 7a53d814b2a37e2d14699d1bc079bada9a497f5b = local HEAD at
   push time).
 
+## E-028 — Streaming + interruption (DONE, 2026-10-31)
+
+- Contract filed at `docs/architecture/E-028_STREAMING_INTERRUPTION.md`. Before
+  E-028, Phase 11's interrupt handling covered exactly one waiting point —
+  Ctrl-C while iterating a stream (partial tagged, persisted, session lives).
+  Every other wait crashed the session and lost the turn: at the prompt
+  (`readline`), during retrieval, at stream creation, at a tool-approval
+  prompt, during tool execution, and inside non-streaming `complete()`.
+- Built (all in `spark/munnr/chat.py` unless named): one rule everywhere —
+  **Ctrl-C ends the current thing, never the session, never silently.**
+  Prompt Ctrl-C re-prompts (leaving is /exit or EOF); retrieval Ctrl-C
+  abandons the turn with the tag shown and NOTHING persisted (no reply ever
+  existed — a tag-only Episode would pollute history); stream creation moved
+  inside the interrupt guard (tag-only partial when an adapter blocks/raises
+  before its iterator exists); `_safe_prompt` deliberately does NOT fold
+  KeyboardInterrupt into its degrade-to-"n" (Ctrl-C at an approval prompt
+  talks over the whole turn, not one call — it propagates to the drivers,
+  which end the turn: no further call executes, no follow-up generation,
+  completed calls in the round stand as emitted+audited, the partial is
+  persisted tagged).
+- **Docket 83 CLOSED** (its E-026/E-028 home): the non-streaming path passed
+  descriptors to `complete()` and silently dropped returned `tool_calls`
+  while its comment claimed they were honoured — and `wrap_complete_as_stream`
+  dropped them too, disarming the tool loop for every WRAPPED backend. The
+  wrapper now carries `reply.tool_calls` into its final chunk, and the
+  non-streaming branch drives the new `_drive_complete_turn_with_tools`:
+  same `_run_tool_round`, same `_MAX_TOOL_TURNS` bound + cap note, tool
+  replies fed back as context, follow-up `complete("")`, final reply
+  persisted — the streaming loop's shape on the single-blob road.
+  Non-streaming Ctrl-C inside `complete()` or a tool round returns the
+  last reply marked interrupted; the caller persists its text tagged
+  (tag-only when nothing had returned) and the session continues.
+- Honest limits kept: a tool executor's worker thread cannot be killed
+  mid-flight (the pre-existing timeout truth) — Ctrl-C ends the turn
+  coherently, a runaway thread may finish in the background, its result
+  discarded, never audited as a completed call; prompt-assembly/windowing
+  (pure local computation, no wait) is not separately guarded; `ember ask`
+  inherits the shape (turn ends tagged, EOF, exit 0).
+- Tests: `test_streaming_interruption_e028.py` **9 passed** (default env).
+  Slice gate Run B: **755 passed, 6 failed, 13 skipped, 1 warning** —
+  746 E-027 baseline + 9 new; the 6 are the proven environment failures.
+  Run D (whole, extras): **796 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1128,4 +1172,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-025 DONE (2026-10-31) — persona core: validated `Persona` schema (slug id never a path, field ceilings, no prompt-line smuggling via line breaks/control chars), strict per-persona JSON loading under `<config_root>/personas/` (typed refusals, filename/id agreement, no silent swap), resolution explicit → default.json → identity-as-default-persona, `PersonasConfig.active`; per-persona memory separation via `Episode.persona_id` + exact-match filtering with the prompt assembler as the wall (adversarial foreign-episode fixture never reaches the prompt), chat sessions resolve/filter/tag by persona, and the `load_identity` non-object-JSON AttributeError crash fixed in scope; honest limit: Brunnr adapters do not yet persist the tag (fails closed — named personae have no cross-restart history yet; migration belongs to Part V/E-080); 38 new tests; gate Run B 677 passed / 6 proven-env failed / 13 skipped, Run D 718 passed / 0 failed; filed at docs/architecture/E-025_PERSONA_CORE.md.
 - E-026 DONE (2026-10-31) — tools discipline: every descriptor states its permission shape (`ToolAccess` + `guarded_arguments`; unspecified = gated dangerous), the live-registry inventory pinned by test (search_well private_read/standing, read_local_file private_read/per_call, fetch_url network/per_call with guarded `allow_private_addresses`; no first-party write/execute/external tool), the approval gate in resolve() (dangerous/unspecified access and truthy guarded arguments always prompt — standing/session/standing_trust powerless; MCP tools state external), and two defects fixed in scope (standing_trust silently overrode a config `forbidden`; the model-supplied private-address escape hatch could be blanket-waived); pinned approval/Phase-16 tests updated with attribution; 31 new tests; gate Run B 708 passed / 6 proven-env failed / 13 skipped, Run D 749 passed / 0 failed; filed at docs/architecture/E-026_TOOLS_DISCIPLINE.md.
 - E-027 DONE (2026-10-31) — approval shape for normal folks: `ember.spark.funi.tools.plain` turns E-026's permission shapes into ordinary words (plain action from the detail that matters, plain reach per access class, fetch_url's private-address widening named as a home-network reach); the rememberable scopes are stated truthfully — `always` offered only when the E-026 gate would honour it, worded "while we're chatting, forgotten when the chat ends, never forever", with a plain per-class reason where it is not offered; the prompter accepts only offered answers and counts an unoffered `always` as a one-time yes with that stated on screen (the old silently-worthless session grant is gone); Munnr's proposal renderer gains plain lines; Playbook Recipe 3 transcript corrected; pinned approval tests updated with attribution; 38 new tests; gate Run B 746 passed / 6 proven-env failed / 13 skipped, Run D 787 passed / 0 failed; filed at docs/architecture/E-027_APPROVAL_SHAPE.md.
-- E-028 next — Streaming + interruption: the companion can be talked over; state stays coherent.
+- E-028 DONE (2026-10-31) — streaming + interruption: Ctrl-C now ends the current thing, never the session, at every waiting point (prompt re-prompts; retrieval abandons the turn with nothing persisted; stream creation inside the guard; approval-prompt and tool-execution interrupts end the turn with the partial persisted tagged, completed calls standing, no further call or generation; non-streaming complete() likewise); **docket 83 CLOSED** — non-streaming tool_calls execute through the same bounded loop (`_drive_complete_turn_with_tools`) and `wrap_complete_as_stream` carries tool_calls for WRAPPED backends; 9 new tests; gate Run B 755 passed / 6 proven-env failed / 13 skipped, Run D 796 passed / 0 failed; filed at docs/architecture/E-028_STREAMING_INTERRUPTION.md.
+- E-029 next — Offline truth: with the network cut, the core's full local life works — proven, with the degraded set listed honestly.
