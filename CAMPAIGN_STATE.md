@@ -1398,7 +1398,11 @@ Top-level members present (size / file count, working tree excl. .git):
   Run B: **809 passed, 6 failed, 15 skipped, 1 warning** — 796 E-033
   baseline + 13 new; the 6 are the proven environment failures. Run D
   (whole, extras): **855 passed, 0 failed, 19 skipped, 1 warning**,
-  exit 0. No README touched.
+  exit 0. No README touched. Pushed under Volmarr's 2026-10-31
+  standing go-ahead: banking commit 0c90949 pushed after fetch +
+  ancestry check — remote moved 0c5fc25 → 0c90949, verified via
+  ls-remote (remote head = 0c90949ac8589617c3694d2648d7544da2679e3e =
+  local HEAD at push time).
 
 ## Slice ledger
 
