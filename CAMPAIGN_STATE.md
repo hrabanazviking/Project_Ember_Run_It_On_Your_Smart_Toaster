@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 23:58 EDT
+Last updated: 2026-10-31 00:08 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009
-Next slice: E-010 — The Hamr verification plan
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010
+Next slice: E-011 — The two-Kistas boundary doc
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -319,6 +319,46 @@ Top-level members present (size / file count, working tree excl. .git):
   **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
   Doc-only slice, no code touched, no README touched, no push.
 
+## E-010 — The Hamr verification plan (DONE, 2026-10-31)
+
+- Plan filed at `docs/audit/E-010_HAMR_VERIFICATION_PLAN.md`: every Hamr
+  phase claim (Ph1–17) inventoried from its source doc, each with the
+  artefact that would prove it, the method, the pass criterion, and the
+  environment the proof needs; execution assigned to E-138 (Ph1–10),
+  E-139 (Ph11–13), E-140 (Ph14–17 + cross-cutting). Binding method:
+  runner counts only, symbol-level existence (a claim naming a symbol
+  that does not exist is NOT PROVEN as written), artefact-at-path,
+  environment is part of the claim.
+- Headline: five phases carry COMPLETE docs (11, 12, 13, 15, 16), but
+  Phases 1–5 survive only as CHANGELOG lines, **Phase 6 has no claim
+  anywhere in the tree**, Phases 7–10 rest on test files + three
+  "Phase 7: Complete" docstrings, and Phase 14 has NO complete
+  artefact (plan's 7 tasks unchecked; CHANGELOG details only T6).
+  Phase 17 is a vision, not a completion — its must-pass first E2E
+  raising is unevidenced: **no `.vrm` file exists in the tree**
+  (`build_output/test.vrm` is a directory holding a preset YAML) and
+  Blender is absent on the VM (E-006). Three headline classes named
+  in the COMPLETE docs — `MaterialForge`, `CollisionForge`,
+  `PoseLibrary` — **appear nowhere in src/ or tests/** (real
+  equivalents: AnimeMaterialGenerator, CollisionMeshGenerator,
+  rigs/poses.py); the claimed `materials/forge.py`,
+  `rigs/colliders.py`, `rigs/pose_library.py` and
+  `tests/test_e2e_pipeline.py` likewise do not exist. Phase 15's
+  promotion check "ci_configured — .github/workflows/ci.yml present"
+  is false in this tree (no `.github` under Hamr/ at all; kin to
+  E-005's STALE standalone-layout finding). The test-count spine
+  (556 → 1159 → 1569 → ~1965/~2206 → 2206) contradicts itself
+  (Ph15: ~1965 in its COMPLETE doc vs ~2206 in its CHANGELOG section;
+  Ph12/Ph13 titled COMPLETE while admitting 4 and 7 failures) and
+  E-005's measured 2170 passed / 28 failed. Version spine's final
+  claim holds at file level: pyproject + `__init__` both say 0.8.0.
+  AUDIT_17's FP-1/FP-2 fixes spot-checked at plan grade (line 852
+  fixed shape; canonical MB_LAB_BONE_MAP at constants.py:238).
+  New docket items 38–45 for E-016.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
+  Doc-only slice, no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -330,4 +370,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-007 DONE (2026-10-30) — dependency & licence audit: estate permissive + intact (11 MIT verified, astrology Apache-2.0, no copyleft in tree), CloakBrowser binary licence is proprietary (no redistribution/bundling without OEM — constraint, not violation), 4 declaration-vs-reality gaps + metadata/lockfile gaps, 8 new docket items (18–25), filed at docs/audit/E-007_DEPENDENCY_LICENCE_AUDIT.md.
 - E-008 DONE (2026-10-30) — the codex census: four elder codices DONE-in-fact (Hermes 58 total, Chatdoll 69, SAP 83, Waifu 21 — every content doc present with its Ember closer, none under its word floor), Ragnarok scaffold-only with 0/46 content docs, all five TASK status lines stale, no codex referenced in src/, 5 new docket items (26–30), filed at docs/audit/E-008_CODEX_CENSUS.md.
 - E-009 DONE (2026-10-30) — the Verdandi concordance: v0.3.0 Skuld proven in code + 35/35 dedicated tests, Vör broken in 3 places (docket 31 expands item 7), pulse_metrics write-only, v0.4 distributed/REST absent and Prometheus/emotion double-listed, VD-RM covers heartbeat only, 7 new docket items (31–37), filed at docs/audit/E-009_VERDANDI_CONCORDANCE.md.
-- E-010 next — The Hamr verification plan.
+- E-010 DONE (2026-10-31) — the Hamr verification plan: every Ph1–17 claim mapped to its proving artefact + method + environment (runner-only counts, symbol-existence rule); Phase 6 has no claim anywhere, Phase 14 no COMPLETE artefact, Phase 17 a vision with no .vrm in tree, MaterialForge/CollisionForge/PoseLibrary absent as named, Ph15 CI promotion check false in-tree, count spine self-contradictory vs E-005; execution bucketed to E-138/E-139/E-140; 8 new docket items (38–45), filed at docs/audit/E-010_HAMR_VERIFICATION_PLAN.md.
+- E-011 next — The two-Kistas boundary doc.
