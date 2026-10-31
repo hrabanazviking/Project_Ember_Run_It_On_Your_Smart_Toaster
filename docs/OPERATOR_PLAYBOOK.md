@@ -357,8 +357,11 @@ ember chat
 ```
 
 **Verification:** unplug the Pi's network; `ember chat` continues to
-work as long as Ollama + sqlite_vec are local. `ember doctor` shows
-both realms ok.
+work as long as Ollama + sqlite_vec are local — a full turn, with
+replies remembered, is the proof (E-029). `ember doctor` shows both
+realms ok *when the sqlite_vec extra is installed*; in a bare
+stdlib-only install doctor cannot open the default Well at all
+(docket 13), so judge by the chat turn there.
 
 **What could go wrong:**
 

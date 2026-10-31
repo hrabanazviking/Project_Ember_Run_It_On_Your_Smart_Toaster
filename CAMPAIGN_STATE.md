@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 05:10 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-028 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028
-Next slice: E-029 — Offline truth: with the network cut, the core's full local life works — proven, with the degraded set listed honestly
+Last updated: 2026-10-31 05:32 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-029 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029
+Next slice: E-030 — Error honesty: failures surface as truthful plain messages; never a fabricated completion
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1147,6 +1147,48 @@ Top-level members present (size / file count, working tree excl. .git):
   7b352662854bb4e8ba334a7c1362346b7732dc92 = local HEAD at push time;
   the push also carried E-027's record commit a6f20aa).
 
+## E-029 — Offline truth (DONE, 2026-10-31)
+
+- Truth filed at `docs/architecture/E-029_OFFLINE_TRUTH.md`. The cut is
+  mechanical: a test guard patches socket resolution + connection so any
+  non-loopback DNS/connect raises and is recorded; a sanity test proves
+  the guard bites. Under it, against the REAL adapters (loopback Ollama
+  wire-shape server; no fake Funi/embedder): a full chat turn — probe,
+  embed, retrieve, streamed reply `local answer`, Episode persisted —
+  with **zero external attempts**; `read_local_file` works; the
+  sqlite_vec Well stores and re-reads an Episode across a reopen
+  (extras shape; honest skip in the default env).
+- The degraded set, each exercised and failing as typed plain data:
+  `fetch_url` → ToolReply error naming the failed DNS lookup; a remote
+  embed endpoint → `None` vectors (retrieval falls back to text
+  search); a remote Funi address → typed `Unavailable
+  (endpoint_unreachable)` at open; pgvector Well → Strengr
+  `Disconnected`, session continues ungrounded with the banner (shape
+  classified from E-020, not re-proven); remote MCP (off by default)
+  simply absent; model pulls/updates need the network at that moment
+  by definition. No production code changed — the offline shapes
+  already existed; E-029 is their proof.
+- One defect found and FIXED in scope — in the slice's own test code:
+  the guard's first draft patched `socket.socket.connect` with a bound
+  method, dropping the socket argument (`TypeError` inside
+  `create_connection`); patched with a plain function instead.
+  Playbook Recipe 7 corrected in scope: its verification claimed
+  `ember doctor` shows both realms ok, which a bare stdlib-only
+  install cannot run at all (docket 13) — it now verifies by the chat
+  turn and names doctor's extras condition.
+- Honest limits: the cut is in-process (a subprocess or vendored
+  binary reaching out would not be seen; the core spawns none in a
+  session — operator-configured MCP servers are the named exception);
+  no live Ollama daemon or real model was used (Part III owns real-
+  hardware proof).
+- Tests: `test_offline_truth_e029.py` **6 passed, 1 skipped** (default
+  env; the skip is the extras-gated Well round-trip), **7 passed**
+  with extras. Slice gate Run B: **761 passed, 6 failed, 14 skipped,
+  1 warning** — 755 E-028 baseline + 6 new passes + 1 honest skip;
+  the 6 are the proven environment failures. Run D (whole, extras):
+  **803 passed, 0 failed, 19 skipped, 1 warning**, exit 0. No README
+  touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1177,4 +1219,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-026 DONE (2026-10-31) — tools discipline: every descriptor states its permission shape (`ToolAccess` + `guarded_arguments`; unspecified = gated dangerous), the live-registry inventory pinned by test (search_well private_read/standing, read_local_file private_read/per_call, fetch_url network/per_call with guarded `allow_private_addresses`; no first-party write/execute/external tool), the approval gate in resolve() (dangerous/unspecified access and truthy guarded arguments always prompt — standing/session/standing_trust powerless; MCP tools state external), and two defects fixed in scope (standing_trust silently overrode a config `forbidden`; the model-supplied private-address escape hatch could be blanket-waived); pinned approval/Phase-16 tests updated with attribution; 31 new tests; gate Run B 708 passed / 6 proven-env failed / 13 skipped, Run D 749 passed / 0 failed; filed at docs/architecture/E-026_TOOLS_DISCIPLINE.md.
 - E-027 DONE (2026-10-31) — approval shape for normal folks: `ember.spark.funi.tools.plain` turns E-026's permission shapes into ordinary words (plain action from the detail that matters, plain reach per access class, fetch_url's private-address widening named as a home-network reach); the rememberable scopes are stated truthfully — `always` offered only when the E-026 gate would honour it, worded "while we're chatting, forgotten when the chat ends, never forever", with a plain per-class reason where it is not offered; the prompter accepts only offered answers and counts an unoffered `always` as a one-time yes with that stated on screen (the old silently-worthless session grant is gone); Munnr's proposal renderer gains plain lines; Playbook Recipe 3 transcript corrected; pinned approval tests updated with attribution; 38 new tests; gate Run B 746 passed / 6 proven-env failed / 13 skipped, Run D 787 passed / 0 failed; filed at docs/architecture/E-027_APPROVAL_SHAPE.md.
 - E-028 DONE (2026-10-31) — streaming + interruption: Ctrl-C now ends the current thing, never the session, at every waiting point (prompt re-prompts; retrieval abandons the turn with nothing persisted; stream creation inside the guard; approval-prompt and tool-execution interrupts end the turn with the partial persisted tagged, completed calls standing, no further call or generation; non-streaming complete() likewise); **docket 83 CLOSED** — non-streaming tool_calls execute through the same bounded loop (`_drive_complete_turn_with_tools`) and `wrap_complete_as_stream` carries tool_calls for WRAPPED backends; 9 new tests; gate Run B 755 passed / 6 proven-env failed / 13 skipped, Run D 796 passed / 0 failed; filed at docs/architecture/E-028_STREAMING_INTERRUPTION.md.
-- E-029 next — Offline truth: with the network cut, the core's full local life works — proven, with the degraded set listed honestly.
+- E-029 DONE (2026-10-31) — offline truth: a socket guard cuts every non-loopback DNS/connect (attempts recorded, sanity-proven) and the core's full local life runs under it against the REAL adapters — a loopback-Ollama chat turn end to end (probe, embed, retrieve, stream, Episode persisted, zero external attempts), read_local_file, and the sqlite_vec Well round-trip across a reopen (extras shape); the degraded set is listed honestly in docs/architecture/E-029_OFFLINE_TRUTH.md, each item failing as typed plain data (fetch_url's DNS-refusal ToolReply, embed client's None vectors → text search, remote Funi's typed Unavailable, pgvector's Disconnected-ungrounded shape); no production code changed — one defect in the slice's own guard fixture fixed in scope, and Playbook Recipe 7's doctor verification corrected (bare installs cannot run it, docket 13); 7 new tests; gate Run B 761 passed / 6 proven-env failed / 14 skipped, Run D 803 passed / 0 failed; filed at docs/architecture/E-029_OFFLINE_TRUTH.md.
+- E-030 next — Error honesty: failures surface as truthful plain messages; never a fabricated completion.
