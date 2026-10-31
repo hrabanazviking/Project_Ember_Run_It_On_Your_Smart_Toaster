@@ -16,6 +16,21 @@ requires PyYAML).
 If the operator later wants the loader to round-trip their config
 through PyYAML's dumper for non-trivial edits, that's the operator
 installing the extra. The write side stays stdlib-only.
+
+E-032 (day-one friction, docket 88): the YAML preference had a trap —
+the *loader* also needs PyYAML, so on an install carrying only the
+documented ``[sqlite_vec]`` extra, Hjarta wrote an ``ember.yaml`` the
+very next launch (and the first launch's own post-setup reload) could
+not read back: every later ``ember`` invocation died with "PyYAML is
+not installed". The writer now chooses by what the machine can read:
+PyYAML importable → ``ember.yaml`` exactly as before; otherwise →
+``ember.toml``, which the loader reads with the stdlib alone. The
+operator's choices survive either way; the file format is the only
+difference. (If an ``ember.yaml`` from an earlier, PyYAML-carrying
+install is already present, the loader's YAML-wins rule still applies
+to that file — the TOML fallback is written only when no YAML reader
+exists on this machine, in which case a stale YAML file would already
+have been unreadable.)
 """
 
 from __future__ import annotations
@@ -52,28 +67,55 @@ def ember_config_path(config_root: Path) -> Path:
     return Path(config_root).expanduser() / "config" / _CONFIG_FILENAME
 
 
+def _yaml_available() -> bool:
+    """True when PyYAML can be imported on this machine (E-032 seam)."""
+    try:
+        import yaml  # noqa: PLC0415 — availability probe, not a use site
+
+        del yaml
+    except ImportError:
+        return False
+    return True
+
+
 def write_ember_config(
     config_root: Path,
     identity: IdentityConfig,
     *,
     extras: Mapping[str, Mapping[str, object]] | None = None,
 ) -> Path:
-    """Atomically write Hjarta's initial ember.yaml.
+    """Atomically write Hjarta's initial operator config.
+
+    Writes ``ember.yaml`` when PyYAML is importable, else ``ember.toml``
+    (stdlib-readable) — see the module docstring (E-032, docket 88).
 
     ``identity`` always appears. ``extras`` is a mapping of
     ``section_name -> {key: value}`` for any other top-level sections
     Hjarta needs to record from the wizard (e.g. an alternative Brunnr
-    path). Values must be str / int / float / bool / None.
+    path). Values must be str / int / float / bool / None, or a nested
+    mapping of the same one level deep (e.g. ``brunnr.sqlite_vec.path``).
+    In the TOML fallback, ``None`` has no literal and is refused.
 
     Returns the written path.
     """
+    yaml_ok = _yaml_available()
     target = ember_config_path(config_root)
+    if not yaml_ok:
+        target = target.with_suffix(".toml")
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    body = _HEADER + "\n" + _format_identity(identity)
+    sections: list[tuple[str, Mapping[str, object]]] = [
+        ("identity", {"name": identity.name, "role": identity.role})
+    ]
     if extras:
-        for section, fields in extras.items():
-            body += "\n" + _format_section(section, fields)
+        sections.extend(extras.items())
+    if yaml_ok:
+        body = _HEADER + "\n" + "".join(
+            ("\n" if i else "") + _format_section(name, fields)
+            for i, (name, fields) in enumerate(sections)
+        )
+    else:
+        body = _HEADER + "\n" + _format_toml(sections)
 
     with tempfile.NamedTemporaryFile(
         mode="w",
@@ -109,7 +151,8 @@ def write_ember_config(
 
 
 def ember_config_exists(config_root: Path) -> bool:
-    return ember_config_path(config_root).is_file()
+    yaml_path = ember_config_path(config_root)
+    return yaml_path.is_file() or yaml_path.with_suffix(".toml").is_file()
 
 
 # --------------------------------------------------------------------- #
@@ -127,8 +170,73 @@ def _format_identity(identity: IdentityConfig) -> str:
 def _format_section(name: str, fields: Mapping[str, object]) -> str:
     lines = [f"{name}:"]
     for key, value in fields.items():
-        lines.append(f"  {key}: {_format_scalar(value)}")
+        if isinstance(value, Mapping):
+            lines.append(f"  {key}:")
+            for sub_key, sub_value in value.items():
+                lines.append(f"    {sub_key}: {_format_scalar(sub_value)}")
+        else:
+            lines.append(f"  {key}: {_format_scalar(value)}")
     return "\n".join(lines) + "\n"
+
+
+# --------------------------------------------------------------------- #
+# TOML fallback emission (E-032 — stdlib-readable first-run config)     #
+# --------------------------------------------------------------------- #
+
+
+def _format_toml(sections: list[tuple[str, Mapping[str, object]]]) -> str:
+    blocks: list[str] = []
+    for name, fields in sections:
+        lines = [f"[{name}]"]
+        nested: list[tuple[str, Mapping[str, object]]] = []
+        for key, value in fields.items():
+            if isinstance(value, Mapping):
+                nested.append((key, value))
+            else:
+                lines.append(f"{key} = {_format_toml_scalar(value)}")
+        blocks.append("\n".join(lines) + "\n")
+        for key, sub_fields in nested:
+            sub = [f"[{name}.{key}]"]
+            for sub_key, sub_value in sub_fields.items():
+                sub.append(f"{sub_key} = {_format_toml_scalar(sub_value)}")
+            blocks.append("\n".join(sub) + "\n")
+    return "\n".join(blocks)
+
+
+def _format_toml_scalar(value: object) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    if isinstance(value, str):
+        return _quote_toml_string(value)
+    if isinstance(value, Path):
+        return _quote_toml_string(str(value))
+    raise ConfigError(
+        f"writer cannot emit value of type {type(value).__name__} "
+        f"in the TOML fallback: {value!r}"
+    )
+
+
+def _quote_toml_string(value: str) -> str:
+    """TOML basic-string emission: escape backslash, quote, controls."""
+    out: list[str] = []
+    for ch in value:
+        if ch == "\\":
+            out.append("\\\\")
+        elif ch == '"':
+            out.append('\\"')
+        elif ch == "\n":
+            out.append("\\n")
+        elif ch == "\t":
+            out.append("\\t")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ord(ch) < 0x20 or ord(ch) == 0x7F:
+            out.append(f"\\u{ord(ch):04X}")
+        else:
+            out.append(ch)
+    return '"' + "".join(out) + '"'
 
 
 def _format_scalar(value: object) -> str:

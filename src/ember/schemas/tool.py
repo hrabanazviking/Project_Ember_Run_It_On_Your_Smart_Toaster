@@ -65,6 +65,30 @@ class ApprovalPolicy(StrEnum):
     FORBIDDEN = "forbidden"   # tool refuses to register at all
 
 
+class ToolAccess(StrEnum):
+    """What a tool can reach — its permission shape (E-026).
+
+    Approval (``required_approval``) says *how often the operator is
+    asked*; access says *what the tool can touch when it runs*. The
+    two are independent: a tool may be asked about every call yet
+    reach very little, or be pre-approved yet read private data.
+
+    ``UNSPECIFIED`` is the default for a descriptor that states no
+    shape. It is treated as dangerous by the approval gate
+    (``ember.spark.funi.tools.permissions``): a tool that does not
+    say what it can reach may never be auto-approved — no stated
+    shape, no standing approval.
+    """
+
+    READ_ONLY    = "read_only"     # reads non-private data; no writes, no egress
+    PRIVATE_READ = "private_read"  # reads the operator's own data; no writes, no egress
+    NETWORK      = "network"       # leaves the machine (egress / SSRF surface)
+    WRITE        = "write"         # mutates local state
+    EXECUTE      = "execute"       # runs code or commands
+    EXTERNAL     = "external"      # effects delegated to an external server; unknown
+    UNSPECIFIED  = "unspecified"   # no shape stated — gated as dangerous
+
+
 class ApprovalOutcome(StrEnum):
     """Typed outcomes per ADR 0011 §2.5 — distinguishes denial vs
     invalid-args vs forbidden vs missing-tool so the audit log
@@ -99,6 +123,15 @@ class ToolDescriptor:
     required_approval: ApprovalPolicy = ApprovalPolicy.PER_CALL
     redacted_arg_names: tuple[str, ...] = ()
     timeout_s: float = 10.0
+    # Permission shape (E-026). ``access`` states what the tool can
+    # reach; ``guarded_arguments`` names arguments that *widen* that
+    # reach (an escape hatch such as fetch_url's
+    # ``allow_private_addresses``). A call carrying a truthy guarded
+    # argument always prompts per call — standing approval, session
+    # "always", and standing_trust never waive it, because the
+    # argument is supplied by the model, not the operator.
+    access: ToolAccess = ToolAccess.UNSPECIFIED
+    guarded_arguments: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,6 +185,7 @@ class ToolError(Exception):
 __all__ = [
     "ApprovalOutcome",
     "ApprovalPolicy",
+    "ToolAccess",
     "ToolCall",
     "ToolDescriptor",
     "ToolError",

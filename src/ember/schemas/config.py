@@ -40,6 +40,7 @@ class FuniRuntime(StrEnum):
     LMSTUDIO = "lmstudio"
     PHI_SILICA = "phi_silica"
     APPLE_FOUNDATION = "apple_foundation"
+    AESIR = "aesir"  # E-023 — Project Aesir native service
 
 
 class LogLevel(StrEnum):
@@ -65,6 +66,20 @@ class BoundaryPreference(StrEnum):
     SENTENCE = "sentence"
     WORD = "word"
     CHAR = "char"
+
+
+class ConversationProfile(StrEnum):
+    """Hardware profile shaping the conversation token budget (E-021).
+
+    The profile names are Part III's (E-041): toaster (the smallest),
+    phone, pi, laptop. E-021 consumes them only for history windowing;
+    Part III owns the full budget book and may re-measure the numbers.
+    """
+
+    TOASTER = "toaster"
+    PHONE = "phone"
+    PI = "pi"
+    LAPTOP = "laptop"
 
 
 # --------------------------------------------------------------------- #
@@ -93,15 +108,80 @@ class FuniOllamaConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class FuniAesirConfig:
+    """Operator-facing config for the Project Aesir backend (E-023).
+
+    Aesir's native service is loopback-only (``127.0.0.1:18434`` by
+    default) and authenticated with a bearer key that lives in a
+    protected key file the service reads at startup (see Aesir's
+    NATIVE_SERVICE doc). Ember follows the Well-secret shape
+    (E-013/E-020): the config carries the key file's *path* — a
+    reference, never the key value — and the adapter reads the file
+    at ``open()`` time, keeping the value in memory only.
+
+    ``model`` is the *expected* resident model identity. The native
+    ``/v1/generate`` route names no model (the service holds exactly
+    one resident model), so an empty value accepts whatever model
+    the service reports ready; a non-empty value is verified against
+    the readiness probe at ``open()`` and a mismatch is a typed
+    ``Unavailable``, never a silent substitution.
+
+    ``max_tokens`` defaults to 256, the Aesir service's own default
+    reply ceiling — a request may lower but never raise the service
+    ceiling, so Ember's default must not promise more than the
+    service's default grants. ``timeout_ms`` is omitted from requests
+    when None (the service's own limit then applies).
+    """
+
+    base_url: str = "http://127.0.0.1:18434"
+    model: str = ""
+    api_key_file: Path = Path("~/.config/aesir/service.key")
+    temperature: float = 0.7
+    top_p: float = 0.9
+    max_tokens: int = 256
+    timeout_ms: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DeterminismConfig:
+    """Determinism mode for tests and benchmarks (E-036).
+
+    OFF by default: the companion samples at the operator's
+    configured temperature and no seed is sent to the backend.
+
+    When ``enabled`` is True, every generation request Ember
+    sends carries the SAME fixed ``seed`` and a temperature of
+    0.0 (greedy decoding) — the effective options computed by
+    :mod:`ember.spark.funi.determinism`, never a mutation of the
+    operator's configured temperature, which stays in the config
+    and returns when the mode is switched off. Same config +
+    same model + same prompt + same retrieved context should
+    then produce the same reply, as far as the backend honours
+    its own seed contract (see the E-036 doc for the honest
+    limits: timestamps, generated ids, and a backend's internal
+    nondeterminism are not Ember's to command).
+
+    ``seed`` must be a non-negative integer; a negative seed is
+    refused at backend open time as CONFIG_INVALID, never
+    silently clamped or dropped.
+    """
+
+    enabled: bool = False
+    seed: int = 42
+
+
+@dataclass(frozen=True, slots=True)
 class FuniConfig:
     runtime: FuniRuntime = FuniRuntime.OLLAMA
     streaming: bool = True
+    determinism: DeterminismConfig = field(default_factory=DeterminismConfig)
     """Whether ``ember chat`` consumes Funi via streaming
     (incremental) or batched (whole reply at once). Default True per
     ADR 0009. Operators on terminals that struggle with byte streams,
     or operators piping output to log collectors, may set ``false``
     in their ``ember.yaml``."""
     ollama: FuniOllamaConfig = field(default_factory=FuniOllamaConfig)
+    aesir: FuniAesirConfig = field(default_factory=FuniAesirConfig)
     # Other runtime sub-configs (llamacpp, lmstudio, phi_silica,
     # apple_foundation) land alongside their adapters in Phase 5+.
 
@@ -216,6 +296,13 @@ class LoggingConfig:
     level: LogLevel = LogLevel.INFO
     format: LogFormat = LogFormat.STRUCTURED
     destinations: tuple[LoggingDestination, ...] = ()
+    diary: bool = True
+    """Whether Ember keeps its plain-words diary (E-034) beside
+    the technical trace: one dated sentence per thing that
+    happened, under ``<config_root>/diary/``, readable with
+    ``ember diary``. On by default — the diary is the log a
+    friend can read. Set False to keep only the technical
+    trace above."""
 
 
 # --------------------------------------------------------------------- #
@@ -237,7 +324,13 @@ class ToolsConfig:
     PER_CALL but cannot upgrade.
 
     ``standing_trust`` flips every PER_CALL tool to AUTO_APPROVED
-    (the "trust everything" knob); still audited.
+    (the "trust everything" knob); still audited. Since E-026 the
+    knob acts only inside the permission gate: tools in a dangerous
+    or unspecified access class (network / write / execute /
+    external) and calls carrying a guarded argument always prompt
+    per call regardless, and a per-tool ``forbidden`` override in
+    ``approval_overrides`` beats the knob (the specific refusal
+    wins over the blanket trust).
 
     ``audit_root`` overrides where the JSONL audit log lands.
     None → ``<config_root>/state/tool_audit/``.
@@ -295,6 +388,167 @@ class MCPConfig:
 
 
 # --------------------------------------------------------------------- #
+# Conversation (E-021 — history windowing under a token budget)         #
+# --------------------------------------------------------------------- #
+
+# Per-profile conversation defaults: (token budget for history,
+# max episodes kept verbatim). The budget covers the episode history
+# only — system prompt, grounding hits, and the current operator line
+# are assembled outside it (see ember.spark.funi.windowing).
+_PROFILE_CONVERSATION_DEFAULTS: dict[ConversationProfile, tuple[int, int]] = {
+    ConversationProfile.TOASTER: (512, 3),
+    ConversationProfile.PHONE: (1024, 5),
+    ConversationProfile.PI: (2048, 8),
+    ConversationProfile.LAPTOP: (4096, 12),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationConfig:
+    """How much conversation history rides in each turn's prompt.
+
+    ``profile`` selects the default token budget + episode cap for the
+    machine class; ``token_budget`` / ``max_episodes`` override the
+    profile's numbers when set. ``summarise_dropped`` keeps a short
+    deterministic summary of whatever the window drops, produced by
+    the summarisation hook (E-021), so trimming never silently
+    pretends the earlier conversation did not happen.
+
+    ``active`` (E-035) names the conversation a chat session runs
+    in when no per-invocation choice is made — one talk, kept apart
+    from the companion's other talks (see
+    ``ember.spark.conversation``). It is empty by default: no
+    explicit choice, so the session runs in the ``default``
+    conversation every pre-E-035 episode already belongs to. A
+    per-invocation ``ember chat --conversation`` choice wins over
+    it. Naming an id that is not a valid slug is an error at
+    resolve time, never a silent fall-back to a different talk.
+    """
+
+    profile: ConversationProfile = ConversationProfile.PI
+    token_budget: int | None = None
+    max_episodes: int | None = None
+    summarise_dropped: bool = True
+    active: str = ""
+
+    @property
+    def resolved_token_budget(self) -> int:
+        if self.token_budget is not None:
+            return self.token_budget
+        return _PROFILE_CONVERSATION_DEFAULTS[self.profile][0]
+
+    @property
+    def resolved_max_episodes(self) -> int:
+        if self.max_episodes is not None:
+            return self.max_episodes
+        return _PROFILE_CONVERSATION_DEFAULTS[self.profile][1]
+
+
+# --------------------------------------------------------------------- #
+# Cognition (E-024 — optional ThoughtForge cognition layer)             #
+# --------------------------------------------------------------------- #
+
+# Per-profile cognition defaults: which Ember profiles may run the
+# ThoughtForge cognition layer, and the candidate-draft cap handed
+# to ThoughtForge's think() on that profile (TF-034 froze
+# num_drafts semantics: a cap, never a raise — the local engine
+# drafts at most 2 by construction, the unified backend exactly 1).
+# The toaster — the smallest profile, the project's namesake floor —
+# cannot afford a second full turn pipeline beside Funi: the layer
+# refuses there, truthfully, instead of swapping the machine.
+_PROFILE_COGNITION_DEFAULTS: dict[ConversationProfile, int | None] = {
+    ConversationProfile.TOASTER: None,
+    ConversationProfile.PHONE: 1,
+    ConversationProfile.PI: 1,
+    ConversationProfile.LAPTOP: 2,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class CognitionConfig:
+    """The optional cognition layer above Funi (E-024).
+
+    ``enabled`` is False by default: ThoughtForge is a *candidate*
+    cognition layer (roadmap E-024), never a silent replacement for
+    the Funi turn. Enabling it is an explicit operator act, and even
+    then the profile gate applies — see
+    :meth:`affords` / :meth:`resolved_num_drafts`.
+
+    ``provider`` names the binding; ``thoughtforge`` is the only
+    provider in this build. ``expected_api_major`` is the
+    ThoughtForge cognition API major this binding was written
+    against (TF-034 froze v1.0.0); a live provider reporting a
+    different major is refused at open time, never adapted to
+    silently (TF-162's rule, Ember side).
+
+    ThoughtForge keeps its own state (its memory dir + knowledge
+    DB). By default both live **inside Ember's config root**
+    (``~/.ember/thoughtforge/…``) so the tether holds (E-020):
+    custody of the Ember folder is custody of everything the
+    companion keeps, ThoughtForge's state included. Paths are
+    stored unexpanded, like every path in this module; the adapter
+    expands them at open time. ``model_path`` is empty by default —
+    ThoughtForge then runs knowledge-only, its own documented
+    no-model shape — and names a model file only when the operator
+    points at one. ``tf_config`` is passed through to the
+    ThoughtForge core constructor unchanged: ThoughtForge's config
+    surface (TF-032) reads its live keys from it, and Ember does
+    not shadow them.
+    """
+
+    enabled: bool = False
+    provider: str = "thoughtforge"
+    profile: ConversationProfile = ConversationProfile.PI
+    expected_api_major: int = 1
+    model_path: Path | None = None
+    memory_dir: Path = Path("~/.ember/thoughtforge/memory")
+    db_path: Path = Path("~/.ember/thoughtforge/knowledge.db")
+    num_drafts: int | None = None
+    tf_config: Mapping[str, object] = field(default_factory=dict)
+
+    def affords(self, profile: ConversationProfile | None = None) -> bool:
+        """Can this (or the given) profile run the cognition layer?"""
+        chosen = self.profile if profile is None else profile
+        return _PROFILE_COGNITION_DEFAULTS[chosen] is not None
+
+    @property
+    def resolved_num_drafts(self) -> int | None:
+        """The draft cap for the configured profile.
+
+        An explicit ``num_drafts`` wins; otherwise the profile's
+        cap applies. None when the profile cannot afford the layer
+        at all. A cap below 1 is a caller error — ThoughtForge's
+        frozen semantics raise on it, and the adapter refuses it
+        earlier, as a typed config refusal.
+        """
+        if self.num_drafts is not None:
+            return self.num_drafts
+        return _PROFILE_COGNITION_DEFAULTS[self.profile]
+
+
+# --------------------------------------------------------------------- #
+# Personae (E-025 — who the companion is)                               #
+# --------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class PersonasConfig:
+    """Which persona the companion runs as (E-025).
+
+    ``active`` names a persona file under
+    ``<config_root>/personas/<id>.json``. It is empty by default:
+    no explicit choice, so resolution falls to a ``default.json``
+    persona file when one exists, else to the identity projected
+    onto the default persona (see
+    ``ember.spark.persona.resolve_persona``). Naming an id that
+    does not load is an error at resolve time, never a silent
+    substitution of a different companion.
+    """
+
+    active: str = ""
+
+
+# --------------------------------------------------------------------- #
 # Top-level                                                             #
 # --------------------------------------------------------------------- #
 
@@ -302,6 +556,9 @@ class MCPConfig:
 @dataclass(frozen=True, slots=True)
 class EmberConfig:
     identity: IdentityConfig = field(default_factory=IdentityConfig)
+    personas: PersonasConfig = field(default_factory=PersonasConfig)
+    conversation: ConversationConfig = field(default_factory=ConversationConfig)
+    cognition: CognitionConfig = field(default_factory=CognitionConfig)
     funi: FuniConfig = field(default_factory=FuniConfig)
     strengr: StrengrConfig = field(default_factory=StrengrConfig)
     brunnr: BrunnrConfig = field(default_factory=BrunnrConfig)
@@ -316,8 +573,13 @@ __all__ = [
     "BrunnrBackend",
     "BrunnrConfig",
     "ChunkerConfig",
+    "CognitionConfig",
+    "ConversationConfig",
+    "ConversationProfile",
+    "DeterminismConfig",
     "EmbeddingConfig",
     "EmberConfig",
+    "FuniAesirConfig",
     "FuniConfig",
     "FuniOllamaConfig",
     "FuniRuntime",
@@ -330,6 +592,7 @@ __all__ = [
     "LoggingDestination",
     "MCPConfig",
     "MCPServerSpec",
+    "PersonasConfig",
     "PgVectorConfig",
     "SmidjaConfig",
     "SqliteVecConfig",

@@ -37,6 +37,14 @@ def load_identity(config_root: Path) -> IdentityConfig:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise HjartaError(f"could not read identity at {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        # E-025: a JSON list/scalar at this path used to crash with
+        # a raw AttributeError on ``payload.get`` — an identity
+        # file that is not an object is a read failure, typed.
+        raise HjartaError(
+            f"could not read identity at {path}: identity file must "
+            f"be a JSON object, got {type(payload).__name__}"
+        )
     return IdentityConfig(
         name=str(payload.get("name", "Ember")),
         role=str(payload.get("role", "your small local AI companion")),

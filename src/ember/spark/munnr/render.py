@@ -33,6 +33,8 @@ from ember.schemas.tool import (
 )
 
 INTERRUPTED_TAG = "[interrupted by operator]"
+ERROR_TAG = "[ember reported an error]"
+TRUNCATED_TAG = "[reply truncated — context limit reached]"
 TOOL_OUTPUT_PREVIEW_BYTES = 2 * 1024  # 2 KiB shown on stdout; full text persisted in audit
 
 # ANSI / CSI / OSC escape-sequence pattern. Tools return strings that
@@ -104,10 +106,10 @@ def render_reply(
 
     body = reply.text.strip() or "(no reply text)"
     if reply.finish_reason is FinishReason.ERROR:
-        parts.append(f"[ember reported an error]\n{body}")
+        parts.append(f"{ERROR_TAG}\n{body}")
     elif reply.finish_reason is FinishReason.LENGTH:
         parts.append(body)
-        parts.append("[reply truncated — context limit reached]")
+        parts.append(TRUNCATED_TAG)
     elif reply.finish_reason is FinishReason.REFUSED:
         parts.append(body)
         parts.append("[ember declined to answer]")
@@ -185,11 +187,11 @@ def stream_finish_tag(
     if interrupted:
         return INTERRUPTED_TAG
     if finish_reason is FinishReason.LENGTH:
-        return "[reply truncated — context limit reached]"
+        return TRUNCATED_TAG
     if finish_reason is FinishReason.REFUSED:
         return "[ember declined to answer]"
     if finish_reason is FinishReason.ERROR:
-        return "[ember reported an error]"
+        return ERROR_TAG
     return None
 
 
@@ -214,6 +216,16 @@ def render_tool_call_proposal(
     ]
     if descriptor is not None:
         lines.append(f"  description: {descriptor.description}")
+        # E-027: the same proposal in plain words, so a
+        # non-technical operator sees what the tool wants to do
+        # and what it can reach before any jargon-shaped detail.
+        from ember.spark.funi.tools.plain import (  # noqa: PLC0415
+            plain_action,
+            plain_reach,
+        )
+
+        lines.append(f"  in plain words: {plain_action(descriptor, call)}")
+        lines.append(f"  what it can reach: {plain_reach(descriptor)}")
     if call.arguments:
         lines.append("  arguments:")
         redacted = (
@@ -386,7 +398,9 @@ def _human_bytes(n: int) -> str:
 
 
 __all__ = [
+    "ERROR_TAG",
     "INTERRUPTED_TAG",
+    "TRUNCATED_TAG",
     "TOOL_OUTPUT_PREVIEW_BYTES",
     "render_citations",
     "render_doctor",

@@ -23,6 +23,7 @@ from ember.schemas.chunks import RetrievalHit
 from ember.schemas.config import IdentityConfig
 from ember.schemas.episode import Episode
 from ember.schemas.funi import ContextItem, ContextKind
+from ember.schemas.persona import Persona
 
 _HONESTY_INSTRUCTION = (
     "Answer honestly and concisely. When you do not know something, "
@@ -49,21 +50,55 @@ def assemble(
     episodes: Sequence[Episode] = (),
     hits: Sequence[RetrievalHit] = (),
     well_disconnected: bool = False,
+    summary: str | None = None,
+    persona: Persona | None = None,
+    conversation_id: str | None = None,
 ) -> list[ContextItem]:
     """Return the per-turn context items in canonical order.
 
-    Order: system → episodes (oldest first) → chunk hits (best first).
-    The operator's current line is **not** included; the caller passes
-    it separately to :meth:`FuniHandle.complete` as ``prompt``.
+    Order: system → history summary (E-021, when the window dropped
+    older episodes) → episodes (oldest first) → chunk hits (best
+    first). The operator's current line is **not** included; the
+    caller passes it separately to :meth:`FuniHandle.complete` as
+    ``prompt``.
+
+    E-025: when ``persona`` is given it, not ``identity``, names
+    who is speaking — the persona's name/role open the system
+    text and its instructions ride after the honesty instruction,
+    attributed to the persona so prompt text never poses as
+    anything else. Persona is also the prompt boundary's memory
+    wall: **only episodes tagged with this persona's id are
+    assembled**, whatever the caller passed in, so one persona's
+    conversation can never ride into another's turn through this
+    door. Without a persona there is no wall (the pre-E-025
+    single-companion shape, unchanged for its existing callers).
+
+    E-035: the same wall, one level in — when ``conversation_id``
+    is given, **only episodes tagged with that conversation are
+    assembled**, whatever the caller passed in, so one talk can
+    never ride into another talk's turn through this door either.
+    The two walls compose: a turn carries only episodes that are
+    its persona's *and* its conversation's. Without a
+    conversation id there is no conversation wall (the pre-E-035
+    shape, unchanged for its existing callers).
     """
     items: list[ContextItem] = []
 
+    if persona is not None:
+        episodes = [ep for ep in episodes if ep.persona_id == persona.id]
+    if conversation_id is not None:
+        episodes = [ep for ep in episodes if ep.conversation_id == conversation_id]
+
     system_text = _system_text(
-        identity=identity,
+        identity=persona.identity if persona is not None else identity,
         has_hits=bool(hits),
         well_disconnected=well_disconnected,
+        persona=persona,
     )
     items.append(ContextItem(kind=ContextKind.SYSTEM, text=system_text))
+
+    if summary:
+        items.append(ContextItem(kind=ContextKind.SUMMARY, text=summary))
 
     for episode in episodes:
         items.append(
@@ -71,7 +106,16 @@ def assemble(
                 kind=ContextKind.EPISODE,
                 text=_episode_text(episode),
                 metadata=(
-                    {"episode_id": episode.id} if episode.id is not None else {}
+                    {
+                        "episode_id": episode.id,
+                        "persona_id": episode.persona_id,
+                        "conversation_id": episode.conversation_id,
+                    }
+                    if episode.id is not None
+                    else {
+                        "persona_id": episode.persona_id,
+                        "conversation_id": episode.conversation_id,
+                    }
                 ),
             )
         )
@@ -102,8 +146,16 @@ def _system_text(
     identity: IdentityConfig,
     has_hits: bool,
     well_disconnected: bool,
+    persona: Persona | None = None,
 ) -> str:
     lines = [f"You are {identity.name}, {identity.role}.", _HONESTY_INSTRUCTION]
+    if persona is not None and persona.instructions:
+        # Persona instructions are operator-authored persona data,
+        # labelled as such in the prompt itself — they extend who
+        # the companion is; they do not outrank the honesty
+        # instruction above them, and the label keeps that order
+        # visible to the model reading it.
+        lines.append(f"{persona.name}'s own notes on how to be:\n{persona.instructions}")
     if well_disconnected:
         lines.append(_DISCONNECTED_INSTRUCTION)
     elif has_hits:
