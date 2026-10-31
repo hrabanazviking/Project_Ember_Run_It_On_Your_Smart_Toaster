@@ -47,6 +47,23 @@ def diary_root(config_root: Path) -> Path:
     return Path(config_root).expanduser() / "diary"
 
 
+def _lock(fd: int) -> None:
+    """Exclusive advisory lock on ``fd`` where POSIX flock exists."""
+    try:
+        import fcntl  # noqa: PLC0415 — POSIX-only, guarded
+    except ImportError:
+        return
+    fcntl.flock(fd, fcntl.LOCK_EX)
+
+
+def _unlock(fd: int) -> None:
+    try:
+        import fcntl  # noqa: PLC0415 — POSIX-only, guarded
+    except ImportError:
+        return
+    fcntl.flock(fd, fcntl.LOCK_UN)
+
+
 class Diary:
     """A plain-words, append-only diary rooted at one directory."""
 
@@ -71,13 +88,29 @@ class Diary:
         try:
             self.root.mkdir(parents=True, exist_ok=True)
             path = self.root / f"{stamp:%Y-%m-%d}.md"
-            is_new = not path.exists()
             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
             try:
-                if is_new:
-                    os.write(fd, f"# Ember's diary — {stamp:%Y-%m-%d}\n\n".encode())
-                os.write(fd, line.encode("utf-8"))
-                os.fsync(fd)
+                # Concurrency (E-038): two chats share one diary.
+                # Without a lock, both writers could see the file
+                # as new and each write the header, and a header
+                # could land between another writer's header and
+                # its first line. Hold an exclusive advisory lock
+                # (POSIX flock, where the platform offers it) for
+                # the size check + write, so the header is written
+                # exactly once and every entry stays one whole
+                # line. Platforms without flock keep the previous
+                # append behaviour.
+                _lock(fd)
+                try:
+                    if os.fstat(fd).st_size == 0:
+                        os.write(
+                            fd,
+                            f"# Ember's diary — {stamp:%Y-%m-%d}\n\n".encode(),
+                        )
+                    os.write(fd, line.encode("utf-8"))
+                    os.fsync(fd)
+                finally:
+                    _unlock(fd)
             finally:
                 os.close(fd)
         except Exception:

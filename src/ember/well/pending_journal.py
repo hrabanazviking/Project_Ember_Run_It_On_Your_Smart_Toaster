@@ -27,6 +27,11 @@ Shape, chosen for tiny hardware and crash honesty:
   (timestamp-prefixed, so name order is turn order). An episode
   file is removed only *after* the Well accepts it; the first
   refusal stops the drain with the rest kept, in order.
+* **Two drains never flush the same turn twice (E-038).** A
+  drain claims each file by atomic rename before reading it;
+  a second chat draining at the same moment sees only the
+  files it can claim. A refused claim is released back under
+  its original name, in order.
 
 The journal persists ``persona_id`` even though the Brunnr
 adapters do not yet store the tag (E-025's stated limit): a
@@ -190,27 +195,54 @@ class PendingJournal:
         Each file is deleted only after ``add_episode`` accepts its
         episode. The first refusal stops the drain (remaining files
         kept, in order) and is reported as ``failure``. Corrupt
-        files are quarantined into ``corrupt/`` and reported."""
+        files are quarantined into ``corrupt/`` and reported.
+
+        Concurrency (E-038): two chats starting together both drain
+        the same journal. Before E-038 both drains read the same
+        file list and both added every episode — each turn landed
+        in the Well twice. A drain now *claims* a file before
+        touching it, by atomically renaming it to
+        ``<name>.claimed-<token>`` (``os.replace`` is atomic, and
+        the claimed name no longer matches the ``*.json`` glob, so
+        no other drain — and no ``load_all`` — can see it). Only
+        the claim's owner reads, adds, and deletes it. If the Well
+        refuses, the claim is released by renaming the file back
+        to its original name, in order, for the next drain. A
+        drain that loses every claim simply reports nothing
+        flushed and nothing kept by it — the episodes are being
+        flushed by the other session, not lost."""
         flushed = 0
         corrupt: list[CorruptEntry] = []
         failure: str | None = None
         kept = 0
         paths = self.files()
-        for idx, path in enumerate(paths):
-            ep, bad = self._read_one(path)
+        for path in paths:
+            claimed = self._claim(path)
+            if claimed is None:
+                # Another drain owns this file now; it is neither
+                # flushed nor kept *by this drain*.
+                continue
+            ep, bad = self._read_one(claimed)
             if bad is not None:
-                corrupt.append(bad)
-                self._quarantine(path)
+                corrupt.append(
+                    CorruptEntry(path=path, detail=bad.detail)
+                )
+                self._quarantine_claimed(claimed, path.name)
                 continue
             assert ep is not None  # noqa: S101 — _read_one invariant
             try:
                 brunnr.add_episode(ep)  # type: ignore[attr-defined]
             except Exception as exc:
                 failure = f"{type(exc).__name__}: {exc}"
-                kept = len(paths) - idx
+                self._release(claimed, path)
+                # Count what actually remains: files this drain
+                # never reached, plus the released one — not files
+                # another drain has claimed, which are in flight,
+                # not kept.
+                kept = len(self.files())
                 break
             with contextlib.suppress(OSError):
-                path.unlink()
+                claimed.unlink()
             flushed += 1
         else:
             kept = 0
@@ -219,6 +251,33 @@ class PendingJournal:
         return DrainResult(
             flushed=flushed, kept=kept, corrupt=tuple(corrupt), failure=failure,
         )
+
+    # ---------------------------------------------------------- claims
+
+    def _claim(self, path: Path) -> Path | None:
+        """Atomically claim ``path`` for this drain, or return None
+        when another drain claimed (or removed) it first."""
+        claimed = path.with_name(
+            f"{path.name}.claimed-{uuid.uuid4().hex[:12]}"
+        )
+        try:
+            os.replace(path, claimed)
+        except OSError:
+            return None
+        return claimed
+
+    def _release(self, claimed: Path, original: Path) -> None:
+        """Give a claimed file back under its original name."""
+        with contextlib.suppress(OSError):
+            os.replace(claimed, original)
+
+    def _quarantine_claimed(self, claimed: Path, original_name: str) -> Path:
+        target_dir = self.root / _CORRUPT_SUBDIR
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target = target_dir / original_name
+        with contextlib.suppress(OSError):
+            os.replace(claimed, target)
+        return target
 
     # ---------------------------------------------------------- internals
 

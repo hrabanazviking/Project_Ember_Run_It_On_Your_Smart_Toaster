@@ -100,6 +100,13 @@ class SqliteVecBrunnr:
             # main-thread waiting on every tool's future.result().
             conn = sqlite3.connect(str(path), check_same_thread=False)
             conn.execute("PRAGMA foreign_keys = ON")
+            # E-038: two chats may hold the same Well file at once
+            # (two processes, one tether). WAL allows one writer at
+            # a time; busy_timeout makes the second writer wait for
+            # the first's commit instead of failing the turn's save
+            # with "database is locked". Five seconds is far beyond
+            # any single Episode commit on phone-class hardware.
+            conn.execute("PRAGMA busy_timeout = 5000")
             if config.sqlite_vec.wal_mode:
                 conn.execute("PRAGMA journal_mode = WAL")
                 # E-031 (the Samtal lesson): WAL alone can still lose

@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 07:14 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-037 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037
-Next slice: E-038 — Concurrency on small hardware
+Last updated: 2026-10-31 07:31 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-038 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038
+Next slice: E-039 — Core docs + runnable examples
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1559,6 +1559,49 @@ Top-level members present (size / file count, working tree excl. .git):
   d311cc0771be348b67550594e736cb9bd3645fc4 = local HEAD at
   push time).
 
+## E-038 — Concurrency on small hardware (DONE, 2026-10-31)
+
+- Filed at `docs/architecture/E-038_CONCURRENCY_SMALL_HARDWARE.md`.
+  Two chats ran at once for the first time (threads, one shared
+  Well, barrier-synchronised fake backend so both are provably
+  mid-turn together, phone profile: 1024 tokens / 5 episodes per
+  session). Three real races on the shared surfaces, all fixed
+  in scope: (1) the pending journal's drain double-flushed —
+  two starting chats both drained every pending episode into
+  the Well twice; drain now claims each file by atomic rename
+  (`<name>.claimed-<token>`) before reading it, a refusal
+  releases the claim back in order, `kept` counts what actually
+  remains; (2) the diary could write a day's header twice —
+  size check + write now under an exclusive flock (POSIX;
+  previous append behaviour elsewhere), "new" judged by the
+  opened file's size; (3) the sqlite_vec Well had no busy
+  timeout — `PRAGMA busy_timeout = 5000` at open, so the second
+  writer waits instead of failing a save "database is locked".
+  Checked and pinned as already safe: journal appends (2×15,
+  nothing lost) and the tool audit log (single O_APPEND
+  write-all per record).
+- Measured (VM profile, fresh process per run, fake backend
+  50 ms/turn, 5 turns/chat, histories at the phone cap):
+  sequential two chats 1.285 s / 23.7 MiB peak RSS; concurrent
+  0.93 s + 0.81 s / 23.9 + 24.2 MiB — the second concurrent
+  session costs <0.5 MiB over running the same chats serially.
+  Each session's windowed history ≤1024 estimated tokens, two
+  together ≤2048 (the phone budget is per-session by
+  construction). Honest limits: threads not two OS processes
+  (fixes are process-safe by mechanism; Well proof = two
+  connections, one file; two-process chat NOT PROVEN); the
+  tool registry's Well binding is process-global (named, not
+  fixed — one session per process is today's CLI shape, Part
+  VIII owns in-process multi-session); no live model served
+  either chat, so backend queueing is unmeasured.
+- Tests: `test_concurrency_e038.py` **7 passed** (default env)
+  + `test_concurrency_well_e038.py` **2 passed** (extras shape).
+  Slice gate Run B: **910 passed, 6 failed, 18 skipped,
+  1 warning** — 903 E-037 baseline + 7 new; the 6 are the
+  proven environment failures. Run D (whole, extras):
+  **960 passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (951 baseline + 9 new). No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1599,4 +1642,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-036 DONE (2026-10-31) — determinism mode (seeded): `funi.determinism` (off by default, seed 42) + `ember.spark.funi.determinism` — off = no seed key anywhere (wire-pinned, byte-identical requests), on = fixed seed + temperature 0.0 effective (configured temperature never mutated) via Ollama's `seed` option and Aesir's native `seed` field; CLI `--deterministic` / `--seed N` one-run overlay; bad seed refused CONFIG_INVALID at open before any request; retrieval ties now break on chunk_id in both adapters (RRF + SQL; sqlite_vec vector ties re-sorted in Python — vec0 KNN forbids a second ORDER BY key, proven by the first Run D gate's 5 failures and fixed + regression-pinned in-slice); honest limits: backend seed contract owns byte-identical answers (no live model run), timestamps/ids stay non-deterministic by design, ThoughtForge uncovered; 21 new tests (19 passed + 2 skipped default); gate Run B 870 passed / 6 proven-env failed / 17 skipped, Run D 918 passed / 0 failed; filed at docs/architecture/E-036_DETERMINISM_MODE.md.
 - E-036 DONE (2026-10-31) — determinism mode (seeded): `funi.determinism` (off by default, seed 42) + `ember.spark.funi.determinism` — off = no seed key anywhere (wire-pinned, byte-identical requests), on = fixed seed + temperature 0.0 effective (configured temperature never mutated) via Ollama's `seed` option and Aesir's native `seed` field; CLI `--deterministic` / `--seed N` one-run overlay; bad seed refused CONFIG_INVALID at open before any request; retrieval ties now break on chunk_id in both adapters (RRF + SQL; sqlite_vec vector ties re-sorted in Python — vec0 KNN forbids a second ORDER BY key, proven by the first Run D gate's 5 failures and fixed + regression-pinned in-slice); honest limits: backend seed contract owns byte-identical answers (no live model run), timestamps/ids stay non-deterministic by design, ThoughtForge uncovered; 21 new tests (19 passed + 2 skipped default); gate Run B 870 passed / 6 proven-env failed / 17 skipped, Run D 918 passed / 0 failed; filed at docs/architecture/E-036_DETERMINISM_MODE.md.
 - E-037 DONE (2026-10-31) — core API freeze v1 (library shape): `ember.api` registry — `API_VERSION 1.0.0` (separate from package 0.2.0, re-exported as `ember.API_VERSION`), 63 individual frozen names + 12 schema modules frozen wholesale (92 names) = 155-entry manifest computed from live modules, `is_api_compatible` gate, `verify_api_surface()` clean in the bare default env; `ember.well.brunnr` `__init__` now re-exports BrunnrHandle + open mirroring Funi; NOT frozen: CLI, MCP, munnr/hjarta/smidja internals, concrete adapters (frozen `open()` registries only); docket 56 CLOSED (member half — members keep own config shapes, bind through the API only, fake-member test proven with no extras and no config file read); honest limits: contract + gate tests not import machinery, no member migrated yet (Parts IV–X bind here), behaviour pinned by per-surface suites; 33 new tests; gate Run B 903 passed / 6 proven-env failed / 17 skipped, Run D 951 passed / 0 failed; filed at docs/architecture/E-037_CORE_API_FREEZE.md.
-- E-038 next — Concurrency on small hardware: two chats, phone-class budgets, measured.
+- E-038 DONE (2026-10-31) — concurrency on small hardware: two chats at once (threads, shared Well, barrier-proven mid-turn overlap, phone profile 1024 tok/5 ep per session) — three races fixed in scope: pending-journal drain double-flush (claim-by-atomic-rename; refusal releases in order), diary double header (flock around size-check + write), sqlite Well "database is locked" (PRAGMA busy_timeout=5000); appends + audit log pinned already safe; measured on VM (fake 50 ms backend, 5 turns/chat): sequential 1.285 s / 23.7 MiB, concurrent 0.93+0.81 s / 23.9+24.2 MiB — second concurrent session <0.5 MiB over serial; each window ≤1024 tokens, two ≤2048; honest limits: threads not two processes (NOT PROVEN), process-global tool Well binding named not fixed, no live model; 9 new tests; gate Run B 910 passed / 6 proven-env failed / 18 skipped, Run D 960 passed / 0 failed; filed at docs/architecture/E-038_CONCURRENCY_SMALL_HARDWARE.md.
+- E-039 next — Core docs + runnable examples.
