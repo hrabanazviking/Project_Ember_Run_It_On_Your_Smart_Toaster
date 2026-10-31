@@ -2722,3 +2722,8 @@ Top-level members present (size / file count, working tree excl. .git):
   ~36%, no summary line) and re-run clean — the figures are the re-run's
   own log. Logs in `~/workspace/.verify-tmp/ember-e064/gate/`. No README touched.
 - E-065 next — the reflex layer: fast, dumb, safe reactions below cognition.
+- E-064 push: banking commit a2e729c pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 649ab88, an
+  ancestor; the push also carried the tick's IN PROGRESS marker 8c560a6) —
+  remote moved 649ab88 → a2e729c, verified via ls-remote (remote head =
+  a2e729c1381601d40a495aec8562d7fc61fb9748 = local HEAD at push time).
