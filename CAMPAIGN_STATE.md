@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 15:52 EDT
-Status: IN PROGRESS — E-061 (event contract v1), started 15:52 EDT keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060
-Next slice: E-061 — Event contract v1: event shapes versioned; producers/consumers listed per event
+Last updated: 2026-10-31 16:14 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-062
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061
+Next slice: E-062 — Context injection discipline: what may be injected, when, with what budget — the injector's rules as tests
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2484,3 +2484,72 @@ Top-level members present (size / file count, working tree excl. .git):
   number is not reused; the next new docket item is 100) and the doc's
   §2/§9 are corrected to match. All other E-060 counts (skuld 35,
   Run B, Run D) are log-backed and unchanged.
+
+## E-061 — Event contract v1 (DONE, 2026-10-31)
+
+- Contract filed in code at `Verdandi/event_contract.py` (stdlib-only,
+  standalone for deployed copies) with its reading copy at
+  `docs/architecture/E-061_EVENT_CONTRACT_V1.md`: canonical v1 envelope
+  `{v: 1, type, data, source}` (hub stamps `_seq/_ts/_iso`; offline
+  fallback adds `_fallback`, no `_seq`); versioning rules (unknown
+  fields ignored, breaking a registered shape = version bump, new
+  types registered in the same change as their producer); control
+  messages named (subscribe/ping/recent → subscribed/pong/recent_events,
+  plus ack/shutdown). Every event registered with producer, consumers,
+  data fields, source, status: 4 conv_* + push_reward + runa_reward +
+  runa_negative + the open operator vocabulary + 5 mood families
+  (event:*, stimulation:*, orgasm, thought:*, location:*) as canonical;
+  `ping` registered as a DEFECT (docket 96, repair E-066); heartbeat_pulse
+  + heartbeat_state_change as LEGACY (flat dialect to verdandi.sock,
+  NO listener, consumers honestly empty) + the heartbeat_fallback feed
+  shape. Sockets named apart: canonical runa.sock vs legacy
+  verdandi.sock. `classify_dialect` / `normalize_event` (no field
+  dropped) / `validate_publish` implement the legacy translations.
+- Producers brought onto the contract: `publish_event_sync` now stamps
+  `'v': 1` (a literal, not an import — nervous_system.py is deployed
+  standalone; pinned by test); the mood/arousal system's `_fire_nerve`
+  now emits the canonical envelope. CORRECTION to E-059 recorded in
+  the E-061 doc §5: E-059's "runa_mood_arousal publishes nothing" was
+  wrong — `_fire_nerve` fires a FOURTH dialect ({source, event,
+  timestamp, data}) at the right socket (runa.sock) with the wrong
+  kind key, so hub feeds carried its events with no `type`; that
+  dialect is retired as a producer shape by this slice (recognised
+  for reading in the contract). Its passenger status (no in-tree
+  callers) stands. Wire shape proven behaviourally by a captured-
+  socket smoke (canonical envelope to runa.sock; evidence dir).
+- Docket 97 CLOSED: context_injector's log-event choices listed only
+  7 of the logger's 8 EVENT_TYPES (missing mood_shift); the injector
+  now derives `choices=sorted(EVENT_TYPES)` from the logger, the same
+  derivation the logger's own CLI uses, pinned by source test + a
+  `log-event --help` behaviour test. `event_contract.LOG_EVENT_TYPES`
+  mirrors the logger's set exactly (pinned equal by test).
+- Docket 93 settled in two of three parts: canonical shape declared
+  + versioned, mood dialect retired; the heartbeat producer's
+  transport rewiring onto runa.sock is expressly E-067's (cross-member
+  wiring under this contract), not dropped. Hub-side validation
+  enforcement was NOT smuggled in (no Part IV slice claims it);
+  validate_publish is available to consumers.
+- Bookkeeping fixed in scope: this slice's Verdandi changes moved
+  the E-057 member budget table — re-measured and updated in both
+  published copies (BUDGET_BOOK §7 + E-057 record, with the re-measure
+  noted in the record): Verdandi 180 files / 16,837,498 B (was 179 /
+  16,817,105 B), twelve-member total 131,231,457 B (was 131,211,064 B),
+  laptop-ceiling miss 60,282 B (was 39,889 B); profile verdict
+  unchanged (none), no RAM floor re-measured, no ceiling moved.
+- Tests: `tests/unit/test_event_contract_e061.py` **22 passed** —
+  registry completeness re-derived from producer sources (every
+  literal publish_event_sync site, the conv_* family, the heartbeat
+  legacy fires, every mood _fire_nerve family), dialect/normalize/
+  validate behaviour, producer shape pins, stdlib-only contract,
+  doc names every registered event. Verdandi focal: conversation
+  set **101 passed** (identical to E-059), heartbeat set **374
+  passed** (identical to E-060), both with the declared pytest-asyncio
+  from the isolated extras dir. Slice gate: Run B **1076 passed,
+  6 failed, 25 skipped, 1 warning** (1054 + 22; the 6 are the proven
+  environment failures — the first attempt's 2 extra failures were
+  the E-057 tests catching this slice's own weight change, fixed by
+  the re-measure above); Run D **1133 passed, 0 failed, 19 skipped,
+  1 warning**, exit 0 (1111 + 22). Logs in
+  `~/workspace/.verify-tmp/ember-e061/gate/`. No README touched.
+- E-062 next — context injection discipline: what may be injected,
+  when, with what budget — the injector's rules as tests.

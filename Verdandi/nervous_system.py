@@ -446,6 +446,10 @@ def publish_event_sync(event_type: str, data: dict = None, source: str = None):
         data = {}
 
     event = {
+        # Contract version (event_contract.CONTRACT_VERSION, E-061).
+        # A literal, not an import: this file is deployed and loaded
+        # standalone, file-by-file, from ~/.hermes/state.
+        'v': 1,
         'type': event_type,
         'data': data,
     }

@@ -28,6 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path.home() / ".hermes" / "state"))
 from conversation_logger import (
+    EVENT_TYPES,
     cmd_start, cmd_end, cmd_event,
     get_context_for_cron, get_current_state, _get_entries_for_session, _get_recent_sessions
 )
@@ -52,9 +53,11 @@ def main():
     # log-event
     sp = sub.add_parser("log-event", help="Log a cron event in real-time")
     sp.add_argument("--session", required=True)
-    sp.add_argument("--type", required=True,
-                   choices=["decision", "file_changed", "learned", "action",
-                           "blocker", "blocker_resolved", "milestone"])
+    # The log-event vocabulary IS the logger's EVENT_TYPES (event
+    # contract v1, E-061 — docket 97: this list previously named
+    # only 7 of the 8, missing mood_shift, and could drift again
+    # as a hand-copied list; deriving it cannot).
+    sp.add_argument("--type", required=True, choices=sorted(EVENT_TYPES))
     sp.add_argument("--content", required=True)
 
     # log-end
