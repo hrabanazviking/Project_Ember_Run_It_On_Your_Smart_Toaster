@@ -62,6 +62,14 @@ a banner. The Episode is written locally.
   the operator's words, never the reply's words. A diary
   failure warns once, in plain words, and never stops a chat
   (see ``docs/architecture/E-034_DIARY_LOG.md``).
+* **E-035** runs the session in one named conversation
+  (``ember.spark.conversation``): history loads only that
+  conversation's turns, each turn is assembled under it and
+  tagged with it, so one talk never bleeds into another. The
+  choice is the ``conversation_id`` argument / ``--conversation``
+  flag, then ``conversation.active`` in the config file, then
+  the ``default`` conversation (see
+  ``docs/architecture/E-035_MULTI_CONVERSATION_ISOLATION.md``).
 """
 
 from __future__ import annotations
@@ -106,6 +114,12 @@ from ember.spark.funi.tools import (
     validate_arguments,
 )
 from ember.diary import Diary, diary_root
+from ember.schemas.conversation import DEFAULT_CONVERSATION_ID
+from ember.spark.conversation import (
+    episodes_for_conversation,
+    resolve_conversation_id,
+)
+from ember.spark.conversation.core import ConversationError
 from ember.spark.hjarta.identity import has_identity, load_identity
 from ember.spark.munnr import render
 from ember.spark.persona import episodes_for_persona, resolve_persona
@@ -165,6 +179,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     funi_opener: Callable | None = None,
     strengr_opener: Callable | None = None,
     approval_prompter: ApprovalPrompter | None = None,
+    conversation_id: str | None = None,
 ) -> int:
     """Run the chat REPL until EOF or an exit command. Returns exit code."""
     stdin = stdin if stdin is not None else sys.stdin
@@ -213,6 +228,27 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         stdout.write(f"Persona could not be loaded: {exc}\n")
         return 1
     identity = persona.identity
+
+    # Conversation (E-035): which talk this session is in. An
+    # invalid chosen id stops the session with the reason named —
+    # never a silent fall-back to a different conversation, which
+    # would mix the talks the operator asked to keep apart.
+    try:
+        session_conversation = resolve_conversation_id(
+            conversation_id, config.conversation.active
+        )
+    except ConversationError as exc:
+        diary_note(
+            "A chat session could not start because the chosen "
+            "conversation name was not usable."
+        )
+        stdout.write(f"Conversation could not be opened: {exc}\n")
+        return 1
+    if session_conversation != DEFAULT_CONVERSATION_ID:
+        diary_note(
+            f"This session is in the '{session_conversation}' "
+            "conversation, kept apart from Ember's other talks."
+        )
 
     # Open Funi first — without a reasoner, the REPL has nothing to do.
     funi_result = open_funi(config.funi)
@@ -323,8 +359,17 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         try:
             # Per-persona separation (E-025): this persona's
             # session starts from its own remembered turns only.
-            episodes = episodes_for_persona(
-                brunnr.recent_episodes(_HISTORY_LOAD_LIMIT), persona.id
+            # Per-conversation separation (E-035): of those, only
+            # this conversation's turns — the other talks this
+            # persona remembers stay in their own conversations.
+            # Filtering happens BEFORE windowing, so a foreign
+            # talk's turns can neither ride verbatim nor leak in
+            # through the window's summary of dropped episodes.
+            episodes = episodes_for_conversation(
+                episodes_for_persona(
+                    brunnr.recent_episodes(_HISTORY_LOAD_LIMIT), persona.id
+                ),
+                session_conversation,
             )
             diary_note(
                 f"{len(episodes)} earlier exchange(s) were loaded "
@@ -404,6 +449,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 well_disconnected=turn_ungrounded,
                 summary=windowed.summary,
                 persona=persona,
+                conversation_id=session_conversation,
             )
 
             if streaming:
@@ -426,6 +472,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     started_at=started,
                     completed_at=completed,
                     persona_id=persona.id,
+                    conversation_id=session_conversation,
                 )
             else:
                 # Non-streaming opt-out path ("give me a single blob"
@@ -475,6 +522,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     started_at=started,
                     completed_at=completed,
                     persona_id=persona.id,
+                    conversation_id=session_conversation,
                 )
 
             episodes.append(episode)

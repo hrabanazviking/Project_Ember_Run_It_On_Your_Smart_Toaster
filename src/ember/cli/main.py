@@ -57,7 +57,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("chat", help="Open an interactive conversation.")
+    chat_p = sub.add_parser("chat", help="Open an interactive conversation.")
+    chat_p.add_argument(
+        "--conversation",
+        default=None,
+        help=(
+            "Which conversation to open (E-035): this talk's own "
+            "remembered turns only, kept apart from Ember's other "
+            "talks. Default: conversation.active from the config "
+            "file, else the 'default' conversation."
+        ),
+    )
 
     ask_p = sub.add_parser("ask", help="Ask a single question and exit.")
     ask_p.add_argument("text", help="The question to ask.")
@@ -173,7 +183,12 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
         config = _apply_tool_overrides(config, args)
 
     if args.command == "chat":
-        return chat.run(config=config, config_root=config_root, stdout=stdout)
+        return chat.run(
+            config=config,
+            config_root=config_root,
+            stdout=stdout,
+            conversation_id=args.conversation,
+        )
     if args.command == "ask":
         return ask.run(
             text=args.text, config=config, config_root=config_root, stdout=stdout

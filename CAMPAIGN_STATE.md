@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 06:42 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-034 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034
-Next slice: E-035 — Multi-conversation isolation (fixtures prove no bleed)
+Last updated: 2026-10-31 06:47 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-035 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035
+Next slice: E-036 — Determinism mode for tests/benchmarks (seeded)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1404,6 +1404,53 @@ Top-level members present (size / file count, working tree excl. .git):
   ls-remote (remote head = 0c90949ac8589617c3694d2648d7544da2679e3e =
   local HEAD at push time).
 
+## E-035 — Multi-conversation isolation (DONE, 2026-10-31)
+
+- Filed at `docs/architecture/E-035_MULTI_CONVERSATION_ISOLATION.md`.
+  E-025's persona discipline applied one level in: episodes now
+  carry `conversation_id` (default `"default"` — the namespace
+  every pre-E-035 episode already belongs to; slug rules in
+  `ember.schemas.conversation`, same shape as persona ids).
+  `ember.spark.conversation` holds resolution (explicit choice →
+  `conversation.active` config → `default`; an invalid chosen id
+  is a typed `ConversationError` and chat stops with the reason
+  named, exit 1 — never a silent fall-back to a different talk),
+  exact-match filtering, and tagging.
+- Chat runs in one conversation: history loads persona filter →
+  conversation filter → windowing (in that order, so a foreign
+  talk can neither ride verbatim nor leak through the window's
+  summary of dropped episodes — fixture-proven), assembly passes
+  `conversation_id` to the prompt wall (which composes with the
+  persona wall: an episode must be the turn's persona's *and*
+  its conversation's; episode context metadata now carries
+  `conversation_id`), and every persisted Episode is tagged on
+  both the streaming and non-streaming roads. Surfaces:
+  `ember chat --conversation <id>` and `conversation.active`
+  (documented in `ember.example.yaml`, E-033 tree-walk green;
+  TOML coercion pinned). `ember ask` rides the same run and
+  inherits the configured conversation. Diary notes a
+  non-default conversation in plain words; the pinned E-034
+  sentences are unchanged.
+- Pending journal (E-031) persists `conversation_id` beside
+  `persona_id`; pre-E-035 journal files (no field) load as
+  `default`, a non-string field is corruption.
+- Honest limits (in the doc): the Brunnr adapters still do not
+  persist either tag (the E-025 limit) — cross-restart history
+  for a *named* conversation awaits Part V's storage road
+  (E-080 family); retrieval grounding (document chunks) is
+  shared by design, only remembered turns are private; no
+  conversation listing/renaming UI yet.
+- Tests: `test_conversation_isolation_e035.py` **42 passed**
+  (two named conversations + the untagged past, interleaved;
+  adversarial prompt wall; persona × conversation composition;
+  summary non-bleed; journal round-trip + legacy payload; two
+  sessions on one Well staying apart; disconnected journal
+  road; CLI flag). Slice gate Run B: **851 passed, 6 failed,
+  15 skipped, 1 warning** — 809 E-034 baseline + 42 new; the 6
+  are the proven environment failures. Run D (whole, extras):
+  **897 passed, 0 failed, 19 skipped, 1 warning**, exit 0.
+  No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1440,4 +1487,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-032 DONE (2026-10-31) — the day-one flow, timed and friction-audited in a clean venv (VM profile, loopback wire-shape model): fresh venv 26.79 s + pip upgrade 19.92 s (corrected same day — the first-banked 1.85 s was a re-run over the existing venv), install 19.24 s, day-one ask (wizard + first chat) 1.28 s, second run 0.93 s; three breaks fixed in scope — Hjarta EOF crash (docket 15 CLOSED; clean abort, nothing written), Hjarta writing an `ember.yaml` the documented `[sqlite_vec]`-only install cannot read back without PyYAML (new docket 88 CLOSED; writer falls back to stdlib-readable `ember.toml`, YAML unchanged when PyYAML present), and a Well path typed in the wizard being probed then forgotten (new docket 87 CLOSED; persisted as `brunnr.sqlite_vec.path`, no override for the default); INSTALL.md's wizard list corrected (tools question, TOML case) and the wizard prompt's hardcoded yaml path fixed; real-model day one NOT PROVEN (no Ollama on the VM; Part III owns it); 9 new tests; gate Run B 790 passed / 6 proven-env failed / 15 skipped, Run D 836 passed / 0 failed; filed at docs/architecture/E-032_DAY_ONE_FLOW.md.
 - E-033 DONE (2026-10-31) — config for humans: one surface stated + enforced (unknown/fossil keys refused by name at startup), `.env.example` Runa fossil rewritten to the two live env vars (docket 55 CLOSED), template now documents every EmberConfig field (conversation/mcp/streaming/aesir timeout_ms/cognition keys were missing; tree-walk test guards it), storage/sources excerpts state they are not config files (docket 56 core half closed, member half stays E-037), defaults audited unchanged; 6 new tests; gate Run B 796 passed / 6 proven-env failed / 15 skipped, Run D 842 passed / 0 failed; filed at docs/architecture/E-033_CONFIG_FOR_HUMANS.md.
 - E-034 DONE (2026-10-31) — logging a friend can read: `ember.diary` keeps a plain-words diary beside the technical trace (daily Markdown files under `<config_root>/diary/`, O(1) O_APPEND+fsync writes, never raises — chat warns once if writing fails); chat records session start/stop, Well reachability, drain + history outcomes, per-turn outcome (answered / ungrounded / interrupted / error / truncated) and save outcome, with NO conversation content by construction (leak-pinned by test); `logging.diary` switch (default on, template-documented); `ember diary [--days N]` reader; tool rounds deliberately left to the audit log (stated limit); 13 new tests; gate Run B 809 passed / 6 proven-env failed / 15 skipped, Run D 855 passed / 0 failed; filed at docs/architecture/E-034_DIARY_LOG.md.
-- E-035 next — Multi-conversation isolation (fixtures prove no bleed).
+- E-035 DONE (2026-10-31) — multi-conversation isolation: `Episode.conversation_id` (default `"default"`, slug rules) + `ember.spark.conversation` (resolution explicit > config `conversation.active` > default, invalid id refused by name — never a silent fall-back; exact-match filter; tagging); chat loads persona → conversation → window (a foreign talk can neither ride verbatim nor leak through the summary), prompt wall composes persona × conversation, both persistence roads tag Episodes; `ember chat --conversation` flag; pending journal persists the tag (pre-E-035 files load as default); honest limit: adapters still persist neither tag, so named-conversation cross-restart history awaits Part V (E-080 family); retrieval grounding shared by design; 42 new tests; gate Run B 851 passed / 6 proven-env failed / 15 skipped, Run D 897 passed / 0 failed; filed at docs/architecture/E-035_MULTI_CONVERSATION_ISOLATION.md.
+- E-036 next — Determinism mode for tests/benchmarks (seeded).

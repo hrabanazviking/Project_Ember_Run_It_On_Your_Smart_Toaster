@@ -384,12 +384,23 @@ class ConversationConfig:
     deterministic summary of whatever the window drops, produced by
     the summarisation hook (E-021), so trimming never silently
     pretends the earlier conversation did not happen.
+
+    ``active`` (E-035) names the conversation a chat session runs
+    in when no per-invocation choice is made — one talk, kept apart
+    from the companion's other talks (see
+    ``ember.spark.conversation``). It is empty by default: no
+    explicit choice, so the session runs in the ``default``
+    conversation every pre-E-035 episode already belongs to. A
+    per-invocation ``ember chat --conversation`` choice wins over
+    it. Naming an id that is not a valid slug is an error at
+    resolve time, never a silent fall-back to a different talk.
     """
 
     profile: ConversationProfile = ConversationProfile.PI
     token_budget: int | None = None
     max_episodes: int | None = None
     summarise_dropped: bool = True
+    active: str = ""
 
     @property
     def resolved_token_budget(self) -> int:

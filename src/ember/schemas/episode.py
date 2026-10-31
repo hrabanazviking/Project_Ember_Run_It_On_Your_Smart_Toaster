@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from ember.schemas.conversation import DEFAULT_CONVERSATION_ID
 from ember.schemas.persona import DEFAULT_PERSONA_ID
 
 
@@ -32,6 +33,15 @@ class Episode:
     tag to disk; the E-025 doc states this limit plainly. The
     pending-episodes journal (E-031) *does* persist the tag, so
     a journaled turn keeps its persona while it waits to drain.
+
+    ``conversation_id`` (E-035) tags the turn with the
+    conversation — the one talk, inside the persona — it belongs
+    to. It defaults to :data:`DEFAULT_CONVERSATION_ID`, the
+    namespace every pre-E-035 episode already belongs to, under
+    exactly the persona tag's discipline: the adapters do not
+    yet persist it, separation is enforced at the prompt
+    boundary and in-process by ``ember.spark.conversation``,
+    and the pending journal *does* persist it.
     """
 
     operator_input: str
@@ -43,6 +53,7 @@ class Episode:
     completed_at: datetime | None = None
     id: int | None = None
     persona_id: str = DEFAULT_PERSONA_ID
+    conversation_id: str = DEFAULT_CONVERSATION_ID
 
 
 __all__ = ["Episode"]

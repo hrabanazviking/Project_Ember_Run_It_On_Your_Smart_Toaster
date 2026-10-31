@@ -135,6 +135,12 @@ funi:
 # the profile's own and only need setting if you want different.
 # ---------------------------------------------------------------------------
 conversation:
+  # Which talk a chat opens in (E-035). Each conversation keeps
+  # its own remembered turns, apart from Ember's other talks.
+  # Leave unset for the "default" conversation — the one every
+  # talk before conversations had names already belongs to. A
+  # one-off `ember chat --conversation <id>` wins over this.
+  # active: "kitchen-table"
   # toaster / phone / pi / laptop. pi is the middle default.
   profile: pi
   # How much history may ride along, counted roughly in tokens

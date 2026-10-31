@@ -32,6 +32,11 @@ The journal persists ``persona_id`` even though the Brunnr
 adapters do not yet store the tag (E-025's stated limit): a
 pending episode keeps its persona while it waits, and chat uses
 it when deciding whose history a drained turn belongs to.
+``conversation_id`` rides the same way (E-035): a pending
+episode keeps its conversation while it waits. Journal files
+written before E-035 have no ``conversation_id`` field; they
+load as the ``default`` conversation, which is exactly the
+namespace those turns already belonged to.
 """
 
 from __future__ import annotations
@@ -65,6 +70,7 @@ def episode_to_payload(episode: Episode) -> dict:
         "started_at": _iso(episode.started_at),
         "completed_at": _iso(episode.completed_at),
         "persona_id": episode.persona_id,
+        "conversation_id": episode.conversation_id,
     }
 
 
@@ -87,6 +93,9 @@ def episode_from_payload(payload: object) -> Episode:
     persona = payload.get("persona_id", "default")
     if not isinstance(persona, str) or not persona:
         raise ValueError("payload field 'persona_id' must be a non-empty string")
+    conversation = payload.get("conversation_id", "default")
+    if not isinstance(conversation, str) or not conversation:
+        raise ValueError("payload field 'conversation_id' must be a non-empty string")
     return Episode(
         operator_input=payload["operator_input"],
         ember_reply=payload["ember_reply"],
@@ -96,6 +105,7 @@ def episode_from_payload(payload: object) -> Episode:
         started_at=_parse(payload.get("started_at")),
         completed_at=_parse(payload.get("completed_at")),
         persona_id=persona,
+        conversation_id=conversation,
     )
 
 
