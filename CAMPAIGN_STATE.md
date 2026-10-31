@@ -527,7 +527,10 @@ Top-level members present (size / file count, working tree excl. .git):
 - Slice gate: root suite re-run in the E-001 shape (pgvector file excluded;
   TMPDIR on the workspace overlay): **546 passed, 6 failed, 12 skipped** —
   identical to the opening baseline. Doc-only slice, no code touched,
-  no README touched.
+  no README touched. Pushed under Volmarr's 2026-10-31 standing go-ahead:
+  banking commit f1d51eb pushed after fetch + ancestry check — remote moved
+  944af88 → f1d51eb, verified via ls-remote (remote head =
+  f1d51ebe924153cfd35abe6baaf2c86aec57cad4 = local HEAD at push time).
 
 ## Slice ledger
 
