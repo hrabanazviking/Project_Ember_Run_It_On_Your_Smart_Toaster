@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 07:42 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-039 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039
-Next slice: E-040 — Part II gate
+Last updated: 2026-10-31 07:49 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II CLOSED at E-040, Part III open
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040
+Next slice: E-041 — The budget book (Part III opens)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1669,6 +1669,48 @@ Top-level members present (size / file count, working tree excl. .git):
   a3da82a95ec8b2948ad8228cdd81abba80379817 = local HEAD at
   push time).
 
+## E-040 — Part II gate (DONE, 2026-10-31)
+
+- Gate filed at `docs/architecture/E-040_PART_II_GATE.md`: **Part II gate
+  PASS** on the roadmap's E-040 criteria — all seven gate criteria checked
+  (G1–G7). All 21 Part II slices E-019–E-039 banked, their docs present
+  under `docs/architecture/` (listing-verified this slice).
+- Day-one flow re-proven on the VM profile: targeted tests
+  `test_day_one_flow_e032.py` + `test_core_docs_examples_e039.py` +
+  `test_core_api_freeze_e037.py` = **50 passed**; the three runnable
+  examples (`first_chat.py`, `member_binding.py`, `offline_turns.py`)
+  executed directly, each **exit 0**. E-032's clean-venv timings stand
+  as the timed record (not re-run, no new timing claimed). Honest limit
+  kept: the model is a loopback wire-shape stand-in / labelled fake —
+  **a real-model day one is NOT PROVEN** (no Ollama on the VM); Part III
+  owns real-device proof (E-047/E-049).
+- API freeze checked live in the bare default env: `API_VERSION 1.0.0`
+  (= `ember.API_VERSION`), `api_manifest()` **155 entries**,
+  `verify_api_surface()` = `()` (no problems),
+  `is_api_compatible("1.0.0")` True / `("2.0.0")` False — identical to
+  the E-037 freeze.
+- Gate re-measurement (E-017 method; logs in
+  `~/workspace/.verify-tmp/ember-e040/`): Run A whole/default
+  **1 error, 11 skipped, exit 2** (docket 1 unchanged; skips 8 → 11
+  explained — Part II added three skip-guarded extras files: E-021
+  reader, E-031 corruption, E-038 Well concurrency); Run B default
+  excl. pgvector **918 passed, 6 failed, 18 skipped, 1 warning** —
+  identical to E-039; Run D whole with extras **968 passed, 0 failed,
+  19 skipped, 1 warning**, exit 0 — identical to E-039.
+- Docket accounting (§5 of the gate doc): Part II closed 15, 55, 56,
+  81, 82, 83, 85, 86, 87, 88, and 84's DATA_FLOW half. Carried forward
+  OPEN with named homes, not claimed fixed: **1, 2, 3, 4, 13 →
+  E-187/E-200** (Part II owned them on paper but no slice E-019–E-039
+  was built to fix them); **20 → E-044** (keyring extra, beside
+  lockfile docket 23); 84's remainder → E-194; 89 → E-195.
+  Other limits on record: adapters persist neither persona nor
+  conversation tag yet (→ E-080 family); ThoughtForge candidate only,
+  chat not rewired, no live Aesir/ThoughtForge turn; two-process
+  concurrency NOT PROVEN.
+- Road check: no re-cut demanded; Part III follows in order, inheriting
+  the budget book (E-041), real-device proofs, and docket 20 at E-044.
+  Doc-only slice, no code touched, no README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1711,4 +1753,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-037 DONE (2026-10-31) — core API freeze v1 (library shape): `ember.api` registry — `API_VERSION 1.0.0` (separate from package 0.2.0, re-exported as `ember.API_VERSION`), 63 individual frozen names + 12 schema modules frozen wholesale (92 names) = 155-entry manifest computed from live modules, `is_api_compatible` gate, `verify_api_surface()` clean in the bare default env; `ember.well.brunnr` `__init__` now re-exports BrunnrHandle + open mirroring Funi; NOT frozen: CLI, MCP, munnr/hjarta/smidja internals, concrete adapters (frozen `open()` registries only); docket 56 CLOSED (member half — members keep own config shapes, bind through the API only, fake-member test proven with no extras and no config file read); honest limits: contract + gate tests not import machinery, no member migrated yet (Parts IV–X bind here), behaviour pinned by per-surface suites; 33 new tests; gate Run B 903 passed / 6 proven-env failed / 17 skipped, Run D 951 passed / 0 failed; filed at docs/architecture/E-037_CORE_API_FREEZE.md.
 - E-038 DONE (2026-10-31) — concurrency on small hardware: two chats at once (threads, shared Well, barrier-proven mid-turn overlap, phone profile 1024 tok/5 ep per session) — three races fixed in scope: pending-journal drain double-flush (claim-by-atomic-rename; refusal releases in order), diary double header (flock around size-check + write), sqlite Well "database is locked" (PRAGMA busy_timeout=5000); appends + audit log pinned already safe; measured on VM (fake 50 ms backend, 5 turns/chat): sequential 1.285 s / 23.7 MiB, concurrent 0.93+0.81 s / 23.9+24.2 MiB — second concurrent session <0.5 MiB over serial; each window ≤1024 tokens, two ≤2048; honest limits: threads not two processes (NOT PROVEN), process-global tool Well binding named not fixed, no live model; 9 new tests; gate Run B 910 passed / 6 proven-env failed / 18 skipped, Run D 960 passed / 0 failed; filed at docs/architecture/E-038_CONCURRENCY_SMALL_HARDWARE.md; banking commit 5e9047a pushed (remote a151b89 → 5e9047a, ls-remote = local HEAD).
 - E-039 DONE (2026-10-31) — core docs + runnable examples: three runnable examples where none existed (first_chat — the real chat loop against a labelled fake model + in-memory Well; member_binding — frozen API v1 only, AST-pinned; offline_turns — banner, pending journal, facts-only diary, clean drain) plus a worked phone-class TOML config that loads through the frozen loader; docket 84's DATA_FLOW half CLOSED (k=5, no AskTurn, streaming default, per-turn JSON journal — facts only, voice intact); new docket 89 (stale examples/ scaffold READMEs → E-195, README care); honest limits: no live model (Part III's burden), chat examples use the operator surface's test seams (not frozen API); 8 new tests; gate Run B 918 passed / 6 proven-env failed / 18 skipped, Run D 968 passed / 0 failed; filed at docs/architecture/E-039_CORE_DOCS_EXAMPLES.md; banking commit a3da82a pushed (remote c677a79 → a3da82a, ls-remote = local HEAD).
-- E-040 next — Part II gate: day-one flow green end-to-end on the VM profile; API frozen; summary filed.
+- E-040 DONE (2026-10-31) — Part II gate PASS: day-one flow re-proven on the VM profile (targeted 50 passed; three runnable examples each exit 0; E-032 clean-venv timings stand; real-model day one NOT PROVEN — loopback wire-shape model only, Part III owns real-device proof), API freeze checked live (1.0.0, 155 manifest entries, verify_api_surface clean), gate re-measurement identical to E-039 (Run B 918 passed / 6 proven-env failed / 18 skipped; Run D 968 passed / 0 failed / 19 skipped; Run A 1 error docket 1, skips 11 explained by Part II's three new skip-guarded files); Part II docket accounted (closed 15, 55, 56, 81–83, 85–88, 84's DATA_FLOW half; carried open 1, 2, 3, 4, 13 → E-187/E-200, 20 → E-044, 89 → E-195); no road re-cut; filed at docs/architecture/E-040_PART_II_GATE.md. **Part II (E-019–E-040) is CLOSED.**
+- E-041 next — Part III opens: the budget book (per-profile ceilings from E-015's archaeology + measurement).
