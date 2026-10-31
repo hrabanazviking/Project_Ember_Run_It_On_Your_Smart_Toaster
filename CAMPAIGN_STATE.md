@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 23:49 EDT
+Last updated: 2026-10-30 23:58 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008
-Next slice: E-009 — The Verdandi concordance
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009
+Next slice: E-010 — The Hamr verification plan
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -284,6 +284,41 @@ Top-level members present (size / file count, working tree excl. .git):
   **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
   Doc-only slice, no code touched, no README touched, no push.
 
+## E-009 — The Verdandi concordance (DONE, 2026-10-30)
+
+- Concordance filed at `docs/audit/E-009_VERDANDI_CONCORDANCE.md`: Verdandi's
+  own roadmap (`Verdandi/docs/roadmap.md`, VD-RM) checked claim by claim
+  against the code, config, and tests.
+- Headline: **v0.3.0 "Skuld" is real** — SkuldCheck, Vör, emotional
+  classifier, maintenance windows, the exactly-8-metric Prometheus exporter,
+  and the `pulse_metrics` table all stand in code, and `tests/test_skuld.py`
+  re-ran **35 passed** this slice. But Vör is BROKEN in three places (not
+  one): it crashes on Skuld's own `{"status": …}` capacity shape in both
+  `should_trigger` and `_get_capacity_summary` (Skuld's own consumer guards
+  `isinstance`, Vör doesn't — all reproduced this slice), its returns use
+  `ActionResult(name=…, ActionSeverity.INFO)` (wrong field, nonexistent
+  severity), and it overrides `execute()` instead of `_execute()`, bypassing
+  BaseAction's crash wrapper — no test covers Vör. And `pulse_metrics` is
+  WRITE-ONLY: created, indexed, inserted every pulse, pruned at 10,000 —
+  never SELECTed anywhere; Skuld predicts from state-derived scores in
+  `pulse_history` instead.
+- **v0.4.0 "Valhalla" is absent or double-counted:** distributed heartbeat
+  and the REST API have NO code (API exists only as a docs wrapper pattern
+  with different paths); Prometheus and the emotional architecture are
+  listed as v0.4 plans after already shipping in v0.3. Emotional count
+  matches nothing (VD-RM says 7, its table lists 6, the dict holds 6,
+  `classify()` can return 8). VD-RM covers the heartbeat only — nerve hub,
+  context injector, conversation logger, top-level reactor, the Eir
+  package (its own version 2.0.0), `runa_*`, and the 50-doc research corpus
+  have no roadmap coverage. VD-RM's sketches diverge from the shipped API
+  in names/thresholds/wiring (check `prediction` not `predictive:…`; slope
+  −0.05 not −0.5; hard-coded Reactor rule, not the sketched YAML;
+  maintenance static, not Urðr-integrated) — code is the authority for
+  E-060's re-cut. New docket items 31–37 for E-016.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
+  Doc-only slice, no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -294,4 +329,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-006 DONE (2026-10-30) — boot census: Verdandi hub + Mímir's Eye proven LIVE, seidr boots+computes bare, ember diagnostics crash bare on the sqlite_vec default backend, astrology/dictionary/Open-VTT cannot boot here for named reasons, 5 new docket items (13–17), filed at docs/audit/E-006_BOOT_CENSUS.md.
 - E-007 DONE (2026-10-30) — dependency & licence audit: estate permissive + intact (11 MIT verified, astrology Apache-2.0, no copyleft in tree), CloakBrowser binary licence is proprietary (no redistribution/bundling without OEM — constraint, not violation), 4 declaration-vs-reality gaps + metadata/lockfile gaps, 8 new docket items (18–25), filed at docs/audit/E-007_DEPENDENCY_LICENCE_AUDIT.md.
 - E-008 DONE (2026-10-30) — the codex census: four elder codices DONE-in-fact (Hermes 58 total, Chatdoll 69, SAP 83, Waifu 21 — every content doc present with its Ember closer, none under its word floor), Ragnarok scaffold-only with 0/46 content docs, all five TASK status lines stale, no codex referenced in src/, 5 new docket items (26–30), filed at docs/audit/E-008_CODEX_CENSUS.md.
-- E-009 next — The Verdandi concordance.
+- E-009 DONE (2026-10-30) — the Verdandi concordance: v0.3.0 Skuld proven in code + 35/35 dedicated tests, Vör broken in 3 places (docket 31 expands item 7), pulse_metrics write-only, v0.4 distributed/REST absent and Prometheus/emotion double-listed, VD-RM covers heartbeat only, 7 new docket items (31–37), filed at docs/audit/E-009_VERDANDI_CONCORDANCE.md.
+- E-010 next — The Hamr verification plan.
