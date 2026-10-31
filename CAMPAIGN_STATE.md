@@ -1745,6 +1745,10 @@ Top-level members present (size / file count, working tree excl. .git):
   6 failed, 20 skipped, 1 warning** (936 E-042 baseline + 5 new; the 6 are the
   proven environment failures, identical set). Run D **993 passed, 0 failed,
   19 skipped, 1 warning**, exit 0 (988 + 5 new). No README touched.
+  Pushed under Volmarr's 2026-10-31 standing go-ahead: banking commit
+  ed0fc91 pushed after fetch + ancestry check — remote moved 9bc82f1 ->
+  ed0fc91, verified via ls-remote (remote head =
+  ed0fc91ccbc5a07bc03699c2aed6a462a39b2f34 = local HEAD at push time).
 
 ## E-042 — Budget tests (DONE, 2026-10-31)
 
