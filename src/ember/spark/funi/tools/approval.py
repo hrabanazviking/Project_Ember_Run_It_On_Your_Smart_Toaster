@@ -9,9 +9,10 @@ Two surfaces:
    prompter.
 
 2. :class:`StdinApprovalPrompter` — the interactive surface for
-   ``PER_CALL`` decisions. Reads y/n/always from a ``TextIO`` and
-   writes prompts to another ``TextIO``. Munnr (Phase 16) wires its
-   stdin/stdout through this; tests inject ``io.StringIO`` instances.
+   ``PER_CALL`` decisions. Writes E-027's plain-language prompt to
+   a ``TextIO`` and reads the operator's answer from another.
+   Munnr (Phase 16) wires its stdin/stdout through this; tests
+   inject ``io.StringIO`` instances.
 
 Policy resolution is deliberately separate from the prompter so the
 test surface stays small. The decision tree in :func:`resolve` is the
@@ -72,15 +73,19 @@ class ApprovalPrompter(Protocol):
 
 
 class StdinApprovalPrompter:
-    """Read y/n/always from a ``TextIO``.
+    """Ask the operator, in plain words, from a ``TextIO``.
 
-    Default stdin / stdout / stderr are used unless an injected pair is
-    given. The renderer is intentionally minimal — Phase 16's Munnr
-    integration replaces the prompt body with one that uses
-    ``render.render_tool_call_proposal`` instead.
+    The prompt body is E-027's plain-language proposal
+    (:func:`ember.spark.funi.tools.plain.render_plain_proposal`):
+    what Ember wants to do, what it can and cannot reach, the
+    details it was given, and the choices with their scopes spelled
+    out. Only the choices actually offered for this call are valid
+    answers — ``always`` ("don't ask again while we're chatting")
+    is offered only when the E-026 gate would honour it.
+
+    Default stdin / stdout are used unless an injected pair is
+    given.
     """
-
-    _VALID: tuple[PromptAnswer, ...] = ("y", "n", "always")
 
     def __init__(
         self,
@@ -96,12 +101,19 @@ class StdinApprovalPrompter:
     ) -> PromptAnswer:
         import sys  # noqa: PLC0415 — only loaded when prompter is actually used
 
+        from ember.spark.funi.tools.plain import (  # noqa: PLC0415
+            offered_choices,
+            render_plain_proposal,
+        )
+
         stdin = self._stdin if self._stdin is not None else sys.stdin
         stdout = self._stdout if self._stdout is not None else sys.stdout
 
-        body = _render_proposal(descriptor, call)
-        stdout.write(body)
-        stdout.write("approve this call? [y/n/always] ")
+        choices = offered_choices(descriptor, call)
+        valid = tuple(choice.answer for choice in choices)
+
+        stdout.write(render_plain_proposal(descriptor, call))
+        stdout.write(f"Your answer ({'/'.join(valid)}): ")
         stdout.flush()
 
         # Read a single line; trim. Default to "n" on EOF — safer to
@@ -110,29 +122,25 @@ class StdinApprovalPrompter:
         if not raw:
             return "n"
         answer = raw.strip().lower()
-        if answer in self._VALID:
+        if answer in valid:
             return answer  # type: ignore[return-value]
+        if answer == "always":
+            # The person asked for a remembered grant this call
+            # cannot carry (the prompt body said why). Never pretend
+            # it was remembered: say plainly that it counts as a
+            # yes for this once only, and return exactly that.
+            stdout.write(
+                "That choice can't be remembered for this kind of "
+                "request, so I'll count it as 'y' — yes for this "
+                "once only.\n"
+            )
+            stdout.flush()
+            return "y"
         # Unknown reply → refuse. Don't loop; Munnr re-prompts at the
         # next REPL turn if Funi proposes again.
         stdout.write(f"unrecognised answer {answer!r}; treating as 'n'\n")
         stdout.flush()
         return "n"
-
-
-def _render_proposal(descriptor: ToolDescriptor, call: ToolCall) -> str:
-    """Minimal terminal rendering — Phase 16 supersedes via render.py."""
-    lines = [
-        "",
-        f"tool proposal: {descriptor.name}",
-        f"  description: {descriptor.description}",
-        "  arguments:",
-    ]
-    for name, value in call.arguments.items():
-        redacted = name in descriptor.redacted_arg_names
-        shown = "<redacted>" if redacted else repr(value)
-        lines.append(f"    {name}: {shown}")
-    lines.append("")
-    return "\n".join(lines)
 
 
 # --------------------------------------------------------------------- #

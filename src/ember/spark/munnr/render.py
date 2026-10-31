@@ -214,6 +214,16 @@ def render_tool_call_proposal(
     ]
     if descriptor is not None:
         lines.append(f"  description: {descriptor.description}")
+        # E-027: the same proposal in plain words, so a
+        # non-technical operator sees what the tool wants to do
+        # and what it can reach before any jargon-shaped detail.
+        from ember.spark.funi.tools.plain import (  # noqa: PLC0415
+            plain_action,
+            plain_reach,
+        )
+
+        lines.append(f"  in plain words: {plain_action(descriptor, call)}")
+        lines.append(f"  what it can reach: {plain_reach(descriptor)}")
     if call.arguments:
         lines.append("  arguments:")
         redacted = (

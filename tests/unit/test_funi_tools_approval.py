@@ -152,15 +152,23 @@ def test_stdin_prompter_returns_y_on_y_input() -> None:
     answer = prompter.prompt(_descriptor(), _call())
     assert answer == "y"
     output = stdout.getvalue()
-    assert "tool proposal: search_well" in output
-    assert "approve this call?" in output
+    # E-027: the prompt is the plain-language proposal, not the old
+    # "tool proposal / approve this call?" jargon shape.
+    assert "Ember is asking your permission." in output
+    assert "Your answer (" in output
 
 
 def test_stdin_prompter_returns_always_on_always_input() -> None:
+    # E-027: "always" is a valid answer only when the E-026 gate
+    # would honour a remembered grant — a stated read-only access
+    # class (the old pin used an UNSPECIFIED descriptor, for which
+    # "always" is now counted as a one-time yes; see the E-027
+    # test file).
     stdin = io.StringIO("always\n")
     stdout = io.StringIO()
     prompter = StdinApprovalPrompter(stdin=stdin, stdout=stdout)
-    assert prompter.prompt(_descriptor(), _call()) == "always"
+    descriptor = _descriptor(access=ToolAccess.PRIVATE_READ)
+    assert prompter.prompt(descriptor, _call()) == "always"
 
 
 def test_stdin_prompter_returns_n_on_n_input() -> None:
@@ -202,7 +210,9 @@ def test_stdin_prompter_redacts_marked_arguments_in_display() -> None:
     prompter = StdinApprovalPrompter(stdin=stdin, stdout=stdout)
     prompter.prompt(descriptor, call)
     out = stdout.getvalue()
-    assert "<redacted>" in out
+    # E-027: redacted arguments render as "<hidden …>" in the plain
+    # prompt (the old pin asserted the "<redacted>" marker).
+    assert "<hidden" in out
     assert "super-secret" not in out
 
 

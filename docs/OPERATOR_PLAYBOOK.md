@@ -152,18 +152,49 @@ tools:
 ```
 
 That's it for "I want tools, I'll approve each call". When you run
-`ember chat` you'll see:
+`ember chat` you'll see the proposal twice over: once as a short
+technical record, and once as the question itself, asked in plain
+words (E-027):
 
 ```
 [tool proposal] read_local_file  (call abc12345)
   description: Read a UTF-8 text file from the operator's home directory...
+  in plain words: Read one of your files: /home/you/notes/runes.md.
+  what it can reach: It reads your own information, on this computer only. ...
   arguments:
     path: '/home/you/notes/runes.md'
-approve this call? [y/n/always]
+
+Ember is asking your permission.
+
+What Ember wants to do:
+  Read one of your files: /home/you/notes/runes.md.
+
+What this can and cannot do:
+  It reads your own information, on this computer only. It cannot
+  change or delete anything, and nothing is sent anywhere.
+
+The details Ember was given:
+  path: '/home/you/notes/runes.md'
+
+Your choices:
+  y — Yes — just this once.
+  always — Yes — and don't ask me again about this tool while
+         we're chatting. (Forgotten when the chat ends; it is
+         never forever.)
+  n — No — don't do it.
+Your answer (y/always/n):
 ```
 
-Answer `y` to approve once, `n` to refuse, or `always` to grant
-session-level standing trust to that tool (resets at restart).
+Answer `y` to approve once, or `n` to refuse. Where `always` is
+offered, it means *while we're chatting* — Ember stops asking
+about that tool until you close the chat, and forgets it then; no
+chat answer ever grants anything forever. For actions that leave
+the computer, change things, run something, happen in another
+program, or widen a tool's reach (fetching a private address on
+your home network is the first-party example), `always` is *not*
+offered — the prompt says why, Ember asks every time, and typing
+`always` anyway counts as a yes for that once only, with that
+stated on screen.
 
 **Verification:** `ember --allow-tools chat` always shows tools
 enabled regardless of config (good for one-off testing).

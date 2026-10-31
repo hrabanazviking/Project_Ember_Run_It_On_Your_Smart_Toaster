@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 04:47 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-026 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026
-Next slice: E-027 — Approval shape for normal folks: tool approvals a non-technical user understands (plain words, rememberable scopes)
+Last updated: 2026-10-31 04:48 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-027 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027
+Next slice: E-028 — Streaming + interruption: the companion can be talked over; state stays coherent
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1054,6 +1054,47 @@ Top-level members present (size / file count, working tree excl. .git):
   (The push also carried E-025's record commit 8cfe502, which had
   been banked locally in the prior slice.)
 
+## E-027 — Approval shape for normal folks (DONE, 2026-10-31)
+
+- Shape filed at `docs/architecture/E-027_APPROVAL_SHAPE.md`. Before E-027 the
+  approval experience was two jargon surfaces (Munnr's `[tool proposal]` block +
+  the prompter's own rendering ending `approve this call? [y/n/always]`), and
+  `always` was a quiet lie: offered for every call, but for dangerous/unspecified
+  classes and guarded-argument calls E-026's gate prompts again anyway, so the
+  session grant was silently worthless; and even where honoured, nothing said
+  what "always" spanned.
+- Built: `ember.spark.funi.tools.plain` — the single place turning E-026 shapes
+  into ordinary words. `plain_action` (one sentence from the detail that
+  matters: search_well names the search words, read_local_file the file,
+  fetch_url the address; other tools fall back to their description; redacted
+  arguments never used), `plain_reach` (one pinned plain sentence per access
+  class; the class name never appears), `plain_guarded_warning` (fetch_url's
+  `allow_private_addresses` named as reaching "private addresses on your own
+  home network"). Rememberable scopes: `offered_choices` offers `y` ("just
+  this once") and `n` always, and `always` ONLY when `can_remember()` (exactly
+  the E-026 gate condition), worded truthfully — "while we're chatting …
+  Forgotten when the chat ends; it is never forever". Where not offered,
+  `why_asked_every_time` states the plain per-class reason.
+- Prompter rewired: `StdinApprovalPrompter` writes `render_plain_proposal`
+  (permission ask → what it wants to do → what it can/cannot do → the exact
+  details, redacted as `<hidden …>` → choices with scopes) and accepts only
+  the offered answers; an `always` typed anyway returns `y` WITH the
+  reinterpretation stated on screen ("can't be remembered for this kind of
+  request … yes for this once only") — nothing silently reinterpreted, and
+  chat's `session_added` can now only name gate-honoured tools. EOF → `n` and
+  unknown → refused kept. Munnr's `render_tool_call_proposal` keeps its
+  technical header and gains `in plain words:` / `what it can reach:` lines.
+  Playbook Recipe 3's stale transcript + "session-level standing trust"
+  wording replaced with the real prompt and scope truth. `resolve()` /
+  `resolve_with_answer()` semantics unchanged.
+- Pinned tests updated with attribution in `test_funi_tools_approval.py`
+  (plain prompt strings, `<hidden …>` marker, PRIVATE_READ descriptor for
+  the remembered case). Tests: `test_plain_approval_e027.py` **38 passed**
+  (default env). Slice gate Run B: **746 passed, 6 failed, 13 skipped,
+  1 warning** — 708 E-026 baseline + 38 new; the 6 are the proven
+  environment failures. Run D (whole, extras): **787 passed, 0 failed,
+  19 skipped**, exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1082,4 +1123,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-024 DONE (2026-10-31) — ThoughtForge binding (candidate): MindSpark ThoughtForge bound as Ember's cognition layer above Funi, against TF's own TF-034 freeze (cognition API v1.0.0); CognitionConfig off by default with a stated profile gate (toaster refused outright; phone/pi draft cap 1, laptop 2, per TF-034's by-construction maxima); lazy optional import (zero new core deps — absent package = typed RUNTIME_NOT_INSTALLED, proven in the default env); API-major/drift truthful refusal via API_VERSION + verify_api_surface() (TF-162's rule, Ember side); core custody inside ~/.ember/thoughtforge/ (E-020 tether), tf_config passed through unshadowed, Episodes → TF's own ChatHistory on the frozen history parameter; chat NOT rewired (candidate), no live TF turn claimed (fake core shaped from the freeze, TF-161 pattern), no budgets claimed; 23 new tests; gate Run B 639 passed / 6 proven-env failed / 13 skipped, Run D 680 passed / 0 failed; filed at docs/architecture/E-024_THOUGHTFORGE_BINDING.md.
 - E-025 DONE (2026-10-31) — persona core: validated `Persona` schema (slug id never a path, field ceilings, no prompt-line smuggling via line breaks/control chars), strict per-persona JSON loading under `<config_root>/personas/` (typed refusals, filename/id agreement, no silent swap), resolution explicit → default.json → identity-as-default-persona, `PersonasConfig.active`; per-persona memory separation via `Episode.persona_id` + exact-match filtering with the prompt assembler as the wall (adversarial foreign-episode fixture never reaches the prompt), chat sessions resolve/filter/tag by persona, and the `load_identity` non-object-JSON AttributeError crash fixed in scope; honest limit: Brunnr adapters do not yet persist the tag (fails closed — named personae have no cross-restart history yet; migration belongs to Part V/E-080); 38 new tests; gate Run B 677 passed / 6 proven-env failed / 13 skipped, Run D 718 passed / 0 failed; filed at docs/architecture/E-025_PERSONA_CORE.md.
 - E-026 DONE (2026-10-31) — tools discipline: every descriptor states its permission shape (`ToolAccess` + `guarded_arguments`; unspecified = gated dangerous), the live-registry inventory pinned by test (search_well private_read/standing, read_local_file private_read/per_call, fetch_url network/per_call with guarded `allow_private_addresses`; no first-party write/execute/external tool), the approval gate in resolve() (dangerous/unspecified access and truthy guarded arguments always prompt — standing/session/standing_trust powerless; MCP tools state external), and two defects fixed in scope (standing_trust silently overrode a config `forbidden`; the model-supplied private-address escape hatch could be blanket-waived); pinned approval/Phase-16 tests updated with attribution; 31 new tests; gate Run B 708 passed / 6 proven-env failed / 13 skipped, Run D 749 passed / 0 failed; filed at docs/architecture/E-026_TOOLS_DISCIPLINE.md.
-- E-027 next — Approval shape for normal folks: tool approvals a non-technical user understands (plain words, rememberable scopes).
+- E-027 DONE (2026-10-31) — approval shape for normal folks: `ember.spark.funi.tools.plain` turns E-026's permission shapes into ordinary words (plain action from the detail that matters, plain reach per access class, fetch_url's private-address widening named as a home-network reach); the rememberable scopes are stated truthfully — `always` offered only when the E-026 gate would honour it, worded "while we're chatting, forgotten when the chat ends, never forever", with a plain per-class reason where it is not offered; the prompter accepts only offered answers and counts an unoffered `always` as a one-time yes with that stated on screen (the old silently-worthless session grant is gone); Munnr's proposal renderer gains plain lines; Playbook Recipe 3 transcript corrected; pinned approval tests updated with attribution; 38 new tests; gate Run B 746 passed / 6 proven-env failed / 13 skipped, Run D 787 passed / 0 failed; filed at docs/architecture/E-027_APPROVAL_SHAPE.md.
+- E-028 next — Streaming + interruption: the companion can be talked over; state stays coherent.
