@@ -230,11 +230,11 @@ the promise.
   the host's, not Ember's.
 - **The other members.** This book is the core's book.
   Every member's cost, per profile, is the member
-  budget table — E-057, the next-but-one slice of this
-  part. (One member was already weighed for shape:
-  Verdandi's two programs are ~20 MiB-class processes
-  on the VM — nerve hub 21.9 MiB live, heartbeat
-  18.4 MiB import-level, E-041.)
+  budget table — §7 below (E-057). (One member was
+  already weighed for shape: Verdandi's two programs
+  are ~20 MiB-class processes on the VM — nerve hub
+  21.9 MiB live, heartbeat 18.4 MiB import-level,
+  E-041.)
 - **Documents a person feeds Ember.** Ingested files
   are bounded by the ingest caps, not by the storage
   ceiling, which prices conversation.
@@ -254,6 +254,58 @@ NOT PROVEN, named plainly:
   is not yet measured.
 - **A whole companion on 512 MiB.** See §5: graded
   NOT CASHED by measurement, not by opinion.
+
+## 7. The members' costs (E-057)
+
+The core is not the whole monorepo. Every member that
+can run, weighed the same way for each: its **tracked
+size** (every tracked file in its directory, summed —
+the checkout weight), the **smallest profile whose
+install ceiling covers that size**, and an
+**import-level RAM floor** (a fresh process importing
+the member's top package on the VM; the bare
+interpreter's own floor by the same method is
+10.1 MiB, so a floor is a floor, never a running cost —
+the core's running idle is 40.7 MiB, §2, and Verdandi's
+running hub is 21.9 MiB live, E-041).
+
+| Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
+|---|---|---|---|---|
+| `src/` (ember core) | 129 | 814,264 B | toaster | 12.0 MiB |
+| `Verdandi/` | 179 | 16,817,105 B | none | 12.6 MiB |
+| `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
+| `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
+| `mimir-well/` | 58 | 607,675 B | toaster | 20.8 MiB |
+| `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
+| `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
+| `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
+| `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
+| `Open-VTT/` | 209 | 6,768,730 B | pi | NOT MEASURED |
+| `CloakBrowser/` | 112 | 6,420,853 B | pi | NOT MEASURED |
+| `cleasby-vigfusson-old-norse-dict/` | 170 | 24,221,782 B | none | NOT MEASURED |
+
+In plain words: the twelve running members weigh
+131,211,064 bytes together, and three of them —
+mempalace, the dictionary, and Verdandi (which misses
+even the laptop's ceiling by 39,889 bytes) — fit no
+profile's install ceiling at all. Their weight is data,
+not code: benchmark corpora, a test snapshot, loose
+images. And none of it is charged to a core user: the
+members are excluded from the core's distribution
+(E-043) and never installed with it. A member's cost is
+paid only by carrying the whole monorepo or running
+that member from a checkout. The rest of the tracked
+tree (documents, root images, assets, tests, scaffolding
+— roughly 83 MiB) is checkout-only estate, never
+installed or run with the companion.
+
+NOT MEASURED, named plainly: Open-VTT's RAM (its Godot
+engine is absent here), the dictionary's RAM (a Node
+app; its dependencies are not installed here), and
+CloakBrowser's RAM — its import needs dependencies this
+bare environment lacks, and its real weight is a
+proprietary browser binary that is not in this tree at
+all; the tracked size above is its wrapper only.
 
 ## Appendix — the measured anchors, by their code names
 
