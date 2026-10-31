@@ -49,6 +49,17 @@ funi:
   # false: each reply arrives whole. Leave true unless your
   # terminal struggles with streams or you pipe output to a log.
   streaming: true
+  # Determinism mode for tests and benchmarks (E-036). OFF for
+  # normal conversation. When true, every generation request
+  # Ember sends carries the fixed seed below and a temperature
+  # of 0.0, so the same prompt, model, and remembered context
+  # can be re-run and compared. Your temperature settings below
+  # are not changed — they return when this is switched off.
+  # One run only: `ember --deterministic chat`, or pick the
+  # seed for one run with `ember --seed 7 chat`.
+  determinism:
+    enabled: false
+    seed: 42
   ollama:
     base_url: "http://localhost:11434"
     model: "phi3:mini"

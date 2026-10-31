@@ -55,6 +55,29 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable tools for this invocation (overrides config.tools.enabled).",
     )
+    # E-036 — per-invocation determinism mode for tests/benchmarks.
+    # Either flag turns the mode on for this run only; --seed also
+    # chooses the seed. Neither is ever saved to the config file.
+    parser.add_argument(
+        "--deterministic",
+        action="store_true",
+        help=(
+            "Determinism mode for this invocation (E-036): every "
+            "generation request carries a fixed seed and temperature "
+            "0.0, so the same prompt can be re-run and compared. "
+            "Overrides config funi.determinism.enabled."
+        ),
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help=(
+            "Seed for determinism mode (E-036); giving a seed turns "
+            "the mode on for this invocation. Default seed is 42 "
+            "(or funi.determinism.seed from the config file)."
+        ),
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     chat_p = sub.add_parser("chat", help="Open an interactive conversation.")
@@ -153,6 +176,7 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
         return 1
 
     config = _apply_tool_overrides(config, args)
+    config = _apply_determinism_override(config, args)
 
     # Wire up logging from config (Batch J — previously LoggingConfig
     # was declared in the schema but no code read it).
@@ -181,6 +205,7 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
             )
             return 1
         config = _apply_tool_overrides(config, args)
+        config = _apply_determinism_override(config, args)
 
     if args.command == "chat":
         return chat.run(
@@ -258,6 +283,31 @@ def _apply_tool_overrides(
     enabled = bool(args.allow_tools)
     new_tools = replace(config.tools, enabled=enabled)
     return replace(config, tools=new_tools)
+
+
+def _apply_determinism_override(
+    config,  # type: ignore[no-untyped-def]
+    args: argparse.Namespace,
+):
+    """Apply the per-invocation ``--deterministic`` / ``--seed`` flags (E-036).
+
+    Returns the same ``EmberConfig`` when neither flag was given.
+    ``--seed`` implies the mode is on for this run; without it the
+    configured seed (or the default 42) is used. The config file
+    is never written — the override lives for one invocation,
+    like ``--allow-tools``.
+    """
+    from dataclasses import replace  # noqa: PLC0415 — narrowly scoped
+
+    seed = getattr(args, "seed", None)
+    if not getattr(args, "deterministic", False) and seed is None:
+        return config
+    new_det = replace(
+        config.funi.determinism,
+        enabled=True,
+        seed=config.funi.determinism.seed if seed is None else seed,
+    )
+    return replace(config, funi=replace(config.funi, determinism=new_det))
 
 
 __all__ = ["main"]

@@ -143,9 +143,38 @@ class FuniAesirConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class DeterminismConfig:
+    """Determinism mode for tests and benchmarks (E-036).
+
+    OFF by default: the companion samples at the operator's
+    configured temperature and no seed is sent to the backend.
+
+    When ``enabled`` is True, every generation request Ember
+    sends carries the SAME fixed ``seed`` and a temperature of
+    0.0 (greedy decoding) — the effective options computed by
+    :mod:`ember.spark.funi.determinism`, never a mutation of the
+    operator's configured temperature, which stays in the config
+    and returns when the mode is switched off. Same config +
+    same model + same prompt + same retrieved context should
+    then produce the same reply, as far as the backend honours
+    its own seed contract (see the E-036 doc for the honest
+    limits: timestamps, generated ids, and a backend's internal
+    nondeterminism are not Ember's to command).
+
+    ``seed`` must be a non-negative integer; a negative seed is
+    refused at backend open time as CONFIG_INVALID, never
+    silently clamped or dropped.
+    """
+
+    enabled: bool = False
+    seed: int = 42
+
+
+@dataclass(frozen=True, slots=True)
 class FuniConfig:
     runtime: FuniRuntime = FuniRuntime.OLLAMA
     streaming: bool = True
+    determinism: DeterminismConfig = field(default_factory=DeterminismConfig)
     """Whether ``ember chat`` consumes Funi via streaming
     (incremental) or batched (whole reply at once). Default True per
     ADR 0009. Operators on terminals that struggle with byte streams,
@@ -547,6 +576,7 @@ __all__ = [
     "CognitionConfig",
     "ConversationConfig",
     "ConversationProfile",
+    "DeterminismConfig",
     "EmbeddingConfig",
     "EmberConfig",
     "FuniAesirConfig",

@@ -419,6 +419,11 @@ class SqliteVecBrunnr:
                     char_end=row[5],
                 )
             )
+        # E-036: equal distances tie-break on chunk_id. This must
+        # happen here, in Python — vec0 KNN queries allow ONLY a
+        # single 'ORDER BY distance' clause (proven by the E-036
+        # gate run: a second SQL key raises OperationalError).
+        hits.sort(key=lambda h: (-h.score, h.chunk_id))
         return hits
 
     def text_search(
@@ -438,7 +443,7 @@ class SqliteVecBrunnr:
             JOIN chunks    c ON c.id = fts.rowid
             JOIN documents d ON d.id = c.document_id
             WHERE chunk_fts MATCH ?
-            ORDER BY fts.rank
+            ORDER BY fts.rank, c.id
             LIMIT ?
             """,
             (safe_query, k),
@@ -481,7 +486,10 @@ class SqliteVecBrunnr:
             rrf[hit.chunk_id] = rrf.get(hit.chunk_id, 0.0) + 1.0 / (_RRF_K + rank)
             order.setdefault(hit.chunk_id, hit)
 
-        ranked_ids = sorted(rrf, key=lambda cid: rrf[cid], reverse=True)[:k]
+        # E-036: ties break on chunk_id, never on dict insertion
+        # order — equal RRF scores must rank identically on every
+        # run, whatever order the two searches returned them in.
+        ranked_ids = sorted(rrf, key=lambda cid: (-rrf[cid], cid))[:k]
         return [
             RetrievalHit(
                 chunk_id=order[cid].chunk_id,

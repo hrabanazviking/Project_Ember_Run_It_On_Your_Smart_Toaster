@@ -584,7 +584,7 @@ class PgVectorBrunnr:
                     FROM {self._qualified('chunks')} c
                     JOIN {self._qualified('documents')} d ON d.id = c.document_id
                     WHERE c.embedding IS NOT NULL
-                    ORDER BY c.embedding <=> %s::vector
+                    ORDER BY c.embedding <=> %s::vector, c.id
                     LIMIT %s
                     """,
                     (list(qvec), list(qvec), int(k)),
@@ -640,7 +640,7 @@ class PgVectorBrunnr:
                     JOIN {self._qualified('documents')} d ON d.id = c.document_id,
                          plainto_tsquery('english', %s) AS q
                     WHERE c.tsv @@ q
-                    ORDER BY ts_rank(c.tsv, q) DESC
+                    ORDER BY ts_rank(c.tsv, q) DESC, c.id
                     LIMIT %s
                     """,
                     (cleaned, int(k)),
@@ -682,7 +682,9 @@ class PgVectorBrunnr:
             rrf[hit.chunk_id] = rrf.get(hit.chunk_id, 0.0) + 1.0 / (_RRF_K + rank)
             order.setdefault(hit.chunk_id, hit)
 
-        ranked_ids = sorted(rrf, key=lambda cid: rrf[cid], reverse=True)[:k]
+        # E-036: ties break on chunk_id, never on dict insertion
+        # order (see the sqlite_vec adapter's hybrid_search).
+        ranked_ids = sorted(rrf, key=lambda cid: (-rrf[cid], cid))[:k]
         return [
             RetrievalHit(
                 chunk_id=order[cid].chunk_id,

@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 06:47 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-035 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035
-Next slice: E-036 — Determinism mode for tests/benchmarks (seeded)
+Last updated: 2026-10-31 07:03 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-036 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036
+Next slice: E-037 — Core API freeze v1 (library shape)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1455,6 +1455,56 @@ Top-level members present (size / file count, working tree excl. .git):
   (remote head = f7dce11e86f6842ecfa7e3845981b250a80343b9 = local
   HEAD at push time).
 
+## E-036 — Determinism mode for tests/benchmarks (DONE, 2026-10-31)
+
+- Filed at `docs/architecture/E-036_DETERMINISM_MODE.md`. Before E-036
+  generation requests carried conversational sampling (temperature
+  0.7) and **no seed at all** — the same prompt could legitimately
+  answer differently every run, and there was no one-run way to ask
+  otherwise. Built: `DeterminismConfig` under `FuniConfig`
+  (`enabled` default False, `seed` default 42, documented in
+  `ember.example.yaml`, E-033 tree-walk green) judged in one place,
+  `ember.spark.funi.determinism` (`effective_options` /
+  `determinism_error`). OFF: effective options are the configured
+  ones copied, **no seed key in any request** (wire-pinned on both
+  backends — a normal request is byte-identical to pre-E-036). ON:
+  every request carries the fixed seed + temperature 0.0 (greedy);
+  the configured temperature is never mutated. Ollama gets the
+  seed as its `seed` generation option; Aesir as the native
+  route's top-level `seed` field (named in its API matrix v1),
+  complete + streaming. CLI: `ember --deterministic` /
+  `ember --seed N` (seed implies the mode; one run only, never
+  saved — the `--allow-tools` overlay shape). A negative or
+  non-integer seed in an enabled mode is refused at open as
+  typed CONFIG_INVALID before any request (Ollama does not even
+  probe; Aesir judges the seed before the key file is read); a
+  disabled mode's seed is inert.
+- Retrieval determinism, always on (found + FIXED in scope):
+  hybrid RRF broke score ties by dict insertion order in BOTH
+  Brunnr adapters and the SQL rankings named no tie-break —
+  ties now break on chunk_id everywhere (RRF `(-score, cid)`;
+  SQL secondary id keys; sqlite_vec vector hits re-sorted in
+  Python because **vec0 KNN allows only a single
+  `ORDER BY distance`** — the first Run D gate proved it with
+  `OperationalError` in 5 tests, fixed and regression-pinned
+  the same slice; the KNN k-boundary tie residue is stated
+  honestly in the doc). The core uses no `random` module
+  anywhere (grep-proven); chunker/summariser are pure.
+- Honest limits (in the doc): the mode makes Ember's *requests*
+  reproducible — byte-identical answers are the backend's seed
+  contract, not Ember's promise; no live model was run (mocked
+  transports, E-022/E-023 pattern; live seeded-repeat proof
+  belongs to Part III on a named device); timestamps and
+  generated ids stay wall-clock/random by design; ThoughtForge
+  is not covered (its frozen `think()` takes no seed).
+- Tests: `test_determinism_mode_e036.py` **19 passed, 2 skipped**
+  (default env; skips = the sqlite_vec fixtures), **21 passed**
+  with extras. Slice gate Run B: **870 passed, 6 failed,
+  17 skipped, 1 warning** — 851 E-035 baseline + 19 new; the 6
+  are the proven environment failures. Run D (whole, extras):
+  **918 passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (897 baseline + 21 new). No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1492,4 +1542,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-033 DONE (2026-10-31) — config for humans: one surface stated + enforced (unknown/fossil keys refused by name at startup), `.env.example` Runa fossil rewritten to the two live env vars (docket 55 CLOSED), template now documents every EmberConfig field (conversation/mcp/streaming/aesir timeout_ms/cognition keys were missing; tree-walk test guards it), storage/sources excerpts state they are not config files (docket 56 core half closed, member half stays E-037), defaults audited unchanged; 6 new tests; gate Run B 796 passed / 6 proven-env failed / 15 skipped, Run D 842 passed / 0 failed; filed at docs/architecture/E-033_CONFIG_FOR_HUMANS.md.
 - E-034 DONE (2026-10-31) — logging a friend can read: `ember.diary` keeps a plain-words diary beside the technical trace (daily Markdown files under `<config_root>/diary/`, O(1) O_APPEND+fsync writes, never raises — chat warns once if writing fails); chat records session start/stop, Well reachability, drain + history outcomes, per-turn outcome (answered / ungrounded / interrupted / error / truncated) and save outcome, with NO conversation content by construction (leak-pinned by test); `logging.diary` switch (default on, template-documented); `ember diary [--days N]` reader; tool rounds deliberately left to the audit log (stated limit); 13 new tests; gate Run B 809 passed / 6 proven-env failed / 15 skipped, Run D 855 passed / 0 failed; filed at docs/architecture/E-034_DIARY_LOG.md.
 - E-035 DONE (2026-10-31) — multi-conversation isolation: `Episode.conversation_id` (default `"default"`, slug rules) + `ember.spark.conversation` (resolution explicit > config `conversation.active` > default, invalid id refused by name — never a silent fall-back; exact-match filter; tagging); chat loads persona → conversation → window (a foreign talk can neither ride verbatim nor leak through the summary), prompt wall composes persona × conversation, both persistence roads tag Episodes; `ember chat --conversation` flag; pending journal persists the tag (pre-E-035 files load as default); honest limit: adapters still persist neither tag, so named-conversation cross-restart history awaits Part V (E-080 family); retrieval grounding shared by design; 42 new tests; gate Run B 851 passed / 6 proven-env failed / 15 skipped, Run D 897 passed / 0 failed; filed at docs/architecture/E-035_MULTI_CONVERSATION_ISOLATION.md.
+- E-036 DONE (2026-10-31) — determinism mode (seeded): `funi.determinism` (off by default, seed 42) + `ember.spark.funi.determinism` — off = no seed key anywhere (wire-pinned, byte-identical requests), on = fixed seed + temperature 0.0 effective (configured temperature never mutated) via Ollama's `seed` option and Aesir's native `seed` field; CLI `--deterministic` / `--seed N` one-run overlay; bad seed refused CONFIG_INVALID at open before any request; retrieval ties now break on chunk_id in both adapters (RRF + SQL; sqlite_vec vector ties re-sorted in Python — vec0 KNN forbids a second ORDER BY key, proven by the first Run D gate's 5 failures and fixed + regression-pinned in-slice); honest limits: backend seed contract owns byte-identical answers (no live model run), timestamps/ids stay non-deterministic by design, ThoughtForge uncovered; 21 new tests (19 passed + 2 skipped default); gate Run B 870 passed / 6 proven-env failed / 17 skipped, Run D 918 passed / 0 failed; filed at docs/architecture/E-036_DETERMINISM_MODE.md.
 - E-036 next — Determinism mode for tests/benchmarks (seeded).
