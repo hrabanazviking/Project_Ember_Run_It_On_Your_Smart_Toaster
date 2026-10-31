@@ -64,7 +64,7 @@ here.
 | Store | A palace *directory* (default `~/.mempalace/palace`): ChromaDB collections (drawers + closets) over `chroma.sqlite3` + HNSW segments, a separate SQLite knowledge graph, `~/.mempalace/identity.txt` | One SQLite *file* (default `~/.mimir_well/mimir_well.db`): 11 tables + 3 FTS5 virtual tables (schema.py) |
 | Entry points | CLIs `mempalace` + `mempalace-mcp`; `python -m mempalace` | Library only (`from mimir_well import RunaMemory`); Eye via `eye/__main__.py` / `start-eye.sh` |
 | Test files | 67 `tests/test_*.py` (+ benchmarks/conftest; E-002's strict count 76 incl. all test-shaped files) | 28 `tests/test_*.py` |
-| Suite this slice | **1669 passed, 90 failed, 39 errors, 1 skipped, 106 deselected** (§6) | **350 passed, 6 failed** (§6) |
+| Suite this slice | **1712 passed, 14 failed, 1 skipped, 106 deselected** (§6) | **350 passed, 6 failed** (§6) |
 
 ## 2. What each one is, from its code
 
@@ -286,7 +286,7 @@ every other member (this slice):
   calls mempalace "(README is scam-warning only —
   content unclear)… Likely abandoned or archival."
   Measured reality (§1–§2, §6: v3.3.5, 25k lines,
-  1,669 passing tests this slice) contradicts
+  1,712 passing tests this slice) contradicts
   "abandoned" outright. The inventory predates the
   import's measurement; its *wired = no* fact stands,
   its characterisation does not. (→ docket 52.)
@@ -319,19 +319,37 @@ environment signature), VM profile.
   it, and it is corrected here by the follow-up
   correction commit the same day; the verified
   count is the one in this bullet.
-- **mempalace: 1669 passed, 90 failed, 1 skipped,
-  39 errors, 106 deselected** (293.0s; benchmark /
+- **mempalace: 1712 passed, 14 failed, 1 skipped,
+  106 deselected, 0 errors** (1093.7s; benchmark /
   slow / stress markers deselected by its own
-  config). Failure and error totals are **identical
-  to E-005** (90 / 39 — the proven environment bulk
-  plus the STALE `.claude-plugin/` family, item 12,
-  plus E-005's small unresolved residue); passed is
-  **+72 vs E-005's 1597** with the same 106
-  deselected — a collection delta this slice records
-  as UNRESOLVED rather than explaining away (runner
-  version and proxy-clean env from the start are the
-  candidate causes; E-077 re-measures in depth).
-  (→ docket 54.)
+  config; output captured to a log file and the
+  count read from that file — see the correction
+  note below). The 14 failures are exactly two
+  families: **10× `test_claude_plugin_hook_wrappers`**
+  (the STALE `.claude-plugin/` family, docket
+  item 12) and **4× `test_palace_locks`**. A second
+  clean run in the same shape scored 1713 passed /
+  13 failed / 0 errors — the two runs agree within
+  one flaky lock test, so the suite's true shape in
+  a clean environment is ~1712 passed / ~14 failed /
+  0 errors. Against E-005 (1597 / 90 / 39) this
+  proves E-005's failure/error bulk was heavily
+  environment-shaped: this slice's runs kept
+  `TMPDIR` off the VM's 512 MB `/tmp` (on the
+  workspace overlay) — two earlier attempts in this
+  very slice died or degraded on a full `/tmp`
+  (`INTERNALERROR: No space left on device`), which
+  is the same class of pressure that inflates
+  chromadb-fixture failures into errors. **Second
+  correction note:** the version of this doc first
+  banked with this slice carried a mempalace figure
+  of "1669 passed, 90 failed, 39 errors" — like the
+  mimir figure above, it came from a background-run
+  summary that no attributable run in this slice
+  produced, and it is corrected here; the verified
+  counts are the ones in this bullet, read from the
+  run's own log file (`~/workspace/.verify-tmp/
+  ember-e012/mempalace-filecheck.log`). (→ docket 54.)
 - Default-env shape unchanged from E-005: mempalace
   cannot even collect without chromadb (its conftest
   imports it unguarded — a *declared core* dep, so a
@@ -388,7 +406,7 @@ undecided and unbuilt; assigned to Part V
 (52) `docs/UNWIRED_INVENTORY.md`'s mempalace line
 ("content unclear… likely abandoned or archival") is
 proven stale by this census (v3.3.5, actively
-testable, 1,669 passing). The wired = no fact is
+testable, 1,712 passing). The wired = no fact is
 correct and stays; the characterisation must be
 corrected where the inventory is next truthfully
 updated (E-018 gate / E-091 residue), never silently.
@@ -401,13 +419,20 @@ failed (`sqlite3.OperationalError`). No code has
 changed; machine-coupling stands as the
 classification. Stays assigned as item 10 was
 (Part V / member hygiene at E-077's mapping).
-(54) mempalace collection delta: +72 passed vs
-E-005 at identical failure/error/deselection totals
-(90 / 39 / 106). Cause unresolved in this slice
-(runner version vs from-the-start cleaned proxy env
-are candidates). E-077 re-measures both suites in
-depth and either explains the delta or carries it
-as a standing uncertainty in Part V's evidence.
+(54) mempalace suite counts are environment-volatile
+at a scale Part V must design for: E-005 measured
+1597 passed / 90 failed / 39 errors; this slice,
+with TMPDIR on the workspace overlay and `/tmp`
+kept clear, measures 1712 / 14 / 0 twice (within
+one flaky lock test), the residue being item 12's
+STALE family (10) + `test_palace_locks` (4). The
+bulk of E-005's 90F/39E is thereby shown to be
+environment-shaped (disk pressure on the 512 MB
+`/tmp` is the proven mechanism in this slice's own
+aborted attempts), but the exact E-005 mix is not
+retro-provable. E-077's harness must pin TMPDIR,
+disk headroom, and runner version, or its numbers
+will move the same way.
 
 ## Slice gate
 
