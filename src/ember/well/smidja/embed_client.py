@@ -12,6 +12,11 @@ E-051 adds an optional patience hook between batches: bulk
 embedding is background work, and on a small shared machine it
 yields (``ember.etiquette``) before piling another batch onto a
 busy or hot host.
+
+E-053 adds an optional battery hook at the same point: on a
+battery-shaped host the same bulk work duty-cycles
+(``ember.battery``) — bursts of batches with single blocking
+rests between — instead of draining flat-out.
 """
 
 from __future__ import annotations
@@ -61,6 +66,7 @@ class OllamaEmbedClient:
         backoff_base_s: float = 1.0,
         backoff_max_s: float = 30.0,
         patience_hook: Callable[[], object] | None = None,
+        battery_hook: Callable[[], object] | None = None,
     ) -> None:
         self._config = config or EmbeddingConfig()
         self._timeout_s = timeout_s
@@ -74,6 +80,13 @@ class OllamaEmbedClient:
         # batch, so a single-batch (foreground) embed never
         # waits. Default None: no etiquette, as before.
         self._patience_hook = patience_hook
+        # E-053: battery-shaped duty cycling. The hook (a
+        # DutyCycler's between_batches in the ingest wiring)
+        # is consulted at the same between-batches point —
+        # never before the first batch, so a single-batch
+        # (foreground) embed is never rested either.
+        # Default None: no battery shaping, as before.
+        self._battery_hook = battery_hook
 
     def embed(self, texts: Sequence[str]) -> list[tuple[float, ...] | None]:
         """Embed ``texts`` and return one vector per input.
@@ -87,6 +100,8 @@ class OllamaEmbedClient:
         for index, batch in enumerate(self._batched(texts)):
             if index > 0 and self._patience_hook is not None:
                 self._patience_hook()
+            if index > 0 and self._battery_hook is not None:
+                self._battery_hook()
             result = self._embed_batch(list(batch))
             out.extend(result.vectors)
         return out

@@ -339,6 +339,49 @@ MEASURED_UPDATE_INSTALLED_BYTES = 775_675
 MEASURED_UPDATE_APPLY_PEAK_BYTES = 1_844_737
 
 
+# --------------------------------------------------------------------- #
+# Measured anchors (battery drain shape — E-053)                        #
+# --------------------------------------------------------------------- #
+
+#: **Battery-shaped behaviour, measured as its cause (E-053).**
+#: No battery device in the house can run Ember today (the
+#: paired phone was offline at E-048 and the tree holds no
+#: phone runtime), so a real battery's drain — percent per
+#: hour — is NOT PROVEN and is claimed nowhere. What this
+#: slice measured on the campaign VM is the drain's *cause*:
+#: the CPU duty of bulk background work, shaped and
+#: unshaped, run back to back under the same (heavy,
+#: sibling-campaign) contention. The probe's unit of work
+#: is 0.25 s of process CPU; the job shape is the embedding
+#: client's (the duty hook consulted between batches only);
+#: rests are the real ``time.sleep``. Method and both runs
+#: live in ``docs/architecture/E-053_BATTERY_BEHAVIOUR.md``.
+#:
+#: Process CPU spent across one single blocking 5 s rest
+#: (the CONSERVE rest): **0.000 s** (second run: 0.0001 s) —
+#: the no-busy-wait fact, measured: a rest is one blocking
+#: sleep, and the CPU is not woken to poll the clock.
+MEASURED_BATTERY_REST_CPU_S = 0.0
+
+#: CPU-over-wall fraction of an unshaped (FULL) background
+#: job, 16 work units: 4.001 s of CPU over 9.719 s of wall
+#: — **0.4117**. Below 1.0 because the contended VM
+#: deschedules the process, neighbours included; the
+#: fraction's use is comparative, against the CONSERVE run
+#: beside it, not as a claim about any quiet machine.
+MEASURED_DUTY_FULL_CPU_FRACTION = 0.4117
+
+#: CPU-over-wall fraction of the same job duty-cycled at
+#: CONSERVE (40% charge shape: bursts of 4 batches, one
+#: 5 s rest between), 12 work units: 3.001 s of CPU over
+#: 15.921 s of wall — **0.1885**, less than half the FULL
+#: run's fraction under the same contention, with exactly
+#: 2 rests totalling 10.0 s. Counted over work + rest only
+#: (contention excluded), CONSERVE's imposed duty is
+#: 3.001 / 13.001 ≈ 23% against FULL's 100%.
+MEASURED_DUTY_CONSERVE_CPU_FRACTION = 0.1885
+
+
 def storage_bytes_per_turn() -> int:
     """The on-disk cost of one ordinary turn, in bytes.
 
@@ -524,7 +567,10 @@ def measured_shape_fits(profile: ConversationProfile) -> tuple[str, ...]:
 
 __all__ = [
     "DIARY_BYTES_PER_TURN",
+    "MEASURED_BATTERY_REST_CPU_S",
     "MEASURED_COLD_START_FIRST_WORD_S",
+    "MEASURED_DUTY_CONSERVE_CPU_FRACTION",
+    "MEASURED_DUTY_FULL_CPU_FRACTION",
     "MEASURED_ESSAY_BYTES_PER_EPISODE",
     "MEASURED_IDLE_RAM_MIB",
     "MEASURED_INSTALL_BYTES",
