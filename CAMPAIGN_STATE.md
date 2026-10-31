@@ -2015,7 +2015,11 @@ Top-level members present (size / file count, working tree excl. .git):
 - Slice gate: Run B **962 passed, 6 failed, 25 skipped, 1 warning**
   (957 E-047 baseline + 5 new; the 6 are the proven environment
   failures, identical set). Run D **1019 passed, 0 failed, 19 skipped,
-  1 warning**, exit 0 (1014 + 5 new — reconciles exactly).
+  1 warning**, exit 0 (1014 + 5 new — reconciles exactly). Pushed under
+  Volmarr's 2026-10-31 standing go-ahead: banking commit 96fb9a2 pushed
+  after fetch + ancestry check — remote moved 632a0a0 → 96fb9a2, verified
+  via ls-remote (remote head =
+  96fb9a2ae7492356321a57fa0dd707cc028446a9 = local HEAD at push time).
 
 ## Slice ledger
 
