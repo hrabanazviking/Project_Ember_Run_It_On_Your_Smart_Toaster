@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 23:44 EDT
+Last updated: 2026-10-30 23:49 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007
-Next slice: E-008 — The codex census
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008
+Next slice: E-009 — The Verdandi concordance
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -253,6 +253,37 @@ Top-level members present (size / file count, working tree excl. .git):
   **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
   Doc-only slice, no code touched, no README touched, no push.
 
+## E-008 — The codex census (DONE, 2026-10-30)
+
+- Census filed at `docs/audit/E-008_CODEX_CENSUS.md`: the five elder
+  TASK_*_CODEX commissions read in full; each promised corpus counted in
+  the tree file-by-file, by layer, with word counts (raw inventory in
+  `~/workspace/.verify-tmp/ember-e008/`); closing artefacts checked.
+- Headline: **four codices are DONE-in-fact** — Hermes 50 content + 8 meta
+  = 58 total (140,519 content words), Chatdoll 63 + 6 = 69 (exactly as
+  promised; 224,436 words), SAP 77 + 6 = 83 (content exact vs its
+  MANIFEST; 201,292 words), Waifu 15 + 6 = 21 (exactly as promised;
+  47,277 words). Every content doc in all four carries its promised
+  `## What This Means for Ember` closer; none falls under its word floor
+  (35 run over their ceilings — over-length, not absence); each corpus is
+  closed by its Scribe meta pass (INDEX / READING_ORDER /
+  CROSS_AGENT_NOTES present) and its named synthesis prizes exist
+  (Hermes 65/66, Chatdoll triangulation 60, SAP 67/68/69, Waifu 60/61).
+- **Ragnarok is PARTIAL — scaffold only, content ABSENT:** 3 of 6 meta
+  files, 0 of 46 promised content docs, no INDEX; its only commit is the
+  2026-05-25 scaffold (a6cbd81) — no authoring wave ever followed. E-165
+  must reconcile an unexecuted commission; authoring/retiring it is
+  Volmarr's word.
+- Cross-cutting: all five TASK status lines are stale ("Authoring /
+  pending dispatch" over four completed corpora); sibling citations mix
+  content/total counts and two match neither (SAP cited "84", Waifu
+  "22"); no codex corpus is referenced anywhere in `src/` — proposals
+  have no in-code consumer yet (Part X's gap). New docket items 26–30
+  for E-016.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
+  Doc-only slice, no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -262,4 +293,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-005 DONE (2026-10-30) — fresh baseline II: per-member truth table; seidr green, bulk of failures proven environment (proxy-env httpx signature), 8 new docket items (machine-coupled tests family), filed at docs/audit/E-005_FRESH_BASELINE_II.md.
 - E-006 DONE (2026-10-30) — boot census: Verdandi hub + Mímir's Eye proven LIVE, seidr boots+computes bare, ember diagnostics crash bare on the sqlite_vec default backend, astrology/dictionary/Open-VTT cannot boot here for named reasons, 5 new docket items (13–17), filed at docs/audit/E-006_BOOT_CENSUS.md.
 - E-007 DONE (2026-10-30) — dependency & licence audit: estate permissive + intact (11 MIT verified, astrology Apache-2.0, no copyleft in tree), CloakBrowser binary licence is proprietary (no redistribution/bundling without OEM — constraint, not violation), 4 declaration-vs-reality gaps + metadata/lockfile gaps, 8 new docket items (18–25), filed at docs/audit/E-007_DEPENDENCY_LICENCE_AUDIT.md.
-- E-008 next — The codex census.
+- E-008 DONE (2026-10-30) — the codex census: four elder codices DONE-in-fact (Hermes 58 total, Chatdoll 69, SAP 83, Waifu 21 — every content doc present with its Ember closer, none under its word floor), Ragnarok scaffold-only with 0/46 content docs, all five TASK status lines stale, no codex referenced in src/, 5 new docket items (26–30), filed at docs/audit/E-008_CODEX_CENSUS.md.
+- E-009 next — The Verdandi concordance.
