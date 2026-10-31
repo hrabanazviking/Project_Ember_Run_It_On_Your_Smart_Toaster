@@ -2781,3 +2781,9 @@ Top-level members present (size / file count, working tree excl. .git):
   Logs in `~/workspace/.verify-tmp/ember-e065/gate/`. No README touched.
 - E-066 next — nerve health: a stuck/dead nerve is detected and reported;
   the hub degrades honestly.
+- E-065 push: banking commit 06aff9b pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was a2e729c, an
+  ancestor; the push also carried E-064's push-record commit 9c75234 and
+  the tick's IN PROGRESS marker 1ad8f3a) — remote moved a2e729c → 06aff9b,
+  verified via ls-remote (remote head =
+  06aff9b18c9f4635cf8d9a691350b84fcb6735d3 = local HEAD at push time).
