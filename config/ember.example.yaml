@@ -61,6 +61,28 @@ funi:
   #   max_tokens: 256
 
 # ---------------------------------------------------------------------------
+# Cognition — optional ThoughtForge layer (E-024, candidate)
+# MindSpark ThoughtForge can sit above Funi as the companion's
+# cognition layer (its own routing/retrieval/scaffold pipeline).
+# OFF by default and never a silent replacement: Ember's Funi turn
+# stays the mind until you turn this on. The toaster profile cannot
+# afford it at all — the layer refuses there, honestly. ThoughtForge
+# must be installed separately; it is never a core dependency.
+# See docs/architecture/E-024_THOUGHTFORGE_BINDING.md.
+# ---------------------------------------------------------------------------
+# cognition:
+#   enabled: false
+#   provider: thoughtforge
+#   # phone / pi / laptop can afford the layer; toaster cannot.
+#   profile: pi
+#   # ThoughtForge's own state, kept inside Ember's folder so
+#   # custody of the folder is custody of the companion.
+#   memory_dir: "~/.ember/thoughtforge/memory"
+#   db_path: "~/.ember/thoughtforge/knowledge.db"
+#   # Empty/unset → ThoughtForge runs knowledge-only (no model).
+#   # model_path: "~/models/phi-3-mini-q4.gguf"
+
+# ---------------------------------------------------------------------------
 # Strengr — the tether
 # Wraps Brunnr-handle acquisition with graceful-offline handling.
 # ---------------------------------------------------------------------------

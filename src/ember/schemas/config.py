@@ -392,6 +392,88 @@ class ConversationConfig:
 
 
 # --------------------------------------------------------------------- #
+# Cognition (E-024 — optional ThoughtForge cognition layer)             #
+# --------------------------------------------------------------------- #
+
+# Per-profile cognition defaults: which Ember profiles may run the
+# ThoughtForge cognition layer, and the candidate-draft cap handed
+# to ThoughtForge's think() on that profile (TF-034 froze
+# num_drafts semantics: a cap, never a raise — the local engine
+# drafts at most 2 by construction, the unified backend exactly 1).
+# The toaster — the smallest profile, the project's namesake floor —
+# cannot afford a second full turn pipeline beside Funi: the layer
+# refuses there, truthfully, instead of swapping the machine.
+_PROFILE_COGNITION_DEFAULTS: dict[ConversationProfile, int | None] = {
+    ConversationProfile.TOASTER: None,
+    ConversationProfile.PHONE: 1,
+    ConversationProfile.PI: 1,
+    ConversationProfile.LAPTOP: 2,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class CognitionConfig:
+    """The optional cognition layer above Funi (E-024).
+
+    ``enabled`` is False by default: ThoughtForge is a *candidate*
+    cognition layer (roadmap E-024), never a silent replacement for
+    the Funi turn. Enabling it is an explicit operator act, and even
+    then the profile gate applies — see
+    :meth:`affords` / :meth:`resolved_num_drafts`.
+
+    ``provider`` names the binding; ``thoughtforge`` is the only
+    provider in this build. ``expected_api_major`` is the
+    ThoughtForge cognition API major this binding was written
+    against (TF-034 froze v1.0.0); a live provider reporting a
+    different major is refused at open time, never adapted to
+    silently (TF-162's rule, Ember side).
+
+    ThoughtForge keeps its own state (its memory dir + knowledge
+    DB). By default both live **inside Ember's config root**
+    (``~/.ember/thoughtforge/…``) so the tether holds (E-020):
+    custody of the Ember folder is custody of everything the
+    companion keeps, ThoughtForge's state included. Paths are
+    stored unexpanded, like every path in this module; the adapter
+    expands them at open time. ``model_path`` is empty by default —
+    ThoughtForge then runs knowledge-only, its own documented
+    no-model shape — and names a model file only when the operator
+    points at one. ``tf_config`` is passed through to the
+    ThoughtForge core constructor unchanged: ThoughtForge's config
+    surface (TF-032) reads its live keys from it, and Ember does
+    not shadow them.
+    """
+
+    enabled: bool = False
+    provider: str = "thoughtforge"
+    profile: ConversationProfile = ConversationProfile.PI
+    expected_api_major: int = 1
+    model_path: Path | None = None
+    memory_dir: Path = Path("~/.ember/thoughtforge/memory")
+    db_path: Path = Path("~/.ember/thoughtforge/knowledge.db")
+    num_drafts: int | None = None
+    tf_config: Mapping[str, object] = field(default_factory=dict)
+
+    def affords(self, profile: ConversationProfile | None = None) -> bool:
+        """Can this (or the given) profile run the cognition layer?"""
+        chosen = self.profile if profile is None else profile
+        return _PROFILE_COGNITION_DEFAULTS[chosen] is not None
+
+    @property
+    def resolved_num_drafts(self) -> int | None:
+        """The draft cap for the configured profile.
+
+        An explicit ``num_drafts`` wins; otherwise the profile's
+        cap applies. None when the profile cannot afford the layer
+        at all. A cap below 1 is a caller error — ThoughtForge's
+        frozen semantics raise on it, and the adapter refuses it
+        earlier, as a typed config refusal.
+        """
+        if self.num_drafts is not None:
+            return self.num_drafts
+        return _PROFILE_COGNITION_DEFAULTS[self.profile]
+
+
+# --------------------------------------------------------------------- #
 # Top-level                                                             #
 # --------------------------------------------------------------------- #
 
@@ -400,6 +482,7 @@ class ConversationConfig:
 class EmberConfig:
     identity: IdentityConfig = field(default_factory=IdentityConfig)
     conversation: ConversationConfig = field(default_factory=ConversationConfig)
+    cognition: CognitionConfig = field(default_factory=CognitionConfig)
     funi: FuniConfig = field(default_factory=FuniConfig)
     strengr: StrengrConfig = field(default_factory=StrengrConfig)
     brunnr: BrunnrConfig = field(default_factory=BrunnrConfig)
@@ -414,6 +497,7 @@ __all__ = [
     "BrunnrBackend",
     "BrunnrConfig",
     "ChunkerConfig",
+    "CognitionConfig",
     "ConversationConfig",
     "ConversationProfile",
     "EmbeddingConfig",

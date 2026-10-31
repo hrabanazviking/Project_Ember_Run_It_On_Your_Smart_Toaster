@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 03:27 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-023 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023
-Next slice: E-024 — ThoughtForge binding (candidate): MindSpark ThoughtForge as the core's cognition layer on profiles that afford it
+Last updated: 2026-10-31 03:52 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-024 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024
+Next slice: E-025 — Persona core: who the companion *is* — persona loading, validation, and per-persona memory separation (fixtures: two personae, adversarial prompts)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -905,6 +905,52 @@ Top-level members present (size / file count, working tree excl. .git):
   ls-remote (remote head = d489fae9eaae7b8a7cd10f9c0da30d596b8d31a7 = local
   HEAD at push time).
 
+## E-024 — ThoughtForge binding (candidate) (DONE, 2026-10-31)
+
+- Binding filed at `docs/architecture/E-024_THOUGHTFORGE_BINDING.md`. MindSpark
+  ThoughtForge bound as Ember's candidate cognition layer (the layer *above*
+  Funi: a whole turn pipeline — routing/retrieval/scaffold/candidates/salvage/
+  enforcement — returning a finished answer), against the contract ThoughtForge
+  itself froze at its TF-034 (cognition API v1.0.0: `ThoughtForgeCore(config,
+  model_path, memory_dir, db_path, backend)`, `think(user_text, retrieval_path,
+  num_drafts, history, interrupt)` → FinalResponseRecord, `API_VERSION` /
+  `verify_api_surface()`). TF-159 consumes the same contract from TF's side.
+- Built: `ember.schemas.cognition` (CognitionReply mapped straight from the
+  FinalResponseRecord — no token split invented; CognitionHealth;
+  CognitionUnavailable returned-never-raised); `CognitionConfig` (enabled
+  **False by default**; provider thoughtforge; `expected_api_major` 1) in
+  EmberConfig + a commented example section; `ember.spark.cognition`
+  (CognitionHandle protocol, `open_cognition` refusal order disabled →
+  profile → unknown provider → binding open, `cognition_registry()`);
+  the adapter at `ember.spark.cognition.thoughtforge` — ThoughtForge imported
+  **lazily inside open() only, zero new core dependencies**; API-major
+  mismatch / unversioned / `verify_api_surface()` drift → truthful
+  `VERSION_MISMATCH` refusal (TF-162's rule, Ember side); core constructed
+  with Ember-custody state (defaults inside `~/.ember/thoughtforge/`, the
+  E-020 tether), `tf_config` passed through as a plain dict unshadowed,
+  `model_path` only when set (unset = TF's knowledge-only shape); Ember
+  Episodes → TF's own ChatHistory (add_user/add_assistant per episode) on
+  the frozen `history` parameter; core exceptions fold into ERROR-shaped
+  replies; close() unloads via the frozen `unload_model()`.
+- **Profile gate:** toaster **cannot afford** the layer (refused
+  PROFILE_CANNOT_AFFORD); phone/pi draft cap 1, laptop 2 (TF-034's
+  by-construction maxima respected); explicit num_drafts wins; a resolved
+  cap < 1 refused CONFIG_INVALID before any core is built.
+- **Candidate honesty:** chat is **not** rewired — `ember chat` still thinks
+  with Funi; wiring the candidate into the turn is a later deliberate act.
+  **No live ThoughtForge turn is claimed**: the real package is absent from
+  Ember's test env (its absence is itself test-proven as the typed
+  RUNTIME_NOT_INSTALLED refusal) and all behaviour is proven over a fake
+  core shaped from the TF-034 freeze (TF-161's pattern); no budgets are
+  claimed (TF-159 owns phone_low budget proof; Part III owns Ember's book).
+  ThoughtForge's own tree was not touched (its campaign is live, TF-036
+  in progress at this slice's start).
+- Tests: `test_thoughtforge_binding_e024.py` **23 passed** (default env).
+  Slice gate Run B: **639 passed, 6 failed, 13 skipped, 1 warning** — 616
+  E-023 baseline + 23 new; the 6 are the proven environment failures.
+  Run D (whole, extras): **680 passed, 0 failed, 19 skipped**, exit 0.
+  No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -930,4 +976,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-021 DONE (2026-10-31) — conversation engine hardening: episode reader on the Brunnr protocol + both adapters (docket 81 CLOSED — history survives restarts for connected sessions), profile-aware token-budget windowing (ConversationConfig: toaster 512/3, phone 1024/5, pi 2048/8 default, laptop 4096/12; caps + budget, newest always kept, dropped always reported), Summariser hook protocol with a deterministic model-free extractive default riding as ContextKind.SUMMARY, chat startup history load + per-turn windowing replacing the fixed [-5:]; 15 + 4 new tests; gate Run B 574 passed / 6 proven-env failed / 13 skipped, Run D with extras 615 passed / 0 failed; docket 82 stays E-031's, filed at docs/architecture/E-021_CONVERSATION_HARDENING.md.
 - E-022 DONE (2026-10-31) — model backends: `BackendCapabilities` + `StreamingMode` declared in schemas and added to the FuniHandle protocol; `backend_registry()`/`capabilities_for()` publish per-runtime truth (Ollama the only implemented backend: native streaming, tool calls model-dependent, token counts yes, RAM never reported, all context kinds; the other four runtimes capability-free and typed-Unavailable); 16 conformance tests in test_backend_contract_e022.py incl. a WRAPPED complete-only fake; FUNI_LOCAL_MODEL_OPTIONS §4 drift (/api/generate, embed(), 127000 tokens) fixed in scope; gate Run B 590 passed / 6 proven-env failed / 13 skipped, Run D 631 passed / 0 failed; filed at docs/architecture/E-022_BACKEND_CONTRACT.md.
 - E-023 DONE (2026-10-31) — Aesir backend for Ember: Project Aesir bound under E-022's contract in its native mode only (POST /v1/generate, loopback :18434, bearer key from a key *file* — config carries the path, never the value, and no detail/log ever echoes key material); FuniRuntime.AESIR + FuniAesirConfig (max_tokens default 256 = the service's own ceiling); context flattened to prompt+system (each generation resets history server-side); tools refused as ERROR replies, never dropped (capabilities tool_calls=False); native streaming, EOF-without-terminal = ERROR; finish mapping eos→STOP / timeout→LENGTH; registry implemented set now [OLLAMA, AESIR] with E-022's tests updated under attribution; 26 new tests; gate Run B 616 passed / 6 proven-env failed / 13 skipped, Run D 657 passed / 0 failed. Ledger respected: no accelerator claim from the server's backend field, and a live end-to-end turn against a running Aesir service is NOT PROVEN (mocked transport only), filed at docs/architecture/E-023_AESIR_BACKEND.md.
-- E-024 next — ThoughtForge binding (candidate): MindSpark ThoughtForge as the core's cognition layer on profiles that afford it (TF-road's TF-159 consumes the same contract from its side).
+- E-024 DONE (2026-10-31) — ThoughtForge binding (candidate): MindSpark ThoughtForge bound as Ember's cognition layer above Funi, against TF's own TF-034 freeze (cognition API v1.0.0); CognitionConfig off by default with a stated profile gate (toaster refused outright; phone/pi draft cap 1, laptop 2, per TF-034's by-construction maxima); lazy optional import (zero new core deps — absent package = typed RUNTIME_NOT_INSTALLED, proven in the default env); API-major/drift truthful refusal via API_VERSION + verify_api_surface() (TF-162's rule, Ember side); core custody inside ~/.ember/thoughtforge/ (E-020 tether), tf_config passed through unshadowed, Episodes → TF's own ChatHistory on the frozen history parameter; chat NOT rewired (candidate), no live TF turn claimed (fake core shaped from the freeze, TF-161 pattern), no budgets claimed; 23 new tests; gate Run B 639 passed / 6 proven-env failed / 13 skipped, Run D 680 passed / 0 failed; filed at docs/architecture/E-024_THOUGHTFORGE_BINDING.md.
+- E-025 next — Persona core: who the companion *is* — persona loading, validation, and per-persona memory separation (fixtures: two personae, adversarial prompts).
