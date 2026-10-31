@@ -2356,3 +2356,8 @@ Top-level members present (size / file count, working tree excl. .git):
   exit 0. Doc-only slice, no code touched, no README touched, no new
   docket items. Road checked: no re-cut; Part IV (Verdandi) follows.
 - **Part III (E-041–E-058) is CLOSED.** Next: E-059 — Verdandi mapped.
+- E-058 push: banking commit 1512f19 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 24464d9, an
+  ancestor; the push also carried the tick's IN PROGRESS marker 4f78bcd) —
+  remote moved 24464d9 → 1512f19, verified via ls-remote (remote head =
+  1512f1991a167cbf3c2e0d5a78c7f397f8776eeb = local HEAD at push time).
