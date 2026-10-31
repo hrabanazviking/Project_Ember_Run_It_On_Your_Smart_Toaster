@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 01:23 EDT
+Last updated: 2026-10-31 01:39 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013
-Next slice: E-014 — Dead/duplicate census
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014
+Next slice: E-015 — Budget archaeology
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -490,6 +490,45 @@ Top-level members present (size / file count, working tree excl. .git):
   ls-remote (remote head = 12f28c26020d86a3a5975df1bb65c6ea6b084906 = local HEAD
   at push time).
 
+## E-014 — Dead/duplicate census (DONE, 2026-10-31)
+
+- Census filed at `docs/audit/E-014_DEAD_DUPLICATE_CENSUS.md`: every tracked file
+  sha256-hashed (3,243 files, 217,404,018 B at HEAD 944af88), images magic-checked,
+  core imports AST-parsed, module stems reference-scanned tree-wide (raw inventories
+  in `~/workspace/.verify-tmp/ember-e014/`).
+- Headline: **only 11 non-trivial exact-duplicate groups** (4,312,510 wasted bytes;
+  1,392,520 of it the intentional mempalace-logo static distribution, leaving
+  2,919,990 accidental/generated/broken) and **zero dead core modules** (all 50
+  non-`__init__` `src/ember` modules referenced elsewhere; AST proves zero sibling
+  imports in the core's 100 import roots — unwired-by-design, per UNWIRED §3).
+  No non-empty `.py` file is duplicated anywhere.
+- The dead weight, named: Verdandi heartbeat's four unwired Runa reward/mood
+  modules (2,548 lines: runa_mood_arousal 1,105, runa_reward 613, runa_negative
+  609, push_reward 221 — no import, no reference, no dynamic load; hub boots
+  without them); four Verdandi 1-byte pseudo-PNGs (newline only, invalid images,
+  unreferenced pre-campaign); tracked generated artefacts (Open-VTT Godot `.tmp`
+  ×3, 65,417 B, two identical; Hamr `build_output/` 5 files, 10,185 B);
+  cross-member triplication of IMG_0665/0666 (assets+Verdandi+kista), licence
+  image ×2, Hamr/astrology image pairs, Volmarr_writings_philosophy.md ×3,
+  WORLD_MODELING_SKILL.md ×2 (docket 62 alone: 2,886,896 wasted B) — answering
+  E-003's question: the new root images duplicate nothing anywhere; the ORIGINS
+  images are where duplication lives.
+- Not dead, recorded so nobody "cleans" them: Stofa TUI design tree (74 files,
+  513,278 B, dormant awaiting ADR-0015) and the archived Runa skeleton (48 files,
+  154,975 B, provenance). ADR-0012's absence explained by UNWIRED §5.4 (a
+  placeholder, never ratified — not a lost document; register gap stays E-196's).
+  `THE_CYBER-VIKING_UX_CODEX.md` is a 25-byte title-only stub; scaffolding shells
+  scripts/tools/examples hold 13 Markdown-only files (12,921 B), zero code.
+  Stem scan's 76 unreferenced `.py` are overwhelmingly pytest-discovered tests
+  (correct shape, not dead) plus classified standalone/generator scripts.
+  New docket items 59–64 for E-016 (Verdandi unwired modules → Part IV;
+  pseudo-PNGs → E-018; generated artefacts → E-158/Part IX; duplication →
+  E-018/E-057; UX-codex stub → E-018/E-193–195; shells → E-018).
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded;
+  TMPDIR on the workspace overlay): **546 passed, 6 failed, 12 skipped** —
+  identical to the opening baseline. Doc-only slice, no code touched,
+  no README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -505,4 +544,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-011 DONE (2026-10-31) — the two-Kistas boundary doc: toaster-Kista (in-tree, v2.0.0, Fernet vault.json.enc, 14 entry types, zero root consumers) vs ai-folder Kista (purplelongship, standalone GitHub line, Runa/Hermes custody, Heimdall's vault) separated with 8 binding custody rules; 6 conflation hazards found (default ~/.hermes vault home in code, Verdandi's third vault.db shape, tests judging the ~/.hermes copy — re-proven 146 passed / 3 failed, known-accounts ledger in-tree, Yggdrasil aspirational shape, shared v2.0 label); ai-folder side graded RECORDED not MEASURED; 5 new docket items (46–50), filed at docs/audit/E-011_TWO_KISTAS_BOUNDARY.md.
 - E-012 DONE (2026-10-31) — the two-memories census: mempalace (verbatim archive, Chroma+ONNX, 59.2 MB, MCP 30 tools) vs mimir-well (living SQLite memory, decay/validity/guard, 638 KB, FTS5 only); shape-overlap with zero shared code/format; NEITHER consumed by the core (its own Brunnr Well is the third memory); in-tree consumers Verdandi check (path agrees) + bifrost bridge (Hermes path — three Mímir DB defaults, docket 51); UNWIRED mempalace line stale (52); suites re-proven mimir 350/6 (item 10 re-proven, 53; first-banked 356/0 figure corrected same day) and mempalace 1712/14/0 file-verified (E-005 bulk environment-shaped, 54; first-banked 1669/90/39 corrected same day), filed at docs/audit/E-012_TWO_MEMORIES_CENSUS.md.
 - E-013 DONE (2026-10-31) — config & secrets census: no real credential in any plain file (all high-confidence hits classified fixtures/placeholders/false positives over 2,754 tracked text files); core Well-secret resolver (env → keyring → mode-600 file) is the tree's model shape; `.env.example` proven a Runa fossil with zero src consumers (docket 55); ≥7 config shapes across members (56); scanner-indistinguishable synthetic fixtures (57); CloakBrowser URL-embedded proxy credentials as a never-adopt boundary (58); known-accounts ledger re-verified, stays docket 48, filed at docs/audit/E-013_CONFIG_SECRETS_CENSUS.md.
-- E-014 next — Dead/duplicate census.
+- E-014 DONE (2026-10-31) — dead/duplicate census: only 11 non-trivial exact-duplicate groups (4,312,510 wasted B, 1,392,520 intentional logo distribution; 2,919,990 accidental/generated/broken), zero dead core modules (50/50 referenced; AST zero sibling imports), no duplicated non-empty .py anywhere; Verdandi heartbeat 2,548 unwired Runa lines (59), four 1-byte pseudo-PNGs (60), tracked Godot .tmp + Hamr build_output artefacts (61), cross-member image/text triplication 2,886,896 B (62), 25-byte UX-codex stub (63), 13-file Markdown-only shells (64); TUI tree + Runa archive dormant-by-design, ADR-0012 explained as UNWIRED placeholder, filed at docs/audit/E-014_DEAD_DUPLICATE_CENSUS.md.
+- E-015 next — Budget archaeology.
