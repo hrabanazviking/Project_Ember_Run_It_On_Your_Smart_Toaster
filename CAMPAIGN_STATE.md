@@ -1141,7 +1141,11 @@ Top-level members present (size / file count, working tree excl. .git):
   Slice gate Run B: **755 passed, 6 failed, 13 skipped, 1 warning** —
   746 E-027 baseline + 9 new; the 6 are the proven environment failures.
   Run D (whole, extras): **796 passed, 0 failed, 19 skipped, 1 warning**,
-  exit 0. No README touched.
+  exit 0. No README touched. Pushed under Volmarr's 2026-10-31 standing
+  go-ahead: banking commit 7b35266 pushed after fetch + ancestry check —
+  remote moved 7a53d81 → 7b35266, verified via ls-remote (remote head =
+  7b352662854bb4e8ba334a7c1362346b7732dc92 = local HEAD at push time;
+  the push also carried E-027's record commit a6f20aa).
 
 ## Slice ledger
 
