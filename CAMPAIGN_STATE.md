@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 02:06 EDT
-Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017
-Next slice: E-018 — Part I gate
+Last updated: 2026-10-31 02:17 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I CLOSED at E-018
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018
+Next slice: E-019 — Part II opens: core loop mapped
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -640,6 +640,47 @@ Top-level members present (size / file count, working tree excl. .git):
   37fc2f2 → 2e17247, verified via ls-remote (remote head =
   2e172479bd6db125b9c875b34bd4d9bd9129bb17 = local HEAD at push time).
 
+## E-018 — Part I gate (DONE, 2026-10-31)
+
+- Gate filed at `docs/audit/E-018_PART_I_GATE.md`: **Part I gate PASS** — all
+  eight gate criteria checked (G1–G8). The 16-document audit E-002–E-017 is
+  published in-repo under `docs/audit/`; a plain-language summary stands at
+  the gate doc's head and in its §6.
+- Verdicts PREPARED (not executed) for every member: every E-002 census row
+  (21 top-level members + the root loose estate) carries a verdict in the
+  gate doc §3 — headline: **nothing is removed, merged, or retired on
+  Part I's evidence**; every member is KEEP, KEEP — STEWARD (CloakBrowser),
+  or KEEP — PENDING VERDICT (mempalace + mimir-well, whose unify / bound /
+  retire verdict belongs to Part V's E-079 paper and Volmarr's word).
+- The six E-018-owned docket items are verdict-prepared in gate §4:
+  52 (UNWIRED mempalace characterisation → correct at E-091), 60 (four
+  1-byte Verdandi pseudo-PNGs → removal prepared, **Volmarr's word** —
+  only he knows if originals exist outside the tree), 62 (duplication
+  2,886,896 B → canonical homes proposed: images → `assets/`, philosophy
+  text → `docs/philosophy/`, WORLD_MODELING_SKILL → `docs/design/`;
+  removals are **Volmarr's word**), 63 (UX-codex stub → POINT at the
+  Lawbook, executed E-193–E-195), 64 (`tools/` keep-and-fill for the
+  E-196 drift detector; `scripts/` + `examples/` fold prepared,
+  **Volmarr's word**), 71 (Stofa's absent budget tests → strike the
+  claim, don't build tests for an unbuilt TUI).
+- Road re-cut check (gate §7): five re-cut triggers tested (missing/dead
+  member, broken core, licence/provenance bar, budget impossibility,
+  elder-commission state) — **none demands a structural re-cut; the order
+  E-019 → E-204 stands as carved**. Four sharpenings recorded, not re-cuts:
+  S1 Part V memories both KEEP-pending-verdict; S2 astrology/Open-VTT/
+  dictionary fixtures-first (docket 77/78); S3 E-142's count stays unset
+  until E-140; S4 gate-owned items leave Part I closed as preparations
+  with their execution homes named. The roadmap file was not edited.
+- Awaiting Volmarr's word (asked once in the Part I completion report;
+  NOT blockers for Part II): docket 26 (Ragnarok author/retire), 48
+  (known-accounts custody), 60, 62, 64 (removals/folds above).
+- Slice gate at part-gate shapes (E-017 method; logs in
+  `~/workspace/.verify-tmp/ember-e018/`), all IDENTICAL to the freeze:
+  Run A whole/default **1 error, 8 skipped, exit 2**; Run B default excl.
+  pgvector file **546 passed, 6 failed, 12 skipped, 1 warning**; Run D
+  whole with extras **583 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0. Doc-only slice, no code touched, no README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -659,4 +700,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-015 DONE (2026-10-31) — budget archaeology: 1,264 numeric size lines classified; only Hamr has an enforced budget (perf.py 1.5 GB/45 s, tiers 512 MB–1.5 GB); core ~50 MB disk/RAM + Well 50 MB claims unmeasured, scope = installed core not the 217 MB monorepo (67); Verdandi six conflicting RAM figures, hub vs heartbeat unseparated (65); Tiny proposal ~622 MB on 512 MB target, self-annotated over budget, 350 vs 400 MB cap conflict (66); Hamr Phase 17 second budget 7.5 GB/143 MB (68); sibling-matrix estimates unsourced (69); five members with no budget at all (70); Stofa's named budget tests absent from tree (71); vendored CloakBrowser ~190 MB idle recorded for E-179; code-enforced limits catalogued, filed at docs/audit/E-015_BUDGET_ARCHAEOLOGY.md.
 - E-016 DONE (2026-10-31) — the bug & gap docket: every Part I carried item numbered, classified, and assigned in one table (80 entries covering 79 distinct issues; items 1–71 preserved exactly as E-004–E-015 assigned them, continuous with no gap or duplicate — verified from the extracted carried sections; items 72–80 first-numbered here for the pre-numbering E-002/E-003 findings and the unnumbered open measurements: ORIGINS register gap, drift detector never built, ADR-sequence silence, IMG provenance/UUID names, vendor/config register mismatches, astrology + Open-VTT zero test suites, dictionary Jest NOT MEASURED, unregistered 22-file root image population, CloakBrowser vendored-suite record); item 53 is a re-observation of 10, not a distinct defect. Owner tally sums to 80 (Part IV largest at 13, Part IX 11, Part II 9). Cross-links recorded (31 expands 7; 13 is the boot face of 2; 16/18 two halves; the five-entry machine-coupling family 5/8/10/17/11). Volmarr's word required for 26, 48, and the removal halves of 60/62/63/64; NOT PROVEN honestly at 40, 44, 78 and item 12's residue. Filed at docs/audit/E-016_BUG_GAP_DOCKET.md.
 - E-017 DONE (2026-10-31) — baseline freeze: the campaign's zero line pinned at docs/audit/E-017_BASELINE_FREEZE.md, measured at HEAD 37fc2f2 (3,246 tracked files; VM, Python 3.12.3, pytest 9.1.1). Root suite re-measured in full this slice, all three shapes IDENTICAL to E-004/E-001: Run A whole/default interrupted at collection (1 error, 8 skipped, exit 2 — docket 1); Run B default excl. pgvector file **546 passed, 6 failed, 12 skipped, 1 warning**; Run D whole with extras **583 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (counts frozen; wall time is not). Per-member truth table pinned from E-005 as corrected by E-012 (seidr 38 green; kista 146/3; Verdandi 539/19; mimir-well 350/6; bifrost 18/7; Hamr 2170/28/33/2E; mempalace corrected 1712/14/1/106-desel/0E with volatility caveat docket 54; CloakBrowser vendored 385/39/15E, docket 80; dictionary NOT MEASURED docket 78; astrology + Open-VTT no suites docket 77). Boot zero line pinned from E-006 with key rows re-probed identical this slice (ember --help exit 0, seidr composes exit 0, ember doctor bare still crashes on sqlite_vec docket 13; Verdandi hub + Mímir's Eye LIVE-proven in E-006). Keeper re-measurement method recorded in the freeze doc (Run B is the per-slice gate; Runs A/D at part gates and on docket 1–4 touches; TMPDIR on workspace overlay always; counts from runner logs only). MCP/Ollama/podman/Gungnir-guarded tests NOT PROVEN — guarded, not passed. Doc-only slice, no code touched, no README touched.
-- E-018 next — Part I gate: audit published in-repo; verdicts prepared (not executed) for every member; plain-language summary filed; the road below re-cut if facts demand.
+- E-018 DONE (2026-10-31) — Part I gate PASS: audit published in-repo (16 docs, E-002–E-017, under docs/audit/), verdicts prepared (not executed) for every member (all KEEP / KEEP-STEWARD / KEEP-PENDING-VERDICT; nothing removed, merged, or retired), the six gate-owned docket items verdict-prepared (52, 60, 62, 63, 64, 71 — removals/folds in 60/62/64 await Volmarr's word, as do 26 Ragnarok and 48 known-accounts custody; none blocks Part II), plain-language summary filed, and the road checked against five re-cut triggers with NO structural re-cut demanded (four sharpenings S1–S4 recorded). Gate re-measurement identical to the E-017 freeze in all three shapes (A: 1 error/8 skipped; B: 546 passed/6 failed/12 skipped/1 warning; D with extras: 583 passed/0 failed/19 skipped/1 warning). Filed at docs/audit/E-018_PART_I_GATE.md. **Part I (E-001–E-018) is CLOSED.**
+- E-019 next — Part II opens: core loop mapped (the companion's turn lifecycle drawn from code; architecture doc published).
