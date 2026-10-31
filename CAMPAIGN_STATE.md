@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 01:39 EDT
+Last updated: 2026-10-31 01:50 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014
-Next slice: E-015 — Budget archaeology
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015
+Next slice: E-016 — The bug & gap docket
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -532,6 +532,43 @@ Top-level members present (size / file count, working tree excl. .git):
   944af88 → f1d51eb, verified via ls-remote (remote head =
   f1d51ebe924153cfd35abe6baaf2c86aec57cad4 = local HEAD at push time).
 
+## E-015 — Budget archaeology (DONE, 2026-10-31)
+
+- Archaeology filed at `docs/audit/E-015_BUDGET_ARCHAEOLOGY.md`: every tracked
+  `.md`/`.py`/`.toml` scanned for numeric size-unit lines (**1,264 lines**;
+  member trees also scanned for RAM/RSS/footprint with word boundaries, 123 lines;
+  raw inventories in `~/workspace/.verify-tmp/ember-e015/`), each hit hand-classified
+  product claim / code-enforced limit / vendored claim / proposal / not-a-claim.
+- Headline: **only Hamr has an enforced budget** (`perf.py`: build ≤45 s, peak
+  ≤1,500 MB, tiers 512 MB/1 GB/1.5 GB on Pi 5); **the core's front-door claims
+  have never been measured** (~3.5 GB typical install of which Ember itself
+  ~50 MB disk, ~50 MB RAM, default Well 50 MB resident — installed core alone,
+  never to be read as the 217 MB monorepo; docket 67); **Verdandi states six
+  RAM figures** (~1 MB hub, ~13 MB / 15 MB idle heartbeat, ~15–25 MB Pi guide,
+  <50 MB research target, ~30 MB proposal matrix) with no document separating
+  hub from heartbeat (docket 65); **five members state no budget at all**
+  (mempalace, mimir-well, seidr_engine, bifrost, kista — docket 70).
+- The rest is proposal, not product: 995 of 1,264 numeric lines live under
+  `docs/`. The Tiny Device Profile's own RAM budget sums to **~622 MB on a
+  512 MB target — the document itself annotates "(over budget!)"** — with a
+  350 MB fallback cap that the tiered-defaults doc contradicts at 400 MB for
+  the same TINY class (docket 66). Hamr carries a second incompatible budget
+  (Phase 17: peak <7.5 GB, VRM <143 MB vs perf.py's 1.5 GB — docket 68).
+  The sibling matrix's per-member round numbers are unsourced and in places
+  at odds with E-002's measured trees (docket 69). Stofa's budget doc names
+  two CI tests **verified absent from the tracked tree** (docket 71).
+  CloakBrowser's figures (~190 MB RAM idle, ~200 MB binary) are vendored —
+  recorded for E-179, never adopted as Ember claims. Code-enforced limits
+  catalogued as Part III's floor of fact (fetch_url 1 MiB, ingest 64 MiB,
+  Verdandi feed rotation 10 MB, mempalace miner cap 500 MB, pass-zero
+  100 KB/5 MB). Part III's test-or-strike list filed as §8 of the doc.
+- New docket items 65–71 for E-016.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded;
+  TMPDIR on the workspace overlay): **546 passed, 6 failed, 12 skipped** —
+  identical to the opening baseline. Doc-only slice, no code touched,
+  no README touched. Push under Volmarr's 2026-10-31 standing go-ahead:
+  recorded below after verification.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -548,4 +585,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-012 DONE (2026-10-31) — the two-memories census: mempalace (verbatim archive, Chroma+ONNX, 59.2 MB, MCP 30 tools) vs mimir-well (living SQLite memory, decay/validity/guard, 638 KB, FTS5 only); shape-overlap with zero shared code/format; NEITHER consumed by the core (its own Brunnr Well is the third memory); in-tree consumers Verdandi check (path agrees) + bifrost bridge (Hermes path — three Mímir DB defaults, docket 51); UNWIRED mempalace line stale (52); suites re-proven mimir 350/6 (item 10 re-proven, 53; first-banked 356/0 figure corrected same day) and mempalace 1712/14/0 file-verified (E-005 bulk environment-shaped, 54; first-banked 1669/90/39 corrected same day), filed at docs/audit/E-012_TWO_MEMORIES_CENSUS.md.
 - E-013 DONE (2026-10-31) — config & secrets census: no real credential in any plain file (all high-confidence hits classified fixtures/placeholders/false positives over 2,754 tracked text files); core Well-secret resolver (env → keyring → mode-600 file) is the tree's model shape; `.env.example` proven a Runa fossil with zero src consumers (docket 55); ≥7 config shapes across members (56); scanner-indistinguishable synthetic fixtures (57); CloakBrowser URL-embedded proxy credentials as a never-adopt boundary (58); known-accounts ledger re-verified, stays docket 48, filed at docs/audit/E-013_CONFIG_SECRETS_CENSUS.md.
 - E-014 DONE (2026-10-31) — dead/duplicate census: only 11 non-trivial exact-duplicate groups (4,312,510 wasted B, 1,392,520 intentional logo distribution; 2,919,990 accidental/generated/broken), zero dead core modules (50/50 referenced; AST zero sibling imports), no duplicated non-empty .py anywhere; Verdandi heartbeat 2,548 unwired Runa lines (59), four 1-byte pseudo-PNGs (60), tracked Godot .tmp + Hamr build_output artefacts (61), cross-member image/text triplication 2,886,896 B (62), 25-byte UX-codex stub (63), 13-file Markdown-only shells (64); TUI tree + Runa archive dormant-by-design, ADR-0012 explained as UNWIRED placeholder, filed at docs/audit/E-014_DEAD_DUPLICATE_CENSUS.md.
-- E-015 next — Budget archaeology.
+- E-015 DONE (2026-10-31) — budget archaeology: 1,264 numeric size lines classified; only Hamr has an enforced budget (perf.py 1.5 GB/45 s, tiers 512 MB–1.5 GB); core ~50 MB disk/RAM + Well 50 MB claims unmeasured, scope = installed core not the 217 MB monorepo (67); Verdandi six conflicting RAM figures, hub vs heartbeat unseparated (65); Tiny proposal ~622 MB on 512 MB target, self-annotated over budget, 350 vs 400 MB cap conflict (66); Hamr Phase 17 second budget 7.5 GB/143 MB (68); sibling-matrix estimates unsourced (69); five members with no budget at all (70); Stofa's named budget tests absent from tree (71); vendored CloakBrowser ~190 MB idle recorded for E-179; code-enforced limits catalogued, filed at docs/audit/E-015_BUDGET_ARCHAEOLOGY.md.
+- E-016 next — The bug & gap docket.
