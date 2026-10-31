@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 07:31 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-038 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038
-Next slice: E-039 — Core docs + runnable examples
+Last updated: 2026-10-31 07:42 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-039 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039
+Next slice: E-040 — Part II gate
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1607,6 +1607,63 @@ Top-level members present (size / file count, working tree excl. .git):
   5e9047a9cc75be00d7006936a7f9842181712212 = local HEAD at
   push time).
 
+## E-039 — Core docs + runnable examples (DONE, 2026-10-31)
+
+- Filed at `docs/architecture/E-039_CORE_DOCS_EXAMPLES.md`: the
+  Part II core-docs index (E-019–E-038 per-slice docs beneath
+  the canonical trio) plus the slice's two builds below.
+- **Runnable examples, where none existed:** `examples/` held
+  only scaffold READMEs whose own law ("examples must actually
+  run against the current `src/ember/`") nothing could be
+  checked against. Now landed, each runnable from the repo
+  root in the bare stdlib-only env, state in a temp folder,
+  caller's directory untouched (all pinned by subprocess
+  tests): `examples/first_chat.py` (the real `chat.run` loop
+  streaming a reply and remembering the turn, against a
+  labelled fake model + in-memory Well), `examples/
+  member_binding.py` (frozen API v1 only — version gate,
+  155-name manifest verified, config via the frozen loader,
+  typed refusals, tagging; AST-scanned for frozen imports),
+  `examples/offline_turns.py` (Well unreachable → banner,
+  pending journal, facts-only diary, then a clean drain),
+  and `examples/configs/phone-class.toml` (worked config,
+  loads through the frozen loader: phone, 1024 tokens, 5
+  turns, diary on). Two first-draft example bugs (a stream
+  chunk missing `done`; a config class imported from the
+  wrong schema module) were caught by running the examples
+  and fixed in the examples — the slice's own argument for
+  executing examples, recorded in the doc.
+- **Docket 84, DATA_FLOW half — CLOSED:**
+  `docs/architecture/DATA_FLOW.md` corrected in place, facts
+  only, correction owned at its head: retrieval k=8 → k=5
+  (hybrid + text), the nonexistent `AskTurn` type removed
+  (the operator's line travels), §7's "no streaming / no
+  tool use" negative space rewritten to the shipped truth
+  (streaming default + interruptible, E-028; tools off by
+  default, approval-gated when enabled, E-026/E-027), and
+  §2.2's pending journal drawn as E-031 built it (per-turn
+  JSON files, atomic; drained by the next connected session;
+  damaged files quarantined, never deleted). Grammar, flows,
+  and the Cartographer's voice stand; E-194 owns the
+  whole-docs reconciliation.
+- **New docket 89** (numbering continues; 87/88 were E-032's):
+  the `examples/` scaffold READMEs are stale Runa-era text
+  (planned files never written, a loader that does not exist
+  here, the folder described as an empty scaffold) — they
+  are READMEs, untouchable by this campaign, so the
+  correction is assigned to E-195 (README care).
+- Honest limits: no live model ran (the fake is by design;
+  real-model proof is Part III's E-047/E-049 burden); the
+  chat examples drive the operator surface through its test
+  seams — `chat` is not frozen API, only the member example
+  is held to frozen imports; one worked config, not a fleet.
+- Tests: `test_core_docs_examples_e039.py` **8 passed**.
+  Slice gate Run B: **918 passed, 6 failed, 18 skipped,
+  1 warning** — 910 E-038 baseline + 8 new; the 6 are the
+  proven environment failures. Run D (whole, extras):
+  **968 passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (960 baseline + 8 new). No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1648,4 +1705,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-036 DONE (2026-10-31) — determinism mode (seeded): `funi.determinism` (off by default, seed 42) + `ember.spark.funi.determinism` — off = no seed key anywhere (wire-pinned, byte-identical requests), on = fixed seed + temperature 0.0 effective (configured temperature never mutated) via Ollama's `seed` option and Aesir's native `seed` field; CLI `--deterministic` / `--seed N` one-run overlay; bad seed refused CONFIG_INVALID at open before any request; retrieval ties now break on chunk_id in both adapters (RRF + SQL; sqlite_vec vector ties re-sorted in Python — vec0 KNN forbids a second ORDER BY key, proven by the first Run D gate's 5 failures and fixed + regression-pinned in-slice); honest limits: backend seed contract owns byte-identical answers (no live model run), timestamps/ids stay non-deterministic by design, ThoughtForge uncovered; 21 new tests (19 passed + 2 skipped default); gate Run B 870 passed / 6 proven-env failed / 17 skipped, Run D 918 passed / 0 failed; filed at docs/architecture/E-036_DETERMINISM_MODE.md.
 - E-037 DONE (2026-10-31) — core API freeze v1 (library shape): `ember.api` registry — `API_VERSION 1.0.0` (separate from package 0.2.0, re-exported as `ember.API_VERSION`), 63 individual frozen names + 12 schema modules frozen wholesale (92 names) = 155-entry manifest computed from live modules, `is_api_compatible` gate, `verify_api_surface()` clean in the bare default env; `ember.well.brunnr` `__init__` now re-exports BrunnrHandle + open mirroring Funi; NOT frozen: CLI, MCP, munnr/hjarta/smidja internals, concrete adapters (frozen `open()` registries only); docket 56 CLOSED (member half — members keep own config shapes, bind through the API only, fake-member test proven with no extras and no config file read); honest limits: contract + gate tests not import machinery, no member migrated yet (Parts IV–X bind here), behaviour pinned by per-surface suites; 33 new tests; gate Run B 903 passed / 6 proven-env failed / 17 skipped, Run D 951 passed / 0 failed; filed at docs/architecture/E-037_CORE_API_FREEZE.md.
 - E-038 DONE (2026-10-31) — concurrency on small hardware: two chats at once (threads, shared Well, barrier-proven mid-turn overlap, phone profile 1024 tok/5 ep per session) — three races fixed in scope: pending-journal drain double-flush (claim-by-atomic-rename; refusal releases in order), diary double header (flock around size-check + write), sqlite Well "database is locked" (PRAGMA busy_timeout=5000); appends + audit log pinned already safe; measured on VM (fake 50 ms backend, 5 turns/chat): sequential 1.285 s / 23.7 MiB, concurrent 0.93+0.81 s / 23.9+24.2 MiB — second concurrent session <0.5 MiB over serial; each window ≤1024 tokens, two ≤2048; honest limits: threads not two processes (NOT PROVEN), process-global tool Well binding named not fixed, no live model; 9 new tests; gate Run B 910 passed / 6 proven-env failed / 18 skipped, Run D 960 passed / 0 failed; filed at docs/architecture/E-038_CONCURRENCY_SMALL_HARDWARE.md; banking commit 5e9047a pushed (remote a151b89 → 5e9047a, ls-remote = local HEAD).
-- E-039 next — Core docs + runnable examples.
+- E-039 DONE (2026-10-31) — core docs + runnable examples: three runnable examples where none existed (first_chat — the real chat loop against a labelled fake model + in-memory Well; member_binding — frozen API v1 only, AST-pinned; offline_turns — banner, pending journal, facts-only diary, clean drain) plus a worked phone-class TOML config that loads through the frozen loader; docket 84's DATA_FLOW half CLOSED (k=5, no AskTurn, streaming default, per-turn JSON journal — facts only, voice intact); new docket 89 (stale examples/ scaffold READMEs → E-195, README care); honest limits: no live model (Part III's burden), chat examples use the operator surface's test seams (not frozen API); 8 new tests; gate Run B 918 passed / 6 proven-env failed / 18 skipped, Run D 968 passed / 0 failed; filed at docs/architecture/E-039_CORE_DOCS_EXAMPLES.md.
+- E-040 next — Part II gate: day-one flow green end-to-end on the VM profile; API frozen; summary filed.
