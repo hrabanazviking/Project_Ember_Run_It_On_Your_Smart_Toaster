@@ -2909,3 +2909,9 @@ Top-level members present (size / file count, working tree excl. .git):
   `~/workspace/.verify-tmp/ember-e067/gate/`. No README touched.
 - E-068 next — Hermes-shaped nerves: Verdandi event shapes matched against
   the Hermes hack's volmarr-core session/turn/tool events.
+- E-067 push: banking commit 95cfa79 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 471cc9d, an
+  ancestor; the push also carried E-066's push-record commit 93f0913 and
+  this tick's IN PROGRESS marker 687e166) — remote moved 471cc9d → 95cfa79,
+  verified via ls-remote (remote head =
+  95cfa79d4de3acac1654d17c6d886985d187e978 = local HEAD at push time).
