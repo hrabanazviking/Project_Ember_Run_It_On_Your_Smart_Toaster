@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 14:52 EDT
-Status: IN PROGRESS — E-059 (Verdandi mapped), started 14:52 EDT keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058
-Next slice: E-059 — Verdandi mapped: context_injector, conversation_logger, and the event model drawn from code
+Last updated: 2026-10-31 15:18 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-060
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059
+Next slice: E-060 — The VD-RM concordance executed: Verdandi's own roadmap items × reality (E-009) — its remaining road re-cut into this part's order, its completed claims verified by tests
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2361,3 +2361,51 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried the tick's IN PROGRESS marker 4f78bcd) —
   remote moved 24464d9 → 1512f19, verified via ls-remote (remote head =
   1512f1991a167cbf3c2e0d5a78c7f397f8776eeb = local HEAD at push time).
+
+## E-059 — Verdandi mapped (DONE, 2026-10-31)
+
+- Map filed at `docs/architecture/E-059_VERDANDI_MAPPED.md`: Verdandi drawn
+  from code at b275aeb — three generations of one idea in one directory:
+  the conversation layer (conversation_logger 619 lines, context_injector
+  142, top-level reactor 345, nerve hub nervous_system 847), the heartbeat
+  package (8,618 lines: 5 checks, 5 actions, heartbeat reactor, pulse →
+  SQLite), and the passengers (verdandi/eir 1,154 lines; runa reward /
+  negative / mood systems + push_reward — publishers with NO in-tree
+  callers). Whole member 19,194 Python lines (11,725 production, 7,469 tests).
+- Central finding: **there is no single event model.** The hub dialect is
+  `{type, data, source}` stamped `_seq/_ts/_iso` over
+  `~/.hermes/state/runa.sock`; the heartbeat fires a flat `{event_type, …}`
+  dialect over a DIFFERENT socket (`<base>/run/verdandi.sock`, nothing in
+  tree listens) and falls back to a third shape written directly into the
+  same nerve_feed.jsonl; heartbeat state-change fires have no fallback.
+  Pulse events fire BEFORE the reactor and BEFORE the state transition
+  (which happens only in run()'s loop, never in a bare pulse() call), so
+  they carry the pre-transition state.
+- Deployment shape proven from code: the conversation layer hardcodes
+  `~/.hermes/state`; the logger's nerve bridge loads nervous_system.py ONLY
+  from that deployed dir and silently no-ops in-tree (on this VM the state
+  dir holds heartbeat artefacts but no deployed top-level copies). The
+  Ember core does not touch Verdandi at all (one docstring mention in
+  src/ember/api.py); the hub's only in-tree subscriber is its own CLI.
+  The context block (current state + recent sessions + feed tail 10 +
+  reactor directives) is item-capped per layer with NO total budget —
+  E-062's starting fact.
+- Six new docket items: 93 (three event dialects / two sockets → E-061),
+  94 (conversation-layer deployment coupling, nerve bridge dormant in-tree
+  → E-067/E-073), 95 (top-level reactor's `focus` accepted, never used;
+  CLI --focus is a no-op → E-065), 96 (nervous_system get_status() publishes
+  a real `ping` event into the feed instead of using the nerve_type ping
+  control → E-066), 97 (injector log-event vocabulary missing mood_shift,
+  7 vs logger's 8 → E-061), 98 (logger's _update_current dead code, cmd_*
+  hand-rolled current.json merges diverge → E-063).
+- Focal test proof this slice: the four focal Verdandi files
+  (context_injector, conversation_logger, reactor, nervous_system) —
+  default env 95 passed / 6 failed, all 6 the missing pytest-asyncio
+  environment class; with the declared dev dep supplied from the isolated
+  target dir, **101 passed, exit 0**. Logs in
+  `~/workspace/.verify-tmp/ember-e059/`.
+- Slice gate identical to E-058 (doc-only slice): Run B **1054 passed,
+  6 failed, 25 skipped, 1 warning** (the proven environment set);
+  Run D **1111 passed, 0 failed, 19 skipped, 1 warning**, exit 0.
+  No code touched, no README touched.
+- E-060 next — the VD-RM concordance executed.
