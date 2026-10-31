@@ -28,6 +28,7 @@ This IS self-awareness, implemented as routing.
 Usage:
   Serve hub:     python3 nervous_system.py serve
   Publish:       python3 nervous_system.py publish <event_type> '<json_data>'
+  Stimulus:      python3 nervous_system.py stimulus <name> '<json>' <origin> <channel>
   Recent events: python3 nervous_system.py recent [count]
   Subscribe:     python3 nervous_system.py subscribe
   Status:        python3 nervous_system.py status
@@ -490,6 +491,71 @@ def publish_event_sync(event_type: str, data: dict = None, source: str = None):
                 pass
 
 
+# ── Stimuli entrance (E-064) ────────────────────────────────
+# External events enter as typed stimuli with provenance
+# (Verdandi/stimuli.py, STIMULI_VERSION 1). The literals below
+# are plain literals, not imports, for the same deployed-
+# standalone reason as the contract version above; the E-064
+# conformance tests pin them equal to stimuli.py's registry.
+_STIMULUS_KINDS = ('time', 'sensor', 'message')
+_STIMULUS_CHANNELS = ('timer', 'cron', 'check', 'signal', 'cli', 'log', 'direct')
+_STIMULUS_SPECS = {
+    'time.tick': ('time', 'timer'),
+    'time.schedule': ('time', 'cron'),
+    'sensor.signal': ('sensor', 'signal'),
+    'message.operator': ('message', 'cli'),
+    'message.conversation': ('message', 'log'),
+    'message.mood_input': ('message', 'direct'),
+}
+_STIMULUS_PATTERNS = {
+    'sensor.check:': ('sensor', 'check'),
+}
+
+
+def _stimulus_spec_for(name):
+    if name in _STIMULUS_SPECS:
+        return _STIMULUS_SPECS[name]
+    for prefix, spec in _STIMULUS_PATTERNS.items():
+        if isinstance(name, str) and name.startswith(prefix):
+            return spec
+    return None
+
+
+def publish_stimulus_sync(name: str, payload: dict = None, origin: str = None, channel: str = None):
+    """Publish an external stimulus, typed and provenanced (E-064).
+
+    A stimulus without valid provenance does NOT enter: this
+    returns {'nerve_type': 'error', 'error': ...} and publishes
+    nothing — no hub write, no feed fallback. A valid stimulus
+    is published as the canonical event type
+    'stimulus:<name>' whose data carries the payload and the
+    full provenance, with source = the provenance origin.
+    """
+    if payload is None:
+        payload = {}
+    spec = _stimulus_spec_for(name)
+    if spec is None:
+        return {'nerve_type': 'error', 'error': f'unregistered stimulus name: {name!r}'}
+    kind, expected_channel = spec
+    if kind not in _STIMULUS_KINDS:
+        return {'nerve_type': 'error', 'error': f'unknown stimulus kind: {kind!r}'}
+    if not isinstance(payload, dict):
+        return {'nerve_type': 'error', 'error': 'stimulus payload must be a dict'}
+    if not isinstance(origin, str) or not origin.strip():
+        return {'nerve_type': 'error', 'error': 'stimulus provenance origin must be a non-empty string'}
+    if channel not in _STIMULUS_CHANNELS:
+        return {'nerve_type': 'error', 'error': f'stimulus provenance channel must be one of {sorted(_STIMULUS_CHANNELS)}'}
+    if channel != expected_channel:
+        return {'nerve_type': 'error', 'error': f'stimulus {name!r} enters by channel {expected_channel!r}, not {channel!r}'}
+    provenance = {
+        'origin': origin,
+        'channel': channel,
+        'at': datetime.now(timezone.utc).isoformat(),
+    }
+    data = {'kind': kind, 'name': name, 'payload': payload, 'provenance': provenance}
+    return publish_event_sync('stimulus:' + name, data, origin)
+
+
 def get_recent_events(count: int = 20) -> list:
     """Get the N most recent events from the nerve feed.
 
@@ -741,6 +807,31 @@ def cmd_publish(args):
         print(f"📤 Result: {json.dumps(result, indent=2)}")
 
 
+def cmd_stimulus(args):
+    """CLI: publish a typed stimulus with provenance (E-064)."""
+    if len(args) < 4:
+        print("Usage: python3 nervous_system.py stimulus <name> '<json_payload>' <origin> <channel>")
+        print("Example: python3 nervous_system.py stimulus message.operator '{\"text\": \"hello\"}' operator_jane cli")
+        sys.exit(2)
+    name = args[0]
+    try:
+        payload = json.loads(args[1])
+    except json.JSONDecodeError:
+        print("❌ Stimulus payload must be a JSON object")
+        sys.exit(2)
+    result = publish_stimulus_sync(name, payload, args[2], args[3])
+    if result.get('nerve_type') == 'error':
+        print(f"❌ Stimulus rejected — nothing published: {result.get('error')}")
+        sys.exit(1)
+    seq = result.get('seq', '?')
+    if result.get('nerve_type') == 'ack':
+        print(f"✅ Stimulus #{seq} published ({name} from {args[2]} via {args[3]})")
+    elif result.get('nerve_type') == 'fallback':
+        print(f"⚠️  Hub offline — stimulus written to feed directly ({name})")
+    else:
+        print(f"📤 Result: {json.dumps(result, indent=2)}")
+
+
 def cmd_recent(args):
     """CLI: show recent events."""
     count = int(args[0]) if args else 20
@@ -831,6 +922,8 @@ def main():
             # Graceful shutdown handled inside serve()
     elif command == 'publish':
         cmd_publish(args)
+    elif command == 'stimulus':
+        cmd_stimulus(args)
     elif command == 'recent':
         cmd_recent(args)
     elif command == 'subscribe':
@@ -844,7 +937,7 @@ def main():
         cmd_stop()
     else:
         print(f"Unknown command: {command}")
-        print("Commands: serve, publish, recent, subscribe, status, healthcheck, stop")
+        print("Commands: serve, publish, stimulus, recent, subscribe, status, healthcheck, stop")
         sys.exit(1)
 
 

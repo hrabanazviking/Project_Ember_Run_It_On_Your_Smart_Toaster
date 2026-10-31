@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 17:12 EDT
-Status: IN PROGRESS — E-064 (stimuli: external events enter as typed stimuli with provenance)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063
-Next slice: E-064 — Stimuli: external events (time, sensors-shaped inputs, messages) enter as typed stimuli with provenance
+Last updated: 2026-10-31 17:27 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-065
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064
+Next slice: E-065 — The reflex layer: fast, dumb, safe reactions below cognition (never speaks for the companion)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2677,3 +2677,48 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried the tick's IN PROGRESS marker 7b45729) —
   remote moved 1ec6c5b → d257751, verified via ls-remote (remote head =
   d257751b3228fe6c376b982ee9a2a2093fbbbadc = local HEAD at push time).
+
+## E-064 — Stimuli (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-064_STIMULI.md` and in code at
+  `Verdandi/stimuli.py` (stdlib-only, standalone like event_contract.py /
+  context_budget.py / logger_law.py): external events enter as typed stimuli
+  with provenance. Three kinds — time, sensor, message (the roadmap's own
+  three) — and seven registered entrances: `time.tick` (heartbeat daemon
+  timer), `time.schedule` (cron job start), `sensor.check:*` (the five
+  heartbeat checks), `sensor.signal` (the signal handler's five signals),
+  `message.operator` (the hub's typed operator entrance), `message.conversation`
+  (logger entries), `message.mood_input` (the mood system's four input
+  functions). No open fallback: an unregistered name is not a stimulus.
+- Provenance is mandatory and channel-bound: a stimulus carries
+  {origin (non-empty), channel (one of timer/cron/check/signal/cli/log/direct,
+  and it must be its entrance's own channel), at (optional origin timestamp)}.
+  `to_event` renders a validated stimulus as a canonical E-061 event
+  (`stimulus:<name>`, source = origin, payload + full provenance inside data,
+  so provenance survives feed/ring/fallback copies); `from_event` is its
+  exact reverse. E-071's privacy rule now has the record it governs.
+- The one live entrance built: `nervous_system.publish_stimulus_sync` + the
+  `stimulus` CLI command — registry literals inline in the hub (deployed-
+  standalone pattern, pinned equal to stimuli.py by tests), entry time
+  stamped by the hub. A stimulus that fails validation is rejected and
+  publishes NOTHING — no hub write, no feed fallback (a fallback line would
+  be exactly an unprovenanced entry).
+- Honest bounds: the heartbeat timer/checks still surface inside the legacy
+  heartbeat_pulse — this slice registers the shape they enter AS; transport
+  rewiring stays E-067's, as E-061 assigned it. No typed stimulus consumer
+  yet (the hub set reads them as ordinary canonical events); typed reaction
+  is E-065/E-067. New docket 101: the hub's open `publish` path still
+  accepts operator events with source optional — making it stimulus-only
+  is a breaking change owned by the E-076 gate review, not smuggled in here.
+- E-057 table re-measured for the Verdandi weight change (183 files /
+  16,889,384 B; total 131,283,343 B; laptop miss 112,168 B), both published
+  copies updated. Conformance: `tests/unit/test_stimuli_e064.py` **16 passed**;
+  Verdandi focal conversation set **101 passed** (identical to
+  E-059/E-061/E-062/E-063; pytest-asyncio from the e005-extras dir, short
+  TMPDIR). Slice gate: Run B **1126 passed, 6 failed, 25 skipped, 1 warning**
+  (1110 + 16; the 6 are the proven environment failures, identical set);
+  Run D **1183 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1167 + 16).
+  The first Run D attempt was killed mid-run (SIGTERM to the harness at
+  ~36%, no summary line) and re-run clean — the figures are the re-run's
+  own log. Logs in `~/workspace/.verify-tmp/ember-e064/gate/`. No README touched.
+- E-065 next — the reflex layer: fast, dumb, safe reactions below cognition.
