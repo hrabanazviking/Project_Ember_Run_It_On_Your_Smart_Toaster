@@ -55,9 +55,42 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable tools for this invocation (overrides config.tools.enabled).",
     )
+    # E-036 — per-invocation determinism mode for tests/benchmarks.
+    # Either flag turns the mode on for this run only; --seed also
+    # chooses the seed. Neither is ever saved to the config file.
+    parser.add_argument(
+        "--deterministic",
+        action="store_true",
+        help=(
+            "Determinism mode for this invocation (E-036): every "
+            "generation request carries a fixed seed and temperature "
+            "0.0, so the same prompt can be re-run and compared. "
+            "Overrides config funi.determinism.enabled."
+        ),
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help=(
+            "Seed for determinism mode (E-036); giving a seed turns "
+            "the mode on for this invocation. Default seed is 42 "
+            "(or funi.determinism.seed from the config file)."
+        ),
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("chat", help="Open an interactive conversation.")
+    chat_p = sub.add_parser("chat", help="Open an interactive conversation.")
+    chat_p.add_argument(
+        "--conversation",
+        default=None,
+        help=(
+            "Which conversation to open (E-035): this talk's own "
+            "remembered turns only, kept apart from Ember's other "
+            "talks. Default: conversation.active from the config "
+            "file, else the 'default' conversation."
+        ),
+    )
 
     ask_p = sub.add_parser("ask", help="Ask a single question and exit.")
     ask_p.add_argument("text", help="The question to ask.")
@@ -76,6 +109,14 @@ def _build_parser() -> argparse.ArgumentParser:
     well_sub.add_parser("status", help="Show counts and health for the Well.")
 
     sub.add_parser("doctor", help="Diagnose Funi + Well health.")
+
+    diary_p = sub.add_parser(
+        "diary", help="Read Ember's diary — what happened, in plain words."
+    )
+    diary_p.add_argument(
+        "--days", type=int, default=7,
+        help="How many days back to read (default: 7).",
+    )
 
     # MCP subcommands — ADR-0014.
     mcp_p = sub.add_parser("mcp", help="Manage MCP (Model Context Protocol).")
@@ -135,6 +176,7 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
         return 1
 
     config = _apply_tool_overrides(config, args)
+    config = _apply_determinism_override(config, args)
 
     # Wire up logging from config (Batch J — previously LoggingConfig
     # was declared in the schema but no code read it).
@@ -163,9 +205,15 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
             )
             return 1
         config = _apply_tool_overrides(config, args)
+        config = _apply_determinism_override(config, args)
 
     if args.command == "chat":
-        return chat.run(config=config, config_root=config_root, stdout=stdout)
+        return chat.run(
+            config=config,
+            config_root=config_root,
+            stdout=stdout,
+            conversation_id=args.conversation,
+        )
     if args.command == "ask":
         return ask.run(
             text=args.text, config=config, config_root=config_root, stdout=stdout
@@ -179,6 +227,21 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
         )
     if args.command == "doctor":
         return doctor.run(config=config, stdout=stdout)
+    if args.command == "diary":
+        # Reading is unconditional: turning the diary off stops
+        # new entries, it does not lock away the ones already kept.
+        from ember.diary import Diary, diary_root  # noqa: PLC0415
+
+        if args.days < 1:
+            stdout.write("The diary needs at least 1 day to read back.\n")
+            return 2
+        entries = Diary(diary_root(config_root)).read_recent(days=args.days)
+        if not entries:
+            stdout.write("No diary entries yet.\n")
+            return 0
+        for entry in entries:
+            stdout.write(entry + "\n")
+        return 0
     if args.command == "well":
         if args.well_command == "ingest":
             return ingest.run(path=args.path, config=config, stdout=stdout)
@@ -220,6 +283,31 @@ def _apply_tool_overrides(
     enabled = bool(args.allow_tools)
     new_tools = replace(config.tools, enabled=enabled)
     return replace(config, tools=new_tools)
+
+
+def _apply_determinism_override(
+    config,  # type: ignore[no-untyped-def]
+    args: argparse.Namespace,
+):
+    """Apply the per-invocation ``--deterministic`` / ``--seed`` flags (E-036).
+
+    Returns the same ``EmberConfig`` when neither flag was given.
+    ``--seed`` implies the mode is on for this run; without it the
+    configured seed (or the default 42) is used. The config file
+    is never written — the override lives for one invocation,
+    like ``--allow-tools``.
+    """
+    from dataclasses import replace  # noqa: PLC0415 — narrowly scoped
+
+    seed = getattr(args, "seed", None)
+    if not getattr(args, "deterministic", False) and seed is None:
+        return config
+    new_det = replace(
+        config.funi.determinism,
+        enabled=True,
+        seed=config.funi.determinism.seed if seed is None else seed,
+    )
+    return replace(config, funi=replace(config.funi, determinism=new_det))
 
 
 __all__ = ["main"]

@@ -1,8 +1,10 @@
 # Brunnr backend selection — operator-facing reference + worked examples.
 #
-# All keys here belong under the `brunnr:` section of `ember.yaml`
-# until per-realm split lands (deferred to slice 3+). This file exists
-# as a copy-paste reference for the most common Brunnr setups.
+# This is NOT a separate config file (E-033): Ember reads exactly
+# one config file, `ember.yaml` (or `ember.toml`). All keys here
+# belong under the `brunnr:` section of that one file; this file
+# exists only as a copy-paste reference for the most common
+# Brunnr setups.
 #
 # Cross-reference:
 #   docs/adapters/BRUNNR_BACKEND_MATRIX.md     — choose-your-backend table

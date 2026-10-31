@@ -73,7 +73,8 @@ Optional: I can call a small set of operator-approved tools (search the
 Well, read a local file, fetch a URL). Tools are OFF by default; every
 call is approved per-invocation unless you say 'always'.
 
-You can change this later by editing ~/.ember/config/ember.yaml.
+You can change this later by editing your Ember config file in
+~/.ember/config/ (ember.yaml, or ember.toml on installs without PyYAML).
 """
 prompt = "Enable tools? [y/N]"
 

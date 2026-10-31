@@ -143,9 +143,38 @@ class FuniAesirConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class DeterminismConfig:
+    """Determinism mode for tests and benchmarks (E-036).
+
+    OFF by default: the companion samples at the operator's
+    configured temperature and no seed is sent to the backend.
+
+    When ``enabled`` is True, every generation request Ember
+    sends carries the SAME fixed ``seed`` and a temperature of
+    0.0 (greedy decoding) — the effective options computed by
+    :mod:`ember.spark.funi.determinism`, never a mutation of the
+    operator's configured temperature, which stays in the config
+    and returns when the mode is switched off. Same config +
+    same model + same prompt + same retrieved context should
+    then produce the same reply, as far as the backend honours
+    its own seed contract (see the E-036 doc for the honest
+    limits: timestamps, generated ids, and a backend's internal
+    nondeterminism are not Ember's to command).
+
+    ``seed`` must be a non-negative integer; a negative seed is
+    refused at backend open time as CONFIG_INVALID, never
+    silently clamped or dropped.
+    """
+
+    enabled: bool = False
+    seed: int = 42
+
+
+@dataclass(frozen=True, slots=True)
 class FuniConfig:
     runtime: FuniRuntime = FuniRuntime.OLLAMA
     streaming: bool = True
+    determinism: DeterminismConfig = field(default_factory=DeterminismConfig)
     """Whether ``ember chat`` consumes Funi via streaming
     (incremental) or batched (whole reply at once). Default True per
     ADR 0009. Operators on terminals that struggle with byte streams,
@@ -267,6 +296,13 @@ class LoggingConfig:
     level: LogLevel = LogLevel.INFO
     format: LogFormat = LogFormat.STRUCTURED
     destinations: tuple[LoggingDestination, ...] = ()
+    diary: bool = True
+    """Whether Ember keeps its plain-words diary (E-034) beside
+    the technical trace: one dated sentence per thing that
+    happened, under ``<config_root>/diary/``, readable with
+    ``ember diary``. On by default — the diary is the log a
+    friend can read. Set False to keep only the technical
+    trace above."""
 
 
 # --------------------------------------------------------------------- #
@@ -377,12 +413,23 @@ class ConversationConfig:
     deterministic summary of whatever the window drops, produced by
     the summarisation hook (E-021), so trimming never silently
     pretends the earlier conversation did not happen.
+
+    ``active`` (E-035) names the conversation a chat session runs
+    in when no per-invocation choice is made — one talk, kept apart
+    from the companion's other talks (see
+    ``ember.spark.conversation``). It is empty by default: no
+    explicit choice, so the session runs in the ``default``
+    conversation every pre-E-035 episode already belongs to. A
+    per-invocation ``ember chat --conversation`` choice wins over
+    it. Naming an id that is not a valid slug is an error at
+    resolve time, never a silent fall-back to a different talk.
     """
 
     profile: ConversationProfile = ConversationProfile.PI
     token_budget: int | None = None
     max_episodes: int | None = None
     summarise_dropped: bool = True
+    active: str = ""
 
     @property
     def resolved_token_budget(self) -> int:
@@ -529,6 +576,7 @@ __all__ = [
     "CognitionConfig",
     "ConversationConfig",
     "ConversationProfile",
+    "DeterminismConfig",
     "EmbeddingConfig",
     "EmberConfig",
     "FuniAesirConfig",

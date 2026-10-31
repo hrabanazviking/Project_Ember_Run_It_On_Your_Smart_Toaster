@@ -6,6 +6,8 @@ Per ADR 0010 §2.5 — resolves the Well password in this order:
    ``EMBER_WELL_PASSWORD``). Empty / missing → continue.
 2. **Keyring** (``keyring.get_password(keyring_service, username)``)
    when ``use_keyring=True`` and the ``keyring`` package is importable.
+   The package ships as the ``secrets`` extra
+   (``pip install ember-agent[secrets]``, E-044 / docket 20).
    Missing → continue.
 3. **Mode-600 file** at ``PgVectorConfig.secret_ref``. The file *must*
    be 0o600 (operator-only); a more permissive mode is refused with a
@@ -87,7 +89,10 @@ def resolve(  # noqa: PLR0912 — secret resolution is naturally branchy; each b
     if config.use_keyring:
         kr = keyring_module if keyring_module is not None else _try_import_keyring()
         if kr is None:
-            notes.append("keyring package not installed")
+            notes.append(
+                "keyring package not installed "
+                "(install with `pip install ember-agent[secrets]`)"
+            )
         else:
             username = _resolve_username(config)
             if username is None:

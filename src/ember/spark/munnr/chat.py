@@ -36,6 +36,15 @@ a banner. The Episode is written locally.
   closes docket 83: the non-streaming path now executes returned
   ``tool_calls`` through the same bounded loop instead of dropping
   them.
+* **E-054** consults graceful smallness once per turn
+  (``ember.smallness``): as this process's memory approaches
+  the conversation profile's turn budget, the companion sheds
+  features by the stated ladder — history summaries, then
+  semantic retrieval (this turn's search runs text-only and
+  the embed call is skipped), then the wide history window —
+  announcing each shed (and each restore) in plain words on
+  screen and in the diary. Answering, saving, and tool safety
+  are never shed.
 * **E-030** completes the error-honesty shape: a failure the
   operator cannot see is a lie of omission, so the three silent
   degradations are now spoken — a history load that fails says so
@@ -47,6 +56,29 @@ a banner. The Episode is written locally.
   a failed or partial reply never poses as a completed answer
   in the remembered history (see
   ``docs/architecture/E-030_ERROR_HONESTY.md``).
+* **E-031** completes session persistence (docket 82): turns a
+  disconnected session makes, and turns whose Well save fails,
+  are written atomically to the pending-episodes journal under
+  ``<config_root>/state/pending_episodes/`` instead of being lost
+  at exit; the next connected session drains the journal into
+  the Well (in order, before history loads) and says so, with
+  damaged journal files quarantined and reported, never fatal
+  (see ``docs/architecture/E-031_SESSION_PERSISTENCE.md``).
+* **E-034** keeps the diary beside the technical trace: the
+  session's plain-words facts (started, Well reached or not,
+  turns answered and how they were saved, ended) are written
+  to ``<config_root>/diary/`` via :mod:`ember.diary` — never
+  the operator's words, never the reply's words. A diary
+  failure warns once, in plain words, and never stops a chat
+  (see ``docs/architecture/E-034_DIARY_LOG.md``).
+* **E-035** runs the session in one named conversation
+  (``ember.spark.conversation``): history loads only that
+  conversation's turns, each turn is assembled under it and
+  tagged with it, so one talk never bleeds into another. The
+  choice is the ``conversation_id`` argument / ``--conversation``
+  flag, then ``conversation.active`` in the config file, then
+  the ``default`` conversation (see
+  ``docs/architecture/E-035_MULTI_CONVERSATION_ISOLATION.md``).
 """
 
 from __future__ import annotations
@@ -90,11 +122,20 @@ from ember.spark.funi.tools import (
     resolve_with_answer,
     validate_arguments,
 )
+from ember.diary import Diary, diary_root
+from ember.smallness import SmallnessGuard
+from ember.schemas.conversation import DEFAULT_CONVERSATION_ID
+from ember.spark.conversation import (
+    episodes_for_conversation,
+    resolve_conversation_id,
+)
+from ember.spark.conversation.core import ConversationError
 from ember.spark.hjarta.identity import has_identity, load_identity
 from ember.spark.munnr import render
 from ember.spark.persona import episodes_for_persona, resolve_persona
 from ember.spark.persona.core import PersonaError
 from ember.thread import strengr
+from ember.well.pending_journal import PendingJournal, pending_root
 from ember.well.smidja.embed_client import OllamaEmbedClient
 
 if TYPE_CHECKING:
@@ -147,7 +188,9 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     embed_client: OllamaEmbedClient | None = None,
     funi_opener: Callable | None = None,
     strengr_opener: Callable | None = None,
+    smallness_guard: SmallnessGuard | None = None,
     approval_prompter: ApprovalPrompter | None = None,
+    conversation_id: str | None = None,
 ) -> int:
     """Run the chat REPL until EOF or an exit command. Returns exit code."""
     stdin = stdin if stdin is not None else sys.stdin
@@ -160,6 +203,48 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         load_identity(config_root) if has_identity(config_root) else config.identity
     )
 
+    # Diary (E-034): the plain-words record beside the technical
+    # trace. Only facts are recorded — never what the operator
+    # wrote, never what Ember replied. A failed diary write warns
+    # ONCE on stdout, in plain words, and never stops the session.
+    diary = Diary(diary_root(config_root), enabled=config.logging.diary)
+    diary_warned = False
+
+    def diary_note(sentence: str) -> None:
+        nonlocal diary_warned
+        if not diary.enabled or diary.record(sentence):
+            return
+        if not diary_warned:
+            diary_warned = True
+            stdout.write(
+                "[note: Ember's diary could not be written, so this "
+                "session's plain-words record may be missing entries. "
+                "The chat itself is unaffected.]\n"
+            )
+            stdout.flush()
+
+    # Graceful smallness (E-054): the shed ladder, consulted
+    # once per turn against this process's own memory and the
+    # conversation profile's turn budget from the book. A shed
+    # (or a restore) is announced in plain words — on the
+    # person's screen and in the diary — at the moment it
+    # happens, never silently. The plan shapes the turn below:
+    # semantic retrieval goes text-only, and the history window
+    # is built under the plan's (possibly narrowed) config.
+    # ``smallness_guard`` is a test seam: an injected guard
+    # judges by its own assessor (a test process's resident
+    # memory is the harness's, not a companion's, so a suite
+    # that means to pin windowing must not inherit whatever
+    # pressure the harness happens to be under).
+    def announce_smallness(sentence: str) -> None:
+        stdout.write(f"[room: {sentence}]\n")
+        stdout.flush()
+        diary_note(sentence)
+
+    smallness = smallness_guard or SmallnessGuard(
+        config.conversation.profile, announce=announce_smallness
+    )
+
     # Persona (E-025): who the companion is this session. An
     # explicitly configured persona that cannot load stops the
     # session with the reason named — never a silent swap to a
@@ -169,19 +254,50 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     try:
         persona = resolve_persona(config_root, config.personas.active or None)
     except PersonaError as exc:
+        diary_note(
+            "A chat session could not start because the chosen "
+            "companion profile could not be loaded."
+        )
         stdout.write(f"Persona could not be loaded: {exc}\n")
         return 1
     identity = persona.identity
 
+    # Conversation (E-035): which talk this session is in. An
+    # invalid chosen id stops the session with the reason named —
+    # never a silent fall-back to a different conversation, which
+    # would mix the talks the operator asked to keep apart.
+    try:
+        session_conversation = resolve_conversation_id(
+            conversation_id, config.conversation.active
+        )
+    except ConversationError as exc:
+        diary_note(
+            "A chat session could not start because the chosen "
+            "conversation name was not usable."
+        )
+        stdout.write(f"Conversation could not be opened: {exc}\n")
+        return 1
+    if session_conversation != DEFAULT_CONVERSATION_ID:
+        diary_note(
+            f"This session is in the '{session_conversation}' "
+            "conversation, kept apart from Ember's other talks."
+        )
+
     # Open Funi first — without a reasoner, the REPL has nothing to do.
     funi_result = open_funi(config.funi)
     if isinstance(funi_result, Unavailable):
+        diary_note(
+            "A chat session could not start because the model "
+            "program was not available."
+        )
         stdout.write(
             f"Funi is unavailable ({funi_result.reason.value}): "
             f"{funi_result.detail or 'no detail'}\n"
         )
         return 1
     funi: FuniHandle = funi_result
+    _model = getattr(funi, "model_id", "") or "an unknown model"
+    diary_note(f"A chat session started with {identity.name} (model {_model}).")
 
     # Open the Well. Disconnected is honest, not fatal — we continue ungrounded.
     well_result = open_well(config.strengr, config.brunnr)
@@ -189,9 +305,60 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     disconnect: Disconnected | None
     if isinstance(well_result, Disconnected):
         brunnr, disconnect = None, well_result
+        diary_note(
+            "The memory store could not be reached, so this session "
+            "began without memory grounding."
+        )
         stdout.write(render.render_well_disconnected_banner(disconnect) + "\n")
     else:
         brunnr, disconnect = well_result, None
+        diary_note("The memory store was connected.")
+
+    # Session persistence (E-031, docket 82): the pending-episodes
+    # journal for this config root. A connected session drains it
+    # into the Well *before* history loads, so turns saved locally
+    # by an earlier disconnected (or save-failed) session join the
+    # remembered history in order. Drain outcomes are spoken:
+    # flushed turns are announced, a refused drain keeps its files
+    # and says why, and damaged files are quarantined + reported.
+    pending = PendingJournal(pending_root(config_root))
+    if brunnr is not None and pending.count():
+        drain = pending.drain(brunnr)
+        if drain.flushed:
+            stdout.write(
+                f"[well: added {drain.flushed} saved turn(s) from the "
+                "local pending journal to the Well.]\\n"
+            )
+        if drain.corrupt:
+            stdout.write(
+                f"[warning: {len(drain.corrupt)} saved turn file(s) in "
+                "the pending journal were damaged and have been moved "
+                "aside (not deleted) under "
+                f"{pending.root / 'corrupt'}; they could not be added "
+                "to the Well.]\\n"
+            )
+        if drain.failure is not None:
+            stdout.write(
+                "[warning: saved turns could not be added to the Well "
+                f"({drain.failure}); {drain.kept} turn(s) are still "
+                "saved locally and will be tried again next session.]\\n"
+            )
+        if drain.flushed:
+            diary_note(
+                f"{drain.flushed} saved turn(s) from an earlier session "
+                "were added to the memory store."
+            )
+        if drain.corrupt:
+            diary_note(
+                f"{len(drain.corrupt)} saved turn file(s) were damaged "
+                "and were moved aside, not deleted."
+            )
+        if drain.failure is not None:
+            diary_note(
+                "Some saved turns could not be added to the memory "
+                "store and are still saved locally for next time."
+            )
+        stdout.flush()
 
     tool_ctx = _maybe_init_tools(
         config=config,
@@ -225,10 +392,29 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         try:
             # Per-persona separation (E-025): this persona's
             # session starts from its own remembered turns only.
-            episodes = episodes_for_persona(
-                brunnr.recent_episodes(_HISTORY_LOAD_LIMIT), persona.id
+            # Per-conversation separation (E-035): of those, only
+            # this conversation's turns — the other talks this
+            # persona remembers stay in their own conversations.
+            # Filtering happens BEFORE windowing, so a foreign
+            # talk's turns can neither ride verbatim nor leak in
+            # through the window's summary of dropped episodes.
+            episodes = episodes_for_conversation(
+                episodes_for_persona(
+                    brunnr.recent_episodes(_HISTORY_LOAD_LIMIT), persona.id
+                ),
+                session_conversation,
+            )
+            diary_note(
+                f"{len(episodes)} earlier exchange(s) were loaded "
+                "from memory."
+                if episodes
+                else "No earlier exchanges were loaded from memory."
             )
         except Exception as exc:
+            diary_note(
+                "Saved conversations could not be loaded, so this "
+                "session started without them (they were not deleted)."
+            )
             stdout.write(
                 "[warning: your saved conversations could not be loaded "
                 f"({type(exc).__name__}: {exc}); this session starts "
@@ -260,13 +446,27 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 break
 
             started = datetime.now(tz=UTC)
+            # E-054: judge this turn's room before any of the
+            # turn's priced work runs — the plan decides whether
+            # retrieval embeds (semantic) or reads plain words,
+            # and under what history window the prompt is built.
+            smallness_plan = smallness.consult().plan
             try:
-                hits, retrieval_failure = _retrieve(text, brunnr, embedder)
+                hits, retrieval_failure = _retrieve(
+                    text,
+                    brunnr,
+                    embedder,
+                    text_only=not smallness_plan.semantic_retrieval,
+                )
             except KeyboardInterrupt:
                 # E-028: talked over during retrieval — before any
                 # reply existed. The turn is abandoned (nothing is
                 # persisted; there is no partial reply to tag) and
                 # the session continues at the next prompt.
+                diary_note(
+                    "A turn was stopped while looking things up, "
+                    "before any reply was written."
+                )
                 stdout.write("\n" + render.INTERRUPTED_TAG + "\n")
                 stdout.flush()
                 continue
@@ -284,7 +484,9 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     "grounded in your documents]\n"
                 )
                 stdout.flush()
-            windowed = window_history(episodes, config.conversation)
+            windowed = window_history(
+                episodes, smallness_plan.conversation_config(config.conversation)
+            )
             context = funi_prompt.assemble(
                 identity=identity,
                 episodes=windowed.episodes,
@@ -292,6 +494,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 well_disconnected=turn_ungrounded,
                 summary=windowed.summary,
                 persona=persona,
+                conversation_id=session_conversation,
             )
 
             if streaming:
@@ -314,6 +517,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     started_at=started,
                     completed_at=completed,
                     persona_id=persona.id,
+                    conversation_id=session_conversation,
                 )
             else:
                 # Non-streaming opt-out path ("give me a single blob"
@@ -363,9 +567,23 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     started_at=started,
                     completed_at=completed,
                     persona_id=persona.id,
+                    conversation_id=session_conversation,
                 )
 
             episodes.append(episode)
+            # Diary (E-034): the turn's outcome in plain words,
+            # read off the same tags the operator saw and the
+            # Episode carries — never the turn's content.
+            if render.INTERRUPTED_TAG in episode.ember_reply:
+                diary_note("A turn was stopped before its reply finished.")
+            elif render.ERROR_TAG in episode.ember_reply:
+                diary_note("A turn ended with an error instead of a finished answer.")
+            elif render.TRUNCATED_TAG in episode.ember_reply:
+                diary_note("A turn's reply was cut off because it ran too long.")
+            elif turn_ungrounded:
+                diary_note("A turn was answered without memory grounding.")
+            else:
+                diary_note("A turn was answered.")
             if brunnr is not None:
                 # Persistence failure is recoverable — we keep serving
                 # the operator with the in-memory episode window.
@@ -377,13 +595,67 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 # failure is caught, never hidden — before E-030 it
                 # was suppressed in silence and a session could
                 # believe it was remembering when the store was not.
+                # E-031 (docket 82): a failed save now falls back to
+                # the pending journal, so the turn survives exit and
+                # drains into the Well on a later connected session;
+                # only when the journal *also* fails is the turn
+                # remembered only until this session ends.
                 try:
                     brunnr.add_episode(episode)
+                    diary_note("The turn was saved to the memory store.")
                 except Exception as exc:
+                    try:
+                        pending.append(episode)
+                    except Exception as journal_exc:
+                        diary_note(
+                            "The turn could not be saved anywhere, so "
+                            "it will only be remembered until this "
+                            "session ends."
+                        )
+                        stdout.write(
+                            "[warning: this turn could not be saved to the "
+                            f"Well ({type(exc).__name__}: {exc}) or to the "
+                            "local pending journal "
+                            f"({type(journal_exc).__name__}: {journal_exc}); "
+                            "it will be remembered only until this "
+                            "session ends.]\n"
+                        )
+                    else:
+                        diary_note(
+                            "The turn could not be saved to the memory "
+                            "store, so it was saved locally for a later "
+                            "session."
+                        )
+                        stdout.write(
+                            "[warning: this turn could not be saved to the "
+                            f"Well ({type(exc).__name__}: {exc}); it has "
+                            "been saved locally and will be added to the "
+                            "Well when it can be reached again.]\n"
+                        )
+                    stdout.flush()
+            else:
+                # Disconnected session (E-031, docket 82): the turn
+                # goes to the pending journal — DATA_FLOW §2.2 step
+                # 9', promised since the Episode schema was written.
+                # The disconnect banner already told the operator the
+                # Well is unreachable; a journal failure is the new
+                # fact, and it is spoken like any save failure.
+                try:
+                    pending.append(episode)
+                    diary_note(
+                        "The turn was saved locally, to be added to "
+                        "the memory store when it can be reached again."
+                    )
+                except Exception as journal_exc:
+                    diary_note(
+                        "The turn could not be saved anywhere, so it "
+                        "will only be remembered until this session ends."
+                    )
                     stdout.write(
-                        "[warning: this turn could not be saved to the "
-                        f"Well ({type(exc).__name__}: {exc}); it will be "
-                        "remembered only until this session ends.]\n"
+                        "[warning: this turn could not be saved locally "
+                        f"({type(journal_exc).__name__}: {journal_exc}); "
+                        "it will be remembered only until this session "
+                        "ends.]\n"
                     )
                     stdout.flush()
     finally:
@@ -396,6 +668,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
             with contextlib.suppress(Exception):
                 brunnr.close()
 
+    diary_note("The chat session ended.")
     return 0
 
 
@@ -1067,6 +1340,8 @@ def _retrieve(
     text: str,
     brunnr: BrunnrHandle | None,
     embedder: OllamaEmbedClient,
+    *,
+    text_only: bool = False,
 ) -> tuple[list[RetrievalHit], str | None]:
     """Search the Well for one turn; return ``(hits, failure)``.
 
@@ -1087,6 +1362,15 @@ def _retrieve(
     """
     if brunnr is None:
         return [], None
+    # E-054: graceful smallness may shed semantic retrieval —
+    # the turn then skips the embed call entirely (saving the
+    # work, not just its use) and searches on plain words,
+    # the same honest text shape the no-vector degrade uses.
+    if text_only:
+        try:
+            return brunnr.text_search(text, k=_DEFAULT_K), None
+        except Exception as exc:
+            return [], f"{type(exc).__name__}: {exc}"
     try:
         vectors = embedder.embed([text])
     except Exception:

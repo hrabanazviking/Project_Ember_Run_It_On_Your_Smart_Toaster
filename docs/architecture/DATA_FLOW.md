@@ -2,7 +2,7 @@
 
 **Voice:** Cartographer (Védis Eikleið)
 **Status:** Ratified 2026-05-21 by Volmarr. Canonical. The Runa-shaped predecessor is preserved at `docs/archive/runa-inherited/architecture/DATA_FLOW.md` for lineage reference.
-**Last touched:** 2026-05-21 (promoted from `EMBER_DATA_FLOW.md` at ratification)
+**Last touched:** 2026-05-21 (promoted from `EMBER_DATA_FLOW.md` at ratification); corrected in place 2026-10-31 by E-039 for docket 84 — facts only (retrieval k, streaming, tool use, the pending journal, the missing `AskTurn` type); the flow grammar and the voice stand. E-194 reconciles the builder docs whole.
 **Reads with:** `ARCHITECTURE.md` (shape), `DOMAIN_MAP.md` (ownership), `docs/SYSTEM_VISION.md` (intent).
 
 ---
@@ -39,7 +39,8 @@ There are no other flows that ship in the first slice. New flows require an ADR.
 [1] Operator types a line at `ember chat`
     │
     ▼
-[2] Munnr parses the line into a typed `AskTurn(text, time)`
+[2] Munnr takes the line as the turn's input (there is no
+    `AskTurn` type in the code; the line itself is what travels)
     │
     ▼
 [3] Munnr asks Strengr for a Well handle.
@@ -54,19 +55,25 @@ There are no other flows that ship in the first slice. New flows require an ADR.
     │                                       endpoint.)
     │
     ▼
-[5] Munnr calls BrunnrHandle.hybrid_search(qvec, text, k=8)
+[5] Munnr calls BrunnrHandle.hybrid_search(qvec, text, k=5)
+    │       (the text-only fallback likewise searches k=5)
     │       returns list[RetrievalHit] (chunk + document title + score)
     │
     ▼
 [6] Munnr assembles a Funi prompt:
     │       · system prompt (from ~/.ember/identity/)
-    │       · last N episodes (read from Well)
+    │       · the windowed last episodes (loaded from the Well
+    │         at session start and held under the profile's
+    │         token budget — E-021)
     │       · retrieved chunks, with attribution
     │       · the operator's line
     │
     ▼
-[7] Munnr calls Funi.complete(prompt, context, tools=None)
-    │       returns FuniReply(text, tool_calls=None, finish_reason)
+[7] Munnr calls Funi.complete_streaming(prompt, context, tools)
+    │       — streaming is the default; the non-streaming
+    │       complete() path runs the same bounded tool loop —
+    │       and consumes FuniReply / stream chunks (text,
+    │       tool_calls, finish_reason)
     │
     ▼
 [8] Munnr renders the reply, with citations to retrieved chunks.
@@ -106,9 +113,13 @@ The flow is **synchronous**. There is no event bus, no kernel, no concurrent ret
          ungrounded; run `ember doctor` for diagnosis."
     │
     ▼
-[9'] Munnr writes the Episode locally to ~/.ember/state/pending_episodes/
-    │   (a tiny SQLite file). When the Well comes back, Hjarta or a
-    │   `ember well drain` flushes these in.
+[9'] Munnr writes the Episode locally to the pending-episodes
+    │   journal at <config_root>/state/pending_episodes/ — one
+    │   small JSON file per turn, written atomically (E-031).
+    │   The next connected chat session drains the journal into
+    │   the Well, in order, before history loads, and says so;
+    │   damaged journal files are quarantined (moved aside,
+    │   never deleted) and reported.
 ```
 
 This is the Vow of Graceful Offline in flow form. Ember **never** hides being disconnected. She **never** invents facts to fill the silence. The sad path is a first-class flow, not an afterthought.
@@ -216,7 +227,7 @@ Tracking *who owns the bytes at each step* is the Cartographer's job. Here is th
 | Step | Datum | Lives in | Lifetime |
 |---|---|---|---|
 | 1 | Operator's raw input | stdin / arg | This turn only. |
-| 2 | `AskTurn` | RAM (Munnr) | This turn only. |
+| 2 | The operator's line | RAM (Munnr) | This turn only. |
 | 3 | `BrunnrHandle` | RAM (Strengr → Munnr) | Process lifetime. |
 | 4 | `qvec` (embedding) | RAM (Munnr) | This turn only. |
 | 5 | `RetrievalHit` list | RAM (Munnr) | This turn only. |
@@ -251,9 +262,9 @@ The discipline this enforces: **Smiðja's RAM working set is one batch**. A 50 0
 Listed so the negative space is explicit.
 
 - **No background reflection.** Ember does not silently re-read her own memory while idle. If the operator wants summarisation, they ask for it.
-- **No autonomous tool use.** Funi may produce a structured tool call only when the operator's turn explicitly invited one (e.g. `ember ask --allow-tools "…"`). No tools in the default first-slice path.
+- **No autonomous tool use.** Tools are off by default. When the operator enables them in config, every call still passes validation, approval, a timeout, and the audit log (E-026/E-027), and the tool loop is bounded per turn — on both the streaming and the non-streaming path.
 - **No cross-operator flows.** Ember is single-operator. A shared Well between two operators is supported, but each operator runs their own Ember instance.
-- **No streaming in the first slice.** Funi returns whole replies. Streaming is a later slice.
+- **Streaming is the default.** Funi replies stream word by word unless config says otherwise, and the stream can be interrupted at every waiting point without corrupting the session (E-028).
 
 ---
 

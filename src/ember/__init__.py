@@ -29,4 +29,8 @@ ADR 0012 (Auga / Rödd / Bifröst — alternate surfaces); it doesn't
 block any current deployment.
 """
 
+from ember.api import API_VERSION
+
 __version__ = "0.2.0"
+
+__all__ = ["API_VERSION", "__version__"]

@@ -239,6 +239,14 @@ def _system_text(context) -> str:
 
 
 def test_save_failure_warns_and_session_keeps_serving(tmp_path: Path) -> None:
+    # E-031 attribution: this test originally pinned E-030's
+    # consequence ("remembered only until this session ends").
+    # E-031 gives a failed save a second home — the pending
+    # journal — so the spoken consequence is now the journal
+    # fallback; the E-030 core (warned at the moment, in plain
+    # words, session keeps serving) is unchanged and still pinned
+    # here. The journal-only failure case keeps the old wording
+    # and is pinned in test_session_persistence_e031.py.
     funi = _StreamingFuni(_chunks("an answer", FinishReason.STOP))
     brunnr = _Brunnr(save_error=RuntimeError("disk full"))
     rc, out = _run(
@@ -251,7 +259,7 @@ def test_save_failure_warns_and_session_keeps_serving(tmp_path: Path) -> None:
     assert funi.streaming_calls == 2
     assert out.count("this turn could not be saved to the Well") == 2
     assert "RuntimeError: disk full" in out
-    assert "remembered only until this session ends" in out
+    assert "saved locally" in out
     # Nothing reached the store — and now the operator knows that.
     assert brunnr.episodes == []
 

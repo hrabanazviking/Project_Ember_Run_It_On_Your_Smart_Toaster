@@ -1,0 +1,33 @@
+# Example config — a phone-class Ember (E-039).
+#
+# Copy this file to ~/.ember/config/ember.toml and edit the few
+# lines you care about; every key is optional and anything you
+# leave out keeps its sensible default. Ember refuses a key it
+# does not know, by name — a typo can never silently change who
+# your companion is (E-033).
+#
+# TOML is the shape an install without PyYAML reads with the
+# standard library alone; the same keys in YAML shape live in
+# config/ember.example.yaml at the repo root.
+#
+# This file is verified by the E-039 tests: it must load through
+# ember.config.load_ember_config exactly as written.
+
+[identity]
+# The name you call your companion, and the one-line role it
+# opens with. Plain words — this is what a person reads.
+name = "Ember"
+role = "your small local AI companion"
+
+[conversation]
+# Phone-class: a small history window (1024 tokens, the last 5
+# turns kept word-for-word) so a phone-sized machine carries
+# the talk comfortably. What falls out of the window is first
+# summarised, so earlier talk is never silently forgotten.
+profile = "phone"
+
+[logging]
+# Keep the plain-words diary (what happened, never what was
+# said) beside the technical log. Read it any time with
+# `ember diary`.
+diary = true

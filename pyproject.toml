@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.18"]
+requires = ["hatchling>=1.18,<2"]
 build-backend = "hatchling.build"
 
 [project]
@@ -47,10 +47,21 @@ dependencies = []
 [project.optional-dependencies]
 # Per-adapter dependencies, shipped as each phase lands. Operators
 # install only the extras they need.
-sqlite_vec = ["sqlite-vec>=0.1.6"]
-config = ["pyyaml>=6.0"]   # Enables YAML config files. TOML config works without this.
-pgvector = ["psycopg[binary]>=3.2", "pgvector>=0.3"]   # ADR 0010 — Postgres + pgvector Brunnr.
-mcp = ["mcp>=1.27"]   # ADR 0014 — bidirectional MCP integration (client + server).
+sqlite_vec = ["sqlite-vec>=0.1.6,<0.2"]
+config = ["pyyaml>=6.0,<7"]   # Enables YAML config files. TOML config works without this.
+pgvector = ["psycopg[binary]>=3.2,<4", "pgvector>=0.3,<0.6"]   # ADR 0010 — Postgres + pgvector Brunnr.
+mcp = ["mcp>=1.27,<2"]   # ADR 0014 — bidirectional MCP integration (client + server).
+# E-044 (dependency diet, docket 20 + 23): every requirement above
+# and below now carries an upper bound at the next major of the
+# line the code was written and tested against. The unbounded
+# floors were proven harmful, not merely untidy: on 2026-10-31
+# `mcp>=1.27` resolved to mcp 2.3.0, whose SDK renamed FastMCP —
+# `ember mcp serve` could not have started on a fresh install.
+# Bounds are reproducibility + breakage armour, claimed as such
+# in docs/architecture/E-044_INSTALL_WEIGHT_CUT_II.md, not as
+# byte savings. The byte cuts of this slice are the `dev` split
+# below and the `secrets` shape here:
+secrets = ["keyring>=24,<26"]   # ADR 0010 §2.5 — the optional keyring secret source for the pgvector Well. Its own extra, never folded into `pgvector`: keyring's Linux tree (SecretStorage + cryptography) weighs ~16.6 MB, and only operators who use the keyring source should pay it.
 # Planned for later phases (filled in as they land):
 #   qdrant      = ["qdrant-client>=1.9"]
 #   chroma      = ["chromadb>=0.5"]
@@ -59,11 +70,19 @@ mcp = ["mcp>=1.27"]   # ADR 0014 — bidirectional MCP integration (client + ser
 #   validation  = ["pydantic>=2.7"]   # Richer config-error messages.
 # Ollama (the first-slice Funi runtime) is reached over HTTP via the
 # standard library — no client dependency required.
+# E-044: `dev` is the test shape only — what the suite and the
+# slice gate actually run (measured 7.6 MB installed). The lint
+# tools moved to their own `lint` extra (measured 81.5 MB: mypy's
+# compiled core + the ruff binary); a test-only install no longer
+# pays for them. `pip install ember-agent[dev,lint]` restores the
+# old combined shape.
 dev = [
-    "pytest>=8",
-    "pytest-cov>=5",
-    "ruff>=0.4",
-    "mypy>=1.10",
+    "pytest>=8,<10",
+    "pytest-cov>=5,<8",
+]
+lint = [
+    "ruff>=0.4,<1",
+    "mypy>=1.10,<3",
 ]
 
 [project.scripts]
@@ -90,6 +109,24 @@ packages = ["src/ember"]
 # bloat the PyPI sdist from ~200 KB to ~33 MB and add no value to
 # someone running `pip install ember-agent`. Same for the repo-root
 # hero images (large PNG/JPEG files used by the rendered README).
+#
+# E-043 (install weight cut I): the same rule now covers the optional
+# members and the docs corpora. The members (Verdandi, kista,
+# mempalace, mimir-well, seidr_engine, astrology-engine, bifrost,
+# Hamr, Open-VTT, CloakBrowser, the Old Norse dictionary) are separate
+# programs that live in this monorepo and are run from a repo
+# checkout — none of them is part of the `ember-agent` package, and
+# the core never imports them. Dragging them into the sdist made a
+# source install download ~45 MB (127 MB unpacked, mempalace alone
+# 57 MB of it) to obtain a 305 KB wheel's worth of core. Excluding
+# them makes the members truly optional at install: `pip install
+# ember-agent` fetches the core only; a member is "installed" by
+# checking out the repo, as it always has been. The elder codex and
+# Mythic Plan trees under docs/ are heritage corpora in the same
+# class as the already-excluded university trees, and the design
+# lawbook (PDF + Markdown) and the campaign state file are repo
+# furniture, not package. Nothing here deletes anything from the
+# repo — an sdist exclude is a shipping decision, not a removal.
 [tool.hatch.build.targets.sdist]
 exclude = [
     "docs/RunaUniversity2040",
@@ -104,11 +141,46 @@ exclude = [
     "*.png",
     "*.jpeg",
     "*.jpg",
+    "*.pdf",
     "Yggdrasil_and_Huginn_and_Muninn_Theory.md",
     ".venv",
     ".pytest_cache",
     ".ruff_cache",
     ".mypy_cache",
+    # E-043: optional members — separate programs, never package.
+    "Verdandi",
+    "kista",
+    "mempalace",
+    "mimir-well",
+    "seidr_engine",
+    "astrology-engine",
+    "bifrost",
+    "Hamr",
+    "Open-VTT",
+    "CloakBrowser",
+    "cleasby-vigfusson-old-norse-dict",
+    # E-043: docs heritage corpora (codex + Mythic Plan trees).
+    "docs/chatdoll_codex",
+    "docs/sap_codex",
+    "docs/hermes_codex",
+    "docs/waifu_codex",
+    "docs/peer_codex",
+    "docs/ragnarok_codex",
+    "docs/ClawLite_Mythic_Plan",
+    "docs/Pocketpal_Mythic_Plan",
+    "docs/Cortex_Mythic_Plan",
+    "docs/WaifuOS_Mythic_Plan",
+    "docs/Open_Viking_Mythic_Plan",
+    "docs/Open_LLM_VTuber_Mythic_Plan",
+    "docs/AIRI_Mythic_Plan",
+    "docs/Graphite_Git_Mythic_Plan",
+    "docs/SillyTavern_Mythic_Plan",
+    "docs/yggdrasil",
+    "docs/tui",
+    "docs/kloinn",
+    # E-043: repo furniture, not package.
+    "Volmarr_Cyber_Viking_Master_Visual_Design_Lawbook.md",
+    "CAMPAIGN_STATE.md",
 ]
 
 [tool.ruff]

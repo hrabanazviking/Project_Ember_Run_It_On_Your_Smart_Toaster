@@ -29,6 +29,8 @@ from ember.schemas.ingest import (
     IngestSummary,
     ParsedFile,
 )
+from ember.battery import DutyCycler
+from ember.etiquette import wait_for_room
 from ember.well.smidja.chunker import chunk as chunk_text
 from ember.well.smidja.embed_client import OllamaEmbedClient
 from ember.well.smidja.journal import Journal
@@ -208,7 +210,19 @@ def run(  # noqa: PLR0913 — orchestrator naturally takes one config + several 
     lets tests mock the embedding HTTP without monkey-patching.
     """
     cfg = smidja_config or SmidjaConfig()
-    client = embed_client or OllamaEmbedClient(config=cfg.embedding)
+    # E-051: the default client carries the patience hook —
+    # ingest is bulk background work, so its embedding yields
+    # between batches on a busy or hot machine. E-053: it also
+    # carries a battery duty cycler — on a discharging
+    # phone-class battery the same embedding runs in bursts
+    # with rests between; on a mains-fed machine the cycler
+    # reads "no battery" and never rests. A client the
+    # caller passed in is the caller's own shape, untouched.
+    client = embed_client or OllamaEmbedClient(
+        config=cfg.embedding,
+        patience_hook=wait_for_room,
+        battery_hook=DutyCycler().between_batches,
+    )
     journal = Journal.open(
         cfg.journal,
         IngestSourceKind.LOCAL_FILES,

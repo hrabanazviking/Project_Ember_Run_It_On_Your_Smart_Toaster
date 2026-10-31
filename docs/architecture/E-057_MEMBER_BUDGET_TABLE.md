@@ -1,0 +1,142 @@
+# E-057 — Member budget table: every member's cost per profile
+
+*Part III, slice E-057. Roadmap line: "Member budget table:
+every member's cost per profile — the monorepo's weight,
+honestly itemised." The published table lives in
+`docs/BUDGET_BOOK.md` §7; its pinning tests are
+`tests/unit/test_member_budget_table_e057.py`.*
+
+## In plain words
+
+**The companion core is tiny; the monorepo around it is
+not — and now every member's weight is on one table.**
+The twelve members that can run (the core plus the eleven
+imported members of the E-002 census) weigh **131,211,064
+bytes (125.13 MiB) of tracked files** between them, and
+almost all of that weight is three members: mempalace
+(59,049,715 B), the Old Norse dictionary (24,221,782 B)
+and Verdandi (16,817,105 B) — and in each case the weight
+is data, not code (benchmark corpora, a test snapshot,
+loose images; E-002/E-014).
+
+Judged against the budget book's own install ceilings,
+four members fit even the toaster's 2 MiB (the core,
+mimir-well, seidr_engine, bifrost), kista fits the phone,
+four fit the pi (astrology-engine, Hamr, Open-VTT,
+CloakBrowser's tracked tree), and three fit **no profile
+at all** — mempalace, the dictionary, and Verdandi, which
+misses even the laptop's 16 MiB ceiling by 39,889 bytes.
+None of this makes any member cost anything to a core
+user: since E-043 the members are excluded from the
+core's distribution and are never installed with it. A
+member's cost is paid only by someone who carries the
+whole monorepo or runs that member from a checkout — the
+table prices exactly that choice, per profile.
+
+## 1. Method (so any keeper can re-measure identically)
+
+- **Tracked size**: `git ls-files` per top-level member
+  directory, each tracked file's on-disk byte size summed
+  (the E-002/E-014 method). Measured 2026-10-31 on the VM
+  at the slice's opening tree. Bytecode caches and other
+  untracked artefacts are not counted. The slice touches
+  no member directory, so the figures are the tree's at
+  banking as well; the E-057 tests re-derive them live and
+  fail if the published table drifts.
+- **Smallest covering profile**: the smallest profile (in
+  `ember.budgets` order) whose *install ceiling* is at
+  least the member's tracked size — the book's ceilings
+  turned on the members, exactly as E-055 §6 promised.
+  This is a checkout-weight judgement, stated as such:
+  no member except the core has a measured *installed*
+  weight (the core's is 978,843 B, E-041).
+- **Import-level RAM floor**: a fresh Python process that
+  imports the member's top package and reads its own
+  VmHWM from `/proc/self/status` (the E-042 method),
+  median of three runs on the VM, bare default env. The
+  bare interpreter's floor is **10.1 MiB** by the same
+  method, so a floor near it means "the top package is
+  light", never "the running program costs this". Raw
+  runs: `~/workspace/.verify-tmp/ember-e057/import_ram.json`.
+  Running costs, where a prior slice measured them, are
+  named in §3 — they are always the larger, truer figure.
+
+## 2. The table (as published in `docs/BUDGET_BOOK.md` §7)
+
+| Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
+|---|---|---|---|---|
+| `src/` (ember core) | 129 | 814,264 B | toaster | 12.0 MiB |
+| `Verdandi/` | 179 | 16,817,105 B | none | 12.6 MiB |
+| `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
+| `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
+| `mimir-well/` | 58 | 607,675 B | toaster | 20.8 MiB |
+| `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
+| `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
+| `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
+| `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
+| `Open-VTT/` | 209 | 6,768,730 B | pi | NOT MEASURED |
+| `CloakBrowser/` | 112 | 6,420,853 B | pi | NOT MEASURED |
+| `cleasby-vigfusson-old-norse-dict/` | 170 | 24,221,782 B | none | NOT MEASURED |
+
+## 3. Honest limits and the rows that need a second look
+
+- **Import floors are floors.** mempalace's 11.5 MiB is
+  its top package only — its search/MCP stack pulls
+  ChromaDB + ONNX (E-012), which this bare env does not
+  import. astrology-engine's 12.4 MiB imports a module
+  whose compute dependencies (pyswisseph and kin) are
+  absent and undeclared (E-006/E-007): importing is not
+  computing. Verdandi's floor is its heartbeat package;
+  the hub's *running* cost is E-041's live 21.9 MiB.
+  The core's running idle is 40.7 MiB (E-041), not 12.0.
+- **NOT MEASURED, with reasons.** Open-VTT runs on the
+  Godot engine, which is absent on the VM (E-006) — no
+  honest RAM figure exists here. The dictionary is a
+  Next.js/Node app with `node_modules` absent (E-006) —
+  likewise. CloakBrowser's import fails in the bare env
+  (`ModuleNotFoundError: httpx`, its declared dependency
+  shape), and its real cost is its proprietary Chromium
+  binary, which is **absent from the tree** (E-007): the
+  tracked 6,420,853 B is wrapper + JS only, and the
+  vendored ~190 MB idle / ~200 MB binary figures are
+  upstream's claims, recorded for E-179 — never adopted
+  as measurements.
+- **Hamr's floor is the heaviest import (40.1 MiB)** —
+  still inside even the toaster's 64 MiB turn ceiling as
+  an import, but Hamr *building* is governed by its own
+  perf budget (peak ≤1,500 MB, E-015), a laptop-class
+  act; E-146 owns its asset budgets in Part IX.
+- **The rest of the estate is checkout-only.** The
+  remaining tracked weight — `docs/` (~44 MiB, growing
+  with this campaign), root loose files (~35 MiB of
+  images and codices), `assets/` (3,406,778 B), `tests/`,
+  and the small scaffolding dirs (`config/`, `deploy/`,
+  `examples/`, `scripts/`, `tools/`, `vendor/`; under
+  100 KB together) — totals roughly 83 MiB of the
+  ~209 MiB tracked tree. None of it is installed or run
+  with the companion; it is the monorepo's library and
+  workshop, priced here so the whole tree is accounted
+  for, and deliberately not judged against profiles.
+- No ceiling moved, no anchor in `ember.budgets`
+  changed, no member code touched, no README touched,
+  no new docket items. Docket 62's duplication (some of
+  Verdandi's image weight is triplicated, E-014) stands
+  as recorded; removing anything remains Volmarr's word.
+
+## 4. Gate
+
+- New tests standalone (with E-055's drift armour):
+  **15 passed** (7 E-057 + 8 E-055) in the default env.
+- Slice gate Run B (default env, pgvector file
+  excluded): **1054 passed, 6 failed, 25 skipped,
+  1 warning** — 1047 E-056 baseline + 7 new; the 6 are
+  the proven environment failures, identical set.
+- Slice gate Run D (whole, extras): **1111 passed,
+  0 failed, 19 skipped, 1 warning**, exit 0 —
+  1104 + 7 new, reconciles exactly. (Logs in
+  `~/workspace/.verify-tmp/ember-e057/gate/`.)
+- No README touched. No code in `src/` changed — this
+  slice measures, publishes and pins; it does not
+  rebuild.
+
+E-058 next — the Part III gate.

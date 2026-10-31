@@ -33,6 +33,7 @@ from ember.schemas.config import (
 from ember.schemas.episode import Episode
 from ember.schemas.funi import ContextKind, FinishReason
 from ember.schemas.stream import FuniStreamChunk
+from ember.smallness import SmallnessGuard, assess
 from ember.spark.funi import prompt as funi_prompt
 from ember.spark.funi.ollama.adapter import _messages_from_context
 from ember.spark.funi.windowing import (
@@ -272,6 +273,15 @@ class _NullEmbed:
 
 def _run_chat(tmp_path: Path, brunnr: _FakeBrunnr, funi: _FakeFuni,
               config: EmberConfig) -> int:
+    # E-054: this file's subject is windowing, not smallness.
+    # The chat loop's shed ladder judges the *process's* memory
+    # — in a test run that is the harness's memory, not a
+    # companion's — so the guard is pinned comfortable through
+    # chat.run's seam; E-054's own tests pin the ladder.
+    calm = SmallnessGuard(
+        config.conversation.profile,
+        assess_fn=lambda: assess(config.conversation.profile, 1.0),
+    )
     return chat.run(
         config=config,
         config_root=tmp_path,
@@ -280,6 +290,7 @@ def _run_chat(tmp_path: Path, brunnr: _FakeBrunnr, funi: _FakeFuni,
         embed_client=_NullEmbed(),
         funi_opener=lambda _cfg: funi,
         strengr_opener=lambda *_a: brunnr,
+        smallness_guard=calm,
     )
 
 

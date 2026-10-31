@@ -45,6 +45,7 @@ from ember.schemas.tool import (
     ToolDescriptor,
     ToolParameterKind,
 )
+from ember.spark.funi.determinism import determinism_error, effective_options
 
 logger = logging.getLogger(__name__)
 
@@ -123,11 +124,20 @@ class OllamaFuni:
                 detail=f"funi config is for {config.runtime.value}, not ollama",
             )
         ollama_cfg = config.ollama
-        options = {
-            "temperature": ollama_cfg.temperature,
-            "top_p": ollama_cfg.top_p,
-            "num_predict": ollama_cfg.num_predict,
-        }
+        det_error = determinism_error(config)
+        if det_error is not None:
+            return Unavailable(
+                reason=UnavailableReason.CONFIG_INVALID,
+                detail=det_error,
+            )
+        options = effective_options(
+            {
+                "temperature": ollama_cfg.temperature,
+                "top_p": ollama_cfg.top_p,
+                "num_predict": ollama_cfg.num_predict,
+            },
+            config,
+        )
         adapter = cls(
             base_url=ollama_cfg.base_url,
             model_id=ollama_cfg.model,

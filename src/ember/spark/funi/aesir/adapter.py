@@ -89,6 +89,7 @@ from ember.schemas.funi import (
 )
 from ember.schemas.stream import FuniStreamChunk
 from ember.schemas.tool import ToolDescriptor
+from ember.spark.funi.determinism import determinism_error, effective_options
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +177,12 @@ class AesirFuni:
                 detail=f"funi config is for {config.runtime.value}, not aesir",
             )
         aesir_cfg = config.aesir
+        det_error = determinism_error(config)
+        if det_error is not None:
+            return Unavailable(
+                reason=UnavailableReason.CONFIG_INVALID,
+                detail=det_error,
+            )
         key_path = Path(aesir_cfg.api_key_file).expanduser()
         try:
             raw_key = key_path.read_text(encoding="utf-8")
@@ -199,11 +206,14 @@ class AesirFuni:
                     "hyphens or underscores)."
                 ),
             )
-        options: dict[str, object] = {
-            "temperature": aesir_cfg.temperature,
-            "top_p": aesir_cfg.top_p,
-            "max_tokens": aesir_cfg.max_tokens,
-        }
+        options: dict[str, object] = effective_options(
+            {
+                "temperature": aesir_cfg.temperature,
+                "top_p": aesir_cfg.top_p,
+                "max_tokens": aesir_cfg.max_tokens,
+            },
+            config,
+        )
         if aesir_cfg.timeout_ms is not None:
             options["timeout_ms"] = aesir_cfg.timeout_ms
         adapter = cls(
@@ -274,6 +284,11 @@ class AesirFuni:
             request_body["system"] = system_text
         if "timeout_ms" in self._options:
             request_body["timeout_ms"] = self._options["timeout_ms"]
+        if "seed" in self._options:
+            # E-036 determinism mode: Aesir's native route accepts
+            # a seed field (its API support matrix v1); present
+            # only when the mode is on — never in a normal request.
+            request_body["seed"] = self._options["seed"]
         payload = json.dumps(request_body).encode("utf-8")
 
         url = f"{self._base_url}/v1/generate"
@@ -389,6 +404,8 @@ class AesirFuni:
             request_body["system"] = system_text
         if "timeout_ms" in self._options:
             request_body["timeout_ms"] = self._options["timeout_ms"]
+        if "seed" in self._options:
+            request_body["seed"] = self._options["seed"]
         payload = json.dumps(request_body).encode("utf-8")
         url = f"{self._base_url}/v1/generate"
 
