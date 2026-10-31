@@ -45,9 +45,14 @@ Usage:
     python3 conversation_logger.py show --session 2026-05-10-truth-discipline
     python3 conversation_logger.py recent --count 5
     python3 conversation_logger.py context   # cron job context injection
+
+    # Delete (the user's delete right, E-063 — total and provable)
+    python3 conversation_logger.py delete --session 2026-05-10-truth-discipline
+    python3 conversation_logger.py delete --all --yes
 """
 
 import argparse
+import gzip
 import json
 import os
 import sys
@@ -199,41 +204,36 @@ def _append(entry: dict) -> dict:
     return entry
 
 
-def _update_current(entry: dict, session_id: str):
-    """Update current.json to reflect the latest state of the active session."""
-    # Merge with existing current.json if it exists and is the same session
-    existing = {}
+def _load_current() -> dict:
+    """Read current.json, or {} when it is missing or corrupt."""
     if CURRENT_FILE.exists():
         try:
             with open(CURRENT_FILE) as f:
-                existing = json.load(f)
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
         except (json.JSONDecodeError, IOError):
             pass
+    return {}
 
-    # Build current state from entry
-    current = {
-        "session_id": session_id,
-        "last_updated": entry.get("timestamp", _timestamp()),
-        "status": entry.get("entry_type", "unknown"),
-    }
 
-    # Preserve and merge accumulated fields
-    for field in ("summary", "decisions", "files_changed", "things_learned",
-                  "next_actions", "mood", "projects_touched", "blockers",
-                  "model", "platform", "duration_minutes", "start_time", "end_time"):
-        if field in entry:
-            current[field] = entry[field]
-        elif field in existing and existing.get("session_id") == session_id:
-            # Keep previous value if same session
-            current[field] = existing[field]
+def _current_owned_by(session_id: str) -> bool:
+    """Whether current.json belongs to ``session_id`` (E-063).
 
-    # Accumulate lists from events (don't overwrite — append unique)
-    for list_field in ("decisions", "files_changed", "things_learned", "projects_touched"):
-        if list_field not in current:
-            current[list_field] = existing.get(list_field, [])
-
-    with open(CURRENT_FILE, "w") as f:
-        json.dump(current, f, indent=2, ensure_ascii=False)
+    current.json is the LATEST session's snapshot: the session
+    that ran ``start`` most recently owns it, and only that
+    session's own event/update/end commands may change it.
+    An entry logged for another session is still appended to
+    the log — the log is the truth — but it never rewrites
+    another session's snapshot. (This settles docket 98: the
+    former _update_current helper was dead code, and the
+    cmd_* commands' hand-rolled merges diverged on exactly
+    this point; the merges below are now the law, uniformly.)
+    A missing or ownerless current.json counts as owned, so
+    the pre-E-063 behaviour for a first command stands.
+    """
+    owner = _load_current().get("session_id")
+    return owner is None or owner == session_id
 
 
 def cmd_start(args):
@@ -293,14 +293,12 @@ def cmd_event(args):
     }
     _append(entry)
 
-    # Update current.json — accumulate into appropriate list field
-    current = {}
-    if CURRENT_FILE.exists():
-        try:
-            with open(CURRENT_FILE) as f:
-                current = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+    # Update current.json — accumulate into appropriate list field,
+    # but only when current.json belongs to this session (E-063).
+    if not _current_owned_by(args.session):
+        print(f"📌 Event logged: {args.type} — {args.content[:80]}")
+        return entry
+    current = _load_current()
 
     # Map event types to current.json list fields
     field_map = {
@@ -340,13 +338,16 @@ def cmd_event(args):
 def cmd_update(args):
     """Update the session state snapshot. Can be called any time."""
     ts = _timestamp()
-    current = {}
-    if CURRENT_FILE.exists():
-        try:
-            with open(CURRENT_FILE) as f:
-                current = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+    # Only the owning session's snapshot may be updated (E-063);
+    # for any other session the update entry is built from this
+    # command's own arguments and current.json is left alone.
+    owned = _current_owned_by(args.session)
+    current = _load_current() if owned else {
+        "next_actions": [],
+        "blockers": [],
+        "projects_touched": [],
+        "mood": "",
+    }
 
     # Overwrite specified fields
     if args.next:
@@ -376,8 +377,9 @@ def cmd_update(args):
     }
     _append(entry)
 
-    with open(CURRENT_FILE, "w") as f:
-        json.dump(current, f, indent=2, ensure_ascii=False)
+    if owned:
+        with open(CURRENT_FILE, "w") as f:
+            json.dump(current, f, indent=2, ensure_ascii=False)
 
     print(f"🔄 State updated: {args.session}")
     return entry
@@ -386,13 +388,13 @@ def cmd_update(args):
 def cmd_end(args):
     """Close a session. Writes final entry and finalizes current.json."""
     ts = _timestamp()
-    current = {}
-    if CURRENT_FILE.exists():
-        try:
-            with open(CURRENT_FILE) as f:
-                current = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+    # Only the owning session may finalise current.json, and its
+    # end entry is built from its own snapshot (E-063); ending a
+    # session that does not own current.json logs the end entry
+    # from this command's arguments alone and leaves the active
+    # session's snapshot untouched.
+    owned = _current_owned_by(args.session)
+    current = _load_current() if owned else {}
 
     # Calculate duration if we have start_time
     duration = args.duration or 0
@@ -422,6 +424,11 @@ def cmd_end(args):
         "projects_touched": current.get("projects_touched", []),
     }
     _append(entry)
+
+    if not owned:
+        print(f"🏁 Session closed: {args.session}")
+        print(f"   Duration: {duration} min")
+        return entry
 
     # Finalize current.json
     current["status"] = "closed"
@@ -485,6 +492,271 @@ def cmd_recent(args):
 def cmd_context(args):
     """Generate context block for cron job injection."""
     print(get_context_for_cron(max_sessions=args.sessions))
+
+
+# --- The user's delete right (E-063): total, and provable ---
+
+
+def _is_nerve_copy_of(entry, session_id: str | None) -> bool:
+    """Whether a nerve-feed entry is a conv_* copy of a logged entry.
+
+    The logger fires every appended entry to the hub as
+    ``conv_<entry_type>`` with the whole entry as ``data`` and
+    source ``conv_logger:<session_id>`` (E-061 contract), so a
+    copy matches on type prefix plus either the source tag or
+    the copied entry's own session_id. With ``session_id``
+    None, every conv_* copy matches (the delete-all scope).
+    """
+    if not isinstance(entry, dict):
+        return False
+    if not str(entry.get("type", "")).startswith("conv_"):
+        return False
+    if session_id is None:
+        return True
+    if entry.get("source") == f"conv_logger:{session_id}":
+        return True
+    data = entry.get("data")
+    return isinstance(data, dict) and data.get("session_id") == session_id
+
+
+def _purge_jsonl(path: Path, matches) -> tuple[int, int]:
+    """Atomically drop the lines of ``path`` whose JSON entry matches.
+
+    Returns (removed, unattributed_kept). Lines that are not
+    valid JSON objects are unattributable: they are kept
+    verbatim and counted, never silently dropped — the logger
+    cannot prove whose they are. Kept lines are preserved
+    byte-for-byte. The rewrite goes through a temporary file
+    in the same directory and os.replace, so a crash leaves
+    the old file or the new one, never a torn one. A file
+    with nothing to remove is left untouched.
+    """
+    if not path.exists():
+        return 0, 0
+    kept: list[str] = []
+    removed = 0
+    unattributed = 0
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                kept.append(line)
+                continue
+            try:
+                entry = json.loads(stripped)
+            except json.JSONDecodeError:
+                entry = None
+            if not isinstance(entry, dict):
+                unattributed += 1
+                kept.append(line)
+            elif matches(entry):
+                removed += 1
+            else:
+                kept.append(line)
+    if removed == 0:
+        return 0, unattributed
+    tmp = path.with_name(path.name + ".tmp-e063")
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.writelines(kept)
+    os.replace(tmp, path)
+    return removed, unattributed
+
+
+def _purge_jsonl_gz(path: Path, matches) -> tuple[int, int]:
+    """The _purge_jsonl discipline for a gzip-compressed feed archive."""
+    if not path.exists():
+        return 0, 0
+    kept: list[str] = []
+    removed = 0
+    unattributed = 0
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                kept.append(line)
+                continue
+            try:
+                entry = json.loads(stripped)
+            except json.JSONDecodeError:
+                entry = None
+            if not isinstance(entry, dict):
+                unattributed += 1
+                kept.append(line)
+            elif matches(entry):
+                removed += 1
+            else:
+                kept.append(line)
+    if removed == 0:
+        return 0, unattributed
+    tmp = path.with_name(path.name + ".tmp-e063")
+    with gzip.open(tmp, "wt", encoding="utf-8") as f:
+        f.writelines(kept)
+    os.replace(tmp, path)
+    return removed, unattributed
+
+
+def _nerve_store_paths() -> list[Path]:
+    """Every state-dir file holding nerve-feed entries: the live
+    feed plus its rotated archives (plain and compressed)."""
+    paths = [STATE_DIR / "nerve_feed.jsonl"]
+    for pattern in ("nerve_feed_*.jsonl", "nerve_feed_*.jsonl.gz"):
+        paths.extend(sorted(STATE_DIR.glob(pattern)))
+    return paths
+
+
+def _count_nerve_copies(session_id: str | None) -> int:
+    """Count conv_* copies for a session (None = all) across the
+    live feed and every rotated archive — the verification read."""
+    total = 0
+    for path in _nerve_store_paths():
+        if not path.exists():
+            continue
+        try:
+            opener = gzip.open if path.name.endswith(".gz") else open
+            with opener(path, "rt", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if _is_nerve_copy_of(entry, session_id):
+                        total += 1
+        except (OSError, EOFError):
+            continue
+    return total
+
+
+def delete_session(session_id: str) -> dict:
+    """Delete ONE session, totally, and prove it (E-063).
+
+    Removes the session's entries from conversation_log.jsonl,
+    current.json if (and only if) it belongs to the session,
+    and the session's conv_* copies from the nerve feed and
+    its rotated archives. Afterwards every affected store is
+    re-read and the remaining attributable count must be
+    zero for the report to claim verification.
+    """
+    removed_log, unattributed = _purge_jsonl(
+        CONV_LOG, lambda e: e.get("session_id") == session_id)
+
+    current_removed = False
+    current = get_current_state()
+    if current is not None and current.get("session_id") == session_id:
+        CURRENT_FILE.unlink()
+        current_removed = True
+
+    removed_nerve = 0
+    for path in _nerve_store_paths():
+        purge = _purge_jsonl_gz if path.name.endswith(".gz") else _purge_jsonl
+        n, u = purge(path, lambda e: _is_nerve_copy_of(e, session_id))
+        removed_nerve += n
+        unattributed += u
+
+    remaining = (
+        len(_get_entries_for_session(session_id))
+        + _count_nerve_copies(session_id)
+        + (1 if (get_current_state() or {}).get("session_id") == session_id else 0)
+    )
+    return {
+        "scope": "session",
+        "session_id": session_id,
+        "log_entries_removed": removed_log,
+        "current_removed": current_removed,
+        "nerve_entries_removed": removed_nerve,
+        "unattributed_lines_kept": unattributed,
+        "remaining_attributable": remaining,
+        "verified": remaining == 0,
+    }
+
+
+def delete_all_conversations() -> dict:
+    """Delete EVERY logged conversation, totally, and prove it (E-063).
+
+    The log and current.json are removed outright; every
+    conv_* copy leaves the nerve feed and its archives (non-
+    conversation feed events are not the logger's words and
+    are kept). Verification re-reads every store.
+    """
+    removed_log = len(_read_all_entries())
+    unattributed = 0
+    if CONV_LOG.exists():
+        with open(CONV_LOG, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    entry = None
+                if not isinstance(entry, dict):
+                    unattributed += 1
+        CONV_LOG.unlink()
+
+    current_removed = False
+    if CURRENT_FILE.exists():
+        CURRENT_FILE.unlink()
+        current_removed = True
+
+    removed_nerve = 0
+    for path in _nerve_store_paths():
+        purge = _purge_jsonl_gz if path.name.endswith(".gz") else _purge_jsonl
+        n, u = purge(path, lambda e: _is_nerve_copy_of(e, None))
+        removed_nerve += n
+        unattributed += u
+
+    remaining = (
+        len(_read_all_entries())
+        + _count_nerve_copies(None)
+        + (1 if CURRENT_FILE.exists() else 0)
+    )
+    return {
+        "scope": "all",
+        "session_id": None,
+        "log_entries_removed": removed_log,
+        "current_removed": current_removed,
+        "nerve_entries_removed": removed_nerve,
+        "unattributed_lines_kept": unattributed,
+        "remaining_attributable": remaining,
+        "verified": remaining == 0,
+    }
+
+
+def cmd_delete(args):
+    """The user's delete right (E-063): one session, or all of it.
+
+    Deleting everything requires --yes: a session can be
+    named exactly, "everything" cannot, so the extra word is
+    the confirmation.
+    """
+    if getattr(args, "all", False):
+        if not getattr(args, "yes", False):
+            print("❌ Refusing to delete ALL conversations without --yes.")
+            print("   Run: delete --all --yes   (this cannot be undone)")
+            sys.exit(2)
+        report = delete_all_conversations()
+        label = "all conversations"
+    else:
+        report = delete_session(args.session)
+        label = f"session {args.session}"
+
+    print(f"🗑️  Deleted {label}:")
+    print(f"   Log entries removed: {report['log_entries_removed']}")
+    print(f"   Current snapshot removed: {'yes' if report['current_removed'] else 'no'}")
+    print(f"   Nerve-feed copies removed: {report['nerve_entries_removed']}")
+    if report["unattributed_lines_kept"]:
+        print(f"   Unattributable lines kept (not provably anyone's): "
+              f"{report['unattributed_lines_kept']}")
+    if report["verified"]:
+        print("   Verified: 0 attributable entries remain in any store.")
+    else:
+        print(f"   ⚠️  NOT VERIFIED: {report['remaining_attributable']} "
+              "attributable entries remain.")
+        sys.exit(1)
+    return report
 
 
 # --- Helper functions ---
@@ -759,6 +1031,12 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("context", help="Generate context block for cron injection")
     sp.add_argument("--sessions", type=int, default=5, help="Number of recent sessions to include")
 
+    # delete (the user's delete right, E-063)
+    sp = sub.add_parser("delete", help="Delete logged conversations — totally, with verification")
+    sp.add_argument("--session", default="", help="Session ID to delete")
+    sp.add_argument("--all", action="store_true", help="Delete ALL logged conversations")
+    sp.add_argument("--yes", action="store_true", help="Confirm a --all deletion")
+
     return parser
 
 
@@ -780,3 +1058,7 @@ if __name__ == "__main__":
         cmd_recent(args)
     elif args.command == "context":
         cmd_context(args)
+    elif args.command == "delete":
+        if not args.all and not args.session:
+            parser.error("delete needs --session <id> or --all --yes")
+        cmd_delete(args)
