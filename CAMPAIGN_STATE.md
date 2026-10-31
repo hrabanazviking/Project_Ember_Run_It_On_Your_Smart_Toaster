@@ -1965,6 +1965,11 @@ Top-level members present (size / file count, working tree excl. .git):
   (952 E-046 baseline + 5 new; the 6 are the proven environment
   failures, identical set). Run D **1014 passed, 0 failed, 19
   skipped, 1 warning**, exit 0 (1009 + 5 new). No README touched.
+  Pushed under Volmarr's 2026-10-31 standing go-ahead: banking commit
+  5dcd1e8 pushed after fetch + remote check (remote was fae0e0b =
+  local HEAD, no divergence) — remote moved fae0e0b → 5dcd1e8,
+  verified via ls-remote (remote head =
+  5dcd1e815124e099b7309f48cb1afef3733bd382 = local HEAD at push time).
 
 ## Slice ledger
 
