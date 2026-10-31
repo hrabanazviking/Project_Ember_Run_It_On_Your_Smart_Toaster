@@ -7,9 +7,9 @@ Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
 Last updated: 2026-10-31 14:32 EDT
-Status: IN PROGRESS — E-058 (Part III gate), started 14:32 EDT keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057
-Next slice: E-058 — Part III gate: budgets enforced by tests; Toaster Test verdict recorded with its device named; summary filed
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-059
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058
+Next slice: E-059 — Verdandi mapped: context_injector, conversation_logger, and the event model drawn from code
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2317,3 +2317,42 @@ Top-level members present (size / file count, working tree excl. .git):
   at push time).
 - E-058 next — Part III gate: budgets enforced by tests; Toaster Test
   verdict recorded with its device named; summary filed.
+
+## E-058 — Part III gate (DONE, 2026-10-31)
+
+- Gate filed at `docs/architecture/E-058_PART_III_GATE.md`: **Part III gate
+  PASS** — all seven gate criteria checked (G1–G7). Budgets are enforced by
+  tests, the Toaster Test verdict is recorded with its device named, and a
+  plain-language summary stands at the gate doc's head and in its §6.
+- Budget enforcement re-proven at the gate: the permanent budget gate
+  (`python3 scripts/dev/run_budget_gate.py`, E-056) re-run this slice in both
+  shapes, exit 0 both times — default **122 passed, 7 skipped** (the honest
+  extras guards), extras **129 passed, 0 skipped** — identical to E-056's
+  banked record. The same armour also runs inside every whole-suite gate.
+- Toaster Test verdict (E-049, restated unsoftened): device **Mimir
+  (purpleviking1) — Raspberry Pi 5 Model B Rev 1.1**, the house's smallest
+  real computer, running the toaster profile. **Core CASHED** (ready 0.21 s
+  vs the unrelaxed flat 5.0 s cap, peak RSS 27.2 MiB vs 64 MiB, installed
+  1,956,428 B vs 2 MiB, real qwen2.5:0.5b + nomic-embed-text, memory across
+  processes; recall quality at the 0.5B rung PARTIAL, the model's limit).
+  **Whole 512 MiB host NOT CASHED**: `ollama ps` measured the two day-one
+  model runners at 442 + 565 = ~1,007 MB on a 512 MiB host; the comfortable
+  member of the toaster class is the 1 GB-and-up machine.
+- Part III docket accounted: closed 20, 23 root half, 65 measurement half,
+  66, 67 (with its front-door wording remainder → E-197), 69 core half, 70,
+  90 (at its grades: Pi REAL / phone SIMULATED / toaster settled), 91.
+  Carried open, not lost: 92 (= 23's member half → Parts IV/VI/VIII/IX per
+  member), 65's wording half (→ E-060), 68 (→ Part IX).
+- NOT PROVEN at this gate, each with its road named: a real phone (E-048 is
+  SIMULATED), a real battery's drain rate, Pi thermal behaviour, a whole
+  companion on a literal 512 MiB host, member RAM for Open-VTT / the
+  dictionary / CloakBrowser (E-057, with reasons).
+- Slice gate at part-gate shapes (E-017 method; logs in
+  `~/workspace/.verify-tmp/ember-e058/gate/`), all IDENTICAL to E-057's
+  banked counts: Run A whole/default **1 error, 11 skipped, exit 2**
+  (docket 1); Run B default excl. pgvector file **1054 passed, 6 failed,
+  25 skipped, 1 warning** (the 6 are the proven environment failures);
+  Run D whole with extras **1111 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0. Doc-only slice, no code touched, no README touched, no new
+  docket items. Road checked: no re-cut; Part IV (Verdandi) follows.
+- **Part III (E-041–E-058) is CLOSED.** Next: E-059 — Verdandi mapped.
