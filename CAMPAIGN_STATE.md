@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 10:58 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-047
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046
-Next slice: E-047 — The Pi proof (full companion on Mimir-class hardware; real Pi or NOT PROVEN, stated plainly)
+Last updated: 2026-10-31 11:35 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-048
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047
+Next slice: E-048 — The phone-class proof (simulated profile + any real device the house can offer; proof grade labelled)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1926,6 +1926,46 @@ Top-level members present (size / file count, working tree excl. .git):
   verified via ls-remote (remote head =
   ea930a5b0628b7e1593c8b67093c025fc18364de = local HEAD at push time).
 
+## E-047 — The Pi proof (DONE, 2026-10-31)
+
+- Proof filed at `docs/architecture/E-047_PI_PROOF.md`: **PROVEN on a
+  real Pi with a real model.** Device: Mimir (`purpleviking1`), Raspberry
+  Pi 5 Model B Rev 1.1 (aarch64, 16 GiB, Python 3.11.2), Ollama 0.20.5
+  resident. Ember cloned fresh at fae0e0b (hash-verified on-device),
+  installed into a clean venv (`pip install ./repo` + sqlite-vec 0.1.9),
+  run on the `pi` profile against the default model pair — phi3:mini
+  chat, nomic-embed-text embedding (pulled for the proof) — real
+  sqlite_vec Well on device storage, all in `/home/pi/ember-e047/`.
+- Numbers (probe on-device, fresh `ember ask` processes): first-ever
+  run (Well created, model cold) rc 0, whole ask 64.91 s; three judged
+  warm runs — ready median **0.18 s**, first word median **5.69 s**
+  (5.17–6.37), peak RSS **27.1 MiB** every run. Memory proven across
+  processes: run 3, asked what the first question was, accurately
+  summarised the first-ever greeting. Installed core on-device
+  1,951,508 B (caches incl.) — inside the pi 8 MiB install ceiling and
+  the toaster's 2 MiB alike; RSS inside even the toaster's 64 MiB.
+  Ollama's runner (~3.7 GiB with phi3 loaded) is the model's cost,
+  charged to no Ember ceiling. Device temp after runs 44.4 °C.
+- The split, kept clean: E-046's flat 5.0 s cap prices Ember's own
+  startup; the Pi re-anchor is **ready 0.18 s** (~28× inside the cap —
+  cap stands unrelaxed, docket 90's Pi half settled by re-derivation).
+  The 5.69 s first word is phi3:mini thinking on a Pi CPU — a model
+  cost, pinned as its own anchor (`MEASURED_PI_FIRST_WORD_REAL_MODEL_S`)
+  and deliberately NOT judged against the cap. Four Pi anchors added
+  to `ember.budgets`, pinned by `tests/unit/test_pi_proof_e047.py`
+  (5 tests). E-032/E-040's "real-model day one NOT PROVEN" is closed
+  for the Pi. Not claimed: on-device wizard (identity pre-written,
+  E-046 convention), Pi idle hour, toaster-device verdict (E-049).
+- Probe defect found and fixed in-slice (own tooling, not product):
+  probe v1 timed the chat banner as "first word" on the first-ever
+  run; caught from its own output, fixed to time the first content
+  after the banner's prompt mark, first-ever first-word left
+  unrecorded and stated as such in the doc.
+- Slice gate: Run B **957 passed, 6 failed, 25 skipped, 1 warning**
+  (952 E-046 baseline + 5 new; the 6 are the proven environment
+  failures, identical set). Run D **1014 passed, 0 failed, 19
+  skipped, 1 warning**, exit 0 (1009 + 5 new). No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1976,4 +2016,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-044 push: banking commit e077d3a pushed under Volmarr's 2026-10-31 standing go-ahead after fetch + remote-diff (remote was d6ecd57 = local HEAD, no divergence) — remote moved d6ecd57 → e077d3a, verified via ls-remote (remote head = e077d3a26693f15c0e550d646b15abec14efdde0 = local HEAD at push time).
 - E-045 DONE (2026-10-31) — idle discipline: four profile probes idled a full hour on the VM (121 samples, 30 s interval) — 0.0 CPU seconds, exactly 1 thread, disk byte-identical (164,616 B), RSS never grew at any step (40.8 → 23.0 MiB floor at ~1,261 s, HWM ≤40.9 MiB inside the toaster's 64 MiB idle ceiling), all probes exit 0; gate armed in tests/unit/test_idle_discipline_e045.py (5 tests; extras 5 passed, default 4 skip-stated + 1 passed); no src change, no defect found, no new docket; gate Run B 949 passed / 6 proven-env failed / 24 skipped, Run D 1005 passed / 0 failed / 19 skipped (corrected same day — first banked as 1022/20 from a foreign background result, not the run's log; log-verified figure stands); filed at docs/architecture/E-045_IDLE_DISCIPLINE.md.
 - E-046 DONE (2026-10-31) — cold start on the smallest profile: seven fresh `ember ask` processes on the toaster profile (real CLI/Well, loopback wire-shape model) — first word median 2.87 s (1.28–5.38, contended VM, stated), ready at 2.79 s so ~97% is process startup and the turn adds ~0.09 s; first-ever start 3.60 s; book gains the test-pinned anchor (2.87) and a flat 5.0 s cold-start cap on every profile; gate armed in tests/unit/test_cold_start_e046.py (4 tests, median-of-3 judged); the gate caught E-045's idle "wander" assertion failing on proven-normal RSS decline under memory pressure — fixed in scope to judge growth only; gate Run B 952 passed / 6 proven-env failed / 25 skipped, Run D 1009 passed / 0 failed / 19 skipped; filed at docs/architecture/E-046_COLD_START.md.
-- E-047 next — the Pi proof: the full companion on Mimir-class hardware (real Pi or NOT PROVEN, stated plainly).
+- E-047 DONE (2026-10-31) — the Pi proof: PROVEN on real hardware — Mimir (purpleviking1), Raspberry Pi 5 Model B Rev 1.1, Ember cloned at fae0e0b + clean-venv install, pi profile, real phi3:mini + nomic-embed-text via the house Ollama, real sqlite_vec Well; ready median 0.18 s (Ember-side re-anchor, docket 90 Pi half settled, 5.0 s cap unrelaxed), first word median 5.69 s (model-included, pinned as its own anchor, not judged against the cap), peak RSS 27.1 MiB, installed 1,951,508 B; cross-process memory proven (run 3 recalled the first-ever question); first-ever cold-model ask 64.91 s; four Pi anchors in ember.budgets pinned by tests/unit/test_pi_proof_e047.py (5 tests); gate Run B 957 passed / 6 proven-env failed / 25 skipped, Run D 1014 passed / 0 failed / 19 skipped; filed at docs/architecture/E-047_PI_PROOF.md.
+- E-048 next — the phone-class proof (simulated profile + any real device the house can offer; proof grade labelled).
