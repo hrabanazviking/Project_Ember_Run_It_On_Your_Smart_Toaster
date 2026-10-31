@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 05:38 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-029 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029
-Next slice: E-030 — Error honesty: failures surface as truthful plain messages; never a fabricated completion
+Last updated: 2026-10-31 05:41 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-030 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030
+Next slice: E-031 — Session persistence: conversations survive restarts, atomic writes (the Samtal lesson), corruption fixtures
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1193,6 +1193,43 @@ Top-level members present (size / file count, working tree excl. .git):
   head = 2e03b8c285593b51171ac701234f15d8e2a93326 = local HEAD at
   push time).
 
+## E-030 — Error honesty (DONE, 2026-10-31)
+
+- Honesty filed at `docs/architecture/E-030_ERROR_HONESTY.md`. The rule: a
+  failure the operator cannot see is a lie of omission, and a record that
+  stores a failed or partial reply as a completed answer is a fabrication.
+  **Docket 85 CLOSED** — an `add_episode` failure is no longer suppressed in
+  silence: a plain warning at that moment names the exception and the
+  consequence ("remembered only until this session ends"), and the session
+  keeps serving from its in-memory window. **Docket 86 CLOSED** — a
+  mid-session Well search failure is no longer indistinguishable from an
+  honestly empty Well: `_retrieve` returns `(hits, failure)` (catch broadened
+  beyond `BrunnrError` to any backend exception, the stale-connection
+  rationale), the operator is told for that turn, the prompt carries the
+  do-not-invent instruction, and the Episode is flagged `well_disconnected`.
+  Third silent site found in the audit and FIXED in scope: the E-021 startup
+  history load suppressed its reader failure the same way — it now warns at
+  startup ("they have not been deleted") and starts empty.
+- Fabricated completion closed at the record: ERROR and LENGTH finishes are
+  persisted **with** their tags (`_tag_failed_finish`; `render.ERROR_TAG` /
+  `render.TRUNCATED_TAG` are now named constants, rendered strings
+  byte-identical), on both streaming and non-streaming roads, so a later
+  session never reads an error text or a cut-off answer back as a completed
+  reply. STOP/TOOL_CALL/None store unchanged; REFUSED stores unchanged (a
+  refusal is a completed act); the E-028 interrupt tag still wins.
+  Distinction kept deliberately: an embedding failure alone is NOT a
+  retrieval failure — the text-search degrade returns real hits and owes no
+  warning (test-pinned). Examined and already honest, unchanged: Funi /
+  persona open refusals, open-time disconnect shape, adapter ERROR folding,
+  tool/audit/prompter failure warnings, ingest's failed count. Honest
+  limits: warnings carry the adapters' technician-shaped exception text
+  inside plain framing (no cause taxonomy invented); docket 82 (disconnected
+  journal) stays E-031's, untouched.
+- Tests: `test_error_honesty_e030.py` **12 passed** (default env). Slice gate
+  Run B: **773 passed, 6 failed, 14 skipped, 1 warning** — 761 E-029 baseline
+  + 12 new; the 6 are the proven environment failures. Run D (whole, extras):
+  **815 passed, 0 failed, 19 skipped, 1 warning**, exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1224,4 +1261,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-027 DONE (2026-10-31) — approval shape for normal folks: `ember.spark.funi.tools.plain` turns E-026's permission shapes into ordinary words (plain action from the detail that matters, plain reach per access class, fetch_url's private-address widening named as a home-network reach); the rememberable scopes are stated truthfully — `always` offered only when the E-026 gate would honour it, worded "while we're chatting, forgotten when the chat ends, never forever", with a plain per-class reason where it is not offered; the prompter accepts only offered answers and counts an unoffered `always` as a one-time yes with that stated on screen (the old silently-worthless session grant is gone); Munnr's proposal renderer gains plain lines; Playbook Recipe 3 transcript corrected; pinned approval tests updated with attribution; 38 new tests; gate Run B 746 passed / 6 proven-env failed / 13 skipped, Run D 787 passed / 0 failed; filed at docs/architecture/E-027_APPROVAL_SHAPE.md.
 - E-028 DONE (2026-10-31) — streaming + interruption: Ctrl-C now ends the current thing, never the session, at every waiting point (prompt re-prompts; retrieval abandons the turn with nothing persisted; stream creation inside the guard; approval-prompt and tool-execution interrupts end the turn with the partial persisted tagged, completed calls standing, no further call or generation; non-streaming complete() likewise); **docket 83 CLOSED** — non-streaming tool_calls execute through the same bounded loop (`_drive_complete_turn_with_tools`) and `wrap_complete_as_stream` carries tool_calls for WRAPPED backends; 9 new tests; gate Run B 755 passed / 6 proven-env failed / 13 skipped, Run D 796 passed / 0 failed; filed at docs/architecture/E-028_STREAMING_INTERRUPTION.md.
 - E-029 DONE (2026-10-31) — offline truth: a socket guard cuts every non-loopback DNS/connect (attempts recorded, sanity-proven) and the core's full local life runs under it against the REAL adapters — a loopback-Ollama chat turn end to end (probe, embed, retrieve, stream, Episode persisted, zero external attempts), read_local_file, and the sqlite_vec Well round-trip across a reopen (extras shape); the degraded set is listed honestly in docs/architecture/E-029_OFFLINE_TRUTH.md, each item failing as typed plain data (fetch_url's DNS-refusal ToolReply, embed client's None vectors → text search, remote Funi's typed Unavailable, pgvector's Disconnected-ungrounded shape); no production code changed — one defect in the slice's own guard fixture fixed in scope, and Playbook Recipe 7's doctor verification corrected (bare installs cannot run it, docket 13); 7 new tests; gate Run B 761 passed / 6 proven-env failed / 14 skipped, Run D 803 passed / 0 failed; filed at docs/architecture/E-029_OFFLINE_TRUTH.md.
-- E-030 next — Error honesty: failures surface as truthful plain messages; never a fabricated completion.
+- E-030 DONE (2026-10-31) — error honesty: the chat session's three silent failures are now spoken in plain warnings at the moment they happen — an Episode that cannot be saved (docket 85 CLOSED; "remembered only until this session ends"), a mid-session Well search that fails (docket 86 CLOSED; operator told, prompt carries do-not-invent, Episode flagged well_disconnected, catch broadened beyond BrunnrError), and a startup history load that fails (found in this slice's audit, fixed in scope; "they have not been deleted") — and ERROR/LENGTH finishes are persisted with their error/truncation tags on both roads so a failed or partial reply never reads back as a completed answer; an embedding failure alone is not a retrieval failure (text-search degrade returns real hits, test-pinned); 12 new tests; gate Run B 773 passed / 6 proven-env failed / 14 skipped, Run D 815 passed / 0 failed; filed at docs/architecture/E-030_ERROR_HONESTY.md.
+- E-031 next — Session persistence: conversations survive restarts, atomic writes (the Samtal lesson), corruption fixtures.

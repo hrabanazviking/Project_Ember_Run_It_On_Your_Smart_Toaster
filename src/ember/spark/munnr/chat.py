@@ -36,6 +36,17 @@ a banner. The Episode is written locally.
   closes docket 83: the non-streaming path now executes returned
   ``tool_calls`` through the same bounded loop instead of dropping
   them.
+* **E-030** completes the error-honesty shape: a failure the
+  operator cannot see is a lie of omission, so the three silent
+  degradations are now spoken — a history load that fails says so
+  at startup, a Well search that fails mid-session says so for
+  that turn *and* marks the turn ungrounded in the prompt and the
+  Episode (docket 86), and an Episode that cannot be saved says
+  so at that moment (docket 85). Replies that ended in an error
+  or were cut off for length are persisted *with* their tag, so
+  a failed or partial reply never poses as a completed answer
+  in the remembered history (see
+  ``docs/architecture/E-030_ERROR_HONESTY.md``).
 """
 
 from __future__ import annotations
@@ -51,7 +62,7 @@ from typing import TYPE_CHECKING, TextIO
 from ember.schemas.chunks import RetrievalHit
 from ember.schemas.config import EmberConfig
 from ember.schemas.episode import Episode
-from ember.schemas.errors import BrunnrError, Disconnected
+from ember.schemas.errors import Disconnected
 from ember.schemas.funi import (
     ContextItem,
     ContextKind,
@@ -206,15 +217,25 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     # History (E-021): episodes persisted in the Well are loaded back
     # so the conversation survives a restart (docket 81). A failing
     # reader degrades to an in-session-only history, never a crash —
-    # the same honesty shape as retrieval failure.
+    # and since E-030 it degrades *loudly*: before E-030 the failure
+    # was suppressed in silence and the operator was left believing
+    # the companion remembered when it could not load its memory.
     episodes: list[Episode] = []
     if brunnr is not None:
-        with contextlib.suppress(Exception):
+        try:
             # Per-persona separation (E-025): this persona's
             # session starts from its own remembered turns only.
             episodes = episodes_for_persona(
                 brunnr.recent_episodes(_HISTORY_LOAD_LIMIT), persona.id
             )
+        except Exception as exc:
+            stdout.write(
+                "[warning: your saved conversations could not be loaded "
+                f"({type(exc).__name__}: {exc}); this session starts "
+                "without them — they have not been deleted.]\n"
+            )
+            stdout.flush()
+            episodes = []
     streaming = config.funi.streaming
 
     try:
@@ -240,7 +261,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
 
             started = datetime.now(tz=UTC)
             try:
-                hits = _retrieve(text, brunnr, embedder)
+                hits, retrieval_failure = _retrieve(text, brunnr, embedder)
             except KeyboardInterrupt:
                 # E-028: talked over during retrieval — before any
                 # reply existed. The turn is abandoned (nothing is
@@ -249,12 +270,26 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 stdout.write("\n" + render.INTERRUPTED_TAG + "\n")
                 stdout.flush()
                 continue
+            # E-030 (docket 86): a search that failed mid-session is
+            # not an honestly empty Well. The operator is told for
+            # this turn, and the turn is ungrounded in fact: the
+            # prompt carries the do-not-invent instruction and the
+            # Episode is flagged well_disconnected, exactly as an
+            # open-time disconnect turn is.
+            turn_ungrounded = disconnect is not None or retrieval_failure is not None
+            if retrieval_failure is not None:
+                stdout.write(
+                    "[well: search failed for this message "
+                    f"({retrieval_failure}); the reply will not be "
+                    "grounded in your documents]\n"
+                )
+                stdout.flush()
             windowed = window_history(episodes, config.conversation)
             context = funi_prompt.assemble(
                 identity=identity,
                 episodes=windowed.episodes,
                 hits=hits,
-                well_disconnected=disconnect is not None,
+                well_disconnected=turn_ungrounded,
                 summary=windowed.summary,
                 persona=persona,
             )
@@ -275,7 +310,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     ember_reply=final_text,
                     cited_chunk_ids=tuple(h.chunk_id for h in hits),
                     funi_model=model_id_seen or funi.model_id,
-                    well_disconnected=disconnect is not None,
+                    well_disconnected=turn_ungrounded,
                     started_at=started,
                     completed_at=completed,
                     persona_id=persona.id,
@@ -312,14 +347,19 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     )
                     stdout.write(rendered + "\n")
                     stdout.flush()
-                    episode_text = reply.text
+                    # E-030: the rendered reply already carries its
+                    # error / truncation tag on screen; the persisted
+                    # Episode carries it too, so the failed or partial
+                    # reply never poses as a completed answer when a
+                    # later session reads the history back.
+                    episode_text = _tag_failed_finish(reply.text, reply.finish_reason)
                     episode_model = reply.model_id
                 episode = Episode(
                     operator_input=text,
                     ember_reply=episode_text,
                     cited_chunk_ids=tuple(h.chunk_id for h in hits),
                     funi_model=episode_model,
-                    well_disconnected=disconnect is not None,
+                    well_disconnected=turn_ungrounded,
                     started_at=started,
                     completed_at=completed,
                     persona_id=persona.id,
@@ -329,13 +369,23 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
             if brunnr is not None:
                 # Persistence failure is recoverable — we keep serving
                 # the operator with the in-memory episode window.
-                # Broaden beyond BrunnrError to also swallow lower-
+                # Broaden beyond BrunnrError to also catch lower-
                 # level backend exceptions (sqlite3.Error, psycopg.Error)
                 # that the adapter might let through on a stale
                 # connection; the cost of losing one Episode is less
-                # than crashing the REPL.
-                with contextlib.suppress(Exception):
+                # than crashing the REPL. E-030 (docket 85): the
+                # failure is caught, never hidden — before E-030 it
+                # was suppressed in silence and a session could
+                # believe it was remembering when the store was not.
+                try:
                     brunnr.add_episode(episode)
+                except Exception as exc:
+                    stdout.write(
+                        "[warning: this turn could not be saved to the "
+                        f"Well ({type(exc).__name__}: {exc}); it will be "
+                        "remembered only until this session ends.]\n"
+                    )
+                    stdout.flush()
     finally:
         # Close each handle independently so a raise from one doesn't
         # leak the other. Neither adapter's close() is documented to
@@ -514,7 +564,11 @@ def _drive_turn_with_tools(  # noqa: PLR0913 — one whole turn naturally fans i
         if turn.interrupted:
             final_text = _tag_interrupted(turn.text)
             break
-        final_text = turn.text
+        # E-030: an error or length finish is tagged in the text
+        # that gets persisted, not only on screen, so the stored
+        # Episode never reads back as a completed answer. A later
+        # tool-loop iteration overwrites this with its own text.
+        final_text = _tag_failed_finish(turn.text, turn.finish_reason)
 
         if not turn.tool_calls or tool_ctx is None:
             break
@@ -983,13 +1037,56 @@ def _tag_interrupted(partial_text: str) -> str:
     return f"{body} {render.INTERRUPTED_TAG}"
 
 
+def _tag_failed_finish(text: str, finish_reason: FinishReason | None) -> str:
+    """Carry a failed or partial finish into the persisted Episode text.
+
+    E-030: the screen already tags an ERROR finish with
+    ``[ember reported an error]`` and a LENGTH finish with the
+    truncation tag (``render.stream_finish_tag`` / ``render_reply``),
+    but before E-030 the Episode stored the bare text — so a later
+    session reading its history back met the error text, or the
+    cut-off answer, as if Ember had completed the turn. The stored
+    text now carries the same tag the operator saw. Other finishes
+    (STOP, REFUSED — a refusal is a completed act whose text says
+    what it is — TOOL_CALL, None) are stored unchanged.
+    """
+    if finish_reason is FinishReason.ERROR:
+        body = text.strip()
+        if not body:
+            return render.ERROR_TAG
+        return f"{render.ERROR_TAG} {body}"
+    if finish_reason is FinishReason.LENGTH:
+        body = text.rstrip()
+        if not body:
+            return render.TRUNCATED_TAG
+        return f"{body} {render.TRUNCATED_TAG}"
+    return text
+
+
 def _retrieve(
     text: str,
     brunnr: BrunnrHandle | None,
     embedder: OllamaEmbedClient,
-) -> list[RetrievalHit]:
+) -> tuple[list[RetrievalHit], str | None]:
+    """Search the Well for one turn; return ``(hits, failure)``.
+
+    E-030 (docket 86): ``failure`` is a plain ``Type: message``
+    description when the search itself failed, and the caller turns
+    the turn ungrounded *and says so* — before E-030 a
+    :class:`BrunnrError` here yielded no hits and no signal, so a
+    broken search was indistinguishable from an honestly empty
+    Well. The catch is broadened beyond ``BrunnrError`` for the
+    same reason persistence catches broadly: an adapter can let a
+    lower-level backend exception (sqlite3 / psycopg) through on a
+    stale connection, and that failure must be spoken too.
+
+    An embedding failure alone is *not* a retrieval failure: the
+    no-vector degrade falls back to text search, whose hits are
+    real search results. ``KeyboardInterrupt`` is never caught
+    here (it is not an ``Exception``) — E-028's talk-over shape.
+    """
     if brunnr is None:
-        return []
+        return [], None
     try:
         vectors = embedder.embed([text])
     except Exception:
@@ -998,10 +1095,10 @@ def _retrieve(
     qvec = vectors[0] if vectors else None
     try:
         if qvec is not None and len(qvec) == brunnr.embedding_dim:
-            return brunnr.hybrid_search(list(qvec), text, k=_DEFAULT_K)
-        return brunnr.text_search(text, k=_DEFAULT_K)
-    except BrunnrError:
-        return []
+            return brunnr.hybrid_search(list(qvec), text, k=_DEFAULT_K), None
+        return brunnr.text_search(text, k=_DEFAULT_K), None
+    except Exception as exc:
+        return [], f"{type(exc).__name__}: {exc}"
 
 
 __all__ = ["run"]
