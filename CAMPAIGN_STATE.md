@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 15:22 EDT
-Status: IN PROGRESS — E-060 (VD-RM concordance executed), started 15:22 EDT keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059
-Next slice: E-060 — The VD-RM concordance executed: Verdandi's own roadmap items × reality (E-009) — its remaining road re-cut into this part's order, its completed claims verified by tests
+Last updated: 2026-10-31 15:47 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-061
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060
+Next slice: E-061 — Event contract v1: event shapes versioned; producers/consumers listed per event
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2419,3 +2419,52 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried the tick's IN PROGRESS marker 0c38b69) —
   remote moved b275aeb → 9017035, verified via ls-remote (remote head =
   9017035acb7e4ade033679bb1cd9d8e054a1cc2f = local HEAD at push time).
+
+## E-060 — VD-RM concordance executed (DONE, 2026-10-31)
+
+- Concordance executed at `docs/architecture/E-060_VDRM_CONCORDANCE_EXECUTED.md`:
+  VD-RM's completed claims re-verified by tests this slice — `test_skuld.py`
+  **35 passed** (identical to E-009); the four-file Verdandi focal set
+  (skuld + heartbeat actions/checks/heartbeat) **374 passed, 0 failed** in
+  three consecutive serial runs. One earlier combined run under parallel
+  command load scored 371/3 with the failures never identified (tail-only
+  log) and unreproduced — recorded honestly as new docket 99 (UNRESOLVED
+  flake, with its re-open rule: capture the full log and name the tests).
+- Vör (docket 31) re-proven broken this slice with synthetic contexts:
+  `should_trigger` crashes `AttributeError: 'str' object has no attribute
+  'get'` on Skuld's own `{"status": …}` capacity shape; the no-action
+  return crashes on `ActionSeverity.INFO` (nonexistent) with the `name=`
+  field error latent behind it; Vör defines `execute()` and no
+  `_execute()`, bypassing BaseAction's crash wrapper. Repair contract
+  fixed in the E-060 doc and owned by **E-065**, including Vör's first tests.
+- The remaining road re-cut: v0.4.0 "Valhalla" is **CLOSED** — Prometheus
+  and the emotional architecture were already shipped in v0.3.0 (struck as
+  double-counted, docket 35), and Distributed Heartbeat + the REST API are
+  **RETIRED** with reasons (absent re-verified by tree search this slice;
+  distributed contradicts the E-020 tethering spec, the REST sketch's
+  local need is served by E-061/E-066/E-073; reopening either is a new
+  commission). The Urðr-integration maintenance sketch is retired
+  (static windows stand, test-proven). v1.0 "Yggdrasil production-ready"
+  is undefined/NOT PROVEN — E-076's gate must close or re-road it with
+  criteria and an owner. Code is the authority over VD-RM's sketches (37).
+- Decisions: `pulse_metrics` (34) — **WIRE, don't stop**: E-066 wires
+  Skuld to read it as its health-history source, with tests. Canonical
+  emotional set named (33 closed as a naming): **eight** labels
+  `classify()` can return — the 6 `EMOTIONAL_STATES` + `moderate` +
+  `unknown`; VD-RM's "7" struck. Budget wording settled (65's wording
+  half): hub ≠ heartbeat — hub **21.9 MiB live**, heartbeat **18.4 MiB
+  import-level** (E-041, VM) are the only measured figures; elder
+  ~1 MB/~13 MB/~15–25 MB claims superseded, and no document may quote a
+  Verdandi size without naming its program (doc edits at E-074; the
+  README is never edited — its ~1 MB line stands contradicted on record).
+  Severity docstring verdict (from E-059 §9): the comparator (UNKNOWN
+  ranks −1, below OK) is the behaviour; the docstring order is wrong
+  wording, fixed at E-074. Stale sibling docs (35) re-verified still
+  stale in the same five files; all five are E-074's list.
+- Slice gate: Run B **1054 passed, 6 failed, 25 skipped, 1 warning**
+  (the proven environment set, identical to E-058/E-059); Run D
+  **1111 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (identical
+  to E-058's Run D). Logs in `~/workspace/.verify-tmp/ember-e060/gate/`.
+  Doc-only slice, no code touched, no README touched.
+- E-061 next — event contract v1: event shapes versioned; producers/
+  consumers listed per event.
