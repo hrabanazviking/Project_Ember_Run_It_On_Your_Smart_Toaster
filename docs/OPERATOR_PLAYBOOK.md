@@ -453,9 +453,14 @@ ember doctor   # verify
 ember chat
 ```
 
-**Verification:** `ember doctor` on the new host shows both realms ok;
-your conversation history is intact (visible by `ember chat` then
-asking Ember to recall something from before).
+**Verification:** `ember doctor` on the new host shows both realms ok.
+What provably carries over is your Ember's identity and settings, your
+secrets, and the Well's ingested documents — Ember can search and cite
+those on the new machine exactly as on the old one. One honest limit:
+past *conversations* are stored in the Well as records, but Ember does
+not yet read them back into a new chat, so it cannot recall an old
+conversation in conversation. (That gap is tracked work, not a failed
+move — your files arrived intact.)
 
 **What could go wrong:**
 
@@ -466,6 +471,50 @@ asking Ember to recall something from before).
 - **Permission errors after `tar`** — your tar didn't preserve
   permissions. Re-apply: `chmod 700 ~/.ember/secrets ~/.ember`
   and `chmod 600 ~/.ember/secrets/*`.
+
+---
+
+## What Ember is tied to — and what it is not
+
+Ember is described as a *small, tethered* companion. Here is what
+"tethered" means, in plain words. (The full specification, with the
+code behind every claim, is `docs/architecture/E-020_TETHERING_SPEC.md`.)
+
+**Tied to you.** Everything that makes this Ember *yours* lives in
+one folder on your machine: `~/.ember/`. It holds the name and role
+you chose for Ember, your settings file, your secrets, and the audit
+log of anything its tools did. Ember has no account with anyone, no
+sign-in, and no profile in any cloud. If you copy that folder, you
+have copied your Ember. If you delete it, that Ember is gone.
+
+**Tied to this machine.** By default Ember thinks with a model
+program (Ollama) running on the same machine, and reads with a
+matching service on the same machine. Out of the box, Ember makes no
+calls off your machine at all. You *can* lengthen this tie — pointing
+Ember at a model on a bigger machine in your house is Recipe 1 — but
+only by editing your settings yourself. Ember never moves its own
+thinking somewhere else on its own, and if it cannot reach its model
+at all, it will not start and pretend otherwise: it tells you why
+and stops.
+
+**Tied to its memory.** What Ember knows and what it has been told
+lives in its Well — by default a single file at `~/.ember/well/store.db`
+on your machine, or, if you choose, a shared Well on another machine
+in your house (Recipe 2). The connection to the Well is checked,
+retried briefly if it stumbles, and reported honestly: if the Well
+cannot be reached, Ember says so at the top of its replies, answers
+from what it can do alone, and does not invent the rest. One limit to
+know today: Ember *writes down* every conversation in the Well, but
+does not yet *read those records back* when a new chat starts — it
+remembers your documents across restarts, not yet your past
+conversations. That is known, tracked work.
+
+**Not tied to anything else.** No company account, no subscription,
+no phone-home. Tools that reach beyond conversation are off unless
+you switch them on (Recipe 3). Your Ember runs where you put it,
+answers to you, and its ties are exactly the three above — each one
+yours to cut by removing a folder, stopping a local service, or
+deleting a file.
 
 ---
 

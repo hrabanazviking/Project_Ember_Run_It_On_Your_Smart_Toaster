@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 02:27 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-019 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019
-Next slice: E-020 — Tethering made explicit
+Last updated: 2026-10-31 02:44 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-020 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020
+Next slice: E-021 — Conversation engine hardening
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -733,6 +733,53 @@ Top-level members present (size / file count, working tree excl. .git):
   ls-remote (remote head = 6846e266ec41917f108c7e1720463ecf067f27b6 =
   local HEAD at push time).
 
+## E-020 — Tethering made explicit (DONE, 2026-10-31)
+
+- Specification filed at `docs/architecture/E-020_TETHERING_SPEC.md`: "tethered"
+  unpacked into exactly three tethers, every clause drawn from code and pinned
+  by tests. **Person:** one config root (default `~/.ember/`, `--config-root`
+  override) holding identity (`identity.json` = name + role ONLY, written
+  atomically by Hjarta as setup's last step; missing file → schema defaults),
+  operator config, secrets, Well, tool audit; no user account or person record
+  exists anywhere — custody of the folder is custody of the companion; two
+  roots proven non-bleeding; the core's whole env surface is `OLLAMA_HOST` +
+  `EMBER_WELL_PASSWORD` (E-013's finding restated as spec). **Machine:** Funi
+  + embedder default to Ollama on localhost (`phi3:mini`, `nomic-embed-text`)
+  — no off-machine call in the defaults; only the Ollama runtime is
+  implemented, the other four enum values return typed
+  `Unavailable(RUNTIME_NOT_INSTALLED)`; schema paths keep `~` unexpanded
+  until use (Flexible Roots); tools + MCP default off. **Memory:** the Well
+  (default local `sqlite_vec` at `~/.ember/well/store.db`; `pgvector` the
+  remote option) is reached only through Strengr — 3 attempts, backoff 1s
+  doubling capped 30s, non-recoverable reasons fast-fail, `health()` never
+  raises, exhaustion is a typed `Disconnected`, never a crash or a lie.
+- Load-bearing asymmetry specified: the machine tether is HARD (Funi opens
+  first; Unavailable → exit 1, Well never opened) while the memory tether is
+  SOFT (Well opens second; Disconnected → banner + do-not-invent prompt +
+  ungrounded session). Hjarta named as the binding ceremony (Funi proven →
+  Well proven via Strengr → probe round-trip must carry → identity written
+  last; any earlier failure writes nothing). Honest centre: T-W6 — Episodes
+  are WRITE-ONLY (docket 81/82), so the memory tether grounds across restarts
+  in ingested documents but NOT in past conversations; E-021/E-031 own closing.
+- Tested: new `tests/unit/test_tethering_e020.py` — **13 passed** in the
+  default env (person: identity defaults/location/round-trip/name+role-only
+  payload/two-root isolation/config-from-root; machine: localhost defaults/
+  typed Unavailable ×4 runtimes/`~`-unexpanded paths/sovereignty defaults;
+  memory: local-Well default/Strengr policy defaults/typed-Disconnected with
+  exact retry count/remote secret as reference-not-value).
+- Stated in user docs: `docs/OPERATOR_PLAYBOOK.md` gained the plain-language
+  section "What Ember is tied to — and what it is not" (three tethers + the
+  write-only-conversations limit, in ordinary words). One defect found and
+  FIXED in scope: Recipe 10's verification overclaimed "your conversation
+  history is intact … asking Ember to recall something from before" — false
+  under T-W6; the recipe now states what provably carries over (identity,
+  config, secrets, searchable ingested documents) and names the episode
+  limit plainly. No code defect found in the tether paths; no README touched.
+- Slice gate: root suite in the E-017 Run B shape (pgvector file excluded;
+  TMPDIR on the workspace overlay): **559 passed, 6 failed, 12 skipped,
+  1 warning** — the 546 freeze baseline + the 13 new tests; the 6 failures
+  are the proven environment failures, identical to the freeze.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -754,4 +801,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-017 DONE (2026-10-31) — baseline freeze: the campaign's zero line pinned at docs/audit/E-017_BASELINE_FREEZE.md, measured at HEAD 37fc2f2 (3,246 tracked files; VM, Python 3.12.3, pytest 9.1.1). Root suite re-measured in full this slice, all three shapes IDENTICAL to E-004/E-001: Run A whole/default interrupted at collection (1 error, 8 skipped, exit 2 — docket 1); Run B default excl. pgvector file **546 passed, 6 failed, 12 skipped, 1 warning**; Run D whole with extras **583 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (counts frozen; wall time is not). Per-member truth table pinned from E-005 as corrected by E-012 (seidr 38 green; kista 146/3; Verdandi 539/19; mimir-well 350/6; bifrost 18/7; Hamr 2170/28/33/2E; mempalace corrected 1712/14/1/106-desel/0E with volatility caveat docket 54; CloakBrowser vendored 385/39/15E, docket 80; dictionary NOT MEASURED docket 78; astrology + Open-VTT no suites docket 77). Boot zero line pinned from E-006 with key rows re-probed identical this slice (ember --help exit 0, seidr composes exit 0, ember doctor bare still crashes on sqlite_vec docket 13; Verdandi hub + Mímir's Eye LIVE-proven in E-006). Keeper re-measurement method recorded in the freeze doc (Run B is the per-slice gate; Runs A/D at part gates and on docket 1–4 touches; TMPDIR on workspace overlay always; counts from runner logs only). MCP/Ollama/podman/Gungnir-guarded tests NOT PROVEN — guarded, not passed. Doc-only slice, no code touched, no README touched.
 - E-018 DONE (2026-10-31) — Part I gate PASS: audit published in-repo (16 docs, E-002–E-017, under docs/audit/), verdicts prepared (not executed) for every member (all KEEP / KEEP-STEWARD / KEEP-PENDING-VERDICT; nothing removed, merged, or retired), the six gate-owned docket items verdict-prepared (52, 60, 62, 63, 64, 71 — removals/folds in 60/62/64 await Volmarr's word, as do 26 Ragnarok and 48 known-accounts custody; none blocks Part II), plain-language summary filed, and the road checked against five re-cut triggers with NO structural re-cut demanded (four sharpenings S1–S4 recorded). Gate re-measurement identical to the E-017 freeze in all three shapes (A: 1 error/8 skipped; B: 546 passed/6 failed/12 skipped/1 warning; D with extras: 583 passed/0 failed/19 skipped/1 warning). Filed at docs/audit/E-018_PART_I_GATE.md. **Part I (E-001–E-018) is CLOSED.**
 - E-019 DONE (2026-10-31) — core loop mapped: entry → startup (Funi first, Well second) → retrieve k=5 → assemble (system + last-5 in-process episodes + hits, no token budget) → Ollama streaming generation → ≤8-round tool loop → render → Episode persist, all drawn from code at docs/architecture/E-019_CORE_LOOP_MAP.md; no event bus / no other member in the loop; six new docket items 81–86 (episodes write-only with no cross-restart history, pending-episodes journal unimplemented, non-streaming tool calls dropped, DATA_FLOW drift, silent persistence and retrieval failures), each with its Part II fixing home named.
-- E-020 next — tethering made explicit: what "tethered" means in the code (to its person, its machine, its memory) — specified, tested, and stated in user docs.
+- E-020 DONE (2026-10-31) — tethering made explicit: three tethers specified from code at docs/architecture/E-020_TETHERING_SPEC.md (person = one config root, identity name+role only, no account/person record, env surface exactly OLLAMA_HOST + EMBER_WELL_PASSWORD; machine = localhost Ollama/embedder defaults, one implemented runtime with typed Unavailable for the rest, `~` unexpanded until use, tools/MCP off by default; memory = Well only via Strengr, 3 attempts / 30 s cap / fast-fail set / health never raises / typed Disconnected), the hard-model vs soft-memory startup asymmetry named, Hjarta as the binding ceremony, and T-W6's honest centre (Episodes write-only, docket 81/82 → E-021/E-031); 13 new spec-pinning tests in tests/unit/test_tethering_e020.py all passing; plain-language statement added to docs/OPERATOR_PLAYBOOK.md and its Recipe 10 conversation-recall overclaim found and fixed in scope; slice gate 559 passed / 6 proven-environment failed / 12 skipped / 1 warning.
+- E-021 next — conversation engine hardening: history, windowing, summarisation hooks under a token budget (profile-aware); owns docket 81 (episodes write-only) with E-031.
