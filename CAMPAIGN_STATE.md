@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 10:37 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-046
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045
-Next slice: E-046 — Cold start on the smallest profile (time-to-first-word measured + capped)
+Last updated: 2026-10-31 10:58 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-047
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046
+Next slice: E-047 — The Pi proof (full companion on Mimir-class hardware; real Pi or NOT PROVEN, stated plainly)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1877,6 +1877,51 @@ Top-level members present (size / file count, working tree excl. .git):
   check — remote moved ee38f38 → 6d99acc, verified via ls-remote (remote
   head = 6d99acc256ac9ce235d730720d0df71374787c19 = local HEAD at push time).
 
+## E-046 — Cold start on the smallest profile (DONE, 2026-10-31)
+
+- Record filed at `docs/architecture/E-046_COLD_START.md`: cold start to
+  first word measured on the toaster profile — seven fresh
+  `python -m ember ask` processes (real CLI, real config file, real
+  sqlite_vec Well, loopback wire-shape model answering instantly, so the
+  number prices Ember's own startup, not a model's thinking; real-model
+  cold start NOT PROVEN). First word: **median 2.87 s, min 1.28, max
+  5.38** on a heavily contended VM (5-min load ~8; stated in the doc —
+  the anchor is a contended median; E-032's quiet-machine whole ask was
+  0.93 s). Ready line at median 2.79 s: **~97% of cold start is process
+  startup** (interpreter, imports, config, Funi probe, Well open,
+  history load); the turn itself adds ~0.09 s. First-ever start (Well
+  creation included) 3.60 s, also inside the cap.
+- The cap, in the book (`src/ember/budgets.py`): new anchor
+  `MEASURED_COLD_START_FIRST_WORD_S = 2.87` (test-pinned) and
+  `ProfileBudget.cold_start_first_word_s = 5.0` **flat across all four
+  profiles** (~1.7× the anchor; starting is the same process on every
+  profile — no machine size is granted a slower start).
+  `check_against` gains an optional fifth judgement in the book's
+  sentence shape; `measured_shape_fits` includes the anchor, so the
+  founding fact covers cold start. E-041's tests stand unmodified.
+- Gate armed: `tests/unit/test_cold_start_e046.py` — 4 tests (book/cap
+  pinning, check_against wording, wiring, and the measurement: setup
+  run + 3 fresh cold processes, judged by their MEDIAN against the
+  cap — a single contention spike cannot flake it, a real startup
+  regression moves all three). Default env 3 passed + 1 skip (reason
+  stated); extras 4 passed.
+- **Defect found by this slice's gate, fixed in scope:** the first
+  Run D failed E-045's idle tests (3 of 4 profiles) on RSS "wander" —
+  the settled samples *declined* 4.4–9.7 MiB inside the 15 s window
+  under memory pressure, and the max−min assertion treated any
+  movement as a violation, contradicting E-045's own proven hour
+  (monotonic decline 40.8 → 23.0 MiB is the normal idle behaviour).
+  The assertion now judges **growth past the first settled sample**
+  at the same 2 MiB bound, reason recorded at the assertion;
+  standalone re-run 9 passed (idle 5 + cold-start 4).
+- Slice gate (final tree; logs in `~/workspace/.verify-tmp/ember-e046/gate/`):
+  Run B **952 passed, 6 proven-environment failures, 25 skipped,
+  1 warning** (949 E-045 baseline + 3 new, +1 designed skip); Run D
+  **1009 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1005 + 4
+  new — reconciles exactly). The pre-fix first Run D read 1006/3, the
+  3 being exactly the wander failures. No new docket items (90 stands,
+  now covering the cold-start anchor). No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1926,4 +1971,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-044 DONE (2026-10-31) — install weight cut II / dependency diet: every root requirement bounded both ways (docket 23 root half closed; member half = new docket 92); the unbounded `mcp>=1.27` floor was PROVEN broken today — it resolves to mcp 2.3.0, whose SDK removed `mcp.server.fastmcp`, so a fresh [mcp] install could not start `ember mcp serve`; bounded to <2 (resolves 1.30.0, FastMCP imports, MCP tests run real). Docket 20 closed: keyring declared as its own `secrets` extra (measured 16,646,785 B / 10 pkgs — deliberately NOT folded into pgvector, which stays 20,920,005 B); resolver's missing-keyring note now names `ember-agent[secrets]`. Dev split: `dev` is test-only 7,600,880 B (was 89,112,145 B combined, −91.5%), ruff+mypy moved to a new `lint` extra (81,511,265 B measured shape). All-extras combined 54,183,654 → 53,703,943 B. Kept deliberately, named in the doc: psycopg[binary] (ADR 0010, no system libpq for normal folks), PyYAML, the mcp SDK's HTTP stack (hard deps, extra-gated). 7 new tests incl. an exact AST import↔extra map; gate Run B 948 passed / 6 proven-env failed / 20 skipped, Run D (real venv install of the edited package, bounded extras) 1015 passed / 0 failed / 16 skipped — the 5 MCP e2e failures under the isolated-target method were proven ENVIRONMENT (subprocess env filtering) by the venv run.
 - E-044 push: banking commit e077d3a pushed under Volmarr's 2026-10-31 standing go-ahead after fetch + remote-diff (remote was d6ecd57 = local HEAD, no divergence) — remote moved d6ecd57 → e077d3a, verified via ls-remote (remote head = e077d3a26693f15c0e550d646b15abec14efdde0 = local HEAD at push time).
 - E-045 DONE (2026-10-31) — idle discipline: four profile probes idled a full hour on the VM (121 samples, 30 s interval) — 0.0 CPU seconds, exactly 1 thread, disk byte-identical (164,616 B), RSS never grew at any step (40.8 → 23.0 MiB floor at ~1,261 s, HWM ≤40.9 MiB inside the toaster's 64 MiB idle ceiling), all probes exit 0; gate armed in tests/unit/test_idle_discipline_e045.py (5 tests; extras 5 passed, default 4 skip-stated + 1 passed); no src change, no defect found, no new docket; gate Run B 949 passed / 6 proven-env failed / 24 skipped, Run D 1005 passed / 0 failed / 19 skipped (corrected same day — first banked as 1022/20 from a foreign background result, not the run's log; log-verified figure stands); filed at docs/architecture/E-045_IDLE_DISCIPLINE.md.
-- E-046 next — cold start on the smallest profile: time-to-first-word measured + capped.
+- E-046 DONE (2026-10-31) — cold start on the smallest profile: seven fresh `ember ask` processes on the toaster profile (real CLI/Well, loopback wire-shape model) — first word median 2.87 s (1.28–5.38, contended VM, stated), ready at 2.79 s so ~97% is process startup and the turn adds ~0.09 s; first-ever start 3.60 s; book gains the test-pinned anchor (2.87) and a flat 5.0 s cold-start cap on every profile; gate armed in tests/unit/test_cold_start_e046.py (4 tests, median-of-3 judged); the gate caught E-045's idle "wander" assertion failing on proven-normal RSS decline under memory pressure — fixed in scope to judge growth only; gate Run B 952 passed / 6 proven-env failed / 25 skipped, Run D 1009 passed / 0 failed / 19 skipped; filed at docs/architecture/E-046_COLD_START.md.
+- E-047 next — the Pi proof: the full companion on Mimir-class hardware (real Pi or NOT PROVEN, stated plainly).

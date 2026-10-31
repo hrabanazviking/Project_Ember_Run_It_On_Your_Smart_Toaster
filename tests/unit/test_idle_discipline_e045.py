@@ -198,9 +198,19 @@ def test_idle_costs_nothing_over_the_window(
     assert rss_last <= toaster.idle_ram_mib
     assert rss_last <= MEASURED_IDLE_RAM_MIB * 1.5
     settled = [r["VmRSS"] / 1024 for r in rows[1:]]
-    assert max(settled) - min(settled) <= 2.0, (
-        f"{profile.value} idle RSS wandered {max(settled) - min(settled):.1f} MiB "
-        "over the window — idle memory should be flat"
+    # Growth only (E-046 gate fix): the discipline is that idle
+    # memory never GROWS. Decline is not a violation — E-045's
+    # own hour proved RSS declines monotonically (40.8 -> 23.0
+    # MiB) as the kernel reclaims untouched pages, and under
+    # memory pressure that decline can land inside this 15 s
+    # window (the E-046 Run D gate measured 4.4–9.7 MiB of pure
+    # decline and failed on it). The original max-min "wander"
+    # assertion therefore contradicted this slice's own
+    # evidence; what is judged here is growth past the first
+    # settled sample, which is the leak shape.
+    assert max(settled) - settled[0] <= 2.0, (
+        f"{profile.value} idle RSS grew {max(settled) - settled[0]:.1f} MiB "
+        "over the window — idle memory should never grow"
     )
 
     # Disk: byte-identical — at rest, nothing is written.

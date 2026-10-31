@@ -89,6 +89,21 @@ MEASURED_IDLE_RAM_MIB = 40.7
 #: profiles at fixture scale.
 MEASURED_TURN_RAM_MIB = 40.1
 
+#: Cold start to first word, E-046: the median of seven fresh
+#: ``ember ask`` processes on the toaster profile (real CLI,
+#: real sqlite_vec Well, loopback wire-shape model answering
+#: instantly — so this prices Ember's own startup, not a
+#: model's thinking time), 2.87 s. The VM was heavily
+#: contended during the measurement (sibling campaigns
+#: running; 5-minute load average ~8), so the anchor is a
+#: contended median: on a quiet machine E-032's whole
+#: second-run ask took 0.93 s end to end. Method and every
+#: run's numbers live in
+#: ``docs/architecture/E-046_COLD_START.md``. Docket 90
+#: stands — a VM anchor, re-anchored per device at
+#: E-047–E-049.
+MEASURED_COLD_START_FIRST_WORD_S = 2.87
+
 
 def storage_bytes_per_turn() -> int:
     """The on-disk cost of one ordinary turn, in bytes.
@@ -134,6 +149,14 @@ class ProfileBudget:
     idle_ram_mib: float
     turn_ram_mib: float
     storage_growth_mib_per_month: float
+    #: E-046: seconds from launching a fresh process to the
+    #: first word of the companion's reply on the operator's
+    #: screen. Flat across profiles on purpose: cold start is
+    #: process startup (interpreter, imports, config, model
+    #: probe, Well open), which E-046 measured as the same
+    #: shape on the smallest profile — the profiles differ in
+    #: what a turn may carry, not in what starting costs.
+    cold_start_first_word_s: float = 5.0
 
     @property
     def history_token_budget(self) -> int:
@@ -205,6 +228,7 @@ def check_against(
     idle_ram_mib: float,
     turn_ram_mib: float,
     storage_growth_mib_per_month: float,
+    cold_start_first_word_s: float | None = None,
 ) -> tuple[str, ...]:
     """Judge one measured shape against a profile's ceilings.
 
@@ -236,6 +260,15 @@ def check_against(
             f"the {profile.value} ceiling of "
             f"{budget.storage_growth_mib_per_month:.2f} MiB/month"
         )
+    if (
+        cold_start_first_word_s is not None
+        and cold_start_first_word_s > budget.cold_start_first_word_s
+    ):
+        problems.append(
+            f"cold start to first word {cold_start_first_word_s:.2f} s exceeds "
+            f"the {profile.value} ceiling of "
+            f"{budget.cold_start_first_word_s:.2f} s"
+        )
     return tuple(problems)
 
 
@@ -251,11 +284,13 @@ def measured_shape_fits(profile: ConversationProfile) -> tuple[str, ...]:
         idle_ram_mib=MEASURED_IDLE_RAM_MIB,
         turn_ram_mib=MEASURED_TURN_RAM_MIB,
         storage_growth_mib_per_month=projected_monthly_growth_mib(),
+        cold_start_first_word_s=MEASURED_COLD_START_FIRST_WORD_S,
     )
 
 
 __all__ = [
     "DIARY_BYTES_PER_TURN",
+    "MEASURED_COLD_START_FIRST_WORD_S",
     "MEASURED_IDLE_RAM_MIB",
     "MEASURED_INSTALL_BYTES",
     "MEASURED_TURN_RAM_MIB",
