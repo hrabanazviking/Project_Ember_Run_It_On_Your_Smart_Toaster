@@ -555,6 +555,10 @@ def _run_tool_round(
             config_overrides=tool_ctx.config_overrides,
             session_standing=frozenset(tool_ctx.session_standing),
             standing_trust_all=tool_ctx.standing_trust_all,
+            # E-026: the call's own arguments feed the guarded-
+            # argument gate (a model-supplied escape hatch such as
+            # fetch_url's allow_private_addresses always prompts).
+            arguments=call.arguments,
         )
         if decision.needs_prompt:
             answer = _safe_prompt(tool_ctx.prompter, stdout, descriptor, call)

@@ -39,6 +39,7 @@ from urllib.robotparser import RobotFileParser
 
 from ember.schemas.tool import (
     ApprovalPolicy,
+    ToolAccess,
     ToolCall,
     ToolDescriptor,
     ToolParameter,
@@ -91,6 +92,15 @@ _DESCRIPTOR = ToolDescriptor(
     },
     required_approval=ApprovalPolicy.PER_CALL,
     timeout_s=_REQUEST_TIMEOUT_S + 5.0,  # give the tool 5s of slack on top of the urlopen timeout
+    # Permission shape (E-026): leaves the machine — a dangerous
+    # access class, so the approval gate never auto-approves it
+    # (standing_trust / session "always" cannot wave it through).
+    # ``allow_private_addresses`` widens the reach from the public
+    # web to the operator's own network, so it is a guarded
+    # argument: a call carrying it truthy always prompts, and the
+    # operator sees the exact URL + flag in that prompt.
+    access=ToolAccess.NETWORK,
+    guarded_arguments=("allow_private_addresses",),
 )
 
 

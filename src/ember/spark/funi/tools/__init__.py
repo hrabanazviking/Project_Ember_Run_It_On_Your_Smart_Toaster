@@ -33,6 +33,12 @@ from ember.spark.funi.tools.approval import (
 )
 from ember.spark.funi.tools.approval import resolve as resolve_approval
 from ember.spark.funi.tools.audit import AuditLog
+from ember.spark.funi.tools.permissions import (
+    ToolPermissionShape,
+    may_auto_approve,
+    permission_shape,
+    tool_inventory,
+)
 from ember.spark.funi.tools.registry import (
     ToolExecutor,
     clear,
@@ -50,12 +56,16 @@ __all__ = [
     "PromptAnswer",
     "StdinApprovalPrompter",
     "ToolExecutor",
+    "ToolPermissionShape",
     "clear",
     "is_registered",
     "list_tools",
     "lookup",
+    "may_auto_approve",
+    "permission_shape",
     "register",
     "resolve_approval",
     "resolve_with_answer",
+    "tool_inventory",
     "validate_arguments",
 ]

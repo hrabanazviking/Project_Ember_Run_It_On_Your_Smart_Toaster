@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 04:11 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-025 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025
-Next slice: E-026 — Tools discipline: the core's tools inventoried; each tool's permission shape stated; dangerous-by-default tools gated
+Last updated: 2026-10-31 04:47 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-026 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026
+Next slice: E-027 — Approval shape for normal folks: tool approvals a non-technical user understands (plain words, rememberable scopes)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1006,6 +1006,49 @@ Top-level members present (size / file count, working tree excl. .git):
   ls-remote (remote head = e2a1e0ec2a93b219b33394f4c87a438dfd824315 = local
   HEAD at push time).
 
+## E-026 — Tools discipline (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-026_TOOLS_DISCIPLINE.md`. Before
+  E-026 a tool stated only how often the operator is asked, never what it
+  could reach. Built: `ToolAccess` on every `ToolDescriptor` (read_only /
+  private_read / network / write / execute / external / unspecified —
+  unspecified is the default and is gated as dangerous: no stated shape, no
+  standing approval) plus `guarded_arguments` (arguments that widen a
+  tool's reach); `ember.spark.funi.tools.permissions` (AUTO_APPROVABLE =
+  {read_only, private_read} only, `may_auto_approve`,
+  `guarded_argument_in_use`, `permission_shape`, `tool_inventory()`).
+- Inventory (pinned from the live registry by test): `search_well`
+  private_read / standing / 15 s; `read_local_file` private_read /
+  per_call / 5 s; `fetch_url` network / per_call / 15 s with guarded
+  argument `allow_private_addresses` (parameter default False, pinned).
+  No first-party tool is write / execute / external / unspecified — the
+  companion can change nothing on the machine. MCP-bridged tools now
+  state `external`; Ember's own MCP server tools (search_well /
+  well_status / doctor, read-only, explicit `ember mcp serve` only)
+  inventoried honestly in the doc, unchanged.
+- The gate (one wall, `approval.resolve`, chat now passes the call's
+  arguments in): (1) descriptor or config `forbidden` refuses before any
+  blanket mechanism; (2) dangerous/unspecified access or a truthy guarded
+  argument always prompts per call — descriptor STANDING, session
+  "always", and standing_trust are all powerless there; then (3)
+  standing_trust, (4) descriptor standing (config downgrade-only floor
+  unchanged), (5) session standing, (6) prompt. ToolsConfig docstring +
+  example config now state standing_trust's gated truth.
+- Two defects found and FIXED in scope: (1) `standing_trust` was checked
+  before config overrides, so it silently overrode an operator's per-tool
+  `forbidden` — specific refusal now beats blanket trust,
+  regression-pinned; (2) fetch_url's private-network escape hatch
+  `allow_private_addresses` is model-supplied and could be waved through
+  unseen by standing_trust / session-always — now gated per call (the
+  executor's sandbox semantics unchanged). Pinned tests updated with
+  attribution at each site: three approval tests + the Phase-16 standing
+  loop test now declare the safe access class their tool represents.
+- Tests: `test_tools_discipline_e026.py` **31 passed** (default env).
+  Slice gate Run B: **708 passed, 6 failed, 13 skipped, 1 warning** —
+  677 E-025 baseline + 31 new; the 6 are the proven environment failures.
+  Run D (whole, extras): **749 passed, 0 failed, 19 skipped**, exit 0.
+  No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1033,4 +1076,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-023 DONE (2026-10-31) — Aesir backend for Ember: Project Aesir bound under E-022's contract in its native mode only (POST /v1/generate, loopback :18434, bearer key from a key *file* — config carries the path, never the value, and no detail/log ever echoes key material); FuniRuntime.AESIR + FuniAesirConfig (max_tokens default 256 = the service's own ceiling); context flattened to prompt+system (each generation resets history server-side); tools refused as ERROR replies, never dropped (capabilities tool_calls=False); native streaming, EOF-without-terminal = ERROR; finish mapping eos→STOP / timeout→LENGTH; registry implemented set now [OLLAMA, AESIR] with E-022's tests updated under attribution; 26 new tests; gate Run B 616 passed / 6 proven-env failed / 13 skipped, Run D 657 passed / 0 failed. Ledger respected: no accelerator claim from the server's backend field, and a live end-to-end turn against a running Aesir service is NOT PROVEN (mocked transport only), filed at docs/architecture/E-023_AESIR_BACKEND.md.
 - E-024 DONE (2026-10-31) — ThoughtForge binding (candidate): MindSpark ThoughtForge bound as Ember's cognition layer above Funi, against TF's own TF-034 freeze (cognition API v1.0.0); CognitionConfig off by default with a stated profile gate (toaster refused outright; phone/pi draft cap 1, laptop 2, per TF-034's by-construction maxima); lazy optional import (zero new core deps — absent package = typed RUNTIME_NOT_INSTALLED, proven in the default env); API-major/drift truthful refusal via API_VERSION + verify_api_surface() (TF-162's rule, Ember side); core custody inside ~/.ember/thoughtforge/ (E-020 tether), tf_config passed through unshadowed, Episodes → TF's own ChatHistory on the frozen history parameter; chat NOT rewired (candidate), no live TF turn claimed (fake core shaped from the freeze, TF-161 pattern), no budgets claimed; 23 new tests; gate Run B 639 passed / 6 proven-env failed / 13 skipped, Run D 680 passed / 0 failed; filed at docs/architecture/E-024_THOUGHTFORGE_BINDING.md.
 - E-025 DONE (2026-10-31) — persona core: validated `Persona` schema (slug id never a path, field ceilings, no prompt-line smuggling via line breaks/control chars), strict per-persona JSON loading under `<config_root>/personas/` (typed refusals, filename/id agreement, no silent swap), resolution explicit → default.json → identity-as-default-persona, `PersonasConfig.active`; per-persona memory separation via `Episode.persona_id` + exact-match filtering with the prompt assembler as the wall (adversarial foreign-episode fixture never reaches the prompt), chat sessions resolve/filter/tag by persona, and the `load_identity` non-object-JSON AttributeError crash fixed in scope; honest limit: Brunnr adapters do not yet persist the tag (fails closed — named personae have no cross-restart history yet; migration belongs to Part V/E-080); 38 new tests; gate Run B 677 passed / 6 proven-env failed / 13 skipped, Run D 718 passed / 0 failed; filed at docs/architecture/E-025_PERSONA_CORE.md.
-- E-026 next — Tools discipline: the core's tools inventoried; each tool's permission shape stated; dangerous-by-default tools gated.
+- E-026 DONE (2026-10-31) — tools discipline: every descriptor states its permission shape (`ToolAccess` + `guarded_arguments`; unspecified = gated dangerous), the live-registry inventory pinned by test (search_well private_read/standing, read_local_file private_read/per_call, fetch_url network/per_call with guarded `allow_private_addresses`; no first-party write/execute/external tool), the approval gate in resolve() (dangerous/unspecified access and truthy guarded arguments always prompt — standing/session/standing_trust powerless; MCP tools state external), and two defects fixed in scope (standing_trust silently overrode a config `forbidden`; the model-supplied private-address escape hatch could be blanket-waived); pinned approval/Phase-16 tests updated with attribution; 31 new tests; gate Run B 708 passed / 6 proven-env failed / 13 skipped, Run D 749 passed / 0 failed; filed at docs/architecture/E-026_TOOLS_DISCIPLINE.md.
+- E-027 next — Approval shape for normal folks: tool approvals a non-technical user understands (plain words, rememberable scopes).

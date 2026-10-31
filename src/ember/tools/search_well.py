@@ -20,6 +20,7 @@ from ember.schemas.chunks import RetrievalHit
 from ember.schemas.errors import BrunnrError
 from ember.schemas.tool import (
     ApprovalPolicy,
+    ToolAccess,
     ToolCall,
     ToolDescriptor,
     ToolParameter,
@@ -61,6 +62,10 @@ _DESCRIPTOR = ToolDescriptor(
     },
     required_approval=ApprovalPolicy.STANDING,
     timeout_s=15.0,
+    # Permission shape (E-026): reads the operator's own Well —
+    # private data, read-only, never leaves the machine — the one
+    # first-party shape the approval gate may auto-approve.
+    access=ToolAccess.PRIVATE_READ,
 )
 
 

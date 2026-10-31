@@ -288,7 +288,13 @@ class ToolsConfig:
     PER_CALL but cannot upgrade.
 
     ``standing_trust`` flips every PER_CALL tool to AUTO_APPROVED
-    (the "trust everything" knob); still audited.
+    (the "trust everything" knob); still audited. Since E-026 the
+    knob acts only inside the permission gate: tools in a dangerous
+    or unspecified access class (network / write / execute /
+    external) and calls carrying a guarded argument always prompt
+    per call regardless, and a per-tool ``forbidden`` override in
+    ``approval_overrides`` beats the knob (the specific refusal
+    wins over the blanket trust).
 
     ``audit_root`` overrides where the JSONL audit log lands.
     None → ``<config_root>/state/tool_audit/``.

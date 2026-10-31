@@ -171,7 +171,7 @@ smidja:
 # ---------------------------------------------------------------------------
 tools:
   enabled: false                # set true to allow tool-use during chat
-  standing_trust: false         # set true to auto-approve every PER_CALL tool (still audited)
+  standing_trust: false         # set true to auto-approve PER_CALL tools in a read-only access class (still audited); dangerous-class tools (e.g. fetch_url, network) and guarded arguments always prompt anyway (E-026)
   allow_private_addresses: false  # affects fetch_url; RFC1918/loopback refused by default
   # Per-tool approval override. Operator can downgrade STANDING → per_call
   # (more strict). Operator cannot upgrade per_call → STANDING — descriptor

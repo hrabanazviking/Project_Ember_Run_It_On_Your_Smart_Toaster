@@ -37,6 +37,7 @@ from pathlib import Path
 
 from ember.schemas.tool import (
     ApprovalPolicy,
+    ToolAccess,
     ToolCall,
     ToolDescriptor,
     ToolParameter,
@@ -79,6 +80,11 @@ _DESCRIPTOR = ToolDescriptor(
     },
     required_approval=ApprovalPolicy.PER_CALL,
     timeout_s=5.0,
+    # Permission shape (E-026): reads the operator's own files —
+    # private data, read-only, never leaves the machine — but the
+    # descriptor still asks every call, because *which* file is
+    # the sensitive part.
+    access=ToolAccess.PRIVATE_READ,
 )
 
 

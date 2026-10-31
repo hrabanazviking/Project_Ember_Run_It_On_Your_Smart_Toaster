@@ -7,6 +7,7 @@ import io
 from ember.schemas.tool import (
     ApprovalOutcome,
     ApprovalPolicy,
+    ToolAccess,
     ToolCall,
     ToolDescriptor,
 )
@@ -22,9 +23,11 @@ def _descriptor(
     name: str = "search_well",
     *,
     required_approval: ApprovalPolicy = ApprovalPolicy.PER_CALL,
+    access: ToolAccess = ToolAccess.UNSPECIFIED,
 ) -> ToolDescriptor:
     return ToolDescriptor(
         name=name, description="t", required_approval=required_approval,
+        access=access,
     )
 
 
@@ -38,7 +41,13 @@ def _call(name: str = "search_well") -> ToolCall:
 
 
 def test_standing_descriptor_auto_approves() -> None:
-    d = _descriptor(required_approval=ApprovalPolicy.STANDING)
+    # E-026: STANDING auto-approves only for a stated read-only
+    # access class (an UNSPECIFIED descriptor now prompts instead —
+    # see tests/unit/test_tools_discipline_e026.py).
+    d = _descriptor(
+        required_approval=ApprovalPolicy.STANDING,
+        access=ToolAccess.PRIVATE_READ,
+    )
     decision = resolve(d)
     assert decision.outcome is ApprovalOutcome.AUTO_APPROVED
     assert decision.needs_prompt is False
@@ -61,7 +70,10 @@ def test_forbidden_descriptor_resolves_to_forbidden_by_registry() -> None:
 
 def test_session_standing_skips_prompt() -> None:
     """Operator typed 'always' earlier in this session."""
-    d = _descriptor(required_approval=ApprovalPolicy.PER_CALL)
+    d = _descriptor(
+        required_approval=ApprovalPolicy.PER_CALL,
+        access=ToolAccess.PRIVATE_READ,  # E-026 gate: session standing needs a safe class
+    )
     decision = resolve(d, session_standing=frozenset({"search_well"}))
     assert decision.outcome is ApprovalOutcome.AUTO_APPROVED
     assert decision.needs_prompt is False
@@ -69,7 +81,10 @@ def test_session_standing_skips_prompt() -> None:
 
 def test_standing_trust_all_skips_prompt_for_per_call_tool() -> None:
     """Operator set tools.standing_trust: true."""
-    d = _descriptor(required_approval=ApprovalPolicy.PER_CALL)
+    d = _descriptor(
+        required_approval=ApprovalPolicy.PER_CALL,
+        access=ToolAccess.PRIVATE_READ,  # E-026 gate: standing_trust needs a safe class
+    )
     decision = resolve(d, standing_trust_all=True)
     assert decision.outcome is ApprovalOutcome.AUTO_APPROVED
 

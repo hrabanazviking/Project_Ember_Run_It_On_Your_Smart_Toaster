@@ -21,6 +21,7 @@ from ember.mcp.client import MCPClientPool
 from ember.schemas.config import MCPServerSpec
 from ember.schemas.tool import (
     ApprovalPolicy,
+    ToolAccess,
     ToolCall,
     ToolDescriptor,
     ToolParameter,
@@ -118,6 +119,14 @@ def _build_descriptor(
         # MCP tools don't declare redacted args; operator overrides via config.
         redacted_arg_names=(),
         timeout_s=30.0,
+        # Permission shape (E-026): an MCP tool's effects happen on
+        # an external server and are unknowable from its schema —
+        # EXTERNAL, a dangerous class. ``auto_approve`` still lifts
+        # the *descriptor* to STANDING (the operator named this
+        # tool in their config), but the approval gate never
+        # auto-approves an EXTERNAL tool: if these tools are ever
+        # wired into a live approval loop, each call prompts.
+        access=ToolAccess.EXTERNAL,
     )
 
 

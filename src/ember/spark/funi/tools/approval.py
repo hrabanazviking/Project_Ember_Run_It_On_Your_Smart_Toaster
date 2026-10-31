@@ -146,58 +146,86 @@ def resolve(
     config_overrides: Mapping[str, ApprovalPolicy] | None = None,
     session_standing: frozenset[str] | None = None,
     standing_trust_all: bool = False,
+    arguments: Mapping[str, object] | None = None,
 ) -> ApprovalDecision:
     """Decide whether a tool call needs an interactive prompt.
 
-    Resolution order per ADR 0011 §2.4:
+    Resolution order per ADR 0011 §2.4, as amended by E-026:
 
-    1. ``descriptor.required_approval == FORBIDDEN`` →
-       ``FORBIDDEN_BY_REGISTRY`` (cannot be overridden by config).
-    2. ``standing_trust_all=True`` → every ``PER_CALL`` becomes
-       ``AUTO_APPROVED`` (operator's "trust everything" knob).
-    3. Descriptor says ``STANDING`` → ``AUTO_APPROVED`` (unless config
+    1. ``descriptor.required_approval == FORBIDDEN``, or a config
+       override of ``FORBIDDEN`` for this tool →
+       ``FORBIDDEN_BY_REGISTRY``. The operator's *specific* refusal
+       beats every blanket mechanism — in particular it beats
+       ``standing_trust_all`` (before E-026 the trust knob was
+       checked first and silently overrode a config ``forbidden``).
+    2. The E-026 gate (``ember.spark.funi.tools.permissions``): a
+       tool whose access class is dangerous or unspecified, or a
+       call carrying a truthy guarded argument, is never
+       auto-approved — it prompts per call whatever the descriptor,
+       the session, or ``standing_trust_all`` say.
+    3. ``standing_trust_all=True`` → ``AUTO_APPROVED`` (operator's
+       "trust everything" knob, within the gate).
+    4. Descriptor says ``STANDING`` → ``AUTO_APPROVED`` (unless config
        downgrades to ``PER_CALL`` — descriptor is the floor on safety,
        not on permissiveness).
-    4. ``session_standing`` carries the tool's name → ``AUTO_APPROVED``
+    5. ``session_standing`` carries the tool's name → ``AUTO_APPROVED``
        (operator typed ``always`` earlier in this session).
-    5. Otherwise → ``PER_CALL``, caller must prompt.
+    6. Otherwise → ``PER_CALL``, caller must prompt.
 
     Config can downgrade ``STANDING`` to ``PER_CALL`` (more strict);
     config cannot upgrade ``PER_CALL`` to ``STANDING``. Pin the safer
-    direction.
+    direction. ``arguments`` is the call's argument mapping, used
+    only for the guarded-argument gate; callers that omit it get
+    the pre-E-026 behaviour for that one check (the access gate
+    still applies).
     """
     overrides = config_overrides or {}
     session = session_standing or frozenset()
+    override = overrides.get(descriptor.name)
 
-    # 1. FORBIDDEN is the absolute floor.
+    # 1. FORBIDDEN is the absolute floor — descriptor or the
+    #    operator's per-tool config refusal, checked before any
+    #    blanket trust mechanism.
     if descriptor.required_approval is ApprovalPolicy.FORBIDDEN:
         return ApprovalDecision(ApprovalOutcome.FORBIDDEN_BY_REGISTRY)
+    if override is ApprovalPolicy.FORBIDDEN:
+        return ApprovalDecision(ApprovalOutcome.FORBIDDEN_BY_REGISTRY)
 
-    # 2. Operator's global trust-everything knob.
+    # 2. The E-026 gate: dangerous/unspecified access, or a truthy
+    #    guarded argument in this call, always prompts per call.
+    from ember.spark.funi.tools.permissions import (  # noqa: PLC0415
+        guarded_argument_in_use,
+        may_auto_approve,
+    )
+
+    if not may_auto_approve(descriptor) or (
+        guarded_argument_in_use(descriptor, arguments) is not None
+    ):
+        return ApprovalDecision(
+            ApprovalOutcome.APPROVED_THIS_CALL,  # placeholder — set after prompt
+            needs_prompt=True,
+        )
+
+    # 3. Operator's global trust-everything knob (gated above).
     if standing_trust_all:
         return ApprovalDecision(ApprovalOutcome.AUTO_APPROVED)
 
-    # 3. Compute the effective policy:
+    # 4. Compute the effective policy:
     #    - start with descriptor's required_approval
     #    - config can downgrade STANDING → PER_CALL (more strict), but
     #      not upgrade PER_CALL → STANDING.
     effective = descriptor.required_approval
-    override = overrides.get(descriptor.name)
     if override is ApprovalPolicy.PER_CALL and effective is ApprovalPolicy.STANDING:
         effective = ApprovalPolicy.PER_CALL
-    # Forbidding in config is honored too (paranoia mode for an
-    # otherwise-STANDING tool).
-    if override is ApprovalPolicy.FORBIDDEN:
-        return ApprovalDecision(ApprovalOutcome.FORBIDDEN_BY_REGISTRY)
 
     if effective is ApprovalPolicy.STANDING:
         return ApprovalDecision(ApprovalOutcome.AUTO_APPROVED)
 
-    # 4. Session-level "always" override.
+    # 5. Session-level "always" override.
     if descriptor.name in session:
         return ApprovalDecision(ApprovalOutcome.AUTO_APPROVED)
 
-    # 5. Per-call prompt required.
+    # 6. Per-call prompt required.
     return ApprovalDecision(
         ApprovalOutcome.APPROVED_THIS_CALL,  # placeholder — set after prompt
         needs_prompt=True,
