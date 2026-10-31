@@ -68,14 +68,17 @@ Hjarta reads the YAML, asks Ollama which of those models are already pulled, and
 
 (Detailed in `docs/architecture/DOMAIN_MAP.md` §5.1.)
 
-A Funi adapter implements four functions:
+A Funi adapter implements four methods (the `FuniHandle` protocol), plus — since E-022 — a declared `capabilities` attribute (`BackendCapabilities`: streaming mode, tool-call truth, token counts, RAM reporting, endpoint need, handled context kinds), published per runtime by the registry in `ember.spark.funi.handle.backend_registry()`:
 
 - `open(config)` → handle or `Unavailable`. Validates the model is loaded; for Ollama, sends a HEAD-ish probe.
-- `complete(prompt, context, tools=None)` → `FuniReply`. **No streaming in the first slice.**
-- `embed(texts)` *(optional)* → list of embedding vectors. If absent, Smiðja uses its own embedding endpoint.
-- `health()` → `FuniHealth(model_id, ram_use, last_ok)`. For `ember doctor`.
+- `complete(prompt, context, tools=None)` → `FuniReply`.
+- `complete_streaming(prompt, context, tools=None)` → stream of `FuniStreamChunk` (Phase 10 / ADR 0009; a complete-only backend wires the `wrap_complete_as_stream` helper and declares `streaming=WRAPPED`).
+- `health()` → `FuniHealth(model_id, ram_use, last_ok)`. For `ember doctor`. (Ollama's adapter never reports RAM: `ram_use_bytes` stays None, and its E-022 declaration says so.)
+- `close()` → release the handle (a no-op for Ollama, which holds no connection).
 
-The Ollama-specific adapter's `complete` wraps `POST /api/generate` (or `/api/chat` if the system prompt benefits from it). Temperature, top-p, and max tokens are operator-configurable in `config/ember.yaml`. The default `max_tokens` is **127000** per RULES.AI.md, with the caveat that any tiny model will OOM before reaching that — the model's *own* context limit applies first.
+Embedding is *not* part of the Funi contract: Smiðja uses its own embedding endpoint (`OllamaEmbedClient`), whatever Funi backend is configured.
+
+The Ollama-specific adapter's `complete` wraps `POST /api/chat`. Temperature, top-p, and max generated tokens (`num_predict`, default 1024) are operator-configurable in `config/ember.yaml`. *(E-022 correction: an earlier draft of this section named `/api/generate`, an optional Funi `embed()`, and a 127000 max-token default — none of those were ever the shipped code; the contract above is the code's.)*
 
 ---
 

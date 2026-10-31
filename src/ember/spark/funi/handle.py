@@ -21,10 +21,12 @@ stream natively.
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from ember.schemas.config import FuniConfig, FuniRuntime
 from ember.schemas.funi import (
+    BackendCapabilities,
     ContextItem,
     FuniHealth,
     FuniReply,
@@ -37,10 +39,19 @@ from ember.schemas.tool import ToolDescriptor
 
 @runtime_checkable
 class FuniHandle(Protocol):
-    """Minimum public surface every Funi runtime satisfies."""
+    """Minimum public surface every Funi runtime satisfies.
+
+    E-022 adds ``capabilities``: a backend declares what it can do
+    (see :class:`ember.schemas.funi.BackendCapabilities`) instead of
+    consumers assuming the richest backend's shape. Note that
+    ``runtime_checkable`` isinstance checks verify the *methods*
+    only — attribute presence (``runtime_kind``, ``model_id``,
+    ``capabilities``) is pinned by the E-022 conformance tests.
+    """
 
     runtime_kind: str
     model_id: str
+    capabilities: BackendCapabilities
 
     def complete(
         self,
@@ -83,6 +94,71 @@ def open(config: FuniConfig) -> FuniHandle | Unavailable:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class BackendRegistration:
+    """One declared runtime's place in the backend contract (E-022).
+
+    ``capabilities`` is None exactly when ``implemented`` is False:
+    an unimplemented runtime has no capabilities, and the registry
+    says so instead of letting prose imply otherwise.
+    """
+
+    runtime: FuniRuntime
+    implemented: bool
+    capabilities: BackendCapabilities | None
+
+
+def backend_registry() -> tuple[BackendRegistration, ...]:
+    """Every runtime the config can name, with its contract truth.
+
+    Covers every :class:`FuniRuntime` member exactly once — the
+    E-022 conformance tests fail if a runtime is added to the enum
+    without a registry entry. Only ``ollama`` is implemented in
+    this build; the other four return :class:`Unavailable` from
+    :func:`open` and carry no capabilities here.
+    """
+    # Lazy import, same reason as open(): only load the runtime
+    # client when the registry is actually read.
+    from ember.spark.funi.ollama.adapter import (  # noqa: PLC0415
+        OLLAMA_CAPABILITIES,
+    )
+
+    return (
+        BackendRegistration(
+            runtime=FuniRuntime.OLLAMA,
+            implemented=True,
+            capabilities=OLLAMA_CAPABILITIES,
+        ),
+        BackendRegistration(
+            runtime=FuniRuntime.LLAMACPP, implemented=False, capabilities=None
+        ),
+        BackendRegistration(
+            runtime=FuniRuntime.LMSTUDIO, implemented=False, capabilities=None
+        ),
+        BackendRegistration(
+            runtime=FuniRuntime.PHI_SILICA, implemented=False, capabilities=None
+        ),
+        BackendRegistration(
+            runtime=FuniRuntime.APPLE_FOUNDATION,
+            implemented=False,
+            capabilities=None,
+        ),
+    )
+
+
+def capabilities_for(runtime: FuniRuntime) -> BackendCapabilities | None:
+    """The declared capabilities of one runtime, or None.
+
+    None means the runtime is not implemented in this build —
+    the same truth :func:`open` reports as
+    ``UnavailableReason.RUNTIME_NOT_INSTALLED``.
+    """
+    for entry in backend_registry():
+        if entry.runtime is runtime:
+            return entry.capabilities
+    return None
+
+
 def wrap_complete_as_stream(
     handle: FuniHandle,
     prompt: str,
@@ -112,4 +188,11 @@ def wrap_complete_as_stream(
     )
 
 
-__all__ = ["FuniHandle", "open", "wrap_complete_as_stream"]
+__all__ = [
+    "BackendRegistration",
+    "FuniHandle",
+    "backend_registry",
+    "capabilities_for",
+    "open",
+    "wrap_complete_as_stream",
+]

@@ -53,6 +53,58 @@ class ContextItem:
 
 
 # --------------------------------------------------------------------- #
+# Backend capabilities (E-022)                                          #
+# --------------------------------------------------------------------- #
+
+
+class StreamingMode(StrEnum):
+    """How a backend produces a streamed reply.
+
+    ``NATIVE`` — the backend streams incrementally itself.
+    ``WRAPPED`` — the backend only completes whole replies;
+    ``complete_streaming`` is the ``wrap_complete_as_stream``
+    one-final-chunk wrapper (ADR 0009 §2.2). Consumers must not
+    promise incremental output from a WRAPPED backend.
+    ``NONE`` — the backend cannot stream at all.
+    """
+
+    NATIVE = "native"
+    WRAPPED = "wrapped"
+    NONE = "none"
+
+
+@dataclass(frozen=True, slots=True)
+class BackendCapabilities:
+    """What one model backend can actually do — declared, not assumed.
+
+    E-022: before this, the Funi contract was four methods and
+    consumers (chat, doctor) had no way to ask a backend what it
+    supports; capability claims lived only in prose docs and had
+    already drifted (see the E-022 slice doc). Every implemented
+    backend now carries one of these as its ``capabilities``
+    attribute, and the registry in ``ember.spark.funi.handle``
+    publishes the same value per runtime so the truth can be read
+    without opening a connection.
+
+    Fields are adapter-level truth. Where a capability also
+    depends on the chosen model, that is said in the open:
+    ``tool_calls_model_dependent`` means the adapter speaks the
+    tool protocol but a specific model may still not emit calls
+    (the FUNI_LOCAL_MODEL_OPTIONS ladder names the known case:
+    ``phi3:mini`` does not emit ``tool_calls`` via Ollama).
+    """
+
+    runtime_kind: str
+    streaming: StreamingMode
+    tool_calls: bool
+    tool_calls_model_dependent: bool = False
+    token_counts: bool = False
+    reports_ram_use: bool = False
+    requires_endpoint: bool = False
+    context_kinds: tuple[ContextKind, ...] = ()
+
+
+# --------------------------------------------------------------------- #
 # Reply + health                                                        #
 # --------------------------------------------------------------------- #
 
@@ -111,9 +163,11 @@ class Unavailable:
 
 
 __all__ = [
+    "BackendCapabilities",
     "ContextItem",
     "ContextKind",
     "FinishReason",
+    "StreamingMode",
     "FuniHealth",
     "FuniReply",
     "ToolCall",

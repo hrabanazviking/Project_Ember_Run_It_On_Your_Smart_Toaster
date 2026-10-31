@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 02:58 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-021 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021
-Next slice: E-022 — Model backends: the core's backend contract + conformance
+Last updated: 2026-10-31 03:10 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-022 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022
+Next slice: E-023 — Aesir backend for Ember: Project Aesir bound under E-022's contract
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -823,6 +823,36 @@ Top-level members present (size / file count, working tree excl. .git):
   remote moved dc9c6c3 → 9749b67, verified via ls-remote (remote head =
   9749b6707ab50db0e93ae40f4bab4d2b91b646e7 = local HEAD at push time).
 
+## E-022 — Model backends: contract + conformance (DONE, 2026-10-31)
+
+- Contract filed at `docs/architecture/E-022_BACKEND_CONTRACT.md`.
+  **Capabilities declared, not assumed:** new `BackendCapabilities` +
+  `StreamingMode` (NATIVE / WRAPPED / NONE) in `ember.schemas.funi`;
+  `capabilities` is now part of the `FuniHandle` protocol.
+  **Registry:** `backend_registry()` + `capabilities_for()` in
+  `ember.spark.funi.handle` publish one entry per `FuniRuntime`
+  (capabilities None exactly when unimplemented); conformance tests
+  fail if the enum ever outgrows the registry. **Capability truth:**
+  Ollama is the only implemented backend — native streaming, tool
+  calls with model-dependent emission (phi3:mini does not emit),
+  token counts from eval counters, RAM never reported, endpoint-
+  required, all five context kinds translated (`OLLAMA_CAPABILITIES`
+  in the adapter, identical across class / handle / registry);
+  llamacpp, lmstudio, phi_silica and apple_foundation have NO
+  capabilities and keep returning typed `Unavailable` from `open()`.
+- One in-scope drift fixed: `FUNI_LOCAL_MODEL_OPTIONS.md` §4 claimed
+  `/api/generate`, a Funi `embed()`, and a 127000 max-token default —
+  none ever shipped; §4 now states the real contract with the
+  correction noted in the doc (embedding is Smiðja's own client).
+- Tests: `test_backend_contract_e022.py` **16 passed** (registry
+  coverage, unimplemented truth ×4, Ollama mocked-transport contract
+  run, a complete-only fake conforming via WRAPPED streaming — the
+  shape E-023's Aesir binding is judged against). Slice gate Run B:
+  **590 passed, 6 failed, 13 skipped, 1 warning** — 574 E-021 baseline
+  + 16 new; the 6 are the proven environment failures. Run D (whole,
+  extras): **631 passed, 0 failed, 19 skipped**, exit 0. No README
+  touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -846,4 +876,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-019 DONE (2026-10-31) — core loop mapped: entry → startup (Funi first, Well second) → retrieve k=5 → assemble (system + last-5 in-process episodes + hits, no token budget) → Ollama streaming generation → ≤8-round tool loop → render → Episode persist, all drawn from code at docs/architecture/E-019_CORE_LOOP_MAP.md; no event bus / no other member in the loop; six new docket items 81–86 (episodes write-only with no cross-restart history, pending-episodes journal unimplemented, non-streaming tool calls dropped, DATA_FLOW drift, silent persistence and retrieval failures), each with its Part II fixing home named.
 - E-020 DONE (2026-10-31) — tethering made explicit: three tethers specified from code at docs/architecture/E-020_TETHERING_SPEC.md (person = one config root, identity name+role only, no account/person record, env surface exactly OLLAMA_HOST + EMBER_WELL_PASSWORD; machine = localhost Ollama/embedder defaults, one implemented runtime with typed Unavailable for the rest, `~` unexpanded until use, tools/MCP off by default; memory = Well only via Strengr, 3 attempts / 30 s cap / fast-fail set / health never raises / typed Disconnected), the hard-model vs soft-memory startup asymmetry named, Hjarta as the binding ceremony, and T-W6's honest centre (Episodes write-only, docket 81/82 → E-021/E-031); 13 new spec-pinning tests in tests/unit/test_tethering_e020.py all passing; plain-language statement added to docs/OPERATOR_PLAYBOOK.md and its Recipe 10 conversation-recall overclaim found and fixed in scope; slice gate 559 passed / 6 proven-environment failed / 12 skipped / 1 warning.
 - E-021 DONE (2026-10-31) — conversation engine hardening: episode reader on the Brunnr protocol + both adapters (docket 81 CLOSED — history survives restarts for connected sessions), profile-aware token-budget windowing (ConversationConfig: toaster 512/3, phone 1024/5, pi 2048/8 default, laptop 4096/12; caps + budget, newest always kept, dropped always reported), Summariser hook protocol with a deterministic model-free extractive default riding as ContextKind.SUMMARY, chat startup history load + per-turn windowing replacing the fixed [-5:]; 15 + 4 new tests; gate Run B 574 passed / 6 proven-env failed / 13 skipped, Run D with extras 615 passed / 0 failed; docket 82 stays E-031's, filed at docs/architecture/E-021_CONVERSATION_HARDENING.md.
-- E-022 next — model backends: the core's backend contract + its existing backends conformed; capability truth per backend.
+- E-022 DONE (2026-10-31) — model backends: `BackendCapabilities` + `StreamingMode` declared in schemas and added to the FuniHandle protocol; `backend_registry()`/`capabilities_for()` publish per-runtime truth (Ollama the only implemented backend: native streaming, tool calls model-dependent, token counts yes, RAM never reported, all context kinds; the other four runtimes capability-free and typed-Unavailable); 16 conformance tests in test_backend_contract_e022.py incl. a WRAPPED complete-only fake; FUNI_LOCAL_MODEL_OPTIONS §4 drift (/api/generate, embed(), 127000 tokens) fixed in scope; gate Run B 590 passed / 6 proven-env failed / 13 skipped, Run D 631 passed / 0 failed; filed at docs/architecture/E-022_BACKEND_CONTRACT.md.
+- E-023 next — Aesir backend for Ember: Project Aesir bound under E-022's contract (its ledger respected).
