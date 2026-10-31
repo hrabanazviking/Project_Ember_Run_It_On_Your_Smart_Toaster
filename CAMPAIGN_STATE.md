@@ -6,7 +6,7 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 07:49 EDT
+Last updated: 2026-10-31 07:52 EDT
 Status: STOPPED between slices (no slice IN PROGRESS) — Part II CLOSED at E-040, Part III open
 Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040
 Next slice: E-041 — The budget book (Part III opens)
@@ -1709,7 +1709,11 @@ Top-level members present (size / file count, working tree excl. .git):
   concurrency NOT PROVEN.
 - Road check: no re-cut demanded; Part III follows in order, inheriting
   the budget book (E-041), real-device proofs, and docket 20 at E-044.
-  Doc-only slice, no code touched, no README touched.
+  Doc-only slice, no code touched, no README touched. Pushed under
+  Volmarr's 2026-10-31 standing go-ahead: banking commit 3d79c11 pushed
+  after fetch + ancestry check — remote moved 639d96e → 3d79c11, verified
+  via ls-remote (remote head =
+  3d79c1117d624e7867363487410e21132d22aab5 = local HEAD at push time).
 
 ## Slice ledger
 
