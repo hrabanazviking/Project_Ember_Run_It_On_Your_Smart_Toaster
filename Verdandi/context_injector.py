@@ -30,7 +30,10 @@ sys.path.insert(0, str(Path.home() / ".hermes" / "state"))
 from conversation_logger import (
     EVENT_TYPES,
     cmd_start, cmd_end, cmd_event,
-    get_context_for_cron, get_current_state, _get_entries_for_session, _get_recent_sessions
+    get_context_for_cron, get_current_state, _get_entries_for_session, _get_recent_sessions,
+    _ctx_truncate, _ctx_cap,
+    _CONTEXT_SUMMARY_MAX_CHARS, _CONTEXT_LIST_ITEM_MAX_CHARS,
+    _CONTEXT_NEXT_ACTIONS_MAX_ITEMS, _CONTEXT_BLOCKERS_MAX_ITEMS,
 )
 
 
@@ -85,14 +88,18 @@ def main():
         print(get_context_for_cron())
         state = get_current_state()
         if state:
+            # This echo block obeys the same E-062 caps as the
+            # context block itself — it previously repeated the
+            # current state with blockers and action items
+            # unbounded, defeating the budget it followed.
             print(f"\n=== CURRENT STATE ===")
-            print(f"Last updated: {state.get('last_updated', 'never')}")
-            print(f"Session: {state.get('session_id', 'unknown')} ({state.get('status', '?')})")
-            print(f"Summary: {state.get('summary', 'none')[:120]}")
+            print(f"Last updated: {_ctx_truncate(state.get('last_updated', 'never'), _CONTEXT_LIST_ITEM_MAX_CHARS)}")
+            print(f"Session: {_ctx_truncate(state.get('session_id', 'unknown'), _CONTEXT_LIST_ITEM_MAX_CHARS)} ({_ctx_truncate(state.get('status', '?'), _CONTEXT_LIST_ITEM_MAX_CHARS)})")
+            print(f"Summary: {_ctx_truncate(state.get('summary', 'none'), _CONTEXT_SUMMARY_MAX_CHARS)}")
             if state.get("next_actions"):
-                print(f"Next actions: {'; '.join(state['next_actions'][:5])}")
+                print(f"Next actions: {'; '.join(_ctx_cap(state['next_actions'], _CONTEXT_NEXT_ACTIONS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS))}")
             if state.get("blockers"):
-                print(f"Blockers: {'; '.join(state['blockers'])}")
+                print(f"Blockers: {'; '.join(_ctx_cap(state['blockers'], _CONTEXT_BLOCKERS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS))}")
     elif args.command == "log-start":
         ns = argparse.Namespace(
             session=args.session, summary=args.summary,

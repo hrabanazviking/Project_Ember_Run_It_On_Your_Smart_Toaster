@@ -62,6 +62,90 @@ CONV_LOG = STATE_DIR / "conversation_log.jsonl"
 # Valid entry types for 'event' subcommand
 EVENT_TYPES = {"decision", "file_changed", "learned", "action", "blocker", "blocker_resolved", "mood_shift", "milestone"}
 
+# Context injection budget (E-062) — the literals below are the
+# deployed copies of Verdandi/context_budget.py's values. They
+# are literals, not imports, because this file is deployed and
+# loaded standalone, file-by-file, from ~/.hermes/state (the
+# E-061 pattern); the E-062 conformance tests pin the two copies
+# equal so they cannot drift.
+_CONTEXT_TOTAL_MAX_CHARS = 4000
+_CONTEXT_CURRENT_MAX_CHARS = 1200
+_CONTEXT_RECENT_MAX_CHARS = 700
+_CONTEXT_NERVE_MAX_CHARS = 1000
+_CONTEXT_REACTIONS_MAX_CHARS = 1100
+_CONTEXT_SUMMARY_MAX_CHARS = 120
+_CONTEXT_RECENT_SUMMARY_MAX_CHARS = 100
+_CONTEXT_DECISIONS_MAX_ITEMS = 5
+_CONTEXT_NEXT_ACTIONS_MAX_ITEMS = 5
+_CONTEXT_BLOCKERS_MAX_ITEMS = 10
+_CONTEXT_PROJECTS_MAX_ITEMS = 10
+_CONTEXT_LIST_ITEM_MAX_CHARS = 120
+_CONTEXT_PROJECT_ITEM_MAX_CHARS = 60
+_CONTEXT_BLOCKERS_JOIN_MAX_CHARS = 600
+_CONTEXT_DECISIONS_JOIN_MAX_CHARS = 300
+_CONTEXT_NEXT_ACTIONS_JOIN_MAX_CHARS = 300
+_CONTEXT_PROJECTS_JOIN_MAX_CHARS = 300
+_CONTEXT_RECENT_MAX_SESSIONS = 5
+_CONTEXT_NERVE_MAX_EVENTS = 10
+_CONTEXT_NERVE_DATA_MAX_CHARS = 100
+_CONTEXT_NERVE_SOURCE_MAX_CHARS = 60
+_CONTEXT_NERVE_TYPE_MAX_CHARS = 60
+_CONTEXT_REACTIONS_MAX_DIRECTIVES = 6
+_CONTEXT_REACTIONS_ITEMS_PER_DIRECTIVE = 3
+_CONTEXT_REACTION_ITEM_MAX_CHARS = 120
+_CONTEXT_REACTION_DETAIL_MAX_CHARS = 120
+_CONTEXT_TRUNCATION_MARKER = "[... truncated by context budget E-062]"
+
+
+def _ctx_truncate(text, limit: int) -> str:
+    """Truncate text to at most limit chars, marking the cut (E-062)."""
+    text = str(text)
+    if len(text) <= limit:
+        return text
+    marker = _CONTEXT_TRUNCATION_MARKER
+    if limit <= len(marker):
+        return text[:limit]
+    return text[: limit - len(marker)] + marker
+
+
+def _ctx_cap(items, max_items: int, max_chars: int) -> list:
+    """Cap a list in both dimensions: count and per-item length (E-062)."""
+    return [_ctx_truncate(item, max_chars) for item in list(items)[:max_items]]
+
+
+def _ctx_fit(lines: list, cap: int, *, drop: str = "tail",
+             protected_head: int = 0, protected_tail: int = 0) -> list:
+    """Fit a section's lines under its char ceiling (E-062).
+
+    Whole lines shed first — from the tail, or from the head of
+    the droppable region when drop="head" (the nerve tail sheds
+    its oldest events, keeping the newest) — and the truncation
+    marker is left in the block so a shortened layer never
+    pretends to be the whole story. Protected head/tail lines
+    (section headers/footers) are never shed; if protected lines
+    alone exceed the cap, they are text-truncated as a last
+    resort.
+    """
+    lines = list(lines)
+    marker = _CONTEXT_TRUNCATION_MARKER
+
+    def _joined(extra=()):
+        return len("\n".join([*lines, *extra]))
+
+    if _joined() <= cap:
+        return lines
+    while len(lines) > protected_head + protected_tail and _joined((marker,)) > cap:
+        if drop == "head":
+            del lines[protected_head]
+        else:
+            del lines[len(lines) - protected_tail - 1]
+    insert_at = len(lines) - protected_tail if protected_tail else len(lines)
+    lines.insert(insert_at, marker)
+    if _joined() > cap:  # protected lines alone are too long
+        text = "\n".join(lines)
+        return [_ctx_truncate(text, cap)]
+    return lines
+
 
 def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -445,7 +529,24 @@ def _get_recent_sessions(count: int = 10) -> list[dict]:
 
 def get_context_for_cron(max_sessions: int = 5) -> str:
     """Generate a context string suitable for injecting into cron job prompts.
-    Includes both recent sessions AND reaction directives."""
+    Includes both recent sessions AND reaction directives.
+
+    The block is built under the E-062 context injection
+    discipline (Verdandi/context_budget.py): only the state
+    dir's current.json, conversation_log.jsonl summaries, the
+    nerve_feed.jsonl tail and reactor directives derived from
+    the same log may be injected; every layer is capped in
+    items, per-item length and total chars; the whole block
+    never exceeds _CONTEXT_TOTAL_MAX_CHARS; and shedding —
+    reactions first, then nerve, then recent, current last —
+    always leaves the truncation marker in the block.
+    """
+    # The caller's session count is a request, clamped to the budget.
+    try:
+        max_sessions = int(max_sessions)
+    except (TypeError, ValueError):
+        max_sessions = _CONTEXT_RECENT_MAX_SESSIONS
+    max_sessions = max(0, min(max_sessions, _CONTEXT_RECENT_MAX_SESSIONS))
     recent = _get_recent_sessions(max_sessions)
 
     # Also get current state
@@ -457,33 +558,50 @@ def get_context_for_cron(max_sessions: int = 5) -> str:
         except (json.JSONDecodeError, IOError):
             pass
 
-    lines = ["=== RUNA SESSION CONTEXT (auto-injected) ==="]
+    header = "=== RUNA SESSION CONTEXT (auto-injected) ==="
+    footer = "=== END CONTEXT ==="
 
+    # Layer 1 (sheds last): current state, fields in retention
+    # order — blockers render before the other lists so line
+    # shedding drops projects, then next actions, then
+    # decisions, and blockers last of all.
+    current_lines: list = []
     if current:
-        lines.append(f"Active session: {current.get('session_id', 'unknown')}")
-        lines.append(f"Status: {current.get('status', 'unknown')}")
-        lines.append(f"Last updated: {current.get('last_updated', 'unknown')}")
-        lines.append(f"Summary: {current.get('summary', 'none')[:120]}")
-        if current.get("decisions"):
-            lines.append(f"Decisions: {'; '.join(current['decisions'][:5])}")
-        if current.get("next_actions"):
-            lines.append(f"Next actions: {'; '.join(current['next_actions'][:5])}")
+        current_lines.append(f"Active session: {_ctx_truncate(current.get('session_id', 'unknown'), _CONTEXT_LIST_ITEM_MAX_CHARS)}")
+        current_lines.append(f"Status: {_ctx_truncate(current.get('status', 'unknown'), _CONTEXT_LIST_ITEM_MAX_CHARS)}")
+        current_lines.append(f"Last updated: {_ctx_truncate(current.get('last_updated', 'unknown'), _CONTEXT_LIST_ITEM_MAX_CHARS)}")
+        current_lines.append(f"Summary: {_ctx_truncate(current.get('summary', 'none'), _CONTEXT_SUMMARY_MAX_CHARS)}")
         if current.get("blockers"):
-            lines.append(f"Blockers: {'; '.join(current['blockers'])}")
+            blockers = _ctx_cap(current["blockers"], _CONTEXT_BLOCKERS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS)
+            current_lines.append(f"Blockers: {_ctx_truncate('; '.join(blockers), _CONTEXT_BLOCKERS_JOIN_MAX_CHARS)}")
+        if current.get("decisions"):
+            decisions = _ctx_cap(current["decisions"], _CONTEXT_DECISIONS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS)
+            current_lines.append(f"Decisions: {_ctx_truncate('; '.join(decisions), _CONTEXT_DECISIONS_JOIN_MAX_CHARS)}")
+        if current.get("next_actions"):
+            actions = _ctx_cap(current["next_actions"], _CONTEXT_NEXT_ACTIONS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS)
+            current_lines.append(f"Next actions: {_ctx_truncate('; '.join(actions), _CONTEXT_NEXT_ACTIONS_JOIN_MAX_CHARS)}")
         if current.get("projects_touched"):
-            lines.append(f"Projects touched: {', '.join(current['projects_touched'])}")
+            projects = _ctx_cap(current["projects_touched"], _CONTEXT_PROJECTS_MAX_ITEMS, _CONTEXT_PROJECT_ITEM_MAX_CHARS)
+            current_lines.append(f"Projects touched: {_ctx_truncate(', '.join(projects), _CONTEXT_PROJECTS_JOIN_MAX_CHARS)}")
+    current_lines = _ctx_fit(current_lines, _CONTEXT_CURRENT_MAX_CHARS)
 
+    # Layer 2: recent session summaries (one line per session).
+    recent_lines: list = []
     if recent:
-        lines.append(f"\n--- Recent {len(recent)} sessions ---")
+        recent_lines.append(f"--- Recent {len(recent)} sessions ---")
         for entry in recent:
-            ts = entry.get("timestamp", "?")[:16]
-            sid = entry.get("session_id", "?")
-            summ = entry.get("summary", "?")[:100]
-            lines.append(f"  {ts} [{sid}]: {summ}")
+            ts = str(entry.get("timestamp", "?"))[:16]
+            sid = _ctx_truncate(entry.get("session_id", "?"), _CONTEXT_LIST_ITEM_MAX_CHARS)
+            summ = _ctx_truncate(entry.get("summary", "?"), _CONTEXT_RECENT_SUMMARY_MAX_CHARS)
+            recent_lines.append(f"  {ts} [{sid}]: {summ}")
+    recent_lines = _ctx_fit(recent_lines, _CONTEXT_RECENT_MAX_CHARS, protected_head=1 if recent_lines else 0)
 
-    # Include nerve feed — recent events from ALL Runa instances (real-time awareness)
+    # Layer 3 (supplementary, failure-silent): nerve feed tail,
+    # read from the feed FILE in the logger's own state dir —
+    # never a live hub query, and never a second home path.
+    nerve_lines: list = []
     try:
-        nerve_path = Path.home() / ".hermes" / "state" / "nerve_feed.jsonl"
+        nerve_path = STATE_DIR / "nerve_feed.jsonl"
         if nerve_path.exists():
             nerve_events = []
             with open(nerve_path) as nf:
@@ -494,42 +612,86 @@ def get_context_for_cron(max_sessions: int = 5) -> str:
                             nerve_events.append(json.loads(line))
                         except json.JSONDecodeError:
                             continue
-            # Show last 10 nerve events
-            recent_nerve = nerve_events[-10:] if nerve_events else []
+            recent_nerve = nerve_events[-_CONTEXT_NERVE_MAX_EVENTS:] if nerve_events else []
             if recent_nerve:
-                lines.append("")
-                lines.append(f"=== NERVE FEED (last {len(recent_nerve)} events across all instances) ===")
+                nerve_lines.append(f"=== NERVE FEED (last {len(recent_nerve)} events across all instances) ===")
                 for ne in recent_nerve:
-                    nts = ne.get("_iso", "?")[:16]
-                    ntype = ne.get("type", "?")
-                    nsource = ne.get("source", "?")
-                    ndata = json.dumps(ne.get("data", {}), ensure_ascii=False)[:100]
-                    lines.append(f"  {nts} [{ntype}] from {nsource}: {ndata}")
-                lines.append("=== END NERVE FEED ===")
+                    nts = str(ne.get("_iso", "?"))[:16]
+                    ntype = _ctx_truncate(ne.get("type", "?"), _CONTEXT_NERVE_TYPE_MAX_CHARS)
+                    nsource = _ctx_truncate(ne.get("source", "?"), _CONTEXT_NERVE_SOURCE_MAX_CHARS)
+                    ndata = _ctx_truncate(json.dumps(ne.get("data", {}), ensure_ascii=False), _CONTEXT_NERVE_DATA_MAX_CHARS)
+                    nerve_lines.append(f"  {nts} [{ntype}] from {nsource}: {ndata}")
+                nerve_lines.append("=== END NERVE FEED ===")
     except Exception:
-        pass  # Nerve feed is supplementary awareness, not a dependency
+        nerve_lines = []  # Nerve feed is supplementary awareness, not a dependency
+    if nerve_lines:
+        nerve_lines = _ctx_fit(nerve_lines, _CONTEXT_NERVE_MAX_CHARS,
+                               drop="head", protected_head=1, protected_tail=1)
 
-    # Include reaction directives (import reactor separately to avoid circular imports)
-    lines.append("")
+    # Layer 4 (supplementary, failure-silent; sheds first):
+    # reaction directives derived from the same log.
+    reaction_lines: list = []
     try:
-        sys.path.insert(0, str(Path.home() / ".hermes" / "state"))
+        sys.path.insert(0, str(STATE_DIR))
         from reactor import react
         reactions = react()
         if reactions.get("reactions"):
-            lines.append("=== REACTION DIRECTIVES (ACT ON THESE) ===")
-            for r in reactions["reactions"]:
-                priority = r.get("priority", "?")
-                action = r.get("action", "?")
-                detail = r.get("detail", "")
-                lines.append(f"[{priority}] {action.upper()}: {detail}")
-                for item in r.get("items", [])[:3]:
-                    lines.append(f"  • {item}")
-            lines.append("=== END REACTIONS ===")
+            reaction_lines.append("=== REACTION DIRECTIVES (ACT ON THESE) ===")
+            for r in reactions["reactions"][:_CONTEXT_REACTIONS_MAX_DIRECTIVES]:
+                priority = _ctx_truncate(r.get("priority", "?"), 20)
+                action = _ctx_truncate(r.get("action", "?"), 60)
+                detail = _ctx_truncate(r.get("detail", ""), _CONTEXT_REACTION_DETAIL_MAX_CHARS)
+                reaction_lines.append(f"[{priority}] {action.upper()}: {detail}")
+                for item in _ctx_cap(r.get("items", []), _CONTEXT_REACTIONS_ITEMS_PER_DIRECTIVE, _CONTEXT_REACTION_ITEM_MAX_CHARS):
+                    reaction_lines.append(f"  • {item}")
+            reaction_lines.append("=== END REACTIONS ===")
     except Exception:
-        pass  # Non-critical — reactions are a bonus, not a dependency
+        reaction_lines = []  # Non-critical — reactions are a bonus, not a dependency
+    if reaction_lines:
+        reaction_lines = _ctx_fit(reaction_lines, _CONTEXT_REACTIONS_MAX_CHARS,
+                                  protected_head=1, protected_tail=1)
 
-    lines.append("=== END CONTEXT ===")
-    return "\n".join(lines)
+    # Assemble in presentation order and enforce the total:
+    # reactions shed first, then nerve, then recent; the
+    # current-state layer is truncated only as a last resort
+    # (its layer fit above already bounds it, so this is a
+    # belt-and-braces guard, not the normal path).
+    sections = [
+        ("reactions", reaction_lines),
+        ("nerve", nerve_lines),
+        ("recent", recent_lines),
+        ("current", current_lines),
+    ]
+    overhead = len(header) + len(footer) + 8  # newlines / spacing
+    total = overhead + sum(len("\n".join(lines)) for _, lines in sections if lines)
+    for name, lines in sections:
+        if total <= _CONTEXT_TOTAL_MAX_CHARS:
+            break
+        if not lines:
+            continue
+        if name == "current":
+            fitted = _ctx_fit(lines, max(len(_CONTEXT_TRUNCATION_MARKER),
+                                         _CONTEXT_TOTAL_MAX_CHARS - (total - len("\n".join(lines)))))
+            total += len("\n".join(fitted)) - len("\n".join(lines))
+            sections[3] = (name, fitted)
+        else:
+            note = [f"[{name} layer {_CONTEXT_TRUNCATION_MARKER[4:]}"]
+            total += len("\n".join(note)) - len("\n".join(lines))
+            sections = [(n, note if n == name else ls) for n, ls in sections]
+
+    out = [header]
+    by_name = dict(sections)
+    for name in ("current", "recent", "nerve", "reactions"):
+        lines = by_name.get(name) or []
+        if lines:
+            if name in ("nerve", "reactions"):
+                out.append("")
+            out.extend(lines)
+    out.append(footer)
+    result = "\n".join(out)
+    if len(result) > _CONTEXT_TOTAL_MAX_CHARS:  # final guard, unreachable by construction
+        result = _ctx_truncate(result, _CONTEXT_TOTAL_MAX_CHARS)
+    return result
 
 
 def get_current_state() -> dict | None:

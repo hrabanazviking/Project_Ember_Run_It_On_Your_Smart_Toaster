@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 16:19 EDT
-Status: IN PROGRESS — E-062 (context injection discipline)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061
-Next slice: E-062 — Context injection discipline: what may be injected, when, with what budget — the injector's rules as tests
+Last updated: 2026-10-31 16:42 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-063
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062
+Next slice: E-063 — The conversation logger's law: what is logged, where, for whom; retention + the user's delete right (total, provable)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2559,3 +2559,56 @@ Top-level members present (size / file count, working tree excl. .git):
   1b0c1f8) — remote moved 037fc0a → 76c47fa, verified via ls-remote
   (remote head = 76c47fa3bc63a9b45e5baf15eebb7c54957770f9 = local HEAD
   at push time).
+
+## E-062 — Context injection discipline (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-062_CONTEXT_INJECTION_DISCIPLINE.md`
+  and in code at `Verdandi/context_budget.py` (stdlib-only, standalone
+  like event_contract.py): only four sources may be injected, all from
+  the one state dir — current.json, conversation_log.jsonl recent
+  summaries (one line per session), the nerve_feed.jsonl file tail
+  (never a live hub query), and reactor directives derived from the
+  same log; nothing else (no env, no configs, no outside files, no
+  credential-shaped material — E-093's custody law starts here).
+  When: once, at a job's start, as a starting brief.
+- The budget: whole block ≤ **4000 chars**; layers current 1200 /
+  recent 700 / nerve 1000 / reactions 1100 (sum = total). Per-item
+  caps in both dimensions (decisions/next ≤5 items, blockers ≤10,
+  projects ≤10; items ≤120 chars, projects ≤60; joined lines also
+  capped — blockers 600, decisions/next/projects 300 — so blockers
+  at full allowance always fit the current layer alone); summaries
+  ≤120 / recent ≤100; max_sessions clamped to ≤5; nerve ≤10 events
+  (data ≤100, source/type ≤60); reactions ≤6 directives × ≤3 items
+  (≤120 each). Shedding: reactions first, then nerve (oldest first),
+  then recent (oldest first), current last — inside current, projects
+  shed first and blockers last; every cut leaves the marker
+  `[... truncated by context budget E-062]` in the block.
+  Supplementary layers stay failure-silent.
+- `get_context_for_cron` rebuilt in layers in conversation_logger.py
+  (budget literals as deployed literals, E-061 pattern, pinned equal
+  to context_budget.py by 23 pairings in the conformance tests).
+  Two defects fixed in scope: (a) nerve tail + reactor were read
+  from a second hardcoded `Path.home()/.hermes/state` instead of the
+  logger's own STATE_DIR — silently divergent for any redirected
+  state dir; now both read STATE_DIR (identical under the default);
+  (b) context_injector's extra CURRENT STATE echo printed blockers
+  and next actions unbounded — now under the same caps. E-057 table
+  re-measured for the Verdandi weight change (181 files /
+  16,852,579 B; total 131,246,538 B; laptop miss 75,363 B), both
+  published copies updated. No new docket items; no README touched.
+- Conformance: `tests/unit/test_context_injection_e062.py` **18 passed**
+  (budget shape, literal pinning, allowed sources, adversarial
+  fixtures: full load yields ≤4000 chars with blockers surviving and
+  the marker present; flooding reactor proven live from a state-dir
+  reactor). Verdandi focal conversation set **101 passed** (identical
+  to E-059/E-061; pytest-asyncio from the e005-extras dir, short
+  TMPDIR — the hub's Unix-socket paths exceed ~108 chars under the
+  deep overlay TMPDIR, failing identically on the unmodified tree,
+  proven by stash-and-rerun). Slice gate: Run B **1094 passed,
+  6 failed, 25 skipped, 1 warning** (1076 + 18; the 6 are the proven
+  environment failures; the first attempt's extra failures were the
+  E-057 tests catching this slice's own weight change, fixed by the
+  re-measure); Run D **1151 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1133 + 18). Logs in `~/workspace/.verify-tmp/ember-e062/gate/`.
+- E-063 next — the conversation logger's law: what is logged, where,
+  for whom; retention + the user's delete right (total, provable).

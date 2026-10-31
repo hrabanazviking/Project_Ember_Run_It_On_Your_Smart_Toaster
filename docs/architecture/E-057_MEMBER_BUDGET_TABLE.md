@@ -11,11 +11,11 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,231,457
-bytes (125.15 MiB) of tracked files** between them, and
+imported members of the E-002 census) weigh **131,246,538
+bytes (125.17 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
-and Verdandi (16,837,498 B) — and in each case the weight
+and Verdandi (16,852,579 B) — and in each case the weight
 is data, not code (benchmark corpora, a test snapshot,
 loose images; E-002/E-014).
 
@@ -25,14 +25,18 @@ mimir-well, seidr_engine, bifrost), kista fits the phone,
 four fit the pi (astrology-engine, Hamr, Open-VTT,
 CloakBrowser's tracked tree), and three fit **no profile
 at all** — mempalace, the dictionary, and Verdandi, which
-misses even the laptop's 16 MiB ceiling by 60,282 bytes.
+misses even the laptop's 16 MiB ceiling by 75,363 bytes.
 *(Re-measured at E-061, which changed Verdandi's tracked
 weight: at E-061's filing the totals above and the Verdandi
 row read 131,211,064 bytes and 16,817,105 B / 179 files,
 missing the laptop ceiling by 39,889 bytes; E-061 added
 `Verdandi/event_contract.py` and touched three Verdandi
 files, and this living table was updated to match the tree,
-as its pinning tests require.)*
+as its pinning tests require. Re-measured again at E-062,
+which added `Verdandi/context_budget.py` and reworked the
+conversation logger's context builder and the injector:
+Verdandi now reads 181 files / 16,852,579 B, the total
+131,246,538 bytes, the laptop miss 75,363 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -73,7 +77,7 @@ table prices exactly that choice, per profile.
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
 | `src/` (ember core) | 129 | 814,264 B | toaster | 12.0 MiB |
-| `Verdandi/` | 180 | 16,837,498 B | none | 12.6 MiB |
+| `Verdandi/` | 181 | 16,852,579 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 58 | 607,675 B | toaster | 20.8 MiB |
