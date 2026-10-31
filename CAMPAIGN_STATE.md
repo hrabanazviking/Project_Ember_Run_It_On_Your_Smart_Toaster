@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 07:03 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-036 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036
-Next slice: E-037 — Core API freeze v1 (library shape)
+Last updated: 2026-10-31 07:14 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-037 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037
+Next slice: E-038 — Concurrency on small hardware
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1510,6 +1510,51 @@ Top-level members present (size / file count, working tree excl. .git):
   621a46a72b7e227979baa8d9ba9e083400d368e8 = local HEAD at
   push time).
 
+## E-037 — Core API freeze v1 (DONE, 2026-10-31)
+
+- Filed at `docs/architecture/E-037_CORE_API_FREEZE.md`. Before
+  E-037 the core's public surface was real but scattered
+  (curated `__all__` lists beside empty `__init__` files, no
+  version a member could check). Built: `ember.api`, the
+  freeze registry — `API_VERSION = "1.0.0"` / `API_MAJOR = 1`
+  (deliberately separate from the package version, still
+  0.2.0; re-exported as `ember.API_VERSION`), `API_V1`'s 63
+  individually frozen names + the 12 `ember.schemas.*` modules
+  frozen as whole surfaces (92 names) = a 155-entry
+  `api_manifest()` computed from the live modules,
+  `is_api_compatible(want)` (same major, provider ≥ wanted
+  minor/patch, unparseable never binds), and
+  `verify_api_surface()` (empty at the freeze in the bare
+  default env — the frozen surface needs no optional extra).
+  V1 rules stated in the doc: within major 1 a frozen name is
+  never removed/renamed/incompatibly re-signed; additions are
+  minor bumps, fixes patch, breaks only a major bump with its
+  own slice. `ember.well.brunnr`'s empty `__init__` now
+  re-exports `BrunnrHandle` + `open`, mirroring Funi (its
+  handle-module paths stay frozen too). NOT frozen, named in
+  the doc: CLI text/flags, MCP, munnr/hjarta/smidja internals,
+  and the concrete adapters (OllamaFuni/AesirFuni/
+  SqliteVecBrunnr/PgVectorBrunnr — reached through the frozen
+  `open()` registries only).
+- **Docket 56 CLOSED** (member half; core half closed at
+  E-033): members keep their own config shapes in their own
+  homes — the freeze imposes no `ember.yaml` on any member —
+  and bind through the API only (version gate → frozen loader
+  → frozen schema types → frozen opens), proven by a
+  fake-member test binding with no extra installed and no
+  config file read. Honest limits in the doc: the freeze is
+  contract + gate tests, not import machinery; no member is
+  migrated onto it yet (Parts IV–X bind, against this
+  contract); name-existence is machine-checked, behaviour
+  stays with the per-surface conformance suites.
+- Tests: `test_core_api_freeze_e037.py` **33 passed** (default
+  env). Slice gate Run B: **903 passed, 6 failed, 17 skipped,
+  1 warning** — 870 E-036 baseline + 33 new; the 6 are the
+  proven environment failures. Run D (whole, extras):
+  **951 passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (918 baseline + 33 new). No README touched. Push record
+  appended after banking below.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1548,4 +1593,6 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-034 DONE (2026-10-31) — logging a friend can read: `ember.diary` keeps a plain-words diary beside the technical trace (daily Markdown files under `<config_root>/diary/`, O(1) O_APPEND+fsync writes, never raises — chat warns once if writing fails); chat records session start/stop, Well reachability, drain + history outcomes, per-turn outcome (answered / ungrounded / interrupted / error / truncated) and save outcome, with NO conversation content by construction (leak-pinned by test); `logging.diary` switch (default on, template-documented); `ember diary [--days N]` reader; tool rounds deliberately left to the audit log (stated limit); 13 new tests; gate Run B 809 passed / 6 proven-env failed / 15 skipped, Run D 855 passed / 0 failed; filed at docs/architecture/E-034_DIARY_LOG.md.
 - E-035 DONE (2026-10-31) — multi-conversation isolation: `Episode.conversation_id` (default `"default"`, slug rules) + `ember.spark.conversation` (resolution explicit > config `conversation.active` > default, invalid id refused by name — never a silent fall-back; exact-match filter; tagging); chat loads persona → conversation → window (a foreign talk can neither ride verbatim nor leak through the summary), prompt wall composes persona × conversation, both persistence roads tag Episodes; `ember chat --conversation` flag; pending journal persists the tag (pre-E-035 files load as default); honest limit: adapters still persist neither tag, so named-conversation cross-restart history awaits Part V (E-080 family); retrieval grounding shared by design; 42 new tests; gate Run B 851 passed / 6 proven-env failed / 15 skipped, Run D 897 passed / 0 failed; filed at docs/architecture/E-035_MULTI_CONVERSATION_ISOLATION.md.
 - E-036 DONE (2026-10-31) — determinism mode (seeded): `funi.determinism` (off by default, seed 42) + `ember.spark.funi.determinism` — off = no seed key anywhere (wire-pinned, byte-identical requests), on = fixed seed + temperature 0.0 effective (configured temperature never mutated) via Ollama's `seed` option and Aesir's native `seed` field; CLI `--deterministic` / `--seed N` one-run overlay; bad seed refused CONFIG_INVALID at open before any request; retrieval ties now break on chunk_id in both adapters (RRF + SQL; sqlite_vec vector ties re-sorted in Python — vec0 KNN forbids a second ORDER BY key, proven by the first Run D gate's 5 failures and fixed + regression-pinned in-slice); honest limits: backend seed contract owns byte-identical answers (no live model run), timestamps/ids stay non-deterministic by design, ThoughtForge uncovered; 21 new tests (19 passed + 2 skipped default); gate Run B 870 passed / 6 proven-env failed / 17 skipped, Run D 918 passed / 0 failed; filed at docs/architecture/E-036_DETERMINISM_MODE.md.
-- E-036 next — Determinism mode for tests/benchmarks (seeded).
+- E-036 DONE (2026-10-31) — determinism mode (seeded): `funi.determinism` (off by default, seed 42) + `ember.spark.funi.determinism` — off = no seed key anywhere (wire-pinned, byte-identical requests), on = fixed seed + temperature 0.0 effective (configured temperature never mutated) via Ollama's `seed` option and Aesir's native `seed` field; CLI `--deterministic` / `--seed N` one-run overlay; bad seed refused CONFIG_INVALID at open before any request; retrieval ties now break on chunk_id in both adapters (RRF + SQL; sqlite_vec vector ties re-sorted in Python — vec0 KNN forbids a second ORDER BY key, proven by the first Run D gate's 5 failures and fixed + regression-pinned in-slice); honest limits: backend seed contract owns byte-identical answers (no live model run), timestamps/ids stay non-deterministic by design, ThoughtForge uncovered; 21 new tests (19 passed + 2 skipped default); gate Run B 870 passed / 6 proven-env failed / 17 skipped, Run D 918 passed / 0 failed; filed at docs/architecture/E-036_DETERMINISM_MODE.md.
+- E-037 DONE (2026-10-31) — core API freeze v1 (library shape): `ember.api` registry — `API_VERSION 1.0.0` (separate from package 0.2.0, re-exported as `ember.API_VERSION`), 63 individual frozen names + 12 schema modules frozen wholesale (92 names) = 155-entry manifest computed from live modules, `is_api_compatible` gate, `verify_api_surface()` clean in the bare default env; `ember.well.brunnr` `__init__` now re-exports BrunnrHandle + open mirroring Funi; NOT frozen: CLI, MCP, munnr/hjarta/smidja internals, concrete adapters (frozen `open()` registries only); docket 56 CLOSED (member half — members keep own config shapes, bind through the API only, fake-member test proven with no extras and no config file read); honest limits: contract + gate tests not import machinery, no member migrated yet (Parts IV–X bind here), behaviour pinned by per-surface suites; 33 new tests; gate Run B 903 passed / 6 proven-env failed / 17 skipped, Run D 951 passed / 0 failed; filed at docs/architecture/E-037_CORE_API_FREEZE.md.
+- E-038 next — Concurrency on small hardware: two chats, phone-class budgets, measured.
