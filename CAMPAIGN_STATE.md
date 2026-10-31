@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 14:22 EDT
-Status: IN PROGRESS — E-057 (member budget table), started 14:22 EDT keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056
-Next slice: E-057 — Member budget table: every member's cost per profile
+Last updated: 2026-10-31 14:40 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-058
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057
+Next slice: E-058 — Part III gate: budgets enforced by tests; Toaster Test verdict recorded with its device named; summary filed
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2266,3 +2266,54 @@ Top-level members present (size / file count, working tree excl. .git):
   remote moved c146826 → 61d3fbc, verified via ls-remote (remote head =
   61d3fbc6a150cbb09b49bffa397f7edae018ea2c = local HEAD at push time).
 - E-057 next — member budget table: every member's cost per profile.
+
+## E-057 — Member budget table (DONE, 2026-10-31)
+
+- Table published at `docs/BUDGET_BOOK.md` §7, record at
+  `docs/architecture/E-057_MEMBER_BUDGET_TABLE.md`: the twelve running
+  members (core `src/` + the eleven imported members of E-002) weighed
+  from `git ls-files` (count + bytes per directory, E-002/E-014 method)
+  and judged against the book's live install ceilings. Total tracked
+  weight **131,211,064 B** (125.13 MiB), almost all of it three members
+  whose weight is data, not code: mempalace 59,049,715 B, dictionary
+  24,221,782 B, Verdandi 16,817,105 B. Smallest covering profile: core
+  (814,264 B), mimir-well, seidr_engine and bifrost fit **toaster**;
+  kista (2,770,218 B) fits **phone**; astrology-engine, Hamr, Open-VTT
+  and CloakBrowser's tracked tree fit **pi**; mempalace, the dictionary
+  and Verdandi fit **none** — Verdandi misses even the laptop's 16 MiB
+  ceiling by **39,889 B**. Members cost a core user nothing (excluded
+  from the distribution since E-043); the table prices carrying the
+  monorepo or running a member from a checkout. The remaining ~83 MiB
+  of tracked estate (docs, root loose files, assets, tests, scaffolding)
+  is checkout-only, accounted in prose and deliberately not profile-judged.
+- RAM, honestly graded: import-level floors measured this slice
+  (fresh process, top package, VmHWM, median of 3, VM; raw runs in
+  `~/workspace/.verify-tmp/ember-e057/import_ram.json`) — interpreter
+  floor 10.1 MiB; mempalace 11.5, core 12.0, astrology 12.4, Verdandi
+  (heartbeat package) 12.6, seidr 13.3, bifrost 15.2, mimir-well 20.8,
+  kista 24.2, Hamr 40.1 MiB. Floors are floors, stated as such in print:
+  running costs stand at E-041's figures (core idle 40.7 MiB, Verdandi
+  hub 21.9 MiB live). NOT MEASURED with reasons named: Open-VTT (Godot
+  absent), dictionary (Node deps absent), CloakBrowser (import fails
+  bare on `httpx`; its real weight is the proprietary binary, absent
+  from the tree — tracked size is wrapper only; vendored ~190 MB idle
+  claim stays E-179's, never adopted).
+- Tests: `tests/unit/test_member_budget_table_e057.py` **7 passed**
+  (15 passed together with E-055's armour) — every row re-derived from
+  `git ls-files`, fit recomputed from live ceilings, prose total +
+  Verdandi margin recomputed, the two published copies held identical.
+  Slice gate: Run B **1054 passed, 6 failed, 25 skipped, 1 warning**
+  (1047 E-056 baseline + 7 new; the 6 are the proven environment
+  failures). Run D **1111 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1104 + 7 — reconciles exactly). Logs in
+  `~/workspace/.verify-tmp/ember-e057/gate/`. No ceiling moved, no
+  anchor changed, no `src/` code touched, no README touched, no new
+  docket items.
+- E-057 push: banking commit 9b1bd09 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 743ae19,
+  an ancestor; the push also carried the tick's IN PROGRESS marker
+  66acbbe) — remote moved 743ae19 → 9b1bd09, verified via ls-remote
+  (remote head = 9b1bd090cc00c6972feaf051e869fb873b4413a7 = local HEAD
+  at push time).
+- E-058 next — Part III gate: budgets enforced by tests; Toaster Test
+  verdict recorded with its device named; summary filed.
