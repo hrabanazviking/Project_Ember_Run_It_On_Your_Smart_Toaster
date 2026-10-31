@@ -90,6 +90,24 @@ packages = ["src/ember"]
 # bloat the PyPI sdist from ~200 KB to ~33 MB and add no value to
 # someone running `pip install ember-agent`. Same for the repo-root
 # hero images (large PNG/JPEG files used by the rendered README).
+#
+# E-043 (install weight cut I): the same rule now covers the optional
+# members and the docs corpora. The members (Verdandi, kista,
+# mempalace, mimir-well, seidr_engine, astrology-engine, bifrost,
+# Hamr, Open-VTT, CloakBrowser, the Old Norse dictionary) are separate
+# programs that live in this monorepo and are run from a repo
+# checkout — none of them is part of the `ember-agent` package, and
+# the core never imports them. Dragging them into the sdist made a
+# source install download ~45 MB (127 MB unpacked, mempalace alone
+# 57 MB of it) to obtain a 305 KB wheel's worth of core. Excluding
+# them makes the members truly optional at install: `pip install
+# ember-agent` fetches the core only; a member is "installed" by
+# checking out the repo, as it always has been. The elder codex and
+# Mythic Plan trees under docs/ are heritage corpora in the same
+# class as the already-excluded university trees, and the design
+# lawbook (PDF + Markdown) and the campaign state file are repo
+# furniture, not package. Nothing here deletes anything from the
+# repo — an sdist exclude is a shipping decision, not a removal.
 [tool.hatch.build.targets.sdist]
 exclude = [
     "docs/RunaUniversity2040",
@@ -104,11 +122,46 @@ exclude = [
     "*.png",
     "*.jpeg",
     "*.jpg",
+    "*.pdf",
     "Yggdrasil_and_Huginn_and_Muninn_Theory.md",
     ".venv",
     ".pytest_cache",
     ".ruff_cache",
     ".mypy_cache",
+    # E-043: optional members — separate programs, never package.
+    "Verdandi",
+    "kista",
+    "mempalace",
+    "mimir-well",
+    "seidr_engine",
+    "astrology-engine",
+    "bifrost",
+    "Hamr",
+    "Open-VTT",
+    "CloakBrowser",
+    "cleasby-vigfusson-old-norse-dict",
+    # E-043: docs heritage corpora (codex + Mythic Plan trees).
+    "docs/chatdoll_codex",
+    "docs/sap_codex",
+    "docs/hermes_codex",
+    "docs/waifu_codex",
+    "docs/peer_codex",
+    "docs/ragnarok_codex",
+    "docs/ClawLite_Mythic_Plan",
+    "docs/Pocketpal_Mythic_Plan",
+    "docs/Cortex_Mythic_Plan",
+    "docs/WaifuOS_Mythic_Plan",
+    "docs/Open_Viking_Mythic_Plan",
+    "docs/Open_LLM_VTuber_Mythic_Plan",
+    "docs/AIRI_Mythic_Plan",
+    "docs/Graphite_Git_Mythic_Plan",
+    "docs/SillyTavern_Mythic_Plan",
+    "docs/yggdrasil",
+    "docs/tui",
+    "docs/kloinn",
+    # E-043: repo furniture, not package.
+    "Volmarr_Cyber_Viking_Master_Visual_Design_Lawbook.md",
+    "CAMPAIGN_STATE.md",
 ]
 
 [tool.ruff]

@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 08:22 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-042
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042
-Next slice: E-043 — Install weight cut I (the heaviest members measured; optional members made truly optional at install)
+Last updated: 2026-10-31 08:47 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-043
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043
+Next slice: E-044 — Install weight cut II (dependency diet per E-007; each removal/replacement measured before/after)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1715,6 +1715,37 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head =
   3d79c1117d624e7867363487410e21132d22aab5 = local HEAD at push time).
 
+## E-043 — Install weight cut I (DONE, 2026-10-31)
+
+- Doc filed at `docs/architecture/E-043_INSTALL_WEIGHT_CUT_I.md`. The wheel was
+  always honest (305 KB, `src/ember` only) but the SDIST dragged the whole
+  monorepo: **~45 MB compressed / 127,162,419 B unpacked**, heaviest members
+  measured from the tarball itself (mempalace 56,960,935 B — 45 MB of it
+  benchmarks/; dictionary 24,075,953 B; Open-VTT 6,251,917 B; Hamr 2,463,468 B;
+  Verdandi 1,610,196 B in-sdist vs 16,800,240 B tracked) plus the docs heritage
+  corpora (~16.4 MB), the lawbook PDF (11,595,685 B) + Markdown, and
+  CAMPAIGN_STATE.md itself.
+- The cut is one file: `pyproject.toml`'s sdist exclude list gains every
+  optional member directory (11), the docs codex/Mythic-Plan corpora,
+  `*.pdf`, the lawbook Markdown and CAMPAIGN_STATE.md. Nothing deleted from
+  the repo — an sdist exclude is a shipping decision; members still run from
+  a checkout as they always have, now truly optional at install (the core
+  never imports any of them; wheel packages, empty core dependencies and
+  extras pinned by test).
+- After: **sdist 1.1 MB compressed / 3,464,529 B unpacked (a ~41x cut)**,
+  364 files; wheel unchanged at 305 KB, so E-041's 978,843 B installed anchor
+  and E-042's gate stand unmodified. Clean-venv install FROM the cut sdist
+  proven: `ember --help` exit 0, no member in site-packages, installed
+  package + dist-info 1,491,175 B incl. install-time bytecode caches.
+  The tests' re-derived sdist file set matches hatchling's actual selection
+  file-for-file (363; real tarball adds only generated PKG-INFO).
+- Tests: `tests/unit/test_install_weight_e043.py` **5 passed** (one defect in
+  the slice's own test fixed in scope: plain `git ls-files` quotes the tree's
+  two non-ASCII paths — reader now uses `-z`). Slice gate: Run B **941 passed,
+  6 failed, 20 skipped, 1 warning** (936 E-042 baseline + 5 new; the 6 are the
+  proven environment failures, identical set). Run D **993 passed, 0 failed,
+  19 skipped, 1 warning**, exit 0 (988 + 5 new). No README touched.
+
 ## E-042 — Budget tests (DONE, 2026-10-31)
 
 - Tests filed at `tests/unit/test_budget_gate_e042.py` (**9 tests**), doc at
@@ -1852,4 +1883,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-040 DONE (2026-10-31) — Part II gate PASS: day-one flow re-proven on the VM profile (targeted 50 passed; three runnable examples each exit 0; E-032 clean-venv timings stand; real-model day one NOT PROVEN — loopback wire-shape model only, Part III owns real-device proof), API freeze checked live (1.0.0, 155 manifest entries, verify_api_surface clean), gate re-measurement identical to E-039 (Run B 918 passed / 6 proven-env failed / 18 skipped; Run D 968 passed / 0 failed / 19 skipped; Run A 1 error docket 1, skips 11 explained by Part II's three new skip-guarded files); Part II docket accounted (closed 15, 55, 56, 81–83, 85–88, 84's DATA_FLOW half; carried open 1, 2, 3, 4, 13 → E-187/E-200, 20 → E-044, 89 → E-195); no road re-cut; filed at docs/architecture/E-040_PART_II_GATE.md. **Part II (E-019–E-040) is CLOSED.**
 - E-041 DONE (2026-10-31) — the budget book: `ember.budgets` + docs/architecture/E-041_BUDGET_BOOK.md; core measured on the VM (install 978,843 B all-in — "~50 MB installed" struck; idle 40.7 MiB with Well open; turn peak 39.4–40.1 MiB flat across profiles — "~50 MB RAM" true and generous, docket 67 measured; storage 694 B/turn → 0.40 MiB/month at 20 turns/day); ceilings per profile (toaster 2 MiB/64/64/2 MiB-mo … laptop 16/256/384/100), history read from E-021's config; docket 65 measurement half settled (Verdandi hub live 21.9 MiB, heartbeat 18.4 MiB import-level; "~1 MB" not a process figure), 66 settled by replacement (toaster sum ~514 MB on a 512 MiB host — marginal, E-049 grades it); new docket 90 (VM anchors only, devices re-anchor at E-047–E-049); 11 new tests; gate Run B 929 passed / 6 proven-env failed / 18 skipped, Run D 979 passed / 0 failed.
 - E-042 DONE (2026-10-31) — budget tests: `tests/unit/test_budget_gate_e042.py` (9 tests) re-derives every shape in fresh subprocesses (install 740,135 B; idle 25.2 / Well-open 35.9 MiB; turn peaks flat 24.3 MiB all profiles; storage 683 B/ep + 126 B/turn diary → 0.46 MiB/mo) judged against ceilings read live from `ember.budgets`, wired into Runs B/D by living in tests/unit (collection pinned by test); mutation-proven to bite; the gate caught its own probe's ru_maxrss-through-exec parent-peak bug (identical 71.9 MiB = pytest's peak) — fixed in scope to VmHWM, anchors stand; new docket 91 (re-derived storage 808 vs book 694 B/turn → E-050 re-anchor); gate Run B 936 passed / 6 proven-env failed / 20 skipped, Run D 988 passed / 0 failed.
-- E-043 next — install weight cut I: the heaviest members measured; optional members made truly optional at install.
+- E-043 DONE (2026-10-31) — install weight cut I: sdist ~45 MB → 1.1 MB compressed (127,162,419 → 3,464,529 B unpacked) by excluding all 11 optional members, the docs heritage corpora, the lawbook PDF/Markdown and CAMPAIGN_STATE.md from `pyproject.toml`'s sdist list; heaviest members measured from the tarball (mempalace 57.0 MB, dictionary 24.1 MB, Open-VTT 6.3 MB); clean-venv install from the cut sdist proven (ember --help exit 0, no member in site-packages); wheel unchanged 305 KB so E-041/E-042 anchors stand; re-derived sdist set matches hatchling file-for-file; 5 new tests; gate Run B 941 passed / 6 proven-env failed / 20 skipped, Run D 993 passed / 0 failed.
+- E-044 next — install weight cut II: dependency diet per E-007 (each removal/replacement measured before/after).
