@@ -290,8 +290,11 @@ here as method, nothing deleted): **546 passed,
 6 failed, 12 skipped** — identical to the opening
 baseline; the 6 failures are the proven environment
 failures. Doc-only slice, no code touched, no README
-touched, no push (but see the state file: the push
-policy recorded there is superseded for slices banked
-from E-013 onward by Volmarr's 2026-10-31 standing
-go-ahead — this slice's commit is pushed under it and
-verified by `ls-remote`).
+touched. Push: under Volmarr's 2026-10-31 standing
+go-ahead (which supersedes the state file's earlier
+local-only wording for slices banked from E-013
+onward), this slice's commit was pushed to origin
+`yrsa/ember-road-build` after fetch + ancestry check
+(remote was a clean fast-forward behind) and verified
+by `ls-remote`: remote head = local head (recorded in
+the state file).
