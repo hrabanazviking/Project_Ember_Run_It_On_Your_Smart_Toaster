@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 11:35 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-048
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047
-Next slice: E-048 — The phone-class proof (simulated profile + any real device the house can offer; proof grade labelled)
+Last updated: 2026-10-31 11:38 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-049
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048
+Next slice: E-049 — The Toaster Test: the smallest honest target the house can muster runs the companion through the day-one flow — the project's name, cashed or honestly graded
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1971,6 +1971,52 @@ Top-level members present (size / file count, working tree excl. .git):
   verified via ls-remote (remote head =
   5dcd1e815124e099b7309f48cb1afef3733bd382 = local HEAD at push time).
 
+## E-048 — The phone-class proof (DONE, 2026-10-31)
+
+- Proof filed at `docs/architecture/E-048_PHONE_PROOF.md`: **Proof grade
+  SIMULATED — proven in a phone-shaped room, not on a phone.** The phone
+  conversation profile ran on the campaign VM under a stated simulation
+  envelope: each fresh `ember ask` process pinned to 2 CPUs, a 512 MiB
+  RSS watchdog (the slice of the book's 2,048 MiB phone host left after
+  OS + the smallest model rung; never triggered), loopback wire-shape
+  model answering instantly (E-046 shape — numbers price Ember, never a
+  model's thinking), heavily contended VM (1-min load 6.0 → 7.6).
+- Numbers (probe + wire capture in `~/workspace/.verify-tmp/ember-e048/`):
+  first-ever run (Well created) ready 3.89 s / first word 3.92 s — inside
+  the flat 5.0 s cap; three judged runs — ready median **1.77 s**, first
+  word median **1.79 s** (1.49–3.01), peak RSS **43.0 MiB** max, all
+  rc 0, no envelope breach. Config root grew 870 B over the three judged
+  turns. Phone ceilings all fit: install 0.93 MiB / 4, RSS 43.0 / 96 idle
+  + 128 turn, first word vs the unrelaxed 5.0 s cap, storage projection
+  0.40 MiB/mo / 10.
+- Memory proven at the wire: the stand-in server's capture shows each
+  later process's request carrying the earlier exchanges verbatim (the
+  recall run's prompt held the first run's "teal" fact); the diary
+  records 1 → 2 → 3 earlier exchanges loaded from the on-disk Well by
+  fresh processes. Semantic recall spoken by a real model stays E-047's
+  Pi proof.
+- NOT PROVEN, named: any real phone — the house's Galaxy S26 Ultra is
+  paired but was offline when checked (last seen 2026-10-31 00:44 UTC)
+  and the tree holds no Android runtime/install path for the core (the
+  Tab S10 Lite, also offline, has the same bar); a real model on
+  phone-class silicon; thermals/battery (E-053); at-cap windowing
+  (history reached 3 of 5 episodes; at-cap is E-021/E-038's proof);
+  the on-room wizard (identity pre-written, E-046 convention). The
+  whole-phone sum (turn ceiling 128 MiB + smallest model ~600 MiB of a
+  2,048 MiB host) is stated as arithmetic, not proof.
+- Three SIM anchors added to `ember.budgets`
+  (`MEASURED_PHONE_SIM_READY_S` 1.77, `MEASURED_PHONE_SIM_FIRST_WORD_S`
+  1.79, `MEASURED_PHONE_SIM_PEAK_RSS_MIB` 43.0), pinned by
+  `tests/unit/test_phone_proof_e048.py` (5 tests, incl. the grade guard
+  keeping SIM anchors distinct from the Pi's real-device anchors).
+  Docket 90's phone half settled at simulation grade — weaker than
+  E-047's real-device re-anchor, recorded as such; ceilings unrelaxed.
+  No defect found, no new docket items. No README touched.
+- Slice gate: Run B **962 passed, 6 failed, 25 skipped, 1 warning**
+  (957 E-047 baseline + 5 new; the 6 are the proven environment
+  failures, identical set). Run D **1019 passed, 0 failed, 19 skipped,
+  1 warning**, exit 0 (1014 + 5 new — reconciles exactly).
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -2022,4 +2068,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-045 DONE (2026-10-31) — idle discipline: four profile probes idled a full hour on the VM (121 samples, 30 s interval) — 0.0 CPU seconds, exactly 1 thread, disk byte-identical (164,616 B), RSS never grew at any step (40.8 → 23.0 MiB floor at ~1,261 s, HWM ≤40.9 MiB inside the toaster's 64 MiB idle ceiling), all probes exit 0; gate armed in tests/unit/test_idle_discipline_e045.py (5 tests; extras 5 passed, default 4 skip-stated + 1 passed); no src change, no defect found, no new docket; gate Run B 949 passed / 6 proven-env failed / 24 skipped, Run D 1005 passed / 0 failed / 19 skipped (corrected same day — first banked as 1022/20 from a foreign background result, not the run's log; log-verified figure stands); filed at docs/architecture/E-045_IDLE_DISCIPLINE.md.
 - E-046 DONE (2026-10-31) — cold start on the smallest profile: seven fresh `ember ask` processes on the toaster profile (real CLI/Well, loopback wire-shape model) — first word median 2.87 s (1.28–5.38, contended VM, stated), ready at 2.79 s so ~97% is process startup and the turn adds ~0.09 s; first-ever start 3.60 s; book gains the test-pinned anchor (2.87) and a flat 5.0 s cold-start cap on every profile; gate armed in tests/unit/test_cold_start_e046.py (4 tests, median-of-3 judged); the gate caught E-045's idle "wander" assertion failing on proven-normal RSS decline under memory pressure — fixed in scope to judge growth only; gate Run B 952 passed / 6 proven-env failed / 25 skipped, Run D 1009 passed / 0 failed / 19 skipped; filed at docs/architecture/E-046_COLD_START.md.
 - E-047 DONE (2026-10-31) — the Pi proof: PROVEN on real hardware — Mimir (purpleviking1), Raspberry Pi 5 Model B Rev 1.1, Ember cloned at fae0e0b + clean-venv install, pi profile, real phi3:mini + nomic-embed-text via the house Ollama, real sqlite_vec Well; ready median 0.18 s (Ember-side re-anchor, docket 90 Pi half settled, 5.0 s cap unrelaxed), first word median 5.69 s (model-included, pinned as its own anchor, not judged against the cap), peak RSS 27.1 MiB, installed 1,951,508 B; cross-process memory proven (run 3 recalled the first-ever question); first-ever cold-model ask 64.91 s; four Pi anchors in ember.budgets pinned by tests/unit/test_pi_proof_e047.py (5 tests); gate Run B 957 passed / 6 proven-env failed / 25 skipped, Run D 1014 passed / 0 failed / 19 skipped; filed at docs/architecture/E-047_PI_PROOF.md.
-- E-048 next — the phone-class proof (simulated profile + any real device the house can offer; proof grade labelled).
+- E-048 DONE (2026-10-31) — the phone-class proof, grade SIMULATED: phone profile on the VM in a phone-shaped room (2 CPUs pinned, 512 MiB RSS watchdog never triggered, loopback wire-shape model, contended VM) — ready median 1.77 s, first word median 1.79 s inside the unrelaxed 5.0 s cap (first-ever 3.92 s also inside), peak RSS 43.0 MiB vs phone ceilings 96/128, memory proven at the wire (later processes' prompts carried earlier exchanges verbatim; diary loads 1→2→3); real phone NOT PROVEN (Galaxy S26 Ultra paired but offline; no Android runtime in tree) and named as such; three MEASURED_PHONE_SIM_* anchors pinned by tests/unit/test_phone_proof_e048.py (5 tests); docket 90 phone half settled at simulation grade; gate Run B 962 passed / 6 proven-env failed / 25 skipped, Run D 1019 passed / 0 failed / 19 skipped; filed at docs/architecture/E-048_PHONE_PROOF.md.
+- E-049 next — the Toaster Test: the smallest honest target the house can muster runs the companion through the day-one flow.

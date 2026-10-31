@@ -153,6 +153,50 @@ MEASURED_PI_PEAK_RSS_MIB = 27.1
 #: install ceiling and the toaster's 2 MiB alike.
 MEASURED_PI_INSTALLED_BYTES = 1_951_508
 
+# --------------------------------------------------------------------- #
+# Measured anchors (phone-class SIMULATION — E-048)                     #
+# --------------------------------------------------------------------- #
+
+#: **Proof grade: SIMULATED — no real phone is claimed.**
+#: The house's real phone (a Galaxy S26 Ultra, paired) was
+#: offline when checked, and the tree holds no Android
+#: runtime or install path for the core, so E-048 ran the
+#: phone conversation profile on the campaign VM under a
+#: simulation envelope: each fresh ``ember ask`` process
+#: pinned to 2 CPUs, a 512 MiB harness watchdog on its RSS
+#: (the slice of a 2,048 MiB phone host left for the
+#: companion's process after the OS and the smallest model
+#: rung, E-041 §3 — an envelope, not a measurement of a
+#: phone), and a loopback wire-shape model answering
+#: instantly (the E-046 shape, so these numbers price
+#: Ember's own startup and turn, never a model's thinking).
+#: VM x86 cores are faster per core than phone silicon;
+#: method and every run live in
+#: ``docs/architecture/E-048_PHONE_PROOF.md``.
+#:
+#: Ember-side ready (spawn → "is ready.") at the median of
+#: three judged fresh processes (1.47–2.99 s, heavily
+#: contended VM, 1-minute load 6.0–7.6): 1.77 s.
+MEASURED_PHONE_SIM_READY_S = 1.77
+
+#: First word at the median of the same three runs
+#: (1.49–3.01 s): 1.79 s — an Ember-side number against an
+#: instantly answering wire-shape model, so unlike the Pi's
+#: real-model first word it IS judged against the flat
+#: 5.0 s cold-start cap, and fits. The first-ever run (Well
+#: created) also fit: first word 3.92 s.
+MEASURED_PHONE_SIM_FIRST_WORD_S = 1.79
+
+#: The Ember process's peak RSS across every simulated run,
+#: first ever and judged alike: 43.0 MiB — inside the phone
+#: profile's 96 MiB idle and 128 MiB turn ceilings, and
+#: 8.4% of the 512 MiB simulation envelope, which the
+#: watchdog never had to enforce. Cross-process memory was
+#: proven at the wire: each later process's request carried
+#: the earlier exchanges (the recall run's prompt held the
+#: first run's stated fact verbatim).
+MEASURED_PHONE_SIM_PEAK_RSS_MIB = 43.0
+
 
 def storage_bytes_per_turn() -> int:
     """The on-disk cost of one ordinary turn, in bytes.
