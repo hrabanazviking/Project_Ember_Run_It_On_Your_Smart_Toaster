@@ -13,6 +13,10 @@ a banner. The Episode is written locally.
 
 * **Phase 11 (ADR 0009 part 2)** wired the streaming consumer — see the
   ``_run_streaming_turn`` helper. Ctrl-C tags partial replies.
+* **E-021** loads persisted history from the Well at startup and
+  windows it per turn under the profile-aware token budget
+  (``ember.spark.funi.windowing``), with dropped turns summarised
+  through the summarisation hook rather than silently forgotten.
 * **Phase 16 (ADR 0011 part 3)** wires the tool-use loop. When
   ``config.tools.enabled`` is True and Funi produces ``tool_calls`` in
   the final stream chunk, this module: validates arguments → resolves
@@ -51,6 +55,7 @@ from ember.schemas.tool import (
 )
 from ember.spark.funi import handle as funi_handle
 from ember.spark.funi import prompt as funi_prompt
+from ember.spark.funi.windowing import window_history
 from ember.spark.funi.tools import (
     AuditLog,
     StdinApprovalPrompter,
@@ -72,7 +77,11 @@ if TYPE_CHECKING:
 
 
 _DEFAULT_K = 5
-_DEFAULT_EPISODE_WINDOW = 5
+# How much stored history to load at startup. The window (profile
+# token budget + episode cap, E-021) trims what actually rides in the
+# prompt; loading a generous multiple of the largest profile cap
+# keeps the summarisation hook fed without unbounded memory growth.
+_HISTORY_LOAD_LIMIT = 64
 _EXIT_COMMANDS = frozenset({"/exit", "/quit", "/q"})
 # Bound the propose→execute→follow-up cycle so a model that loops on
 # tool calls can't lock up the REPL. Eight is plenty for any real
@@ -165,7 +174,14 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         )
     stdout.flush()
 
+    # History (E-021): episodes persisted in the Well are loaded back
+    # so the conversation survives a restart (docket 81). A failing
+    # reader degrades to an in-session-only history, never a crash —
+    # the same honesty shape as retrieval failure.
     episodes: list[Episode] = []
+    if brunnr is not None:
+        with contextlib.suppress(Exception):
+            episodes = list(brunnr.recent_episodes(_HISTORY_LOAD_LIMIT))
     streaming = config.funi.streaming
 
     try:
@@ -183,11 +199,13 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
 
             started = datetime.now(tz=UTC)
             hits = _retrieve(text, brunnr, embedder)
+            windowed = window_history(episodes, config.conversation)
             context = funi_prompt.assemble(
                 identity=identity,
-                episodes=episodes[-_DEFAULT_EPISODE_WINDOW:],
+                episodes=windowed.episodes,
                 hits=hits,
                 well_disconnected=disconnect is not None,
+                summary=windowed.summary,
             )
 
             if streaming:

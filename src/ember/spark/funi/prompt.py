@@ -49,12 +49,15 @@ def assemble(
     episodes: Sequence[Episode] = (),
     hits: Sequence[RetrievalHit] = (),
     well_disconnected: bool = False,
+    summary: str | None = None,
 ) -> list[ContextItem]:
     """Return the per-turn context items in canonical order.
 
-    Order: system → episodes (oldest first) → chunk hits (best first).
-    The operator's current line is **not** included; the caller passes
-    it separately to :meth:`FuniHandle.complete` as ``prompt``.
+    Order: system → history summary (E-021, when the window dropped
+    older episodes) → episodes (oldest first) → chunk hits (best
+    first). The operator's current line is **not** included; the
+    caller passes it separately to :meth:`FuniHandle.complete` as
+    ``prompt``.
     """
     items: list[ContextItem] = []
 
@@ -64,6 +67,9 @@ def assemble(
         well_disconnected=well_disconnected,
     )
     items.append(ContextItem(kind=ContextKind.SYSTEM, text=system_text))
+
+    if summary:
+        items.append(ContextItem(kind=ContextKind.SUMMARY, text=summary))
 
     for episode in episodes:
         items.append(

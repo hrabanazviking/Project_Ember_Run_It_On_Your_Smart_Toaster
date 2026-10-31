@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 02:44 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-020 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020
-Next slice: E-021 — Conversation engine hardening
+Last updated: 2026-10-31 02:58 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-021 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021
+Next slice: E-022 — Model backends: the core's backend contract + conformance
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -785,6 +785,41 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head =
   315032ef4883348439be1a9a9a161a3c9c35d67c = local HEAD at push time).
 
+## E-021 — Conversation engine hardening (DONE, 2026-10-31)
+
+- Hardening filed at `docs/architecture/E-021_CONVERSATION_HARDENING.md`.
+  **History:** `BrunnrHandle.recent_episodes(limit)` added to the protocol and
+  implemented in BOTH adapters (sqlite_vec + pgvector, newest-N oldest-first,
+  `BrunnrError`-wrapped); `chat.run()` loads up to 64 stored episodes at
+  startup, reader failure degrading to in-session history — **docket 81
+  CLOSED** (episodes no longer write-only; T-W6's centre closed, E-020's spec
+  left as its historical record). **Windowing:** new
+  `ember.spark.funi.windowing` — `estimate_tokens` (ceil chars/4),
+  `window_history` applying episode cap then token budget newest-first,
+  newest episode always kept, dropped turns always reported in the result.
+  **Profile-aware budget:** new `ConversationConfig` — toaster 512 tok/3 eps,
+  phone 1024/5, pi 2048/8 (default), laptop 4096/12, explicit overrides win,
+  loads from the operator config file via the generic loader. **Summarisation
+  hooks:** `Summariser` protocol + deterministic model-free
+  `ExtractiveSummariser` (counts + verbatim snippets, 600-char cap); summary
+  rides as new `ContextKind.SUMMARY` between system and episodes in
+  `prompt.assemble`, carried by the Ollama adapter as a system message;
+  `test_schemas_funi`'s pinned kind set updated with attribution (Phase 16
+  precedent). Chat's fixed `[-5:]` slice replaced by per-turn windowing.
+- One in-scope defect fixed: the Playbook's two "conversations are not read
+  back" statements (Recipe 10 + tethering section, written at E-020) updated
+  to the E-021 behaviour + the remaining disconnected-session limit; MCP
+  server's stale write-only note corrected (MCP exposure stays V2).
+- Honest limits kept: docket 82 (disconnected-session journal) stays open
+  for E-031; 85/86 keep their E-030 home; token counts are estimates.
+- Tests: `test_conversation_e021.py` **15 passed** (default env);
+  `test_episode_reader_e021.py` **4 passed** with extras (real sqlite_vec
+  round-trip / limit / restart-reopen / closed-handle typed error), skips
+  honestly without. Slice gate Run B: **574 passed, 6 failed, 13 skipped,
+  1 warning** — 559 E-020 baseline + 15 new; the 6 are the proven environment
+  failures. Run D (whole, extras): **615 passed, 0 failed, 19 skipped**,
+  exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -807,4 +842,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-018 DONE (2026-10-31) — Part I gate PASS: audit published in-repo (16 docs, E-002–E-017, under docs/audit/), verdicts prepared (not executed) for every member (all KEEP / KEEP-STEWARD / KEEP-PENDING-VERDICT; nothing removed, merged, or retired), the six gate-owned docket items verdict-prepared (52, 60, 62, 63, 64, 71 — removals/folds in 60/62/64 await Volmarr's word, as do 26 Ragnarok and 48 known-accounts custody; none blocks Part II), plain-language summary filed, and the road checked against five re-cut triggers with NO structural re-cut demanded (four sharpenings S1–S4 recorded). Gate re-measurement identical to the E-017 freeze in all three shapes (A: 1 error/8 skipped; B: 546 passed/6 failed/12 skipped/1 warning; D with extras: 583 passed/0 failed/19 skipped/1 warning). Filed at docs/audit/E-018_PART_I_GATE.md. **Part I (E-001–E-018) is CLOSED.**
 - E-019 DONE (2026-10-31) — core loop mapped: entry → startup (Funi first, Well second) → retrieve k=5 → assemble (system + last-5 in-process episodes + hits, no token budget) → Ollama streaming generation → ≤8-round tool loop → render → Episode persist, all drawn from code at docs/architecture/E-019_CORE_LOOP_MAP.md; no event bus / no other member in the loop; six new docket items 81–86 (episodes write-only with no cross-restart history, pending-episodes journal unimplemented, non-streaming tool calls dropped, DATA_FLOW drift, silent persistence and retrieval failures), each with its Part II fixing home named.
 - E-020 DONE (2026-10-31) — tethering made explicit: three tethers specified from code at docs/architecture/E-020_TETHERING_SPEC.md (person = one config root, identity name+role only, no account/person record, env surface exactly OLLAMA_HOST + EMBER_WELL_PASSWORD; machine = localhost Ollama/embedder defaults, one implemented runtime with typed Unavailable for the rest, `~` unexpanded until use, tools/MCP off by default; memory = Well only via Strengr, 3 attempts / 30 s cap / fast-fail set / health never raises / typed Disconnected), the hard-model vs soft-memory startup asymmetry named, Hjarta as the binding ceremony, and T-W6's honest centre (Episodes write-only, docket 81/82 → E-021/E-031); 13 new spec-pinning tests in tests/unit/test_tethering_e020.py all passing; plain-language statement added to docs/OPERATOR_PLAYBOOK.md and its Recipe 10 conversation-recall overclaim found and fixed in scope; slice gate 559 passed / 6 proven-environment failed / 12 skipped / 1 warning.
-- E-021 next — conversation engine hardening: history, windowing, summarisation hooks under a token budget (profile-aware); owns docket 81 (episodes write-only) with E-031.
+- E-021 DONE (2026-10-31) — conversation engine hardening: episode reader on the Brunnr protocol + both adapters (docket 81 CLOSED — history survives restarts for connected sessions), profile-aware token-budget windowing (ConversationConfig: toaster 512/3, phone 1024/5, pi 2048/8 default, laptop 4096/12; caps + budget, newest always kept, dropped always reported), Summariser hook protocol with a deterministic model-free extractive default riding as ContextKind.SUMMARY, chat startup history load + per-turn windowing replacing the fixed [-5:]; 15 + 4 new tests; gate Run B 574 passed / 6 proven-env failed / 13 skipped, Run D with extras 615 passed / 0 failed; docket 82 stays E-031's, filed at docs/architecture/E-021_CONVERSATION_HARDENING.md.
+- E-022 next — model backends: the core's backend contract + its existing backends conformed; capability truth per backend.

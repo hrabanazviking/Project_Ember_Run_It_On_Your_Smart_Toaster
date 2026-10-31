@@ -457,7 +457,11 @@ def _messages_from_context(
     """
     messages: list[dict[str, object]] = []
     for item in context:
-        if item.kind is ContextKind.SYSTEM or item.kind is ContextKind.CHUNK:
+        if item.kind in (
+            ContextKind.SYSTEM,
+            ContextKind.CHUNK,
+            ContextKind.SUMMARY,
+        ):
             messages.append({"role": "system", "content": item.text})
         elif item.kind is ContextKind.EPISODE:
             op, em = _split_episode(item.text)

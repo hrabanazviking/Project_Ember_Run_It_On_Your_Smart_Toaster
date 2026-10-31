@@ -455,12 +455,12 @@ ember chat
 
 **Verification:** `ember doctor` on the new host shows both realms ok.
 What provably carries over is your Ember's identity and settings, your
-secrets, and the Well's ingested documents — Ember can search and cite
-those on the new machine exactly as on the old one. One honest limit:
-past *conversations* are stored in the Well as records, but Ember does
-not yet read them back into a new chat, so it cannot recall an old
-conversation in conversation. (That gap is tracked work, not a failed
-move — your files arrived intact.)
+secrets, the Well's ingested documents — Ember can search and cite
+those on the new machine exactly as on the old one — and your past
+conversations: since E-021 Ember reads its stored conversation back
+when a new chat starts, keeping as much as your machine's history
+budget allows and summarising the older turns it had to trim, rather
+than pretending they never happened.
 
 **What could go wrong:**
 
@@ -503,11 +503,13 @@ on your machine, or, if you choose, a shared Well on another machine
 in your house (Recipe 2). The connection to the Well is checked,
 retried briefly if it stumbles, and reported honestly: if the Well
 cannot be reached, Ember says so at the top of its replies, answers
-from what it can do alone, and does not invent the rest. One limit to
-know today: Ember *writes down* every conversation in the Well, but
-does not yet *read those records back* when a new chat starts — it
-remembers your documents across restarts, not yet your past
-conversations. That is known, tracked work.
+from what it can do alone, and does not invent the rest. Since E-021
+Ember also *reads its conversations back*: when a new chat starts it
+loads the stored turns from the Well, keeps the newest ones that fit
+your profile's history budget, and carries a short summary of the
+older ones it trimmed. One limit remains: turns from a session whose
+Well was disconnected are not yet journalled for later — that is
+known, tracked work (E-031).
 
 **Not tied to anything else.** No company account, no subscription,
 no phone-home. Tools that reach beyond conversation are off unless

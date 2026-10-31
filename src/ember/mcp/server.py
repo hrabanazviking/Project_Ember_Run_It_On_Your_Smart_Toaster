@@ -168,9 +168,10 @@ def _register_tools(
         result["realms"]["funi"] = _probe_funi(config)
         return result
 
-    # Note: `recent_episodes` was scoped for V1 but BrunnrHandle currently
-    # has only `add_episode` (write-only). The reader API is deferred to
-    # V2 along with the matching MCP tool + resource exposure.
+    # Note: `recent_episodes` was scoped for V1 when BrunnrHandle was
+    # write-only for episodes. The reader API landed in E-021
+    # (`BrunnrHandle.recent_episodes`); exposing it as an MCP tool +
+    # resource remains deferred to V2.
 
 
 def _register_resources(

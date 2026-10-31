@@ -247,6 +247,30 @@ class SqliteVecBrunnr:
         assert cur.lastrowid is not None
         return cur.lastrowid
 
+    def recent_episodes(self, limit: int) -> list[Episode]:
+        """The newest ``limit`` episodes, oldest first (E-021).
+
+        The reader half of the episode store — before E-021 episodes
+        were write-only (docket 81) and conversation history never
+        survived a restart.
+        """
+        if limit <= 0:
+            return []
+        try:
+            rows = self._conn.execute(
+                """
+                SELECT id, operator_input, ember_reply, cited_chunk_ids,
+                       funi_model, well_disconnected, started_at, completed_at
+                FROM episodes
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        except sqlite3.Error as exc:
+            raise BrunnrError(f"recent_episodes failed: {exc}") from exc
+        return [_row_to_episode(row) for row in reversed(rows)]
+
     # ------------------------------------------------------------- reads
 
     def get_document(self, document_id: int) -> Document:
@@ -481,6 +505,25 @@ def open(config: BrunnrConfig) -> SqliteVecBrunnr | Disconnected:
 # --------------------------------------------------------------------- #
 # Helpers                                                                #
 # --------------------------------------------------------------------- #
+
+
+def _row_to_episode(row: tuple) -> Episode:
+    try:
+        cited = json.loads(row[3]) if row[3] else []
+    except json.JSONDecodeError as exc:
+        raise SchemaError(
+            f"episode {row[0]} has invalid cited_chunk_ids json: {exc}"
+        ) from exc
+    return Episode(
+        operator_input=row[1],
+        ember_reply=row[2],
+        cited_chunk_ids=tuple(int(c) for c in cited),
+        funi_model=row[4] or "",
+        well_disconnected=bool(row[5]),
+        started_at=_parse_iso(row[6]),
+        completed_at=_parse_iso(row[7]),
+        id=row[0],
+    )
 
 
 def _row_to_document(row: tuple) -> Document:

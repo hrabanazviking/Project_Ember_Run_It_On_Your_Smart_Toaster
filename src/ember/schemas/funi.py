@@ -30,6 +30,7 @@ class ContextKind(StrEnum):
     EPISODE = "episode"
     CHUNK = "chunk"
     SYSTEM = "system"
+    SUMMARY = "summary"         # E-021 — summary of window-dropped history
     TOOL_REPLY = "tool_reply"   # Phase 16 — feeds ToolReply back into next turn
 
 

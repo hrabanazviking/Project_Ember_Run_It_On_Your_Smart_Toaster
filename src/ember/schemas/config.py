@@ -67,6 +67,20 @@ class BoundaryPreference(StrEnum):
     CHAR = "char"
 
 
+class ConversationProfile(StrEnum):
+    """Hardware profile shaping the conversation token budget (E-021).
+
+    The profile names are Part III's (E-041): toaster (the smallest),
+    phone, pi, laptop. E-021 consumes them only for history windowing;
+    Part III owns the full budget book and may re-measure the numbers.
+    """
+
+    TOASTER = "toaster"
+    PHONE = "phone"
+    PI = "pi"
+    LAPTOP = "laptop"
+
+
 # --------------------------------------------------------------------- #
 # Identity                                                              #
 # --------------------------------------------------------------------- #
@@ -295,6 +309,52 @@ class MCPConfig:
 
 
 # --------------------------------------------------------------------- #
+# Conversation (E-021 — history windowing under a token budget)         #
+# --------------------------------------------------------------------- #
+
+# Per-profile conversation defaults: (token budget for history,
+# max episodes kept verbatim). The budget covers the episode history
+# only — system prompt, grounding hits, and the current operator line
+# are assembled outside it (see ember.spark.funi.windowing).
+_PROFILE_CONVERSATION_DEFAULTS: dict[ConversationProfile, tuple[int, int]] = {
+    ConversationProfile.TOASTER: (512, 3),
+    ConversationProfile.PHONE: (1024, 5),
+    ConversationProfile.PI: (2048, 8),
+    ConversationProfile.LAPTOP: (4096, 12),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ConversationConfig:
+    """How much conversation history rides in each turn's prompt.
+
+    ``profile`` selects the default token budget + episode cap for the
+    machine class; ``token_budget`` / ``max_episodes`` override the
+    profile's numbers when set. ``summarise_dropped`` keeps a short
+    deterministic summary of whatever the window drops, produced by
+    the summarisation hook (E-021), so trimming never silently
+    pretends the earlier conversation did not happen.
+    """
+
+    profile: ConversationProfile = ConversationProfile.PI
+    token_budget: int | None = None
+    max_episodes: int | None = None
+    summarise_dropped: bool = True
+
+    @property
+    def resolved_token_budget(self) -> int:
+        if self.token_budget is not None:
+            return self.token_budget
+        return _PROFILE_CONVERSATION_DEFAULTS[self.profile][0]
+
+    @property
+    def resolved_max_episodes(self) -> int:
+        if self.max_episodes is not None:
+            return self.max_episodes
+        return _PROFILE_CONVERSATION_DEFAULTS[self.profile][1]
+
+
+# --------------------------------------------------------------------- #
 # Top-level                                                             #
 # --------------------------------------------------------------------- #
 
@@ -302,6 +362,7 @@ class MCPConfig:
 @dataclass(frozen=True, slots=True)
 class EmberConfig:
     identity: IdentityConfig = field(default_factory=IdentityConfig)
+    conversation: ConversationConfig = field(default_factory=ConversationConfig)
     funi: FuniConfig = field(default_factory=FuniConfig)
     strengr: StrengrConfig = field(default_factory=StrengrConfig)
     brunnr: BrunnrConfig = field(default_factory=BrunnrConfig)
@@ -316,6 +377,8 @@ __all__ = [
     "BrunnrBackend",
     "BrunnrConfig",
     "ChunkerConfig",
+    "ConversationConfig",
+    "ConversationProfile",
     "EmbeddingConfig",
     "EmberConfig",
     "FuniConfig",
