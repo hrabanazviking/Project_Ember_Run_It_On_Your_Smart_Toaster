@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 00:17 EDT
+Last updated: 2026-10-31 00:31 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011
-Next slice: E-012 — The two-memories census
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012
+Next slice: E-013 — Config & secrets census
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -402,6 +402,52 @@ Top-level members present (size / file count, working tree excl. .git):
   **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
   Doc-only slice, no code touched, no README touched, no push.
 
+
+## E-012 — The two-memories census (DONE, 2026-10-31)
+
+- Census filed at `docs/audit/E-012_TWO_MEMORIES_CENSUS.md`: mempalace vs
+  mimir-well measured side by side — shape, storage, retrieval, overlap,
+  uniqueness, consumers — as Part V's evidence (E-077 executes in depth).
+- Headline: **overlap is shape, not code** — both store/search/graph/
+  converse/repair/export, share zero code and zero storage format, and
+  **neither is consumed by the Ember core** (zero imports in `src/`; the
+  core's live memory is a THIRD system, its own Brunnr sqlite_vec/
+  pgvector Well). mempalace (3.3.5, upstream MemPalace) is the verbatim
+  archive: wings/rooms/closets/drawers, mining pipelines, hybrid
+  vector+BM25 search, temporal KG, 30-tool MCP server, benchmark estate —
+  at ChromaDB+ONNX weight (59.2 MB tree, package 25,318 lines).
+  mimir-well (2.10.4, house line) is the living memory: one stdlib
+  SQLite file (638 KB tree, 6,496 lines), importance/valence,
+  Ebbinghaus decay, temporal validity + supersession, contradiction
+  detection, source-trust guard, audit trail, token budgeting — and
+  **no vector search anywhere** (FTS5 only).
+- Consumers in-tree: mempalace NONE (its consumers are external —
+  Claude Code hooks / MCP clients). mimir-well two shape-consumers:
+  Verdandi's heartbeat check (path agrees with the library default
+  `~/.mimir_well/mimir_well.db`) and bifrost's memory bridge (SQL
+  against `memories`/`memories_fts` but at `~/.hermes/memory/
+  runa_memory.db` — the Eye's default too; three default paths for
+  "the Mímir DB", stores mutually invisible → docket 51).
+  UNWIRED_INVENTORY's mempalace line ("likely abandoned or archival")
+  is proven stale — wired=no stands, the characterisation does not
+  (docket 52).
+- Suites re-run this slice (E-005 method, deps isolated, proxy
+  cleaned): mimir-well **356 passed, 0 failed** — E-005's 6 Eye-fixture
+  failures did NOT reproduce and no code changed: the pass is
+  environment-shaped (this VM carries the `~/.hermes` state the
+  fixture relies on); docket item 10 stays open as machine-coupled
+  (re-observation = docket 53). mempalace **1669 passed, 90 failed,
+  39 errors, 1 skipped, 106 deselected** — failure/error totals
+  identical to E-005, passed +72 at identical deselection: a
+  collection delta recorded UNRESOLVED (docket 54; E-077 re-measures).
+- New docket items 51–54 for E-016 (three-path Mímir DB → Part V;
+  stale UNWIRED mempalace line → E-018/E-091; item-10 re-observation;
+  mempalace collection delta → E-077).
+- Slice gate: root suite re-run in the E-001 shape (pgvector file
+  excluded): **546 passed, 6 failed, 12 skipped** — identical to the
+  opening baseline. Doc-only slice, no code touched, no README
+  touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -415,4 +461,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-009 DONE (2026-10-30) — the Verdandi concordance: v0.3.0 Skuld proven in code + 35/35 dedicated tests, Vör broken in 3 places (docket 31 expands item 7), pulse_metrics write-only, v0.4 distributed/REST absent and Prometheus/emotion double-listed, VD-RM covers heartbeat only, 7 new docket items (31–37), filed at docs/audit/E-009_VERDANDI_CONCORDANCE.md.
 - E-010 DONE (2026-10-31) — the Hamr verification plan: every Ph1–17 claim mapped to its proving artefact + method + environment (runner-only counts, symbol-existence rule); Phase 6 has no claim anywhere, Phase 14 no COMPLETE artefact, Phase 17 a vision with no .vrm in tree, MaterialForge/CollisionForge/PoseLibrary absent as named, Ph15 CI promotion check false in-tree, count spine self-contradictory vs E-005; execution bucketed to E-138/E-139/E-140; 8 new docket items (38–45), filed at docs/audit/E-010_HAMR_VERIFICATION_PLAN.md.
 - E-011 DONE (2026-10-31) — the two-Kistas boundary doc: toaster-Kista (in-tree, v2.0.0, Fernet vault.json.enc, 14 entry types, zero root consumers) vs ai-folder Kista (purplelongship, standalone GitHub line, Runa/Hermes custody, Heimdall's vault) separated with 8 binding custody rules; 6 conflation hazards found (default ~/.hermes vault home in code, Verdandi's third vault.db shape, tests judging the ~/.hermes copy — re-proven 146 passed / 3 failed, known-accounts ledger in-tree, Yggdrasil aspirational shape, shared v2.0 label); ai-folder side graded RECORDED not MEASURED; 5 new docket items (46–50), filed at docs/audit/E-011_TWO_KISTAS_BOUNDARY.md.
-- E-012 next — The two-memories census.
+- E-012 DONE (2026-10-31) — the two-memories census: mempalace (verbatim archive, Chroma+ONNX, 59.2 MB, MCP 30 tools) vs mimir-well (living SQLite memory, decay/validity/guard, 638 KB, FTS5 only); shape-overlap with zero shared code/format; NEITHER consumed by the core (its own Brunnr Well is the third memory); in-tree consumers Verdandi check (path agrees) + bifrost bridge (Hermes path — three Mímir DB defaults, docket 51); UNWIRED mempalace line stale (52); suites re-proven mimir 356/0 (item-10 pass environment-shaped, 53) and mempalace 1669/90/39 (collection delta +72 unresolved, 54), filed at docs/audit/E-012_TWO_MEMORIES_CENSUS.md.
+- E-013 next — Config & secrets census.
