@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 22:17 EDT
+Last updated: 2026-10-30 22:32 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002
-Next slice: E-003 — ORIGINS concordance
+Banked: E-001, E-002, E-003
+Next slice: E-004 — Fresh baseline I
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -90,8 +90,39 @@ Top-level members present (size / file count, working tree excl. .git):
   failures are the proven environment failures. Doc-only slice, no code touched,
   no README touched, no push.
 
+## E-003 — ORIGINS concordance (DONE, 2026-10-30)
+
+- Concordance filed at `docs/audit/E-003_ORIGINS_CONCORDANCE.md`: every ORIGINS
+  claim checked against the tree (paths + byte sizes; root images sha256-compared
+  against `assets/`; git log used only for successor lineage).
+- Headline: the register is accurate about everything it covers — §1: 24 of 25
+  rows at their recorded places (MYTHIC_ENGINEERING.md and README grown as their
+  own notes foresaw; the config stub absent under its claimed name
+  `config/runa.example.yaml` with proven fork successor `config/ember.example.yaml`);
+  §2: all 11 images present in `assets/`, §5b holds (the merge-restored copies are
+  not at root); §7: every listed item present (12 docs, 7 ADRs, 11 subtrees,
+  5 operator docs).
+- The blind spot: **none of the eleven imported member directories has an
+  ORIGINS row** (Verdandi, kista, mempalace, mimir-well, seidr_engine,
+  astrology-engine, bifrost, Hamr, Open-VTT, CloakBrowser, dictionary), and
+  neither do the five elder codices or other root loose files. New root image
+  population (19 IMG_0861–0879 + 3 PNGs) is sha256-proven NOT duplicates of
+  `assets/` — new unregistered material. Grown-beyond, unlisted: ADR 0014,
+  `src/ember/mcp/`, `config/sources.example.yaml`; ADR 0012 absent from the
+  sequence, unexplained in the register. `src/runa/` moved/replaced by the
+  fork (skeleton archived at `docs/archive/runa-inherited/src-skeleton/`).
+  The §6-planned drift detector `tools/repo/check_origins_drift.py` was never
+  built (tools/repo holds only its README). THIRD_PARTY_NOTICES.md still names
+  "Runa Agent"/"HERETIC" — stale skeleton. All small items carried to E-016;
+  the register gap itself is an E-196 act (ORIGINS was not modified).
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline;
+  the 6 failures are the proven environment failures. Doc-only slice, no code
+  touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
 - E-002 DONE (2026-10-30) — member census in depth, filed at docs/audit/E-002_MEMBER_CENSUS.md.
-- E-003 next — ORIGINS concordance.
+- E-003 DONE (2026-10-30) — ORIGINS concordance, filed at docs/audit/E-003_ORIGINS_CONCORDANCE.md.
+- E-004 next — Fresh baseline I.
