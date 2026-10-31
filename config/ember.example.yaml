@@ -265,6 +265,13 @@ mcp:
 logging:
   level: INFO       # DEBUG / INFO / WARNING / ERROR
   format: structured   # structured / plain
+  # Ember also keeps a diary in plain words — one dated sentence
+  # per thing that happened (a chat started, a turn was answered,
+  # a turn was saved) — in ~/.ember/diary/, readable any time
+  # with `ember diary`. It never holds what you or Ember said,
+  # only that things happened. Set false to keep no diary and
+  # have only the technical log below.
+  diary: true
   destinations:
     - kind: file
       path: "~/.ember/logs/ember.log"

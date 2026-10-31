@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 06:20 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-033 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033
-Next slice: E-034 — Logging a friend can read: the companion's diary-shaped log (what happened, in words) beside the technical trace
+Last updated: 2026-10-31 06:42 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-034 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034
+Next slice: E-035 — Multi-conversation isolation (fixtures prove no bleed)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1358,6 +1358,48 @@ Top-level members present (size / file count, working tree excl. .git):
   check — remote moved ea09f17 → a292b4a, verified via ls-remote (remote
   head = a292b4a7a2534942d40bf3458c8995f8f7359a1f = local HEAD at push time).
 
+## E-034 — Logging a friend can read (DONE, 2026-10-31)
+
+- Filed at `docs/architecture/E-034_DIARY_LOG.md`. Beside the technical
+  trace (`ember.logging`, for maintainers) Ember now keeps a **diary**:
+  `ember.diary.Diary` writes one plain sentence per thing that happened
+  into `<config_root>/diary/YYYY-MM-DD.md` (header + `- HH:MM — …`
+  entries). Daily files were chosen for tiny hardware: appends are O(1)
+  however long Ember has lived, and an old day is a whole file a person
+  can remove without parsing anything. Writes are a single O_APPEND
+  write + flush + fsync (not the pending journal's tmp+replace — a torn
+  diary line loses at most one sentence and stays visible; the choice
+  is justified in the module and the doc).
+- Chat records, in plain words: session started (identity/persona name
+  + model) and could-not-start (persona load failure / model
+  unavailable), Well connected vs not reachable, pending-drain outcomes
+  (flushed count / damaged files moved aside / failure with turns
+  kept), history loaded count or load failure, each turn's outcome
+  (answered / answered without memory grounding / interrupted / error
+  / truncated — read off the same tags the Episode carries), each
+  turn's save outcome (Well / pending journal locally / nowhere), and
+  session ended. **No conversation content, by construction**: callers
+  pass only facts (counts, names, outcomes) — tests pin the operator's
+  words, the reply's words, and drained-episode content absent.
+- The diary never harms the session: `record()` returns a bool and
+  never raises; chat's wrapper warns **once** on stdout in plain words
+  if writing fails. Switch: `logging.diary` (default true) on
+  `LoggingConfig`, documented in `config/ember.example.yaml` (E-033
+  tree-walk stays green). Reader: `ember diary [--days N]` (default 7)
+  prints recent entries flattened with their dates, works even when
+  the diary is off, and needs no identity/setup.
+- Honest limits (in the doc): tool rounds are NOT diary entries — the
+  chat drivers don't surface per-round tool facts to the persistence
+  step, and those facts already have a complete home in the tool audit
+  log; old diary files are not auto-pruned yet; entry times are local
+  with no timezone label; entries are written after the fact they
+  describe.
+- Tests: `test_diary_e034.py` **13 passed** (default env). Slice gate
+  Run B: **809 passed, 6 failed, 15 skipped, 1 warning** — 796 E-033
+  baseline + 13 new; the 6 are the proven environment failures. Run D
+  (whole, extras): **855 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1393,4 +1435,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-031 DONE (2026-10-31) — session persistence: the pending-episodes journal built (ember.well.pending_journal, per-episode atomic JSON files under <config_root>/state/pending_episodes/, fsync + os.replace + dir fsync) — disconnected turns and Well-save failures are journaled instead of lost (docket 82 CLOSED), a connected startup drains the journal in order before history loads with outcomes spoken, corrupt journal files are quarantined to corrupt/ (never deleted) and reported; sqlite_vec gains synchronous=FULL beside WAL and a BrunnrError-wrapped add_episode, and both adapters skip single corrupt episode rows instead of failing the whole history; 8 + 4 new tests; gate Run B 781 passed / 6 proven-env failed / 15 skipped, Run D 827 passed / 0 failed; filed at docs/architecture/E-031_SESSION_PERSISTENCE.md.
 - E-032 DONE (2026-10-31) — the day-one flow, timed and friction-audited in a clean venv (VM profile, loopback wire-shape model): fresh venv 26.79 s + pip upgrade 19.92 s (corrected same day — the first-banked 1.85 s was a re-run over the existing venv), install 19.24 s, day-one ask (wizard + first chat) 1.28 s, second run 0.93 s; three breaks fixed in scope — Hjarta EOF crash (docket 15 CLOSED; clean abort, nothing written), Hjarta writing an `ember.yaml` the documented `[sqlite_vec]`-only install cannot read back without PyYAML (new docket 88 CLOSED; writer falls back to stdlib-readable `ember.toml`, YAML unchanged when PyYAML present), and a Well path typed in the wizard being probed then forgotten (new docket 87 CLOSED; persisted as `brunnr.sqlite_vec.path`, no override for the default); INSTALL.md's wizard list corrected (tools question, TOML case) and the wizard prompt's hardcoded yaml path fixed; real-model day one NOT PROVEN (no Ollama on the VM; Part III owns it); 9 new tests; gate Run B 790 passed / 6 proven-env failed / 15 skipped, Run D 836 passed / 0 failed; filed at docs/architecture/E-032_DAY_ONE_FLOW.md.
 - E-033 DONE (2026-10-31) — config for humans: one surface stated + enforced (unknown/fossil keys refused by name at startup), `.env.example` Runa fossil rewritten to the two live env vars (docket 55 CLOSED), template now documents every EmberConfig field (conversation/mcp/streaming/aesir timeout_ms/cognition keys were missing; tree-walk test guards it), storage/sources excerpts state they are not config files (docket 56 core half closed, member half stays E-037), defaults audited unchanged; 6 new tests; gate Run B 796 passed / 6 proven-env failed / 15 skipped, Run D 842 passed / 0 failed; filed at docs/architecture/E-033_CONFIG_FOR_HUMANS.md.
-- E-034 next — Logging a friend can read: the companion's diary-shaped log beside the technical trace.
+- E-034 DONE (2026-10-31) — logging a friend can read: `ember.diary` keeps a plain-words diary beside the technical trace (daily Markdown files under `<config_root>/diary/`, O(1) O_APPEND+fsync writes, never raises — chat warns once if writing fails); chat records session start/stop, Well reachability, drain + history outcomes, per-turn outcome (answered / ungrounded / interrupted / error / truncated) and save outcome, with NO conversation content by construction (leak-pinned by test); `logging.diary` switch (default on, template-documented); `ember diary [--days N]` reader; tool rounds deliberately left to the audit log (stated limit); 13 new tests; gate Run B 809 passed / 6 proven-env failed / 15 skipped, Run D 855 passed / 0 failed; filed at docs/architecture/E-034_DIARY_LOG.md.
+- E-035 next — Multi-conversation isolation (fixtures prove no bleed).

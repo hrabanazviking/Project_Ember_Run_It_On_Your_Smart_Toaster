@@ -77,6 +77,14 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("doctor", help="Diagnose Funi + Well health.")
 
+    diary_p = sub.add_parser(
+        "diary", help="Read Ember's diary — what happened, in plain words."
+    )
+    diary_p.add_argument(
+        "--days", type=int, default=7,
+        help="How many days back to read (default: 7).",
+    )
+
     # MCP subcommands — ADR-0014.
     mcp_p = sub.add_parser("mcp", help="Manage MCP (Model Context Protocol).")
     mcp_sub = mcp_p.add_subparsers(dest="mcp_command", required=True)
@@ -179,6 +187,21 @@ def main(  # noqa: PLR0911,PLR0912 — top-level dispatcher legitimately returns
         )
     if args.command == "doctor":
         return doctor.run(config=config, stdout=stdout)
+    if args.command == "diary":
+        # Reading is unconditional: turning the diary off stops
+        # new entries, it does not lock away the ones already kept.
+        from ember.diary import Diary, diary_root  # noqa: PLC0415
+
+        if args.days < 1:
+            stdout.write("The diary needs at least 1 day to read back.\n")
+            return 2
+        entries = Diary(diary_root(config_root)).read_recent(days=args.days)
+        if not entries:
+            stdout.write("No diary entries yet.\n")
+            return 0
+        for entry in entries:
+            stdout.write(entry + "\n")
+        return 0
     if args.command == "well":
         if args.well_command == "ingest":
             return ingest.run(path=args.path, config=config, stdout=stdout)

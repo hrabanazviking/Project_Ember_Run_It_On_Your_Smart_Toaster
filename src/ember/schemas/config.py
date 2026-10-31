@@ -267,6 +267,13 @@ class LoggingConfig:
     level: LogLevel = LogLevel.INFO
     format: LogFormat = LogFormat.STRUCTURED
     destinations: tuple[LoggingDestination, ...] = ()
+    diary: bool = True
+    """Whether Ember keeps its plain-words diary (E-034) beside
+    the technical trace: one dated sentence per thing that
+    happened, under ``<config_root>/diary/``, readable with
+    ``ember diary``. On by default — the diary is the log a
+    friend can read. Set False to keep only the technical
+    trace above."""
 
 
 # --------------------------------------------------------------------- #
