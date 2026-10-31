@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 06:00 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-031 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031
-Next slice: E-032 — The day-one flow: install → first model → first chat, timed and friction-audited (Part XII's Stranger Test consumes)
+Last updated: 2026-10-31 06:10 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-032 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032
+Next slice: E-033 — Config for humans: one config surface, sane defaults, every key documented in plain words (E-013's live keys only)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1272,6 +1272,46 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head = 77c75ea5f55a1e1de8da241d1de6b5add383e753 = local
   HEAD at push time).
 
+## E-032 — The day-one flow (DONE, 2026-10-31)
+
+- Audit filed at `docs/architecture/E-032_DAY_ONE_FLOW.md`: the real flow run
+  in a CLEAN venv on the VM profile (system Python's preinstalled PyYAML /
+  sqlite-vec would have hidden the headline friction) against a loopback
+  Ollama wire-shape server (E-029 pattern; no Ollama daemon on the VM).
+  Timed: venv 1.85 s; `pip install <tree>[sqlite_vec]` 19.24 s (wheel
+  290,650 B); `ember --help` 0.46 s; day-one `ember ask` (wizard + first
+  chat) 1.28 s exit 0; second run 0.93 s. Ollama's own install + model pull
+  NOT measured — real-model day one is NOT PROVEN (Part III owns it).
+- Three breaks found and FIXED in scope: **(F1) docket 15 CLOSED** — Hjarta
+  caught Ctrl-C but not EOF, so closed stdin (`ember ask < /dev/null`)
+  died with a raw EOFError traceback; EOF is now a clean abort at the
+  current state, nothing written, setup reports it with exit 1.
+  **(F2) new docket 88 CLOSED** — the documented install
+  (`ember-agent[sqlite_vec]`) has no PyYAML, but Hjarta always wrote
+  `ember.yaml`, which the loader cannot read without PyYAML: proven in
+  the clean venv, EVERY command exited 1 ("PyYAML is not installed")
+  with that file in place — a stranger finished the wizard and lost
+  their Ember at the same launch's own reload. The config writer now
+  falls back to stdlib-readable `ember.toml` when PyYAML is not
+  importable (YAML preferred and unchanged when present; nested
+  sections now supported in both formats). **(F3) new docket 87
+  CLOSED** — a Well path typed in the wizard was probed, then forgotten:
+  the written config carried no trace, so the next chat reopened the
+  DEFAULT Well; the choice is now persisted as `brunnr.sqlite_vec.path`
+  (the writer docstring's always-promised extras shape), and the
+  default writes no override.
+- Two text frictions fixed: INSTALL.md's wizard walkthrough omitted the
+  tools question (list now matches the wizard, 10 steps, TOML case
+  named; §7 notes it too) and the wizard's tools prompt hardcoded the
+  `ember.yaml` path (now names the config folder + both filenames).
+  F6 recorded, not a defect: the first chat cites Hjarta's probe chunk
+  (already disclosed in INSTALL.md).
+- Tests: `test_day_one_flow_e032.py` **9 passed** (default env). Slice gate
+  Run B: **790 passed, 6 failed, 15 skipped, 1 warning** — 781 E-031
+  baseline + 9 new; the 6 are the proven environment failures. Run D
+  (whole, extras): **836 passed, 0 failed, 19 skipped, 1 warning**, exit 0.
+  No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1305,4 +1345,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-029 DONE (2026-10-31) — offline truth: a socket guard cuts every non-loopback DNS/connect (attempts recorded, sanity-proven) and the core's full local life runs under it against the REAL adapters — a loopback-Ollama chat turn end to end (probe, embed, retrieve, stream, Episode persisted, zero external attempts), read_local_file, and the sqlite_vec Well round-trip across a reopen (extras shape); the degraded set is listed honestly in docs/architecture/E-029_OFFLINE_TRUTH.md, each item failing as typed plain data (fetch_url's DNS-refusal ToolReply, embed client's None vectors → text search, remote Funi's typed Unavailable, pgvector's Disconnected-ungrounded shape); no production code changed — one defect in the slice's own guard fixture fixed in scope, and Playbook Recipe 7's doctor verification corrected (bare installs cannot run it, docket 13); 7 new tests; gate Run B 761 passed / 6 proven-env failed / 14 skipped, Run D 803 passed / 0 failed; filed at docs/architecture/E-029_OFFLINE_TRUTH.md.
 - E-030 DONE (2026-10-31) — error honesty: the chat session's three silent failures are now spoken in plain warnings at the moment they happen — an Episode that cannot be saved (docket 85 CLOSED; "remembered only until this session ends"), a mid-session Well search that fails (docket 86 CLOSED; operator told, prompt carries do-not-invent, Episode flagged well_disconnected, catch broadened beyond BrunnrError), and a startup history load that fails (found in this slice's audit, fixed in scope; "they have not been deleted") — and ERROR/LENGTH finishes are persisted with their error/truncation tags on both roads so a failed or partial reply never reads back as a completed answer; an embedding failure alone is not a retrieval failure (text-search degrade returns real hits, test-pinned); 12 new tests; gate Run B 773 passed / 6 proven-env failed / 14 skipped, Run D 815 passed / 0 failed; filed at docs/architecture/E-030_ERROR_HONESTY.md.
 - E-031 DONE (2026-10-31) — session persistence: the pending-episodes journal built (ember.well.pending_journal, per-episode atomic JSON files under <config_root>/state/pending_episodes/, fsync + os.replace + dir fsync) — disconnected turns and Well-save failures are journaled instead of lost (docket 82 CLOSED), a connected startup drains the journal in order before history loads with outcomes spoken, corrupt journal files are quarantined to corrupt/ (never deleted) and reported; sqlite_vec gains synchronous=FULL beside WAL and a BrunnrError-wrapped add_episode, and both adapters skip single corrupt episode rows instead of failing the whole history; 8 + 4 new tests; gate Run B 781 passed / 6 proven-env failed / 15 skipped, Run D 827 passed / 0 failed; filed at docs/architecture/E-031_SESSION_PERSISTENCE.md.
-- E-032 next — The day-one flow: install → first model → first chat, timed and friction-audited (Part XII's Stranger Test consumes).
+- E-032 DONE (2026-10-31) — the day-one flow, timed and friction-audited in a clean venv (VM profile, loopback wire-shape model): venv 1.85 s, install 19.24 s, day-one ask (wizard + first chat) 1.28 s, second run 0.93 s; three breaks fixed in scope — Hjarta EOF crash (docket 15 CLOSED; clean abort, nothing written), Hjarta writing an `ember.yaml` the documented `[sqlite_vec]`-only install cannot read back without PyYAML (new docket 88 CLOSED; writer falls back to stdlib-readable `ember.toml`, YAML unchanged when PyYAML present), and a Well path typed in the wizard being probed then forgotten (new docket 87 CLOSED; persisted as `brunnr.sqlite_vec.path`, no override for the default); INSTALL.md's wizard list corrected (tools question, TOML case) and the wizard prompt's hardcoded yaml path fixed; real-model day one NOT PROVEN (no Ollama on the VM; Part III owns it); 9 new tests; gate Run B 790 passed / 6 proven-env failed / 15 skipped, Run D 836 passed / 0 failed; filed at docs/architecture/E-032_DAY_ONE_FLOW.md.
+- E-033 next — Config for humans: one config surface, sane defaults, every key documented in plain words (E-013's live keys only).

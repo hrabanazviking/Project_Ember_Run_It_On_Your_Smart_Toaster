@@ -257,6 +257,18 @@ def run(  # noqa: PLR0911,PLR0912,PLR0915 — explicit FSM with one return per a
         extras: dict[str, dict[str, object]] = {}
         if tools_enabled:
             extras["tools"] = {"enabled": True}
+        if well_answer and chosen_brunnr.sqlite_vec is not None:
+            # E-032: a Well path typed at this prompt used to be honoured
+            # only for this run's probe and then silently forgotten — the
+            # written config carried no trace of it, so the very next
+            # `ember chat` reopened the DEFAULT Well and the operator's
+            # choice (and the probe chunk in it) vanished. Persist the
+            # choice in the operator config Hjarta writes at this step
+            # (the writer's extras docstring always promised this shape:
+            # "an alternative Brunnr path").
+            extras["brunnr"] = {
+                "sqlite_vec": {"path": str(chosen_brunnr.sqlite_vec.path)}
+            }
         try:
             written_config = write_ember_config(
                 config_root, identity,
@@ -281,6 +293,14 @@ def run(  # noqa: PLR0911,PLR0912,PLR0915 — explicit FSM with one return per a
     except KeyboardInterrupt:
         io.info("")
         return _abort(current_state, "operator interrupted")
+    except EOFError:
+        # E-032 (docket 15): a closed stdin — `ember ask … < /dev/null`,
+        # a script that ran out of answers, a dropped terminal — used
+        # to escape as a raw EOFError traceback. End of input is the
+        # operator walking away: a clean abort at the current state,
+        # nothing written, exactly like Ctrl-C.
+        io.info("")
+        return _abort(current_state, "end of input at prompt (stdin closed)")
     finally:
         if funi is not None:
             funi.close()

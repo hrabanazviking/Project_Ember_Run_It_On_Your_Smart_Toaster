@@ -96,10 +96,19 @@ the **Hjarta** first-run wizard. It will:
    Well; you can delete it later if you want.*
 7. **Name Ember** — press Enter to keep `Ember`, or type your own name
    (e.g. `Spark`, `Sigrún`, `Hugin`).
-8. **Write identity** — Ember writes
-   `~/.ember/identity/identity.json` *atomically*; nothing on disk
-   until this last step.
-9. **Done** — Ember is ready.
+8. **Tools (optional)** — answer `y` only if you want Ember to be able
+   to use its tools (search the Well, read a local file, fetch a URL);
+   press Enter to keep them off. You can change this later in the
+   config file. *(This step was missing from this list before E-032 —
+   the wizard has always asked; the guide now matches it.)*
+9. **Write identity** — Ember writes
+   `~/.ember/identity/identity.json` *atomically*, plus your operator
+   config at `~/.ember/config/ember.yaml` — or `ember.toml` in the
+   same folder on an install without PyYAML (E-032: Hjarta writes the
+   format your install can read back). Nothing on disk until this
+   last step. A Well path you typed at step 4 is recorded in that
+   config file, so the Well you chose is the Well Ember keeps using.
+10. **Done** — Ember is ready.
 
 If the wizard fails at any earlier step, **no files are written.** Fix
 the cause (usually `Funi unavailable` = Ollama not running) and re-run.
@@ -175,7 +184,9 @@ service.
 
 ## 7. Editing `ember.yaml` (slice 2)
 
-Hjarta wrote `~/.ember/config/ember.yaml` at first run. Every key is
+Hjarta wrote `~/.ember/config/ember.yaml` at first run (or
+`ember.toml` in the same folder, on an install without PyYAML —
+E-032; everything below applies to whichever file you have). Every key is
 optional; absent keys fall through to the slice-shipped defaults in
 `src/ember/schemas/config.py`. Re-running `ember chat` after an edit
 picks up the new values immediately (no daemon to restart).
