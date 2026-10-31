@@ -2848,3 +2848,9 @@ Top-level members present (size / file count, working tree excl. .git):
   `~/workspace/.verify-tmp/ember-e066/gate/`. No README touched.
 - E-067 next — cross-member nerves: ember core ⇄ Verdandi ⇄ memory
   (Part V) wired under E-061's contract.
+- E-066 push: banking commit 471cc9d pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 06aff9b, an
+  ancestor; the push also carried E-065's push-record commit b5a668b and
+  this tick's IN PROGRESS marker 905da16) — remote moved 06aff9b → 471cc9d,
+  verified via ls-remote (remote head =
+  471cc9dccc8fdb7ff053b74f04623a2539f13acb = local HEAD at push time).
