@@ -603,6 +603,64 @@ def get_recent_events(count: int = 20) -> list:
     return events[-count:]
 
 
+def ping_hub(timeout: float = 2.0) -> bool:
+    """Probe the hub with the nerve_type ping CONTROL message.
+
+    E-066 (docket 96): a status probe must never become
+    traffic. This sends {'nerve_type': 'ping'} — protocol,
+    not an event: the hub replies pong, nothing is stamped,
+    nothing is appended to the feed, nothing is broadcast.
+    (get_status previously probed by publishing a real
+    event of type 'ping', so every status check landed in
+    the feed as traffic.) Returns True only on a pong reply.
+    """
+    try:
+        import socket as sock_mod
+        s = sock_mod.socket(sock_mod.AF_UNIX, sock_mod.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect(str(SOCKET_PATH))
+        s.sendall(json.dumps({'nerve_type': 'ping'}).encode() + b'\n')
+        response = s.recv(4096)
+        s.close()
+        resp = json.loads(response.decode().strip())
+        return resp.get('nerve_type') == 'pong'
+    except Exception:
+        return False
+
+
+# ── Nerve-health classification (E-066) ─────────────────────
+# Inline copy of Verdandi/nerve_health.py's classification,
+# in the deployed-standalone literal pattern (E-061/E-064):
+# this file is loaded alone from ~/.hermes/state, so the
+# classifier travels as plain code here; the E-066
+# conformance tests pin this function's verdicts equal to
+# nerve_health.classify_nerve_health on the same matrix.
+def _classify_nerve_health(obs: dict) -> str:
+    """healthy / degraded / stuck / dead / absent, from facts."""
+    warnings = []
+    if obs.get('feed_exists'):
+        size = obs.get('feed_size_bytes')
+        maxb = obs.get('feed_max_bytes') or 0
+        if size is not None and maxb and size >= 0.8 * maxb:
+            warnings.append('feed near rotation')
+    elif obs.get('state_dir_exists') or obs.get('socket_exists'):
+        warnings.append('feed missing')
+    if obs.get('log_writable') is False:
+        warnings.append('log not writable')
+    if obs.get('pid_file_exists') and obs.get('pid_alive') is False:
+        return 'dead'
+    if obs.get('ping_responded') is False and (
+            obs.get('socket_exists') or obs.get('pid_alive') is True):
+        return 'stuck'
+    if obs.get('pid_alive') is True and not obs.get('socket_exists'):
+        return 'stuck'
+    if not obs.get('socket_exists') and obs.get('pid_alive') is not True:
+        return 'absent'
+    if obs.get('ping_responded') is True:
+        return 'degraded' if warnings else 'healthy'
+    return 'degraded'
+
+
 def cmd_healthcheck():
     """Comprehensive health check: verify socket, feed, service are all healthy."""
     issues = []
@@ -617,22 +675,12 @@ def cmd_healthcheck():
     # 2. Check socket file
     if SOCKET_PATH.exists():
         ok_count += 1
-        # Verify socket is responsive
-        try:
-            import socket as sock_mod
-            s = sock_mod.socket(sock_mod.AF_UNIX, sock_mod.SOCK_STREAM)
-            s.settimeout(2.0)
-            s.connect(str(SOCKET_PATH))
-            s.sendall(json.dumps({'nerve_type': 'ping'}).encode() + b'\n')
-            response = s.recv(4096)
-            s.close()
-            resp = json.loads(response.decode().strip())
-            if resp.get('nerve_type') == 'pong':
-                ok_count += 1
-            else:
-                issues.append(f"Socket responsive but unexpected reply: {resp.get('nerve_type')}")
-        except Exception as e:
-            issues.append(f"Socket exists but not responsive: {e}")
+        # Verify socket is responsive — the control ping
+        # (E-066: ping_hub, never a published event).
+        if ping_hub():
+            ok_count += 1
+        else:
+            issues.append("Socket exists but not responsive: no pong to control ping (hub stuck?)")
     else:
         issues.append("Socket file missing (hub not running)")
 
@@ -729,15 +777,37 @@ def get_status() -> dict:
                 if line.strip():
                     status['feed_events'] += 1
 
-    # Try ping
+    # Probe responsiveness with the control ping — never a
+    # published event (E-066, docket 96 CLOSED: the old code
+    # published a real 'ping' event into the feed on every
+    # status check).
+    status['hub_responsive'] = ping_hub() if status['socket_exists'] else False
+
+    # Nerve-health classification (E-066): the hub's state
+    # named from the same facts, so a stuck or dead hub is
+    # reported as such — never as merely "not responsive".
     try:
-        result = publish_event_sync('ping', {}, 'status_check')
-        if result.get('nerve_type') == 'ack':
-            status['hub_responsive'] = True
-        elif result.get('nerve_type') == 'pong':
-            status['hub_responsive'] = True
+        log_writable = None
+        try:
+            with open(LOG_PATH, 'a') as f:
+                f.write('')
+            log_writable = True
+        except OSError:
+            log_writable = False
+        status['nerve_health'] = _classify_nerve_health({
+            'state_dir_exists': STATE_DIR.exists(),
+            'socket_exists': status['socket_exists'],
+            'pid_file_exists': PID_PATH.exists(),
+            'pid_alive': (True if status['hub_running'] else
+                          (False if status['pid'] is not None else None)),
+            'ping_responded': status['hub_responsive'] if status['socket_exists'] else None,
+            'feed_exists': status['feed_exists'],
+            'feed_size_bytes': status['feed_size_bytes'] if status['feed_exists'] else None,
+            'feed_max_bytes': MAX_FEED_BYTES,
+            'log_writable': log_writable,
+        })
     except Exception:
-        status['hub_responsive'] = False
+        status['nerve_health'] = None
 
     return status
 
@@ -863,6 +933,8 @@ def cmd_status():
     print(f"   Feed: {'✅' if status['feed_exists'] else '❌'} ({status['feed_events']} events, {status['feed_size_bytes']} bytes)")
     if status.get('hub_responsive') is not None:
         print(f"   Responsive: {'✅' if status['hub_responsive'] else '❌'}")
+    if status.get('nerve_health'):
+        print(f"   Nerve health: {status['nerve_health']}")
 
 
 def cmd_stop():

@@ -249,16 +249,19 @@ EVENT_SPECS = (
     EventSpec(
         name="ping",
         dialect=DIALECT_HUB,
-        producer="nervous_system.get_status (via publish_event_sync)",
+        producer="nervous_system.get_status (via publish_event_sync) — RETIRED at E-066",
         consumers=_HUB_CONSUMERS,
         data_fields=(),
         source="status_check",
-        status="defect",
-        notes="Docket 96: a status probe published as a real event "
-              "instead of using the nerve_type ping control message; "
-              "it lands in the feed and is broadcast. Repair owned "
-              "by E-066. Registered here so the feed's ping events "
-              "have a named, owned explanation until then.",
+        status="legacy",
+        notes="Docket 96 CLOSED at E-066: a status probe was "
+              "published as a real event instead of using the "
+              "nerve_type ping control message, so it landed in "
+              "the feed and was broadcast. get_status now probes "
+              "via nervous_system.ping_hub (control message only, "
+              "nothing stamped or fed). This spec stays registered "
+              "so 'ping' lines in pre-E-066 feeds have a named "
+              "explanation; no current producer emits them.",
     ),
     EventSpec(
         name="*",

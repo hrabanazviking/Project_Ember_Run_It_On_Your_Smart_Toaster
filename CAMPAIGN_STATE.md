@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 18:02 EDT
-Status: IN PROGRESS — E-066 (nerve health) started 18:02 keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065
-Next slice: E-066 IN PROGRESS — Nerve health: a stuck/dead nerve is detected and reported; the hub degrades honestly
+Last updated: 2026-10-31 18:24 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-067
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066
+Next slice: E-067 — Cross-member nerves: ember core ⇄ Verdandi ⇄ memory (Part V) wired under E-061's contract
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2787,3 +2787,64 @@ Top-level members present (size / file count, working tree excl. .git):
   the tick's IN PROGRESS marker 1ad8f3a) — remote moved a2e729c → 06aff9b,
   verified via ls-remote (remote head =
   06aff9b18c9f4635cf8d9a691350b84fcb6735d3 = local HEAD at push time).
+
+## E-066 — Nerve health (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-066_NERVE_HEALTH.md` and in code
+  at `Verdandi/nerve_health.py` (stdlib-only, standalone like
+  event_contract.py / context_budget.py / logger_law.py / stimuli.py /
+  reflexes.py): the hub's state is classified from stated observations
+  (process aliveness and ping response tri-state — unobserved is None,
+  never invented) into exactly five states — healthy (alive, pong, no
+  warnings), degraded (answers, but a warning holds: feed ≥80% of its
+  10 MB rotation threshold, feed missing, log unwritable, or never
+  probed), stuck (alive/socket present but no pong, or a live process
+  with no socket), dead (PID file stands, process gone), absent (not
+  running) — each with its deciding reasons, warnings, and a plain
+  degrade-behaviour sentence (`validate_classification` refuses a
+  mismatched behaviour). Dead/stuck are judged before degraded/healthy,
+  so a warning can never mask a silent hub; an unprobed hub is never
+  called healthy. Hermes baseline socket failures (E-059 §8) are the
+  slice's cautionary fixture; detection never restarts anything.
+- **Docket 96 CLOSED** — `get_status()` probed the hub by publishing a
+  real `ping` event (stamped, fed, broadcast on every status check).
+  New `nervous_system.ping_hub()` sends only the `nerve_type: ping`
+  control message and accepts only `pong`; healthcheck uses it (stuck
+  wording named), `get_status` uses it and now reports `nerve_health`
+  (inline classifier in the deployed-standalone pattern, pinned equal
+  to nerve_health.py on a nine-case matrix), and the status CLI prints
+  it. Test-proven degrade honesty: `get_status` on an absent hub leaves
+  a seeded feed byte-identical and reports `absent`; on a stale-PID hub
+  it reports `dead`. The E-061 contract's `ping` spec is re-registered
+  defect → legacy (no current producer; pre-E-066 feed lines keep their
+  explanation). Degrade shapes pinned as they stand: hub-unreachable
+  publishes return marked `_fallback` feed writes (never `ack`), stuck
+  publishes return `sent / no_ack`, recent reads fall back to the feed
+  file, subscribe refuses plainly when the hub is not running.
+- **Docket 34 CLOSED** — Skuld now reads `pulse_metrics`: the daemon
+  has written a real per-pulse `health_score` every pulse since v0.3.0
+  and nothing ever read it (E-009); Skuld approximated scores from
+  pulse_history state names instead. `_get_pulse_metrics` +
+  `_health_score_series` in `heartbeat/checks/skuld.py` feed the trend,
+  anomaly and emotion paths from the metrics series, each result
+  carrying `score_source` (`pulse_metrics` / `pulse_history_state`);
+  the metrics-less fallback reproduces the old state-score behaviour
+  exactly (test-pinned). Capacity still reads pulse_history by design
+  (its resource percentages live in checks_json, which pulse_metrics
+  does not carry — stated in code and doc). E-060's WIRE decision
+  executed; E-076's gate verifies.
+- No new docket items. Transport rewiring (E-067), backpressure
+  (E-070), and dockets 100/101 (E-076 gate review) keep their owners.
+- E-057 table re-measured for the Verdandi weight change (185 files /
+  16,919,924 B; total 131,313,883 B; laptop miss 142,708 B), both
+  published copies updated. Conformance:
+  `tests/unit/test_nerve_health_e066.py` **19 passed**; Verdandi focal
+  conversation set **101 passed** (identical to E-059–E-065) and
+  heartbeat set **374 passed** (identical to E-060/E-065; pytest-asyncio
+  from the e005-extras dir, short TMPDIR). Slice gate: Run B **1163
+  passed, 6 failed, 25 skipped, 1 warning** (1144 + 19; the 6 are the
+  proven environment failures, identical set); Run D **1220 passed,
+  0 failed, 19 skipped, 1 warning**, exit 0 (1201 + 19). Logs in
+  `~/workspace/.verify-tmp/ember-e066/gate/`. No README touched.
+- E-067 next — cross-member nerves: ember core ⇄ Verdandi ⇄ memory
+  (Part V) wired under E-061's contract.

@@ -463,31 +463,81 @@ class SkuldCheck(BaseCheck):
             logger.warning(f"Skuld: Could not read pulse history: {e}")
             return []
 
-    def _predict_health_trend(self) -> dict:
-        """Predict future health based on historical trends."""
-        history = self._get_pulse_history(hours=168)
+    # ── pulse_metrics: the health-history source (E-066) ────
+    # Docket 34 CLOSED: pulse_metrics was write-only — the
+    # daemon wrote a real per-pulse health_score every pulse
+    # (heartbeat/core._state_db_save) and nothing ever read
+    # it; Skuld instead approximated scores from
+    # pulse_history's daemon-state names. Skuld now reads
+    # pulse_metrics.health_score as its health-history
+    # source wherever a usable score exists, and falls back
+    # to the state-name approximation only for the pulses /
+    # stores that predate or lack metrics. Capacity
+    # prediction still reads pulse_history: the resource
+    # percentages it needs live in checks_json, which
+    # pulse_metrics does not carry.
 
-        if len(history) < 5:
-            return {
-                "prediction": "insufficient_data",
-                "data_points": len(history),
-                "minimum_required": 5,
-            }
+    def _get_pulse_metrics(self, hours: int = 168) -> list[dict]:
+        """Read pulse_metrics rows (oldest first); [] if absent."""
+        db_path = self.config.get("heartbeat.db_path") or str(get_db_path())
+        if not Path(db_path).exists():
+            return []
+        try:
+            with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
+                conn.row_factory = sqlite3.Row
+                has = conn.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' "
+                    "AND name='pulse_metrics'").fetchone()
+                if not has:
+                    return []
+                cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+                rows = conn.execute(
+                    "SELECT * FROM pulse_metrics WHERE timestamp > ? "
+                    "ORDER BY timestamp, id",
+                    (cutoff,),
+                ).fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.warning(f"Skuld: Could not read pulse metrics: {e}")
+            return []
 
-        # Extract health-like scores from check results
-        # We approximate from the state: running=100, degraded=60, critical=20
+    def _health_score_series(self, hours: int) -> tuple[list[float], str]:
+        """(scores, source) — pulse_metrics first, state fallback.
+
+        source is "pulse_metrics" when at least one usable
+        health_score was read, else "pulse_history_state".
+        """
+        metrics = self._get_pulse_metrics(hours=hours)
+        scores = [float(m["health_score"]) for m in metrics
+                  if isinstance(m.get("health_score"), (int, float))]
+        if scores:
+            return scores, "pulse_metrics"
+        history = self._get_pulse_history(hours=hours)
         state_scores = {
             "running": 100, "recovering": 75, "degraded": 50,
             "critical": 20, "initializing": 50, "shutting_down": 10,
         }
+        return ([float(state_scores.get(h.get("state", "unknown"), 50))
+                 for h in history], "pulse_history_state")
 
-        xs = list(range(len(history)))
-        ys = [state_scores.get(h.get("state", "unknown"), 50) for h in history]
+    def _predict_health_trend(self) -> dict:
+        """Predict future health based on historical trends."""
+        ys, score_source = self._health_score_series(hours=168)
+
+        if len(ys) < 5:
+            return {
+                "prediction": "insufficient_data",
+                "data_points": len(ys),
+                "minimum_required": 5,
+                "score_source": score_source,
+            }
+
+        xs = list(range(len(ys)))
 
         model = LinearRegression.fit([float(x) for x in xs], [float(y) for y in ys])
 
         # Predict days to critical (score <= 30)
-        days_to_critical = LinearRegression.predict_future(model, float(len(history)), 30.0)
+        days_to_critical = LinearRegression.predict_future(model, float(len(ys)), 30.0)
 
         return {
             "prediction": "degrading" if model["slope"] < -0.05 else
@@ -496,21 +546,18 @@ class SkuldCheck(BaseCheck):
             "r_squared": model["r_squared"],
             "confidence": model["confidence"],
             "days_to_critical": days_to_critical,
-            "data_points": len(history),
+            "data_points": len(ys),
+            "score_source": score_source,
         }
 
     def _detect_anomalies(self) -> dict:
         """Detect anomalous health readings."""
-        history = self._get_pulse_history(hours=72)
+        values, score_source = self._health_score_series(hours=72)
 
-        if len(history) < 10:
-            return {"anomaly_count": 0, "anomalies": [], "data_points": len(history)}
-
-        state_scores = {
-            "running": 100, "recovering": 75, "degraded": 50,
-            "critical": 20, "initializing": 50,
-        }
-        values = [float(state_scores.get(h.get("state", "unknown"), 50)) for h in history]
+        if len(values) < 10:
+            return {"anomaly_count": 0, "anomalies": [],
+                    "data_points": len(values),
+                    "score_source": score_source}
 
         detector = AnomalyDetector(window=min(50, len(values) // 2))
         anomalies = detector.detect(values)
@@ -518,7 +565,8 @@ class SkuldCheck(BaseCheck):
         return {
             "anomaly_count": len(anomalies),
             "anomalies": anomalies[:10],  # Limit to 10 most recent
-            "data_points": len(history),
+            "data_points": len(values),
+            "score_source": score_source,
         }
 
     def _predict_capacity(self) -> dict:
@@ -579,17 +627,10 @@ class SkuldCheck(BaseCheck):
 
     def _classify_emotion(self) -> dict:
         """Classify the current system state into an emotional category."""
-        history = self._get_pulse_history(hours=24)
+        scores, _source = self._health_score_series(hours=24)
 
-        if len(history) < 3:
+        if len(scores) < 3:
             return {"emotion": "unknown", "description": "Insufficient data for emotional classification"}
-
-        state_scores = {
-            "running": 100, "recovering": 75, "degraded": 50,
-            "critical": 20, "initializing": 50,
-        }
-
-        scores = [float(state_scores.get(h.get("state", "unknown"), 50)) for h in history]
 
         # Determine trend
         if len(scores) >= 5:
