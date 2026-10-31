@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 01:58 EDT
+Last updated: 2026-10-31 02:06 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016
-Next slice: E-017 — Baseline freeze
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017
+Next slice: E-018 — Part I gate
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -611,6 +611,32 @@ Top-level members present (size / file count, working tree excl. .git):
   remote moved 1877cf7 → 45cc03a, verified via ls-remote (remote head =
   45cc03ab64664656c4f693b2766de79d80ed54f9 = local HEAD at push time).
 
+## E-017 — Baseline freeze (DONE, 2026-10-31)
+
+- Freeze filed at `docs/audit/E-017_BASELINE_FREEZE.md`: suite + boot results
+  from E-004/E-005/E-006 pinned as the campaign's zero line at HEAD 37fc2f2
+  (3,246 tracked files; VM profile, Python 3.12.3, pytest 9.1.1, Node v24.22.1),
+  with the exact keeper re-measurement method (Run B per-slice gate; Runs A/D
+  at part gates and on docket 1–4 touches; TMPDIR always on the workspace
+  overlay; counts from runner logs only; wall time explicitly NOT frozen).
+- Root suite re-measured in full this slice (raw logs in
+  `~/workspace/.verify-tmp/ember-e017/`), all three shapes IDENTICAL to the
+  E-004/E-001 counts: Run A whole/default **interrupted at collection —
+  1 error, 8 skipped, exit 2** (docket 1); Run B default excl. pgvector file
+  **546 passed, 6 failed, 12 skipped, 1 warning**; Run D whole with extras
+  (sqlite-vec 0.1.9 / psycopg[binary] 3.3.6 / pgvector 0.5.1 from the isolated
+  ember-extras dir; mcp extra supplied in no shape) **583 passed, 0 failed,
+  19 skipped, 1 warning**, exit 0.
+- Per-member table pinned from E-005 as corrected by E-012 (mempalace's frozen
+  figure is the E-012 corrected 1712/14/1/106-deselected/0-errors, with docket
+  54's volatility caveat; dictionary stays NOT MEASURED, docket 78).
+  Boot zero line pinned from E-006; key rows re-probed identical this slice:
+  ember `--help` exit 0, seidr `fornyrthislag --seed 1` composes exit 0,
+  ember `doctor` in the default env still crashes on `sqlite_vec` (docket 13).
+  MCP/Ollama/podman/Gungnir-guarded tests are recorded NOT PROVEN — guarded,
+  not passed. No new docket items; doc-only slice, no code touched, no
+  README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -629,4 +655,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-014 DONE (2026-10-31) — dead/duplicate census: only 11 non-trivial exact-duplicate groups (4,312,510 wasted B, 1,392,520 intentional logo distribution; 2,919,990 accidental/generated/broken), zero dead core modules (50/50 referenced; AST zero sibling imports), no duplicated non-empty .py anywhere; Verdandi heartbeat 2,548 unwired Runa lines (59), four 1-byte pseudo-PNGs (60), tracked Godot .tmp + Hamr build_output artefacts (61), cross-member image/text triplication 2,886,896 B (62), 25-byte UX-codex stub (63), 13-file Markdown-only shells (64); TUI tree + Runa archive dormant-by-design, ADR-0012 explained as UNWIRED placeholder, filed at docs/audit/E-014_DEAD_DUPLICATE_CENSUS.md.
 - E-015 DONE (2026-10-31) — budget archaeology: 1,264 numeric size lines classified; only Hamr has an enforced budget (perf.py 1.5 GB/45 s, tiers 512 MB–1.5 GB); core ~50 MB disk/RAM + Well 50 MB claims unmeasured, scope = installed core not the 217 MB monorepo (67); Verdandi six conflicting RAM figures, hub vs heartbeat unseparated (65); Tiny proposal ~622 MB on 512 MB target, self-annotated over budget, 350 vs 400 MB cap conflict (66); Hamr Phase 17 second budget 7.5 GB/143 MB (68); sibling-matrix estimates unsourced (69); five members with no budget at all (70); Stofa's named budget tests absent from tree (71); vendored CloakBrowser ~190 MB idle recorded for E-179; code-enforced limits catalogued, filed at docs/audit/E-015_BUDGET_ARCHAEOLOGY.md.
 - E-016 DONE (2026-10-31) — the bug & gap docket: every Part I carried item numbered, classified, and assigned in one table (80 entries covering 79 distinct issues; items 1–71 preserved exactly as E-004–E-015 assigned them, continuous with no gap or duplicate — verified from the extracted carried sections; items 72–80 first-numbered here for the pre-numbering E-002/E-003 findings and the unnumbered open measurements: ORIGINS register gap, drift detector never built, ADR-sequence silence, IMG provenance/UUID names, vendor/config register mismatches, astrology + Open-VTT zero test suites, dictionary Jest NOT MEASURED, unregistered 22-file root image population, CloakBrowser vendored-suite record); item 53 is a re-observation of 10, not a distinct defect. Owner tally sums to 80 (Part IV largest at 13, Part IX 11, Part II 9). Cross-links recorded (31 expands 7; 13 is the boot face of 2; 16/18 two halves; the five-entry machine-coupling family 5/8/10/17/11). Volmarr's word required for 26, 48, and the removal halves of 60/62/63/64; NOT PROVEN honestly at 40, 44, 78 and item 12's residue. Filed at docs/audit/E-016_BUG_GAP_DOCKET.md.
-- E-017 next — Baseline freeze.
+- E-017 DONE (2026-10-31) — baseline freeze: the campaign's zero line pinned at docs/audit/E-017_BASELINE_FREEZE.md, measured at HEAD 37fc2f2 (3,246 tracked files; VM, Python 3.12.3, pytest 9.1.1). Root suite re-measured in full this slice, all three shapes IDENTICAL to E-004/E-001: Run A whole/default interrupted at collection (1 error, 8 skipped, exit 2 — docket 1); Run B default excl. pgvector file **546 passed, 6 failed, 12 skipped, 1 warning**; Run D whole with extras **583 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (counts frozen; wall time is not). Per-member truth table pinned from E-005 as corrected by E-012 (seidr 38 green; kista 146/3; Verdandi 539/19; mimir-well 350/6; bifrost 18/7; Hamr 2170/28/33/2E; mempalace corrected 1712/14/1/106-desel/0E with volatility caveat docket 54; CloakBrowser vendored 385/39/15E, docket 80; dictionary NOT MEASURED docket 78; astrology + Open-VTT no suites docket 77). Boot zero line pinned from E-006 with key rows re-probed identical this slice (ember --help exit 0, seidr composes exit 0, ember doctor bare still crashes on sqlite_vec docket 13; Verdandi hub + Mímir's Eye LIVE-proven in E-006). Keeper re-measurement method recorded in the freeze doc (Run B is the per-slice gate; Runs A/D at part gates and on docket 1–4 touches; TMPDIR on workspace overlay always; counts from runner logs only). MCP/Ollama/podman/Gungnir-guarded tests NOT PROVEN — guarded, not passed. Doc-only slice, no code touched, no README touched.
+- E-018 next — Part I gate: audit published in-repo; verdicts prepared (not executed) for every member; plain-language summary filed; the road below re-cut if facts demand.
