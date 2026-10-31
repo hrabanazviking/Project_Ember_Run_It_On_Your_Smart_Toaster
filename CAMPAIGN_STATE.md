@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 19:24 EDT
-Status: IN PROGRESS — E-068 (19:12 keeper tick)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067
-Next slice: E-068 — Hermes-shaped nerves: the Verdandi event shapes matched against the Hermes hack's volmarr-core session/turn/tool events (post-refresh surfaces) — one dialect or a documented translation (IN PROGRESS)
+Last updated: 2026-10-31 19:45 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-069
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068
+Next slice: E-069 — Ordering & replay: events replay deterministically for debugging (fixtures)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2915,3 +2915,56 @@ Top-level members present (size / file count, working tree excl. .git):
   this tick's IN PROGRESS marker 687e166) — remote moved 471cc9d → 95cfa79,
   verified via ls-remote (remote head =
   95cfa79d4de3acac1654d17c6d886985d187e978 = local HEAD at push time).
+
+## E-068 — Hermes-shaped nerves (DONE, 2026-10-31)
+
+- Match filed at `docs/architecture/E-068_HERMES_SHAPED_NERVES.md`, translation
+  registry in code at `Verdandi/hermes_nerves.py` (stdlib-only, standalone like
+  event_contract.py): the Verdandi event shapes matched against the Hermes
+  hack's volmarr-core session/turn/tool events, read post-refresh from the
+  Hermes tree itself (hermes-hack-build HEAD 7b821b2704, plugin v0.26.0;
+  verdandi.py publisher + lifecycle.py bridge + verdandi_stimuli.py intake;
+  the Hermes tree was NOT modified). **Verdict: NOT one dialect — a documented
+  translation.** Transport already one: same hub socket (runa.sock, same state
+  dir for the default profile), same outer {type, source, data} keys, one JSON
+  line per event — proven live this slice (a Hermes-shaped publish to the real
+  hub is stamped, acked, and fed). Payloads differ: Verdandi contract v1 is
+  flat data under an outer `v: 1`; Hermes data is an inner envelope
+  (schema runeforge.hermes.lifecycle v1, event_id, occurred_at, event,
+  context) with the facts one level down in `context`. Unifying would break a
+  versioned contract on one side or the other (E-061's bump rule; the Hermes
+  envelope is shared by all five volmarr-core publisher families).
+- The eight lifecycle types (hermes.session.started / .ended,
+  hermes.turn.completed / .failed / .interrupted, hermes.tool.started /
+  .completed / .failed) are registered in BOTH hermes_nerves.py (exact context
+  fields + hook + kin) and event_contract.EVENT_SPECS (hub dialect, canonical,
+  data_fields = the ENVELOPE's fields — the honest wire description); the E-061
+  doc gains a dated E-068 addendum naming all eight. `normalize_hermes_event`
+  translates losslessly (context → data; envelope metadata → _hermes_*
+  provenance keys; type/source/stamps pass through; result passes
+  validate_publish) and NEVER renames a Hermes type into a Verdandi one:
+  session kinship to ember_session is real but field-poor (no persona /
+  conversation / Well facts), turn outcome is type-encoded where ember_turn
+  carries an outcome field, and Hermes turns carry no memory facts.
+  Delivery asymmetry recorded plainly: Hermes's publisher is fire-and-forget
+  (≤1 s write, no ack read, NO feed fallback — an event sent to a down hub is
+  gone); any repair is Hermes-side work, not this slice's.
+- The reverse direction was already matched: Hermes's stimuli intake reads
+  runa_reward / runa_negative / push_reward / conv_event from the hub's
+  `recent` in their flat canonical shapes — no translation needed or added.
+  New **docket 103**: no Verdandi tool event exists to match the hermes.tool.*
+  family — owner E-076 gate review (road a core tool-facts event or record the
+  absence as Part IV's verdict). E-069 inherits the _hermes_* provenance keys
+  as replay-preservation facts.
+- E-057 table re-measured for the Verdandi weight change (187 files /
+  16,956,837 B; total 131,363,445 B; laptop miss 179,621 B), both published
+  copies updated. Conformance: `tests/unit/test_hermes_nerves_e068.py`
+  **12 passed**; prior Part IV conformance (E-061 as addended + E-062–E-067 +
+  E-057 pins) **137 passed**; Verdandi focal conversation set **101 passed**
+  and heartbeat set **374 passed** (identical to E-059–E-067 / E-060/E-065).
+  Slice gate: Run B **1196 passed, 6 failed, 25 skipped, 1 warning**
+  (1184 + 12; the 6 are the proven environment failures); Run D **1253
+  passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1241 + 12). Logs in
+  `~/workspace/.verify-tmp/ember-e068/gate/`. No README touched.
+- E-069 next — ordering & replay: events replay deterministically for
+  debugging (fixtures).

@@ -66,6 +66,17 @@ LEGACY DIALECTS (recognised, deprecated — E-059 §6/§8, docket 93)
   recognised here because deployed copies and old feed lines
   still carry it.
 
+EXTERNAL PRODUCERS (E-068)
+
+The Hermes hack's volmarr-core plugin publishes its
+``hermes.*`` lifecycle events to this same hub, in the same
+outer keys but with an inner-envelope ``data`` (its own
+``runeforge.hermes.lifecycle`` schema, v1). Those types are
+registered below (hub dialect) and translated — never
+trusted as canonical flat data — by
+``Verdandi/hermes_nerves.py``; see docs/architecture/
+E-068_HERMES_SHAPED_NERVES.md for the match and the verdict.
+
 CONTROL MESSAGES (not events — they are never stamped or fed)
 
 A message carrying ``nerve_type`` is protocol, not an event:
@@ -408,6 +419,137 @@ EVENT_SPECS = (
               "landed, E-031); outcome is answered / interrupted "
               "/ error / truncated / ungrounded. Memory crosses "
               "the nerve as these facts — never as content.",
+    ),
+    # ── Hub dialect: Hermes-shaped nerves (E-068) ─────────────
+    # External producer: the Hermes hack's volmarr-core plugin
+    # (lifecycle bridge) publishes these to the same hub socket
+    # in the same outer keys, but its data is an inner envelope
+    # ({schema, schema_version, event_id, occurred_at, event,
+    # context}) — NOT this contract's flat data. The data_fields
+    # below are therefore the ENVELOPE's fields; the event's own
+    # fields live in `context` and are registered, field for
+    # field, in Verdandi/hermes_nerves.py, which also carries
+    # the lossless translation into the canonical envelope.
+    # Verdict (E-068): documented translation, not one dialect.
+    EventSpec(
+        name="hermes.session.started",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_session_start "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: Hermes lifecycle envelope (schema "
+              "runeforge.hermes.lifecycle v1); context fields "
+              "(session_id, model, platform) registered in "
+              "hermes_nerves.py. Kin to ember_session phase=start; "
+              "not that event (no persona / conversation / Well "
+              "fields). Source is the publisher's default; it is "
+              "operator-configurable on the Hermes side.",
+    ),
+    EventSpec(
+        name="hermes.session.ended",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_session_finalize "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: context fields (session_id). Kin to "
+              "ember_session phase=end / conv_end. The turn hook "
+              "(on_session_end) publishes the turn events below, "
+              "not this one — the naming is Hermes's own.",
+    ),
+    EventSpec(
+        name="hermes.turn.completed",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_turn_end "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: context fields (session_id, task_id, "
+              "turn_id, completed, exit_reason, model, platform). "
+              "Kin to ember_turn outcome=answered: Hermes encodes "
+              "the outcome in the TYPE where ember_turn carries "
+              "an outcome field, and has none of Ember's memory "
+              "facts (hits / cited / persisted / ungrounded).",
+    ),
+    EventSpec(
+        name="hermes.turn.failed",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_turn_end "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: same context fields as hermes.turn.completed. "
+              "Kin to ember_turn outcome=error.",
+    ),
+    EventSpec(
+        name="hermes.turn.interrupted",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_turn_end "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: same context fields as hermes.turn.completed. "
+              "Kin to ember_turn outcome=interrupted.",
+    ),
+    EventSpec(
+        name="hermes.tool.started",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_tool_start "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: context fields (tool_name, session_id, "
+              "task_id, turn_id, tool_call_id, api_request_id). "
+              "NO Verdandi kin exists — no E-061 event reports "
+              "tool calls (docket 103, E-076 gate review).",
+    ),
+    EventSpec(
+        name="hermes.tool.completed",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_tool_end "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: context fields (tool_name, session_id, "
+              "task_id, turn_id, tool_call_id, api_request_id, "
+              "duration_ms, status, error_type). No Verdandi "
+              "kin (docket 103).",
+    ),
+    EventSpec(
+        name="hermes.tool.failed",
+        dialect=DIALECT_HUB,
+        producer="Hermes volmarr-core LifecycleBridge.on_tool_end "
+                 "(via VerdandiPublisher) — external, hermes-hack-build",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("schema", "schema_version", "event_id", "occurred_at",
+                     "event", "context"),
+        source="hermes-agent",
+        status="canonical",
+        notes="E-068: same context fields as hermes.tool.completed; "
+              "chosen when the hook's status is not 'ok'. No "
+              "Verdandi kin (docket 103).",
     ),
     # ── Legacy heartbeat dialect (verdandi.sock — no listener) ─
     EventSpec(

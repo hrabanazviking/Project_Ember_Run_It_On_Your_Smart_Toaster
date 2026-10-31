@@ -302,3 +302,23 @@ record — the three legs, the memory facts the turn event
 carries, and the reverse direction's honest state — is
 `docs/architecture/E-067_CROSS_MEMBER_NERVES.md`; the wiring
 registry in code is `Verdandi/cross_member.py`.
+
+## Addendum (E-068, 2026-10-31) — the external producer this contract now names
+
+E-068 matched this contract against the Hermes hack's
+volmarr-core lifecycle events (post-refresh surfaces) and
+registered the eight external types in the hub dialect, per
+§2's rule that a type is registered in the same change that
+brings it into the contract's world: `hermes.session.started`,
+`hermes.session.ended`, `hermes.turn.completed`,
+`hermes.turn.failed`, `hermes.turn.interrupted`,
+`hermes.tool.started`, `hermes.tool.completed`, and
+`hermes.tool.failed`. Their registered `data_fields` are the
+Hermes inner envelope's fields — Hermes's `data` is NOT this
+contract's flat data — and their context fields, kinship map,
+and lossless translation into the canonical envelope live in
+`Verdandi/hermes_nerves.py` and
+`docs/architecture/E-068_HERMES_SHAPED_NERVES.md`. The verdict
+is a documented translation, not one dialect: no Hermes type
+is renamed, and no producer in this tree emits the Hermes
+shape.
