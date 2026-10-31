@@ -51,13 +51,14 @@ against the code (present, at the E-009 paths) and by the runner:
   `asyncio_mode` environment note), identical to E-009.
 - The wider focal set — `test_skuld.py` +
   `test_heartbeat_actions.py` + `test_heartbeat_checks.py` +
-  `test_heartbeat.py`: **374 passed, 0 failed** in three
-  consecutive serial runs. One earlier combined run, taken while
-  other commands ran in parallel on this VM, scored 371 passed /
-  3 failed; its log captured only the tail, the three failures
-  were never identified, and they did not reproduce in any of the
-  three serial re-runs. That is recorded as an unreproduced
-  flake, not hidden — docket 99, with its re-open rule.
+  `test_heartbeat.py`: **374 passed, 0 failed** in every logged
+  run — four runs in total, all kept in the evidence dir
+  (`focal.txt`, `focal_full.log`, `focal_run1.log`,
+  `focal_run2.log`). CORRECTION (same day): the first banking of
+  this slice recorded a further combined run at 371 passed /
+  3 failed and docketed it as item 99; no log anywhere contains
+  that run, every attributable run is 374 passed, and the
+  figure is withdrawn as unattributable — see §8.
 - Claim-by-claim: SkuldCheck (registered `"prediction"`),
   maintenance windows (3 dedicated tests in the 35), the
   exactly-8-metric Prometheus exporter (4 dedicated tests; the
@@ -192,36 +193,41 @@ Prometheus-compatible metrics"). VD-RM's own double-listing is
 settled in §4. All five files are E-074's reconciliation list;
 until then, E-009 + this document are the correction of record.
 
-## 8. New docket item
+## 8. Docket item 99 — WITHDRAWN by correction
 
-(99) The Verdandi focal set (skuld + heartbeat actions /
-checks / heartbeat, 374 tests) scored 371 passed / 3 failed in
-one run taken under parallel command load on the VM, then
-374 passed in three consecutive serial runs; the failing
-tests were not captured (tail-only log) and are unidentified.
-Class: UNRESOLVED flake. Re-open rule: any future focal or
-gate run that fails in this set must capture the full log and
-name the tests before the count is banked; if the same tests
-recur, the flake becomes a defect with a Part IV owner.
+The first banking of this slice created docket item 99 for an
+alleged focal-set run of 371 passed / 3 failed under parallel
+load. That run is **unattributable**: no log in the evidence
+dir (or anywhere in the campaign's verify store) contains it,
+and all four logged focal runs are 374 passed, 0 failed. Per
+the campaign's counts-from-the-runner-only law, the item is
+withdrawn — there is no evidenced flake to docket. The number
+99 is not reused; the next new docket item is 100, so no later
+item can ever be confused with this withdrawn one. The standing
+discipline the withdrawn item proposed is adopted anyway, as
+method rather than as a docket entry: any future failing run
+must have its full log captured and its failing tests named
+before any count from it is banked.
 
 ## 9. Slice gate
 
 - Focal Verdandi proof (§2/§3): `test_skuld.py` **35 passed**;
-  the four-file focal set **374 passed, 0 failed** in three
-  consecutive serial runs (one earlier parallel-load run scored
-  371/3, unreproduced — docket 99). Vör reproductions in §3 from
-  the evidence dir's script.
+  the four-file focal set **374 passed, 0 failed** in all four
+  logged runs (the 371/3 figure in the first banking was
+  unattributable and is withdrawn — §8). Vör reproductions in
+  §3 from the evidence dir's script.
 - Root suite gate (doc-only slice): Run B **1054 passed,
   6 failed, 25 skipped, 1 warning** — the 6 are the proven
   environment failures, identical to E-058/E-059; Run D
   **1111 passed, 0 failed, 19 skipped, 1 warning**, exit 0 —
   identical to E-058's Run D. Logs in
   `~/workspace/.verify-tmp/ember-e060/gate/`.
-- Doc-only slice: no code touched, no README touched. New
-  docket item 99 (§8); docket 31, 33, 34, 35, 37 and 65's
-  wording half are settled or given executing owners above —
-  none is closed by a doc edit in this slice, and E-076's gate
-  must verify each executing slice landed.
+- Doc-only slice: no code touched, no README touched. Docket
+  item 99 was created in the first banking and withdrawn by
+  the same-day correction (§8); docket 31, 33, 34, 35, 37 and
+  65's wording half are settled or given executing owners
+  above — none is closed by a doc edit in this slice, and
+  E-076's gate must verify each executing slice landed.
 
 *Filed by the E-060 slice, 2026-10-31. Next: E-061 — event
 contract v1.*

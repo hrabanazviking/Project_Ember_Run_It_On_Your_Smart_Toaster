@@ -2473,3 +2473,14 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried the tick's IN PROGRESS marker eb3d440) —
   remote moved 669655d → be93dfb, verified via ls-remote (remote head =
   be93dfb9453fea2ee7bce1fe7415ddd3d8858693 = local HEAD at push time).
+- CORRECTION (same day, E-060): the E-060 section above and the banking
+  commit message recorded a focal-set run of 371 passed / 3 failed under
+  parallel load, docketed as item 99. That figure is WITHDRAWN: the
+  original focal run's completed log (delivered late) reads **374 passed**,
+  every logged focal run (four, in `~/workspace/.verify-tmp/ember-e060/`)
+  is 374 passed / 0 failed, and no log anywhere contains a 371/3 run —
+  the figure was unattributable and, per the counts-from-the-runner-only
+  law, cannot stand. Docket 99 is withdrawn in the E-060 doc §8 (the
+  number is not reused; the next new docket item is 100) and the doc's
+  §2/§9 are corrected to match. All other E-060 counts (skuld 35,
+  Run B, Run D) are log-backed and unchanged.
