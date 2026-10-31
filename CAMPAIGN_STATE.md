@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 05:41 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-030 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030
-Next slice: E-031 — Session persistence: conversations survive restarts, atomic writes (the Samtal lesson), corruption fixtures
+Last updated: 2026-10-31 05:56 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-031 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031
+Next slice: E-032 — The day-one flow: install → first model → first chat, timed and friction-audited (Part XII's Stranger Test consumes)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1234,6 +1234,40 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head = c2141f92b8d39bce4c02f69f8fc7a625253cdac4 = local
   HEAD at push time).
 
+## E-031 — Session persistence (DONE, 2026-10-31)
+
+- Persistence filed at `docs/architecture/E-031_SESSION_PERSISTENCE.md`.
+  **Docket 82 CLOSED** — the pending-episodes journal promised by
+  `schemas/episode.py` + DATA_FLOW §2.2 now exists:
+  `ember.well.pending_journal` at `<config_root>/state/pending_episodes/`
+  (promised place honoured; per-episode JSON files instead of the
+  DATA_FLOW parenthetical's single SQLite file — O(1) append, per-turn
+  corruption isolation, stdlib only; divergence recorded in the doc).
+  Each file is written atomically (`.tmp` sibling + fsync + os.replace
+  + directory fsync — the Samtal lesson); a kill mid-write leaves at
+  most an ignored `.tmp` fragment. The journal persists `persona_id`
+  even though the Well adapters do not yet.
+- Chat: disconnected turns are journaled instead of lost; a connected
+  save failure (docket 85's site) falls back to the journal with the
+  warning reworded to say so (only a journal failure too earns the old
+  "remembered only until this session ends"); a connected startup
+  drains the journal into the Well in order BEFORE the history load,
+  announcing flushed turns, quarantined damage, and refused drains.
+  Corrupt journal files are moved to `pending_episodes/corrupt/`
+  (never deleted) and reported.
+- Well side: sqlite_vec sets `PRAGMA synchronous = FULL` beside WAL;
+  its `add_episode` is now BrunnrError-wrapped with rollback (parity
+  with sibling writes + pgvector); both adapters' `recent_episodes`
+  skip a single corrupt row (logged by id) instead of failing the
+  whole history load.
+- Tests: `test_session_persistence_e031.py` **8 passed** (default env);
+  `test_episode_corruption_e031.py` **4 passed** (extras shape);
+  E-030's save-failure test updated with attribution. Slice gate
+  Run B: **781 passed, 6 failed, 15 skipped, 1 warning** — 773 E-030
+  baseline + 8 new (corruption file skips in default env); the 6 are
+  the proven environment failures. Run D (whole, extras): **827
+  passed, 0 failed, 19 skipped, 1 warning**, exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1266,4 +1300,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-028 DONE (2026-10-31) — streaming + interruption: Ctrl-C now ends the current thing, never the session, at every waiting point (prompt re-prompts; retrieval abandons the turn with nothing persisted; stream creation inside the guard; approval-prompt and tool-execution interrupts end the turn with the partial persisted tagged, completed calls standing, no further call or generation; non-streaming complete() likewise); **docket 83 CLOSED** — non-streaming tool_calls execute through the same bounded loop (`_drive_complete_turn_with_tools`) and `wrap_complete_as_stream` carries tool_calls for WRAPPED backends; 9 new tests; gate Run B 755 passed / 6 proven-env failed / 13 skipped, Run D 796 passed / 0 failed; filed at docs/architecture/E-028_STREAMING_INTERRUPTION.md.
 - E-029 DONE (2026-10-31) — offline truth: a socket guard cuts every non-loopback DNS/connect (attempts recorded, sanity-proven) and the core's full local life runs under it against the REAL adapters — a loopback-Ollama chat turn end to end (probe, embed, retrieve, stream, Episode persisted, zero external attempts), read_local_file, and the sqlite_vec Well round-trip across a reopen (extras shape); the degraded set is listed honestly in docs/architecture/E-029_OFFLINE_TRUTH.md, each item failing as typed plain data (fetch_url's DNS-refusal ToolReply, embed client's None vectors → text search, remote Funi's typed Unavailable, pgvector's Disconnected-ungrounded shape); no production code changed — one defect in the slice's own guard fixture fixed in scope, and Playbook Recipe 7's doctor verification corrected (bare installs cannot run it, docket 13); 7 new tests; gate Run B 761 passed / 6 proven-env failed / 14 skipped, Run D 803 passed / 0 failed; filed at docs/architecture/E-029_OFFLINE_TRUTH.md.
 - E-030 DONE (2026-10-31) — error honesty: the chat session's three silent failures are now spoken in plain warnings at the moment they happen — an Episode that cannot be saved (docket 85 CLOSED; "remembered only until this session ends"), a mid-session Well search that fails (docket 86 CLOSED; operator told, prompt carries do-not-invent, Episode flagged well_disconnected, catch broadened beyond BrunnrError), and a startup history load that fails (found in this slice's audit, fixed in scope; "they have not been deleted") — and ERROR/LENGTH finishes are persisted with their error/truncation tags on both roads so a failed or partial reply never reads back as a completed answer; an embedding failure alone is not a retrieval failure (text-search degrade returns real hits, test-pinned); 12 new tests; gate Run B 773 passed / 6 proven-env failed / 14 skipped, Run D 815 passed / 0 failed; filed at docs/architecture/E-030_ERROR_HONESTY.md.
-- E-031 next — Session persistence: conversations survive restarts, atomic writes (the Samtal lesson), corruption fixtures.
+- E-031 DONE (2026-10-31) — session persistence: the pending-episodes journal built (ember.well.pending_journal, per-episode atomic JSON files under <config_root>/state/pending_episodes/, fsync + os.replace + dir fsync) — disconnected turns and Well-save failures are journaled instead of lost (docket 82 CLOSED), a connected startup drains the journal in order before history loads with outcomes spoken, corrupt journal files are quarantined to corrupt/ (never deleted) and reported; sqlite_vec gains synchronous=FULL beside WAL and a BrunnrError-wrapped add_episode, and both adapters skip single corrupt episode rows instead of failing the whole history; 8 + 4 new tests; gate Run B 781 passed / 6 proven-env failed / 15 skipped, Run D 827 passed / 0 failed; filed at docs/architecture/E-031_SESSION_PERSISTENCE.md.
+- E-032 next — The day-one flow: install → first model → first chat, timed and friction-audited (Part XII's Stranger Test consumes).

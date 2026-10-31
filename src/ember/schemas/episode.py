@@ -29,7 +29,9 @@ class Episode:
     schemas predate it) — separation is enforced at the prompt
     boundary by ``ember.spark.funi.prompt`` and in-process by
     ``ember.spark.persona`` until a storage slice carries the
-    tag to disk; the E-025 doc states this limit plainly.
+    tag to disk; the E-025 doc states this limit plainly. The
+    pending-episodes journal (E-031) *does* persist the tag, so
+    a journaled turn keeps its persona while it waits to drain.
     """
 
     operator_input: str

@@ -444,7 +444,18 @@ class PgVectorBrunnr:
                 rows = cur.fetchall()
         except Exception as exc:
             raise BrunnrError(f"recent_episodes failed: {exc}") from exc
-        return [_row_to_episode(row) for row in reversed(rows)]
+        # E-031 corruption shape (parity with the sqlite_vec reader):
+        # one damaged row is skipped and logged by id; healthy
+        # history still loads instead of the whole read failing.
+        episodes: list[Episode] = []
+        for row in reversed(rows):
+            try:
+                episodes.append(_row_to_episode(row))
+            except Exception as exc:
+                _logger.warning(
+                    "skipping corrupt episode row id=%s: %s", row[0], exc,
+                )
+        return episodes
 
     # ------------------------------------------------------------- reads
 

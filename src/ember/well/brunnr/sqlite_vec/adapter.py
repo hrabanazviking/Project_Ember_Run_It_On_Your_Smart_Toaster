@@ -102,6 +102,11 @@ class SqliteVecBrunnr:
             conn.execute("PRAGMA foreign_keys = ON")
             if config.sqlite_vec.wal_mode:
                 conn.execute("PRAGMA journal_mode = WAL")
+                # E-031 (the Samtal lesson): WAL alone can still lose
+                # the last committed turn on a power cut; FULL sync
+                # makes a committed Episode durable before the turn
+                # is answered as remembered.
+                conn.execute("PRAGMA synchronous = FULL")
             conn.enable_load_extension(True)
             sqlite_vec.load(conn)
             conn.enable_load_extension(False)
@@ -226,24 +231,32 @@ class SqliteVecBrunnr:
         return ids
 
     def add_episode(self, episode: Episode) -> int:
-        cur = self._conn.execute(
-            """
-            INSERT INTO episodes (
-                operator_input, ember_reply, cited_chunk_ids,
-                funi_model, well_disconnected, started_at, completed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                episode.operator_input,
-                episode.ember_reply,
-                json.dumps(list(episode.cited_chunk_ids)),
-                episode.funi_model,
-                1 if episode.well_disconnected else 0,
-                _isoformat(episode.started_at),
-                _isoformat(episode.completed_at),
-            ),
-        )
-        self._conn.commit()
+        # E-031: wrapped like add_document/add_chunks — before this,
+        # a sqlite error here propagated raw (no rollback, no typed
+        # contract), unlike every sibling write in this adapter.
+        try:
+            cur = self._conn.execute(
+                """
+                INSERT INTO episodes (
+                    operator_input, ember_reply, cited_chunk_ids,
+                    funi_model, well_disconnected, started_at, completed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    episode.operator_input,
+                    episode.ember_reply,
+                    json.dumps(list(episode.cited_chunk_ids)),
+                    episode.funi_model,
+                    1 if episode.well_disconnected else 0,
+                    _isoformat(episode.started_at),
+                    _isoformat(episode.completed_at),
+                ),
+            )
+            self._conn.commit()
+        except sqlite3.Error as exc:
+            with contextlib.suppress(sqlite3.Error):
+                self._conn.rollback()
+            raise BrunnrError(f"add_episode failed: {exc}") from exc
         assert cur.lastrowid is not None
         return cur.lastrowid
 
@@ -269,7 +282,20 @@ class SqliteVecBrunnr:
             ).fetchall()
         except sqlite3.Error as exc:
             raise BrunnrError(f"recent_episodes failed: {exc}") from exc
-        return [_row_to_episode(row) for row in reversed(rows)]
+        # E-031 corruption shape: one damaged row (bad cited-ids JSON,
+        # a non-integer id list) must not take every healthy episode
+        # down with it. The damaged row is skipped and logged by id;
+        # the healthy history still loads. Before E-031 the row's
+        # SchemaError/ValueError escaped and chat started empty.
+        episodes: list[Episode] = []
+        for row in reversed(rows):
+            try:
+                episodes.append(_row_to_episode(row))
+            except Exception as exc:
+                logger.warning(
+                    "skipping corrupt episode row id=%s: %s", row[0], exc,
+                )
+        return episodes
 
     # ------------------------------------------------------------- reads
 

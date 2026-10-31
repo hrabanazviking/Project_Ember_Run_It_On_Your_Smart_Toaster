@@ -47,6 +47,14 @@ a banner. The Episode is written locally.
   a failed or partial reply never poses as a completed answer
   in the remembered history (see
   ``docs/architecture/E-030_ERROR_HONESTY.md``).
+* **E-031** completes session persistence (docket 82): turns a
+  disconnected session makes, and turns whose Well save fails,
+  are written atomically to the pending-episodes journal under
+  ``<config_root>/state/pending_episodes/`` instead of being lost
+  at exit; the next connected session drains the journal into
+  the Well (in order, before history loads) and says so, with
+  damaged journal files quarantined and reported, never fatal
+  (see ``docs/architecture/E-031_SESSION_PERSISTENCE.md``).
 """
 
 from __future__ import annotations
@@ -95,6 +103,7 @@ from ember.spark.munnr import render
 from ember.spark.persona import episodes_for_persona, resolve_persona
 from ember.spark.persona.core import PersonaError
 from ember.thread import strengr
+from ember.well.pending_journal import PendingJournal, pending_root
 from ember.well.smidja.embed_client import OllamaEmbedClient
 
 if TYPE_CHECKING:
@@ -192,6 +201,37 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         stdout.write(render.render_well_disconnected_banner(disconnect) + "\n")
     else:
         brunnr, disconnect = well_result, None
+
+    # Session persistence (E-031, docket 82): the pending-episodes
+    # journal for this config root. A connected session drains it
+    # into the Well *before* history loads, so turns saved locally
+    # by an earlier disconnected (or save-failed) session join the
+    # remembered history in order. Drain outcomes are spoken:
+    # flushed turns are announced, a refused drain keeps its files
+    # and says why, and damaged files are quarantined + reported.
+    pending = PendingJournal(pending_root(config_root))
+    if brunnr is not None and pending.count():
+        drain = pending.drain(brunnr)
+        if drain.flushed:
+            stdout.write(
+                f"[well: added {drain.flushed} saved turn(s) from the "
+                "local pending journal to the Well.]\\n"
+            )
+        if drain.corrupt:
+            stdout.write(
+                f"[warning: {len(drain.corrupt)} saved turn file(s) in "
+                "the pending journal were damaged and have been moved "
+                "aside (not deleted) under "
+                f"{pending.root / 'corrupt'}; they could not be added "
+                "to the Well.]\\n"
+            )
+        if drain.failure is not None:
+            stdout.write(
+                "[warning: saved turns could not be added to the Well "
+                f"({drain.failure}); {drain.kept} turn(s) are still "
+                "saved locally and will be tried again next session.]\\n"
+            )
+        stdout.flush()
 
     tool_ctx = _maybe_init_tools(
         config=config,
@@ -377,13 +417,48 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 # failure is caught, never hidden — before E-030 it
                 # was suppressed in silence and a session could
                 # believe it was remembering when the store was not.
+                # E-031 (docket 82): a failed save now falls back to
+                # the pending journal, so the turn survives exit and
+                # drains into the Well on a later connected session;
+                # only when the journal *also* fails is the turn
+                # remembered only until this session ends.
                 try:
                     brunnr.add_episode(episode)
                 except Exception as exc:
+                    try:
+                        pending.append(episode)
+                    except Exception as journal_exc:
+                        stdout.write(
+                            "[warning: this turn could not be saved to the "
+                            f"Well ({type(exc).__name__}: {exc}) or to the "
+                            "local pending journal "
+                            f"({type(journal_exc).__name__}: {journal_exc}); "
+                            "it will be remembered only until this "
+                            "session ends.]\n"
+                        )
+                    else:
+                        stdout.write(
+                            "[warning: this turn could not be saved to the "
+                            f"Well ({type(exc).__name__}: {exc}); it has "
+                            "been saved locally and will be added to the "
+                            "Well when it can be reached again.]\n"
+                        )
+                    stdout.flush()
+            else:
+                # Disconnected session (E-031, docket 82): the turn
+                # goes to the pending journal — DATA_FLOW §2.2 step
+                # 9', promised since the Episode schema was written.
+                # The disconnect banner already told the operator the
+                # Well is unreachable; a journal failure is the new
+                # fact, and it is spoken like any save failure.
+                try:
+                    pending.append(episode)
+                except Exception as journal_exc:
                     stdout.write(
-                        "[warning: this turn could not be saved to the "
-                        f"Well ({type(exc).__name__}: {exc}); it will be "
-                        "remembered only until this session ends.]\n"
+                        "[warning: this turn could not be saved locally "
+                        f"({type(journal_exc).__name__}: {journal_exc}); "
+                        "it will be remembered only until this session "
+                        "ends.]\n"
                     )
                     stdout.flush()
     finally:

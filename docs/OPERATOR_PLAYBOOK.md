@@ -541,9 +541,13 @@ from what it can do alone, and does not invent the rest. Since E-021
 Ember also *reads its conversations back*: when a new chat starts it
 loads the stored turns from the Well, keeps the newest ones that fit
 your profile's history budget, and carries a short summary of the
-older ones it trimmed. One limit remains: turns from a session whose
-Well was disconnected are not yet journalled for later — that is
-known, tracked work (E-031).
+older ones it trimmed. Since E-031, turns from a session whose
+Well was disconnected — or whose save to the Well failed — are
+kept in a local pending journal in your Ember folder and added
+to the Well automatically the next time a chat starts with the
+Well reachable; Ember tells you when it adds them, and if one of
+those saved turns is ever damaged on disk, Ember moves it aside
+(it does not delete it) and tells you that too.
 
 **Not tied to anything else.** No company account, no subscription,
 no phone-home. Tools that reach beyond conversation are off unless
