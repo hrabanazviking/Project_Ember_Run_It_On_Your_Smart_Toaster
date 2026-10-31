@@ -1000,7 +1000,11 @@ Top-level members present (size / file count, working tree excl. .git):
 - Tests: `test_persona_core_e025.py` **38 passed** (default env). Slice gate
   Run B: **677 passed, 6 failed, 13 skipped, 1 warning** — 639 E-024 baseline
   + 38 new; the 6 are the proven environment failures. Run D (whole, extras):
-  **718 passed, 0 failed, 19 skipped**, exit 0. No README touched.
+  **718 passed, 0 failed, 19 skipped**, exit 0. No README touched. Pushed under
+  Volmarr's 2026-10-31 standing go-ahead: banking commit e2a1e0e pushed after
+  fetch + ancestry check — remote moved 3d987d7 → e2a1e0e, verified via
+  ls-remote (remote head = e2a1e0ec2a93b219b33394f4c87a438dfd824315 = local
+  HEAD at push time).
 
 ## Slice ledger
 
