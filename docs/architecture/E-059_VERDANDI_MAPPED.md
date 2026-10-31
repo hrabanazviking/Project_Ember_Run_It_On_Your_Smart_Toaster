@@ -381,11 +381,17 @@ contract must settle; docket 93.
   target dir, the same four files run **101 passed, exit 0** —
   the 6 are ENVIRONMENT, proven, the same class as E-005's
   Verdandi family. Logs in `~/workspace/.verify-tmp/ember-e059/`.
-- Root suite gate, identical to E-058's banked counts (doc-only
-  slice): Run B **1054 passed, 6 failed, 25 skipped, 1 warning**
-  (the 6 are the proven environment failures, same set);
-  Run D **1111 passed, 0 failed, 19 skipped, 1 warning**,
-  exit 0. Logs in `~/workspace/.verify-tmp/ember-e059/gate/`.
+- Root suite gate (doc-only slice): Run B **1054 passed,
+  6 failed, 25 skipped, 1 warning** (the 6 are the proven
+  environment failures, same set as E-058); Run D **1111 passed,
+  0 failed, 6 skipped, 1 warning**, exit 0 — pass/fail identical
+  to E-058's Run D; its skip count differs from E-058's 19
+  (extras shape variance, not investigated; pass/fail are the
+  gate). Logs in `~/workspace/.verify-tmp/ember-e059/gate/`.
+  *Correction, same day: the first banking of this slice recorded
+  Run D as 19 skipped, carried over from E-058's record before
+  Run D's own log was read; the log's figure is 6, corrected here
+  and in the state file.*
 - Doc-only slice: no code touched, no README touched. New docket
   items 93–98 (§8/§4/§5/§6/§7), each with its Part IV home.
 

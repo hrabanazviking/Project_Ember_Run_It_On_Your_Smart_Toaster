@@ -2404,10 +2404,15 @@ Top-level members present (size / file count, working tree excl. .git):
   environment class; with the declared dev dep supplied from the isolated
   target dir, **101 passed, exit 0**. Logs in
   `~/workspace/.verify-tmp/ember-e059/`.
-- Slice gate identical to E-058 (doc-only slice): Run B **1054 passed,
+- Slice gate (doc-only slice): Run B **1054 passed,
   6 failed, 25 skipped, 1 warning** (the proven environment set);
-  Run D **1111 passed, 0 failed, 19 skipped, 1 warning**, exit 0.
-  No code touched, no README touched.
+  Run D **1111 passed, 0 failed, 6 skipped, 1 warning**, exit 0
+  (pass/fail identical to E-058's Run D; skip count differs from
+  its 19 — extras shape variance, not investigated).
+  CORRECTION (same day): the first banking recorded Run D as
+  19 skipped, carried from E-058's record before Run D's own log
+  was read; the log's figure is 6. Corrected here and in the
+  E-059 doc. No code touched, no README touched.
 - E-060 next — the VD-RM concordance executed.
 - E-059 push: banking commit 9017035 pushed under Volmarr's 2026-10-31
   standing go-ahead after fetch + ancestry check (remote was b275aeb, an
