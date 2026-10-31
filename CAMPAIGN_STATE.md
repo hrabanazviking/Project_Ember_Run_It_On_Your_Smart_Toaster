@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 23:35 EDT
+Last updated: 2026-10-30 23:44 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005
-Next slice: E-006 — Boot census
+Banked: E-001, E-002, E-003, E-004, E-005, E-006
+Next slice: E-007 — Dependency & licence audit
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -185,6 +185,40 @@ Top-level members present (size / file count, working tree excl. .git):
   **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
   Doc-only slice, no code touched, no README touched, no push.
 
+## E-006 — Boot census (DONE, 2026-10-30)
+
+- Census filed at `docs/audit/E-006_BOOT_CENSUS.md`: every E-002 entry point
+  actually started on the VM profile (sandboxed HOME + redirected state;
+  raw probe outputs kept in `~/workspace/.verify-tmp/ember-e006/`).
+- LIVE proven: Verdandi's nerve hub (`serve` → socket up, status Running ✅,
+  healthcheck ALL CHECKS PASSED, publish accepted event #2, `recent` shows it,
+  clean terminate) and Mímir's Eye (HTTP 200 dashboard with flask supplied).
+  seidr_engine is the only member that boots AND computes in the bare default
+  env (`fornyrthislag --seed 1` composes, exit 0). BOOTS: ember CLI help /
+  `mcp list`, Verdandi heartbeat CLI, kista (real HOME), mempalace CLI
+  (3.3.5) + MCP server (with deps), mimir-well core library, bifrost library
+  (instantiates; no CLI by design), Hamr CLI (0.8.0; check-env honestly
+  reports Blender absent), CloakBrowser CLI (`info`: binary NOT installed,
+  install deliberately not run).
+- CRASHES: ember `doctor` / `well status` in the stdlib-only env traceback on
+  `ModuleNotFoundError: sqlite_vec` — the default Well backend needs an
+  optional extra, so first-run diagnostics cannot start bare (with extras:
+  both boot; doctor honestly reports Funi UNAVAILABLE / Well ok, exit 1).
+  New docket items 13–17 for E-016: (13) that crash (boot face of item 2);
+  (14) kista credstore's import-time `pip install cryptography` fallback dies
+  with CalledProcessError on PEP 668 where the dep is absent; (15) Hjarta
+  wizard `EOFError` traceback on closed stdin (`ask` fresh-root probe);
+  (16) astrology-engine's real commands exit 0 printing "pyswisseph required",
+  computing nothing, its deps declared nowhere; (17) mimir-well
+  `start-eye.sh` hardcodes `/home/pi` (module path works).
+- CANNOT BOOT HERE, named: astrology-engine (deps absent + undeclared),
+  dictionary (`npm run start` exit 127, `next` not found — node_modules
+  absent), Open-VTT (no Godot binary on the VM; project + main scene present
+  and correctly referenced — NOT PROVEN, Part X).
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
+  Doc-only slice, no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -192,4 +226,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-003 DONE (2026-10-30) — ORIGINS concordance, filed at docs/audit/E-003_ORIGINS_CONCORDANCE.md.
 - E-004 DONE (2026-10-30) — fresh baseline I: whole root suite classified; with extras 583 passed / 0 failed, filed at docs/audit/E-004_FRESH_BASELINE_I.md.
 - E-005 DONE (2026-10-30) — fresh baseline II: per-member truth table; seidr green, bulk of failures proven environment (proxy-env httpx signature), 8 new docket items (machine-coupled tests family), filed at docs/audit/E-005_FRESH_BASELINE_II.md.
-- E-006 next — Boot census.
+- E-006 DONE (2026-10-30) — boot census: Verdandi hub + Mímir's Eye proven LIVE, seidr boots+computes bare, ember diagnostics crash bare on the sqlite_vec default backend, astrology/dictionary/Open-VTT cannot boot here for named reasons, 5 new docket items (13–17), filed at docs/audit/E-006_BOOT_CENSUS.md.
+- E-007 next — Dependency & licence audit.
