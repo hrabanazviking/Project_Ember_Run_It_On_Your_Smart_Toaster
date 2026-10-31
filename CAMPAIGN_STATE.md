@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 09:20 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-044
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044
-Next slice: E-045 — Idle discipline (at rest the companion costs ~nothing — measured over an hour, per profile)
+Last updated: 2026-10-31 10:37 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-046
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045
+Next slice: E-046 — Cold start on the smallest profile (time-to-first-word measured + capped)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1842,6 +1842,32 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head =
   1530961e6d3dd24cc0c8aade9f54761bd7cfd6a0 = local HEAD at push time).
 
+## E-045 — Idle discipline (DONE, 2026-10-31)
+
+- Record filed at `docs/architecture/E-045_IDLE_DISCIPLINE.md`: four profile
+  probes (full CLI/chat surface imported, profile config loaded, real
+  sqlite_vec Well open, blocked on stdin as `chat` waits) idled concurrently
+  for 3,600 s on the VM, sampled every 30 s (121 samples; scripts + raw
+  samples in `~/workspace/.verify-tmp/ember-e045/`).
+- Headline: **zero CPU** (each probe's CPU ticks identical first→last sample;
+  0.0 s over the hour), **exactly 1 thread** throughout, **disk
+  byte-identical** (164,616 B at every sample), and RSS **never grew at any
+  sampled step** — it declined monotonically from ~40.8 MiB to a 23.0 MiB
+  floor reached at ~1,261 s and held flat; HWM never exceeded ~40.9 MiB,
+  inside the toaster's 64 MiB idle ceiling. All four probes exited 0.
+  Mechanism for the RSS decline is NOT claimed (probes did no work; stated
+  as observation in the doc). A 60 s rehearsal run showed the same shape.
+- Gate armed: `tests/unit/test_idle_discipline_e045.py` — 5 tests (4 profile
+  probes at 15 s gate scale: CPU ≤2 ticks, 1 thread, RSS inside ceiling +
+  1.5× anchor band, settled wander ≤2 MiB, disk byte-identical; + wiring).
+  Extras shape standalone **5 passed**; default env 4 skip (reason stated)
+  + 1 passed. No `src/` code changed — the discipline was already the
+  code's behaviour; no defect found, no new docket items (90 stands).
+- Slice gate: Run B **949 passed, 6 proven-environment failures,
+  24 skipped, 1 warning** (948 E-044 baseline + 1 new; 4 new skips as
+  designed); Run D (whole, extras) **1022 passed, 0 failed, 20 skipped,
+  1 warning**, exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1890,4 +1916,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-043 DONE (2026-10-31) — install weight cut I: sdist ~45 MB → 1.1 MB compressed (127,162,419 → 3,464,529 B unpacked) by excluding all 11 optional members, the docs heritage corpora, the lawbook PDF/Markdown and CAMPAIGN_STATE.md from `pyproject.toml`'s sdist list; heaviest members measured from the tarball (mempalace 57.0 MB, dictionary 24.1 MB, Open-VTT 6.3 MB); clean-venv install from the cut sdist proven (ember --help exit 0, no member in site-packages); wheel unchanged 305 KB so E-041/E-042 anchors stand; re-derived sdist set matches hatchling file-for-file; 5 new tests; gate Run B 941 passed / 6 proven-env failed / 20 skipped, Run D 993 passed / 0 failed.
 - E-044 DONE (2026-10-31) — install weight cut II / dependency diet: every root requirement bounded both ways (docket 23 root half closed; member half = new docket 92); the unbounded `mcp>=1.27` floor was PROVEN broken today — it resolves to mcp 2.3.0, whose SDK removed `mcp.server.fastmcp`, so a fresh [mcp] install could not start `ember mcp serve`; bounded to <2 (resolves 1.30.0, FastMCP imports, MCP tests run real). Docket 20 closed: keyring declared as its own `secrets` extra (measured 16,646,785 B / 10 pkgs — deliberately NOT folded into pgvector, which stays 20,920,005 B); resolver's missing-keyring note now names `ember-agent[secrets]`. Dev split: `dev` is test-only 7,600,880 B (was 89,112,145 B combined, −91.5%), ruff+mypy moved to a new `lint` extra (81,511,265 B measured shape). All-extras combined 54,183,654 → 53,703,943 B. Kept deliberately, named in the doc: psycopg[binary] (ADR 0010, no system libpq for normal folks), PyYAML, the mcp SDK's HTTP stack (hard deps, extra-gated). 7 new tests incl. an exact AST import↔extra map; gate Run B 948 passed / 6 proven-env failed / 20 skipped, Run D (real venv install of the edited package, bounded extras) 1015 passed / 0 failed / 16 skipped — the 5 MCP e2e failures under the isolated-target method were proven ENVIRONMENT (subprocess env filtering) by the venv run.
 - E-044 push: banking commit e077d3a pushed under Volmarr's 2026-10-31 standing go-ahead after fetch + remote-diff (remote was d6ecd57 = local HEAD, no divergence) — remote moved d6ecd57 → e077d3a, verified via ls-remote (remote head = e077d3a26693f15c0e550d646b15abec14efdde0 = local HEAD at push time).
-- E-045 next — idle discipline: at rest the companion costs ~nothing, measured over an hour, per profile.
+- E-045 DONE (2026-10-31) — idle discipline: four profile probes idled a full hour on the VM (121 samples, 30 s interval) — 0.0 CPU seconds, exactly 1 thread, disk byte-identical (164,616 B), RSS never grew at any step (40.8 → 23.0 MiB floor at ~1,261 s, HWM ≤40.9 MiB inside the toaster's 64 MiB idle ceiling), all probes exit 0; gate armed in tests/unit/test_idle_discipline_e045.py (5 tests; extras 5 passed, default 4 skip-stated + 1 passed); no src change, no defect found, no new docket; gate Run B 949 passed / 6 proven-env failed / 24 skipped, Run D 1022 passed / 0 failed; filed at docs/architecture/E-045_IDLE_DISCIPLINE.md.
+- E-046 next — cold start on the smallest profile: time-to-first-word measured + capped.
