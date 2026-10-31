@@ -635,7 +635,10 @@ Top-level members present (size / file count, working tree excl. .git):
   ember `doctor` in the default env still crashes on `sqlite_vec` (docket 13).
   MCP/Ollama/podman/Gungnir-guarded tests are recorded NOT PROVEN — guarded,
   not passed. No new docket items; doc-only slice, no code touched, no
-  README touched.
+  README touched. Pushed under Volmarr's 2026-10-31 standing go-ahead:
+  banking commit 2e17247 pushed after fetch + ancestry check — remote moved
+  37fc2f2 → 2e17247, verified via ls-remote (remote head =
+  2e172479bd6db125b9c875b34bd4d9bd9129bb17 = local HEAD at push time).
 
 ## Slice ledger
 
