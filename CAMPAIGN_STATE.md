@@ -6,16 +6,19 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 00:31 EDT
+Last updated: 2026-10-31 01:23 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012
-Next slice: E-013 — Config & secrets census
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013
+Next slice: E-014 — Dead/duplicate census
 
 ## Laws (from the roadmap §3, binding every slice)
 
 - Keeper discipline; never leave a discovered bug unfixed (in scope, or docketed to its part in E-016).
 - No Docker ever. Never touch any README.md.
-- Banking is local per slice; pushes await Volmarr's word — sole exception was the E-001 roadmap filing.
+- Banking is local per slice; from E-013 onward, banked slices are pushed to origin
+  `yrsa/ember-road-build` under Volmarr's standing go-ahead (2026-10-31): git fetch +
+  remote-diff first, never force-push, verified via ls-remote. (Earlier slices were
+  local-only under the prior wording; their banking records stand as written.)
 - Vendored code (CloakBrowser) keeps its licences, never rewritten.
 - Counts from the runner only; hardware claims name the device; never invent counts.
 - Tiny-hardware budgets are the project's soul.
@@ -453,6 +456,37 @@ Top-level members present (size / file count, working tree excl. .git):
   opening baseline. Doc-only slice, no code touched, no README
   touched, no push.
 
+## E-013 — Config & secrets census (DONE, 2026-10-31)
+
+- Census filed at `docs/audit/E-013_CONFIG_SECRETS_CENSUS.md`: every member's
+  config shape inventoried (57 config-shaped files; tracked tree 3,242 files via
+  git ls-files), high-confidence secret patterns scanned over 2,754 tracked text
+  files, every hit classified, every documented env key checked for a live
+  consumer in `src/`. No credential value reproduced anywhere.
+- Headline: **no real credential exists in any plain file** — GitHub tokens 0,
+  JWTs 0, bearer literals 0; private-key blocks ×7 are all fixtures/templates
+  (kista isolated-vault tests, root refusal tests, SKILL.md heredoc with `...`
+  body); AWS-shaped ×2 are sequential synthetic test data; the one `sk-` hit is
+  hyphenated prose. In code/config files only 8 quoted long credential
+  assignments exist, all test fixtures. The core's Well-password resolver
+  (env → keyring → mode-600 file, never logged) is the tree's best shape and
+  E-093's model.
+- The defects are shape, not leaks: (55) root `.env.example` is a Runa fossil —
+  `~/.runa/secrets/runa.env`, a dozen provider/bridge keys, **zero consumers in
+  src/ember** (core's true env surface: `OLLAMA_HOST` + `EMBER_WELL_PASSWORD`)
+  → E-033; (56) config fragmentation, ≥7 shapes, astrology none → E-033/E-037;
+  (57) synthetic fixtures are scanner-indistinguishable — discipline item for
+  E-187; (58) CloakBrowser's URL-embedded proxy credentials are a vendored
+  shape Ember must never adopt → E-178. The known-accounts identifier ledger
+  was re-verified (no credential values) and stays under docket 48 / Volmarr's
+  word, not renumbered.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded;
+  TMPDIR on the workspace overlay — the VM's 512 MB /tmp was full, nothing
+  deleted): **546 passed, 6 failed, 12 skipped** — identical to the opening
+  baseline. Doc-only slice, no code touched, no README touched. First slice
+  pushed under Volmarr's 2026-10-31 standing go-ahead (fetch + remote-diff
+  first, ls-remote verified — see git log / remote head).
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -467,4 +501,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-010 DONE (2026-10-31) — the Hamr verification plan: every Ph1–17 claim mapped to its proving artefact + method + environment (runner-only counts, symbol-existence rule); Phase 6 has no claim anywhere, Phase 14 no COMPLETE artefact, Phase 17 a vision with no .vrm in tree, MaterialForge/CollisionForge/PoseLibrary absent as named, Ph15 CI promotion check false in-tree, count spine self-contradictory vs E-005; execution bucketed to E-138/E-139/E-140; 8 new docket items (38–45), filed at docs/audit/E-010_HAMR_VERIFICATION_PLAN.md.
 - E-011 DONE (2026-10-31) — the two-Kistas boundary doc: toaster-Kista (in-tree, v2.0.0, Fernet vault.json.enc, 14 entry types, zero root consumers) vs ai-folder Kista (purplelongship, standalone GitHub line, Runa/Hermes custody, Heimdall's vault) separated with 8 binding custody rules; 6 conflation hazards found (default ~/.hermes vault home in code, Verdandi's third vault.db shape, tests judging the ~/.hermes copy — re-proven 146 passed / 3 failed, known-accounts ledger in-tree, Yggdrasil aspirational shape, shared v2.0 label); ai-folder side graded RECORDED not MEASURED; 5 new docket items (46–50), filed at docs/audit/E-011_TWO_KISTAS_BOUNDARY.md.
 - E-012 DONE (2026-10-31) — the two-memories census: mempalace (verbatim archive, Chroma+ONNX, 59.2 MB, MCP 30 tools) vs mimir-well (living SQLite memory, decay/validity/guard, 638 KB, FTS5 only); shape-overlap with zero shared code/format; NEITHER consumed by the core (its own Brunnr Well is the third memory); in-tree consumers Verdandi check (path agrees) + bifrost bridge (Hermes path — three Mímir DB defaults, docket 51); UNWIRED mempalace line stale (52); suites re-proven mimir 350/6 (item 10 re-proven, 53; first-banked 356/0 figure corrected same day) and mempalace 1712/14/0 file-verified (E-005 bulk environment-shaped, 54; first-banked 1669/90/39 corrected same day), filed at docs/audit/E-012_TWO_MEMORIES_CENSUS.md.
-- E-013 next — Config & secrets census.
+- E-013 DONE (2026-10-31) — config & secrets census: no real credential in any plain file (all high-confidence hits classified fixtures/placeholders/false positives over 2,754 tracked text files); core Well-secret resolver (env → keyring → mode-600 file) is the tree's model shape; `.env.example` proven a Runa fossil with zero src consumers (docket 55); ≥7 config shapes across members (56); scanner-indistinguishable synthetic fixtures (57); CloakBrowser URL-embedded proxy credentials as a never-adopt boundary (58); known-accounts ledger re-verified, stays docket 48, filed at docs/audit/E-013_CONFIG_SECRETS_CENSUS.md.
+- E-014 next — Dead/duplicate census.
