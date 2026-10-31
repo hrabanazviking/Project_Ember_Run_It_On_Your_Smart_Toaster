@@ -2968,3 +2968,8 @@ Top-level members present (size / file count, working tree excl. .git):
   `~/workspace/.verify-tmp/ember-e068/gate/`. No README touched.
 - E-069 next — ordering & replay: events replay deterministically for
   debugging (fixtures).
+- E-068 push: banking commit fbbcae9 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 95cfa79, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 7448d2d)
+  — remote moved 95cfa79 → fbbcae9, verified via ls-remote (remote head =
+  fbbcae99b0e26a6acf049c97e7565c805026df0d = local HEAD at push time).
