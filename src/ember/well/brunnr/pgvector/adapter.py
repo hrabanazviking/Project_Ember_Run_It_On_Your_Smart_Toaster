@@ -419,6 +419,33 @@ class PgVectorBrunnr:
             raise BrunnrError("add_episode insert returned no row id")
         return int(row[0])
 
+    def recent_episodes(self, limit: int) -> list[Episode]:
+        """The newest ``limit`` episodes, oldest first (E-021).
+
+        The reader half of the episode store — before E-021 episodes
+        were write-only (docket 81) and conversation history never
+        survived a restart.
+        """
+        if limit <= 0:
+            return []
+        try:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    f"""
+                    SELECT id, operator_input, ember_reply,
+                           cited_chunk_ids::text, funi_model,
+                           well_disconnected, started_at, completed_at
+                    FROM {self._qualified('episodes')}
+                    ORDER BY id DESC
+                    LIMIT %s
+                    """,
+                    (limit,),
+                )
+                rows = cur.fetchall()
+        except Exception as exc:
+            raise BrunnrError(f"recent_episodes failed: {exc}") from exc
+        return [_row_to_episode(row) for row in reversed(rows)]
+
     # ------------------------------------------------------------- reads
 
     def get_document(self, document_id: int) -> Document:
@@ -898,6 +925,31 @@ def _classify_operational_error(
         reason=DisconnectReason.UNKNOWN,
         since=_now_utc(),
         detail=detail,
+    )
+
+
+def _row_to_episode(row: tuple) -> Episode:
+    raw_cited = row[3]
+    if raw_cited is None:
+        cited: list = []
+    elif isinstance(raw_cited, str):
+        try:
+            cited = json.loads(raw_cited)
+        except json.JSONDecodeError as exc:
+            raise SchemaError(
+                f"episode {row[0]} has invalid cited_chunk_ids json: {exc}"
+            ) from exc
+    else:
+        cited = list(raw_cited)
+    return Episode(
+        operator_input=row[1],
+        ember_reply=row[2],
+        cited_chunk_ids=tuple(int(c) for c in cited),
+        funi_model=row[4] or "",
+        well_disconnected=bool(row[5]),
+        started_at=row[6],
+        completed_at=row[7],
+        id=int(row[0]),
     )
 
 

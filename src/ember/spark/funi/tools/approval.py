@@ -9,9 +9,10 @@ Two surfaces:
    prompter.
 
 2. :class:`StdinApprovalPrompter` — the interactive surface for
-   ``PER_CALL`` decisions. Reads y/n/always from a ``TextIO`` and
-   writes prompts to another ``TextIO``. Munnr (Phase 16) wires its
-   stdin/stdout through this; tests inject ``io.StringIO`` instances.
+   ``PER_CALL`` decisions. Writes E-027's plain-language prompt to
+   a ``TextIO`` and reads the operator's answer from another.
+   Munnr (Phase 16) wires its stdin/stdout through this; tests
+   inject ``io.StringIO`` instances.
 
 Policy resolution is deliberately separate from the prompter so the
 test surface stays small. The decision tree in :func:`resolve` is the
@@ -72,15 +73,19 @@ class ApprovalPrompter(Protocol):
 
 
 class StdinApprovalPrompter:
-    """Read y/n/always from a ``TextIO``.
+    """Ask the operator, in plain words, from a ``TextIO``.
 
-    Default stdin / stdout / stderr are used unless an injected pair is
-    given. The renderer is intentionally minimal — Phase 16's Munnr
-    integration replaces the prompt body with one that uses
-    ``render.render_tool_call_proposal`` instead.
+    The prompt body is E-027's plain-language proposal
+    (:func:`ember.spark.funi.tools.plain.render_plain_proposal`):
+    what Ember wants to do, what it can and cannot reach, the
+    details it was given, and the choices with their scopes spelled
+    out. Only the choices actually offered for this call are valid
+    answers — ``always`` ("don't ask again while we're chatting")
+    is offered only when the E-026 gate would honour it.
+
+    Default stdin / stdout are used unless an injected pair is
+    given.
     """
-
-    _VALID: tuple[PromptAnswer, ...] = ("y", "n", "always")
 
     def __init__(
         self,
@@ -96,12 +101,19 @@ class StdinApprovalPrompter:
     ) -> PromptAnswer:
         import sys  # noqa: PLC0415 — only loaded when prompter is actually used
 
+        from ember.spark.funi.tools.plain import (  # noqa: PLC0415
+            offered_choices,
+            render_plain_proposal,
+        )
+
         stdin = self._stdin if self._stdin is not None else sys.stdin
         stdout = self._stdout if self._stdout is not None else sys.stdout
 
-        body = _render_proposal(descriptor, call)
-        stdout.write(body)
-        stdout.write("approve this call? [y/n/always] ")
+        choices = offered_choices(descriptor, call)
+        valid = tuple(choice.answer for choice in choices)
+
+        stdout.write(render_plain_proposal(descriptor, call))
+        stdout.write(f"Your answer ({'/'.join(valid)}): ")
         stdout.flush()
 
         # Read a single line; trim. Default to "n" on EOF — safer to
@@ -110,29 +122,25 @@ class StdinApprovalPrompter:
         if not raw:
             return "n"
         answer = raw.strip().lower()
-        if answer in self._VALID:
+        if answer in valid:
             return answer  # type: ignore[return-value]
+        if answer == "always":
+            # The person asked for a remembered grant this call
+            # cannot carry (the prompt body said why). Never pretend
+            # it was remembered: say plainly that it counts as a
+            # yes for this once only, and return exactly that.
+            stdout.write(
+                "That choice can't be remembered for this kind of "
+                "request, so I'll count it as 'y' — yes for this "
+                "once only.\n"
+            )
+            stdout.flush()
+            return "y"
         # Unknown reply → refuse. Don't loop; Munnr re-prompts at the
         # next REPL turn if Funi proposes again.
         stdout.write(f"unrecognised answer {answer!r}; treating as 'n'\n")
         stdout.flush()
         return "n"
-
-
-def _render_proposal(descriptor: ToolDescriptor, call: ToolCall) -> str:
-    """Minimal terminal rendering — Phase 16 supersedes via render.py."""
-    lines = [
-        "",
-        f"tool proposal: {descriptor.name}",
-        f"  description: {descriptor.description}",
-        "  arguments:",
-    ]
-    for name, value in call.arguments.items():
-        redacted = name in descriptor.redacted_arg_names
-        shown = "<redacted>" if redacted else repr(value)
-        lines.append(f"    {name}: {shown}")
-    lines.append("")
-    return "\n".join(lines)
 
 
 # --------------------------------------------------------------------- #
@@ -146,58 +154,86 @@ def resolve(
     config_overrides: Mapping[str, ApprovalPolicy] | None = None,
     session_standing: frozenset[str] | None = None,
     standing_trust_all: bool = False,
+    arguments: Mapping[str, object] | None = None,
 ) -> ApprovalDecision:
     """Decide whether a tool call needs an interactive prompt.
 
-    Resolution order per ADR 0011 §2.4:
+    Resolution order per ADR 0011 §2.4, as amended by E-026:
 
-    1. ``descriptor.required_approval == FORBIDDEN`` →
-       ``FORBIDDEN_BY_REGISTRY`` (cannot be overridden by config).
-    2. ``standing_trust_all=True`` → every ``PER_CALL`` becomes
-       ``AUTO_APPROVED`` (operator's "trust everything" knob).
-    3. Descriptor says ``STANDING`` → ``AUTO_APPROVED`` (unless config
+    1. ``descriptor.required_approval == FORBIDDEN``, or a config
+       override of ``FORBIDDEN`` for this tool →
+       ``FORBIDDEN_BY_REGISTRY``. The operator's *specific* refusal
+       beats every blanket mechanism — in particular it beats
+       ``standing_trust_all`` (before E-026 the trust knob was
+       checked first and silently overrode a config ``forbidden``).
+    2. The E-026 gate (``ember.spark.funi.tools.permissions``): a
+       tool whose access class is dangerous or unspecified, or a
+       call carrying a truthy guarded argument, is never
+       auto-approved — it prompts per call whatever the descriptor,
+       the session, or ``standing_trust_all`` say.
+    3. ``standing_trust_all=True`` → ``AUTO_APPROVED`` (operator's
+       "trust everything" knob, within the gate).
+    4. Descriptor says ``STANDING`` → ``AUTO_APPROVED`` (unless config
        downgrades to ``PER_CALL`` — descriptor is the floor on safety,
        not on permissiveness).
-    4. ``session_standing`` carries the tool's name → ``AUTO_APPROVED``
+    5. ``session_standing`` carries the tool's name → ``AUTO_APPROVED``
        (operator typed ``always`` earlier in this session).
-    5. Otherwise → ``PER_CALL``, caller must prompt.
+    6. Otherwise → ``PER_CALL``, caller must prompt.
 
     Config can downgrade ``STANDING`` to ``PER_CALL`` (more strict);
     config cannot upgrade ``PER_CALL`` to ``STANDING``. Pin the safer
-    direction.
+    direction. ``arguments`` is the call's argument mapping, used
+    only for the guarded-argument gate; callers that omit it get
+    the pre-E-026 behaviour for that one check (the access gate
+    still applies).
     """
     overrides = config_overrides or {}
     session = session_standing or frozenset()
+    override = overrides.get(descriptor.name)
 
-    # 1. FORBIDDEN is the absolute floor.
+    # 1. FORBIDDEN is the absolute floor — descriptor or the
+    #    operator's per-tool config refusal, checked before any
+    #    blanket trust mechanism.
     if descriptor.required_approval is ApprovalPolicy.FORBIDDEN:
         return ApprovalDecision(ApprovalOutcome.FORBIDDEN_BY_REGISTRY)
+    if override is ApprovalPolicy.FORBIDDEN:
+        return ApprovalDecision(ApprovalOutcome.FORBIDDEN_BY_REGISTRY)
 
-    # 2. Operator's global trust-everything knob.
+    # 2. The E-026 gate: dangerous/unspecified access, or a truthy
+    #    guarded argument in this call, always prompts per call.
+    from ember.spark.funi.tools.permissions import (  # noqa: PLC0415
+        guarded_argument_in_use,
+        may_auto_approve,
+    )
+
+    if not may_auto_approve(descriptor) or (
+        guarded_argument_in_use(descriptor, arguments) is not None
+    ):
+        return ApprovalDecision(
+            ApprovalOutcome.APPROVED_THIS_CALL,  # placeholder — set after prompt
+            needs_prompt=True,
+        )
+
+    # 3. Operator's global trust-everything knob (gated above).
     if standing_trust_all:
         return ApprovalDecision(ApprovalOutcome.AUTO_APPROVED)
 
-    # 3. Compute the effective policy:
+    # 4. Compute the effective policy:
     #    - start with descriptor's required_approval
     #    - config can downgrade STANDING → PER_CALL (more strict), but
     #      not upgrade PER_CALL → STANDING.
     effective = descriptor.required_approval
-    override = overrides.get(descriptor.name)
     if override is ApprovalPolicy.PER_CALL and effective is ApprovalPolicy.STANDING:
         effective = ApprovalPolicy.PER_CALL
-    # Forbidding in config is honored too (paranoia mode for an
-    # otherwise-STANDING tool).
-    if override is ApprovalPolicy.FORBIDDEN:
-        return ApprovalDecision(ApprovalOutcome.FORBIDDEN_BY_REGISTRY)
 
     if effective is ApprovalPolicy.STANDING:
         return ApprovalDecision(ApprovalOutcome.AUTO_APPROVED)
 
-    # 4. Session-level "always" override.
+    # 5. Session-level "always" override.
     if descriptor.name in session:
         return ApprovalDecision(ApprovalOutcome.AUTO_APPROVED)
 
-    # 5. Per-call prompt required.
+    # 6. Per-call prompt required.
     return ApprovalDecision(
         ApprovalOutcome.APPROVED_THIS_CALL,  # placeholder — set after prompt
         needs_prompt=True,

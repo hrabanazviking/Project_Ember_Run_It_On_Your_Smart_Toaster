@@ -152,18 +152,49 @@ tools:
 ```
 
 That's it for "I want tools, I'll approve each call". When you run
-`ember chat` you'll see:
+`ember chat` you'll see the proposal twice over: once as a short
+technical record, and once as the question itself, asked in plain
+words (E-027):
 
 ```
 [tool proposal] read_local_file  (call abc12345)
   description: Read a UTF-8 text file from the operator's home directory...
+  in plain words: Read one of your files: /home/you/notes/runes.md.
+  what it can reach: It reads your own information, on this computer only. ...
   arguments:
     path: '/home/you/notes/runes.md'
-approve this call? [y/n/always]
+
+Ember is asking your permission.
+
+What Ember wants to do:
+  Read one of your files: /home/you/notes/runes.md.
+
+What this can and cannot do:
+  It reads your own information, on this computer only. It cannot
+  change or delete anything, and nothing is sent anywhere.
+
+The details Ember was given:
+  path: '/home/you/notes/runes.md'
+
+Your choices:
+  y — Yes — just this once.
+  always — Yes — and don't ask me again about this tool while
+         we're chatting. (Forgotten when the chat ends; it is
+         never forever.)
+  n — No — don't do it.
+Your answer (y/always/n):
 ```
 
-Answer `y` to approve once, `n` to refuse, or `always` to grant
-session-level standing trust to that tool (resets at restart).
+Answer `y` to approve once, or `n` to refuse. Where `always` is
+offered, it means *while we're chatting* — Ember stops asking
+about that tool until you close the chat, and forgets it then; no
+chat answer ever grants anything forever. For actions that leave
+the computer, change things, run something, happen in another
+program, or widen a tool's reach (fetching a private address on
+your home network is the first-party example), `always` is *not*
+offered — the prompt says why, Ember asks every time, and typing
+`always` anyway counts as a yes for that once only, with that
+stated on screen.
 
 **Verification:** `ember --allow-tools chat` always shows tools
 enabled regardless of config (good for one-off testing).
@@ -326,8 +357,11 @@ ember chat
 ```
 
 **Verification:** unplug the Pi's network; `ember chat` continues to
-work as long as Ollama + sqlite_vec are local. `ember doctor` shows
-both realms ok.
+work as long as Ollama + sqlite_vec are local — a full turn, with
+replies remembered, is the proof (E-029). `ember doctor` shows both
+realms ok *when the sqlite_vec extra is installed*; in a bare
+stdlib-only install doctor cannot open the default Well at all
+(docket 13), so judge by the chat turn there.
 
 **What could go wrong:**
 
@@ -453,9 +487,14 @@ ember doctor   # verify
 ember chat
 ```
 
-**Verification:** `ember doctor` on the new host shows both realms ok;
-your conversation history is intact (visible by `ember chat` then
-asking Ember to recall something from before).
+**Verification:** `ember doctor` on the new host shows both realms ok.
+What provably carries over is your Ember's identity and settings, your
+secrets, the Well's ingested documents — Ember can search and cite
+those on the new machine exactly as on the old one — and your past
+conversations: since E-021 Ember reads its stored conversation back
+when a new chat starts, keeping as much as your machine's history
+budget allows and summarising the older turns it had to trim, rather
+than pretending they never happened.
 
 **What could go wrong:**
 
@@ -466,6 +505,52 @@ asking Ember to recall something from before).
 - **Permission errors after `tar`** — your tar didn't preserve
   permissions. Re-apply: `chmod 700 ~/.ember/secrets ~/.ember`
   and `chmod 600 ~/.ember/secrets/*`.
+
+---
+
+## What Ember is tied to — and what it is not
+
+Ember is described as a *small, tethered* companion. Here is what
+"tethered" means, in plain words. (The full specification, with the
+code behind every claim, is `docs/architecture/E-020_TETHERING_SPEC.md`.)
+
+**Tied to you.** Everything that makes this Ember *yours* lives in
+one folder on your machine: `~/.ember/`. It holds the name and role
+you chose for Ember, your settings file, your secrets, and the audit
+log of anything its tools did. Ember has no account with anyone, no
+sign-in, and no profile in any cloud. If you copy that folder, you
+have copied your Ember. If you delete it, that Ember is gone.
+
+**Tied to this machine.** By default Ember thinks with a model
+program (Ollama) running on the same machine, and reads with a
+matching service on the same machine. Out of the box, Ember makes no
+calls off your machine at all. You *can* lengthen this tie — pointing
+Ember at a model on a bigger machine in your house is Recipe 1 — but
+only by editing your settings yourself. Ember never moves its own
+thinking somewhere else on its own, and if it cannot reach its model
+at all, it will not start and pretend otherwise: it tells you why
+and stops.
+
+**Tied to its memory.** What Ember knows and what it has been told
+lives in its Well — by default a single file at `~/.ember/well/store.db`
+on your machine, or, if you choose, a shared Well on another machine
+in your house (Recipe 2). The connection to the Well is checked,
+retried briefly if it stumbles, and reported honestly: if the Well
+cannot be reached, Ember says so at the top of its replies, answers
+from what it can do alone, and does not invent the rest. Since E-021
+Ember also *reads its conversations back*: when a new chat starts it
+loads the stored turns from the Well, keeps the newest ones that fit
+your profile's history budget, and carries a short summary of the
+older ones it trimmed. One limit remains: turns from a session whose
+Well was disconnected are not yet journalled for later — that is
+known, tracked work (E-031).
+
+**Not tied to anything else.** No company account, no subscription,
+no phone-home. Tools that reach beyond conversation are off unless
+you switch them on (Recipe 3). Your Ember runs where you put it,
+answers to you, and its ties are exactly the three above — each one
+yours to cut by removing a folder, stopping a local service, or
+deleting a file.
 
 ---
 

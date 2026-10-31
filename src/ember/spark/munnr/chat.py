@@ -13,12 +13,40 @@ a banner. The Episode is written locally.
 
 * **Phase 11 (ADR 0009 part 2)** wired the streaming consumer — see the
   ``_run_streaming_turn`` helper. Ctrl-C tags partial replies.
+* **E-021** loads persisted history from the Well at startup and
+  windows it per turn under the profile-aware token budget
+  (``ember.spark.funi.windowing``), with dropped turns summarised
+  through the summarisation hook rather than silently forgotten.
+* **E-025** resolves the session's persona (``ember.spark.persona``),
+  starts from that persona's own remembered turns only, assembles
+  each turn under that persona, and tags every new Episode with
+  its id — one persona's conversation never rides in another's.
 * **Phase 16 (ADR 0011 part 3)** wires the tool-use loop. When
   ``config.tools.enabled`` is True and Funi produces ``tool_calls`` in
   the final stream chunk, this module: validates arguments → resolves
   approval → optionally prompts → executes → audits → folds each
   :class:`ToolReply` back into the next turn's context. The loop is
   bounded by ``_MAX_TOOL_TURNS`` per operator input.
+* **E-028** completes the interruption shape: the companion can be
+  talked over at *every* waiting point — at the prompt, during
+  retrieval, mid-stream, at a tool-approval prompt, during tool
+  execution, and inside a non-streaming ``complete()`` — and the
+  session stays coherent (see
+  ``docs/architecture/E-028_STREAMING_INTERRUPTION.md``). E-028 also
+  closes docket 83: the non-streaming path now executes returned
+  ``tool_calls`` through the same bounded loop instead of dropping
+  them.
+* **E-030** completes the error-honesty shape: a failure the
+  operator cannot see is a lie of omission, so the three silent
+  degradations are now spoken — a history load that fails says so
+  at startup, a Well search that fails mid-session says so for
+  that turn *and* marks the turn ungrounded in the prompt and the
+  Episode (docket 86), and an Episode that cannot be saved says
+  so at that moment (docket 85). Replies that ended in an error
+  or were cut off for length are persisted *with* their tag, so
+  a failed or partial reply never poses as a completed answer
+  in the remembered history (see
+  ``docs/architecture/E-030_ERROR_HONESTY.md``).
 """
 
 from __future__ import annotations
@@ -34,11 +62,12 @@ from typing import TYPE_CHECKING, TextIO
 from ember.schemas.chunks import RetrievalHit
 from ember.schemas.config import EmberConfig
 from ember.schemas.episode import Episode
-from ember.schemas.errors import BrunnrError, Disconnected
+from ember.schemas.errors import Disconnected
 from ember.schemas.funi import (
     ContextItem,
     ContextKind,
     FinishReason,
+    FuniReply,
     Unavailable,
 )
 from ember.schemas.stream import FuniStreamChunk
@@ -51,6 +80,7 @@ from ember.schemas.tool import (
 )
 from ember.spark.funi import handle as funi_handle
 from ember.spark.funi import prompt as funi_prompt
+from ember.spark.funi.windowing import window_history
 from ember.spark.funi.tools import (
     AuditLog,
     StdinApprovalPrompter,
@@ -62,6 +92,8 @@ from ember.spark.funi.tools import (
 )
 from ember.spark.hjarta.identity import has_identity, load_identity
 from ember.spark.munnr import render
+from ember.spark.persona import episodes_for_persona, resolve_persona
+from ember.spark.persona.core import PersonaError
 from ember.thread import strengr
 from ember.well.smidja.embed_client import OllamaEmbedClient
 
@@ -72,7 +104,11 @@ if TYPE_CHECKING:
 
 
 _DEFAULT_K = 5
-_DEFAULT_EPISODE_WINDOW = 5
+# How much stored history to load at startup. The window (profile
+# token budget + episode cap, E-021) trims what actually rides in the
+# prompt; loading a generous multiple of the largest profile cap
+# keeps the summarisation hook fed without unbounded memory growth.
+_HISTORY_LOAD_LIMIT = 64
 _EXIT_COMMANDS = frozenset({"/exit", "/quit", "/q"})
 # Bound the propose→execute→follow-up cycle so a model that loops on
 # tool calls can't lock up the REPL. Eight is plenty for any real
@@ -124,6 +160,19 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         load_identity(config_root) if has_identity(config_root) else config.identity
     )
 
+    # Persona (E-025): who the companion is this session. An
+    # explicitly configured persona that cannot load stops the
+    # session with the reason named — never a silent swap to a
+    # different companion. With no persona configured and no
+    # persona files, this is the identity above, projected onto
+    # the default persona unchanged.
+    try:
+        persona = resolve_persona(config_root, config.personas.active or None)
+    except PersonaError as exc:
+        stdout.write(f"Persona could not be loaded: {exc}\n")
+        return 1
+    identity = persona.identity
+
     # Open Funi first — without a reasoner, the REPL has nothing to do.
     funi_result = open_funi(config.funi)
     if isinstance(funi_result, Unavailable):
@@ -165,14 +214,43 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         )
     stdout.flush()
 
+    # History (E-021): episodes persisted in the Well are loaded back
+    # so the conversation survives a restart (docket 81). A failing
+    # reader degrades to an in-session-only history, never a crash —
+    # and since E-030 it degrades *loudly*: before E-030 the failure
+    # was suppressed in silence and the operator was left believing
+    # the companion remembered when it could not load its memory.
     episodes: list[Episode] = []
+    if brunnr is not None:
+        try:
+            # Per-persona separation (E-025): this persona's
+            # session starts from its own remembered turns only.
+            episodes = episodes_for_persona(
+                brunnr.recent_episodes(_HISTORY_LOAD_LIMIT), persona.id
+            )
+        except Exception as exc:
+            stdout.write(
+                "[warning: your saved conversations could not be loaded "
+                f"({type(exc).__name__}: {exc}); this session starts "
+                "without them — they have not been deleted.]\n"
+            )
+            stdout.flush()
+            episodes = []
     streaming = config.funi.streaming
 
     try:
         while True:
             stdout.write("> ")
             stdout.flush()
-            line = stdin.readline()
+            try:
+                line = stdin.readline()
+            except KeyboardInterrupt:
+                # E-028: Ctrl-C at the prompt talks over an empty
+                # line, not over the session — re-prompt. Leaving is
+                # /exit or EOF, never an accidental interrupt.
+                stdout.write("\n")
+                stdout.flush()
+                continue
             if not line:
                 break  # EOF
             text = line.rstrip("\n").strip()
@@ -182,12 +260,38 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 break
 
             started = datetime.now(tz=UTC)
-            hits = _retrieve(text, brunnr, embedder)
+            try:
+                hits, retrieval_failure = _retrieve(text, brunnr, embedder)
+            except KeyboardInterrupt:
+                # E-028: talked over during retrieval — before any
+                # reply existed. The turn is abandoned (nothing is
+                # persisted; there is no partial reply to tag) and
+                # the session continues at the next prompt.
+                stdout.write("\n" + render.INTERRUPTED_TAG + "\n")
+                stdout.flush()
+                continue
+            # E-030 (docket 86): a search that failed mid-session is
+            # not an honestly empty Well. The operator is told for
+            # this turn, and the turn is ungrounded in fact: the
+            # prompt carries the do-not-invent instruction and the
+            # Episode is flagged well_disconnected, exactly as an
+            # open-time disconnect turn is.
+            turn_ungrounded = disconnect is not None or retrieval_failure is not None
+            if retrieval_failure is not None:
+                stdout.write(
+                    "[well: search failed for this message "
+                    f"({retrieval_failure}); the reply will not be "
+                    "grounded in your documents]\n"
+                )
+                stdout.flush()
+            windowed = window_history(episodes, config.conversation)
             context = funi_prompt.assemble(
                 identity=identity,
-                episodes=episodes[-_DEFAULT_EPISODE_WINDOW:],
+                episodes=windowed.episodes,
                 hits=hits,
-                well_disconnected=disconnect is not None,
+                well_disconnected=turn_ungrounded,
+                summary=windowed.summary,
+                persona=persona,
             )
 
             if streaming:
@@ -206,49 +310,82 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     ember_reply=final_text,
                     cited_chunk_ids=tuple(h.chunk_id for h in hits),
                     funi_model=model_id_seen or funi.model_id,
-                    well_disconnected=disconnect is not None,
+                    well_disconnected=turn_ungrounded,
                     started_at=started,
                     completed_at=completed,
+                    persona_id=persona.id,
                 )
             else:
-                # Non-streaming opt-out path. Tool use here is intentionally
-                # one-shot: we honour tool_calls but do not loop, since the
-                # legacy path is meant to be the "give me a single blob"
-                # mode for piped callers.
-                reply = funi.complete(
-                    text,
-                    context,
-                    tools=tuple(tool_ctx.descriptors) if tool_ctx else None,
+                # Non-streaming opt-out path ("give me a single blob"
+                # mode for piped callers). E-028 (docket 83): returned
+                # tool_calls are executed through the same bounded
+                # loop as the streaming path — before E-028 they were
+                # silently dropped while the old comment claimed they
+                # were honoured. Interruption inside complete() or a
+                # tool round yields the tagged partial, never a crash.
+                reply, was_interrupted = _drive_complete_turn_with_tools(
+                    funi=funi,
+                    operator_input=text,
+                    initial_context=context,
+                    disconnect=disconnect,
+                    stdout=stdout,
+                    tool_ctx=tool_ctx,
                 )
                 completed = datetime.now(tz=UTC)
-                rendered = render.render_reply(
-                    reply,
-                    hits=hits,
-                    well_disconnected=disconnect is not None,
-                )
-                stdout.write(rendered + "\n")
-                stdout.flush()
+                if was_interrupted:
+                    final_text = _tag_interrupted(reply.text if reply else "")
+                    stdout.write(final_text + "\n")
+                    stdout.flush()
+                    episode_text = final_text
+                    episode_model = reply.model_id if reply else funi.model_id
+                else:
+                    assert reply is not None  # noqa: S101 — driver invariant
+                    rendered = render.render_reply(
+                        reply,
+                        hits=hits,
+                        well_disconnected=disconnect is not None,
+                    )
+                    stdout.write(rendered + "\n")
+                    stdout.flush()
+                    # E-030: the rendered reply already carries its
+                    # error / truncation tag on screen; the persisted
+                    # Episode carries it too, so the failed or partial
+                    # reply never poses as a completed answer when a
+                    # later session reads the history back.
+                    episode_text = _tag_failed_finish(reply.text, reply.finish_reason)
+                    episode_model = reply.model_id
                 episode = Episode(
                     operator_input=text,
-                    ember_reply=reply.text,
+                    ember_reply=episode_text,
                     cited_chunk_ids=tuple(h.chunk_id for h in hits),
-                    funi_model=reply.model_id,
-                    well_disconnected=disconnect is not None,
+                    funi_model=episode_model,
+                    well_disconnected=turn_ungrounded,
                     started_at=started,
                     completed_at=completed,
+                    persona_id=persona.id,
                 )
 
             episodes.append(episode)
             if brunnr is not None:
                 # Persistence failure is recoverable — we keep serving
                 # the operator with the in-memory episode window.
-                # Broaden beyond BrunnrError to also swallow lower-
+                # Broaden beyond BrunnrError to also catch lower-
                 # level backend exceptions (sqlite3.Error, psycopg.Error)
                 # that the adapter might let through on a stale
                 # connection; the cost of losing one Episode is less
-                # than crashing the REPL.
-                with contextlib.suppress(Exception):
+                # than crashing the REPL. E-030 (docket 85): the
+                # failure is caught, never hidden — before E-030 it
+                # was suppressed in silence and a session could
+                # believe it was remembering when the store was not.
+                try:
                     brunnr.add_episode(episode)
+                except Exception as exc:
+                    stdout.write(
+                        "[warning: this turn could not be saved to the "
+                        f"Well ({type(exc).__name__}: {exc}); it will be "
+                        "remembered only until this session ends.]\n"
+                    )
+                    stdout.flush()
     finally:
         # Close each handle independently so a raise from one doesn't
         # leak the other. Neither adapter's close() is documented to
@@ -427,16 +564,32 @@ def _drive_turn_with_tools(  # noqa: PLR0913 — one whole turn naturally fans i
         if turn.interrupted:
             final_text = _tag_interrupted(turn.text)
             break
-        final_text = turn.text
+        # E-030: an error or length finish is tagged in the text
+        # that gets persisted, not only on screen, so the stored
+        # Episode never reads back as a completed answer. A later
+        # tool-loop iteration overwrites this with its own text.
+        final_text = _tag_failed_finish(turn.text, turn.finish_reason)
 
         if not turn.tool_calls or tool_ctx is None:
             break
 
-        round_outcome = _run_tool_round(
-            calls=turn.tool_calls,
-            tool_ctx=tool_ctx,
-            stdout=stdout,
-        )
+        try:
+            round_outcome = _run_tool_round(
+                calls=turn.tool_calls,
+                tool_ctx=tool_ctx,
+                stdout=stdout,
+            )
+        except KeyboardInterrupt:
+            # E-028: talked over while approving or executing a tool
+            # call. Calls already executed in this round stand (they
+            # were emitted + audited as they completed); no further
+            # call runs, no follow-up generation happens, and the
+            # streamed text is persisted with the interrupt tag —
+            # the same shape as a mid-stream interrupt.
+            stdout.write("\n" + render.INTERRUPTED_TAG + "\n")
+            stdout.flush()
+            final_text = _tag_interrupted(turn.text)
+            break
         context.extend(round_outcome.context_extension)
         for promoted in round_outcome.session_added:
             tool_ctx.session_standing.add(promoted)
@@ -449,6 +602,76 @@ def _drive_turn_with_tools(  # noqa: PLR0913 — one whole turn naturally fans i
         stdout.flush()
 
     return final_text, model_id_seen
+
+
+def _drive_complete_turn_with_tools(  # noqa: PLR0913 — mirrors the streaming driver's shape
+    *,
+    funi: FuniHandle,
+    operator_input: str,
+    initial_context: Sequence[ContextItem],
+    disconnect: Disconnected | None,
+    stdout: TextIO,
+    tool_ctx: _ToolContext | None,
+) -> tuple[FuniReply | None, bool]:
+    """Drive one non-streaming turn, looping on tool_calls (E-028).
+
+    Returns ``(reply, interrupted)``. ``reply`` is the last Funi
+    reply produced (None only when the *first* ``complete()`` was
+    interrupted before returning anything). ``interrupted`` is True
+    when the operator talked over the turn — inside ``complete()``,
+    at a tool-approval prompt, or during tool execution — in which
+    case the caller persists ``reply.text`` with the interrupt tag
+    and no further generation or tool call happens.
+
+    Before E-028 (docket 83) this path passed descriptors to
+    ``complete()`` and silently dropped any returned ``tool_calls``.
+    Now a reply carrying calls runs the same propose → approve →
+    execute → feedback round as streaming, bounded by
+    ``_MAX_TOOL_TURNS``. A non-final reply that carries both text
+    and tool calls is rendered before its round runs, mirroring
+    what the streaming operator already saw live.
+    """
+    context: list[ContextItem] = list(initial_context)
+    current_input = operator_input
+    last_reply: FuniReply | None = None
+
+    for iteration in range(_MAX_TOOL_TURNS):
+        tools_arg = tuple(tool_ctx.descriptors) if tool_ctx is not None else None
+        try:
+            reply = funi.complete(current_input, context, tools=tools_arg)
+        except KeyboardInterrupt:
+            return last_reply, True
+        last_reply = reply
+
+        if not reply.tool_calls or tool_ctx is None:
+            return reply, False
+
+        if reply.text:
+            rendered = render.render_reply(
+                reply,
+                hits=(),
+                well_disconnected=disconnect is not None and iteration == 0,
+            )
+            stdout.write(rendered + "\n")
+            stdout.flush()
+
+        try:
+            round_outcome = _run_tool_round(
+                calls=reply.tool_calls,
+                tool_ctx=tool_ctx,
+                stdout=stdout,
+            )
+        except KeyboardInterrupt:
+            return reply, True
+        context.extend(round_outcome.context_extension)
+        for promoted in round_outcome.session_added:
+            tool_ctx.session_standing.add(promoted)
+        current_input = ""
+    else:
+        stdout.write("\n[tool-loop max iterations reached]\n")
+        stdout.flush()
+
+    return last_reply, False
 
 
 def _run_tool_round(
@@ -511,6 +734,10 @@ def _run_tool_round(
             config_overrides=tool_ctx.config_overrides,
             session_standing=frozenset(tool_ctx.session_standing),
             standing_trust_all=tool_ctx.standing_trust_all,
+            # E-026: the call's own arguments feed the guarded-
+            # argument gate (a model-supplied escape hatch such as
+            # fetch_url's allow_private_addresses always prompts).
+            arguments=call.arguments,
         )
         if decision.needs_prompt:
             answer = _safe_prompt(tool_ctx.prompter, stdout, descriptor, call)
@@ -651,6 +878,11 @@ def _safe_prompt(
     A closed-stdin / disconnected-terminal IOError mid-prompt should
     refuse the call rather than crash the loop. The Vow of Sovereignty
     says ambiguity defaults to refusal.
+
+    ``KeyboardInterrupt`` is deliberately NOT caught here (E-028):
+    Ctrl-C at an approval prompt is the operator talking over the
+    whole turn, not answering "n" to one call — it propagates to the
+    turn driver, which ends the turn with the interrupt tag.
     """
     try:
         return prompter.prompt(descriptor, call)
@@ -729,9 +961,6 @@ def _run_streaming_turn(  # noqa: PLR0913 — one open turn naturally takes the 
         stdout.write(render.render_well_disconnected_banner(disconnect) + "\n\n")
         stdout.flush()
 
-    stream: Iterator[FuniStreamChunk] = funi.complete_streaming(
-        prompt, context, tools=tools,
-    )
     chunks_text: list[str] = []
     finish_reason: FinishReason | None = None
     model_id = ""
@@ -740,8 +969,14 @@ def _run_streaming_turn(  # noqa: PLR0913 — one open turn naturally takes the 
     tool_calls: tuple[ToolCall, ...] = ()
     interrupted = False
     last_delta_was_empty = True  # so we don't double-newline an empty body
+    stream: Iterator[FuniStreamChunk] | None = None
 
     try:
+        # E-028: creating the stream is inside the interrupt guard
+        # too — an adapter may do real work (or block) before it
+        # returns its iterator, and Ctrl-C there is still just the
+        # operator talking over this turn.
+        stream = funi.complete_streaming(prompt, context, tools=tools)
         for chunk in stream:
             delta = render.render_stream_chunk(chunk)
             if delta:
@@ -802,13 +1037,56 @@ def _tag_interrupted(partial_text: str) -> str:
     return f"{body} {render.INTERRUPTED_TAG}"
 
 
+def _tag_failed_finish(text: str, finish_reason: FinishReason | None) -> str:
+    """Carry a failed or partial finish into the persisted Episode text.
+
+    E-030: the screen already tags an ERROR finish with
+    ``[ember reported an error]`` and a LENGTH finish with the
+    truncation tag (``render.stream_finish_tag`` / ``render_reply``),
+    but before E-030 the Episode stored the bare text — so a later
+    session reading its history back met the error text, or the
+    cut-off answer, as if Ember had completed the turn. The stored
+    text now carries the same tag the operator saw. Other finishes
+    (STOP, REFUSED — a refusal is a completed act whose text says
+    what it is — TOOL_CALL, None) are stored unchanged.
+    """
+    if finish_reason is FinishReason.ERROR:
+        body = text.strip()
+        if not body:
+            return render.ERROR_TAG
+        return f"{render.ERROR_TAG} {body}"
+    if finish_reason is FinishReason.LENGTH:
+        body = text.rstrip()
+        if not body:
+            return render.TRUNCATED_TAG
+        return f"{body} {render.TRUNCATED_TAG}"
+    return text
+
+
 def _retrieve(
     text: str,
     brunnr: BrunnrHandle | None,
     embedder: OllamaEmbedClient,
-) -> list[RetrievalHit]:
+) -> tuple[list[RetrievalHit], str | None]:
+    """Search the Well for one turn; return ``(hits, failure)``.
+
+    E-030 (docket 86): ``failure`` is a plain ``Type: message``
+    description when the search itself failed, and the caller turns
+    the turn ungrounded *and says so* — before E-030 a
+    :class:`BrunnrError` here yielded no hits and no signal, so a
+    broken search was indistinguishable from an honestly empty
+    Well. The catch is broadened beyond ``BrunnrError`` for the
+    same reason persistence catches broadly: an adapter can let a
+    lower-level backend exception (sqlite3 / psycopg) through on a
+    stale connection, and that failure must be spoken too.
+
+    An embedding failure alone is *not* a retrieval failure: the
+    no-vector degrade falls back to text search, whose hits are
+    real search results. ``KeyboardInterrupt`` is never caught
+    here (it is not an ``Exception``) — E-028's talk-over shape.
+    """
     if brunnr is None:
-        return []
+        return [], None
     try:
         vectors = embedder.embed([text])
     except Exception:
@@ -817,10 +1095,10 @@ def _retrieve(
     qvec = vectors[0] if vectors else None
     try:
         if qvec is not None and len(qvec) == brunnr.embedding_dim:
-            return brunnr.hybrid_search(list(qvec), text, k=_DEFAULT_K)
-        return brunnr.text_search(text, k=_DEFAULT_K)
-    except BrunnrError:
-        return []
+            return brunnr.hybrid_search(list(qvec), text, k=_DEFAULT_K), None
+        return brunnr.text_search(text, k=_DEFAULT_K), None
+    except Exception as exc:
+        return [], f"{type(exc).__name__}: {exc}"
 
 
 __all__ = ["run"]

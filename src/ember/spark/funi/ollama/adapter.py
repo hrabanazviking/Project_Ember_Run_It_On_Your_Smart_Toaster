@@ -29,11 +29,13 @@ from datetime import UTC, datetime
 
 from ember.schemas.config import FuniConfig, FuniRuntime
 from ember.schemas.funi import (
+    BackendCapabilities,
     ContextItem,
     ContextKind,
     FinishReason,
     FuniHealth,
     FuniReply,
+    StreamingMode,
     Unavailable,
     UnavailableReason,
 )
@@ -70,10 +72,32 @@ _OLLAMA_DONE_REASON_TO_FINISH: dict[str, FinishReason] = {
 }
 
 
+# E-022 capability truth for this backend, from the code below:
+# native NDJSON streaming; tool descriptors sent and tool_calls
+# parsed (but whether a model *emits* calls is model-dependent —
+# phi3:mini does not, per FUNI_LOCAL_MODEL_OPTIONS); token counts
+# reported from Ollama's eval counters; RAM use never reported
+# (health() leaves ram_use_bytes None); every ContextKind has a
+# defined translation in _messages_from_context; the backend is
+# reached over an HTTP endpoint (localhost by config default —
+# locality is the config's, not the adapter's).
+OLLAMA_CAPABILITIES = BackendCapabilities(
+    runtime_kind="ollama",
+    streaming=StreamingMode.NATIVE,
+    tool_calls=True,
+    tool_calls_model_dependent=True,
+    token_counts=True,
+    reports_ram_use=False,
+    requires_endpoint=True,
+    context_kinds=tuple(ContextKind),
+)
+
+
 class OllamaFuni:
     """Ollama-backed Funi adapter. Implements :class:`FuniHandle`."""
 
     runtime_kind: str = "ollama"
+    capabilities: BackendCapabilities = OLLAMA_CAPABILITIES
 
     def __init__(
         self,
@@ -457,7 +481,11 @@ def _messages_from_context(
     """
     messages: list[dict[str, object]] = []
     for item in context:
-        if item.kind is ContextKind.SYSTEM or item.kind is ContextKind.CHUNK:
+        if item.kind in (
+            ContextKind.SYSTEM,
+            ContextKind.CHUNK,
+            ContextKind.SUMMARY,
+        ):
             messages.append({"role": "system", "content": item.text})
         elif item.kind is ContextKind.EPISODE:
             op, em = _split_episode(item.text)
@@ -605,4 +633,4 @@ def _parse_tool_calls(raw: object) -> tuple[ToolCall, ...]:
     return tuple(out)
 
 
-__all__ = ["OllamaFuni", "open"]
+__all__ = ["OLLAMA_CAPABILITIES", "OllamaFuni", "open"]

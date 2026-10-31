@@ -40,6 +40,62 @@ funi:
     temperature: 0.7
     top_p: 0.9
     num_predict: 1024
+  # ─── Project Aesir (E-023) ──────────────────────────────────────
+  # To run Ember on Volmarr's own Aesir engine instead, set
+  # `runtime: aesir` above and start Aesir's native service first
+  # (loopback only). The native route holds ONE resident model and
+  # accepts no tool calls; Ember sends the conversation in the
+  # prompt each turn. See docs/architecture/E-023_AESIR_BACKEND.md.
+  # aesir:
+  #   base_url: "http://127.0.0.1:18434"
+  #   # Expected resident model; "" accepts whatever the service
+  #   # reports ready. A mismatch is refused at startup, not swapped.
+  #   model: ""
+  #   # The bearer key's FILE — a reference, never the key itself.
+  #   # Create it with Aesir's keygen; Ember reads it at startup.
+  #   api_key_file: "~/.config/aesir/service.key"
+  #   temperature: 0.7
+  #   top_p: 0.9
+  #   # 256 is the Aesir service's own default reply ceiling; a
+  #   # request may lower but never raise the service's ceiling.
+  #   max_tokens: 256
+
+# ---------------------------------------------------------------------------
+# Cognition — optional ThoughtForge layer (E-024, candidate)
+# MindSpark ThoughtForge can sit above Funi as the companion's
+# cognition layer (its own routing/retrieval/scaffold pipeline).
+# OFF by default and never a silent replacement: Ember's Funi turn
+# stays the mind until you turn this on. The toaster profile cannot
+# afford it at all — the layer refuses there, honestly. ThoughtForge
+# must be installed separately; it is never a core dependency.
+# See docs/architecture/E-024_THOUGHTFORGE_BINDING.md.
+# ---------------------------------------------------------------------------
+# cognition:
+#   enabled: false
+#   provider: thoughtforge
+#   # phone / pi / laptop can afford the layer; toaster cannot.
+#   profile: pi
+#   # ThoughtForge's own state, kept inside Ember's folder so
+#   # custody of the folder is custody of the companion.
+#   memory_dir: "~/.ember/thoughtforge/memory"
+#   db_path: "~/.ember/thoughtforge/knowledge.db"
+#   # Empty/unset → ThoughtForge runs knowledge-only (no model).
+#   # model_path: "~/models/phi-3-mini-q4.gguf"
+
+# ---------------------------------------------------------------------------
+# Personae — who the companion is (E-025)
+# A persona is one JSON file in ~/.ember/personas/<id>.json:
+# {"id": "ember", "name": "Ember", "role": "your small local AI
+# companion", "description": "...", "instructions": "..."}.
+# Each persona remembers only its own conversations. Leave `active`
+# unset to use a default.json persona when you have one, or your
+# Hjarta identity (as the default persona) when you have none.
+# Naming a persona that does not load is an error, never a quiet
+# swap to a different companion. See
+# docs/architecture/E-025_PERSONA_CORE.md.
+# ---------------------------------------------------------------------------
+# personas:
+#   active: "ember"
 
 # ---------------------------------------------------------------------------
 # Strengr — the tether
@@ -115,7 +171,7 @@ smidja:
 # ---------------------------------------------------------------------------
 tools:
   enabled: false                # set true to allow tool-use during chat
-  standing_trust: false         # set true to auto-approve every PER_CALL tool (still audited)
+  standing_trust: false         # set true to auto-approve PER_CALL tools in a read-only access class (still audited); dangerous-class tools (e.g. fetch_url, network) and guarded arguments always prompt anyway (E-026)
   allow_private_addresses: false  # affects fetch_url; RFC1918/loopback refused by default
   # Per-tool approval override. Operator can downgrade STANDING → per_call
   # (more strict). Operator cannot upgrade per_call → STANDING — descriptor

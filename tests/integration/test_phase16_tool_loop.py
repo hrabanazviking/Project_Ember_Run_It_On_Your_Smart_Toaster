@@ -45,6 +45,7 @@ from ember.schemas.funi import (
 from ember.schemas.stream import FuniStreamChunk
 from ember.schemas.tool import (
     ApprovalPolicy,
+    ToolAccess,
     ToolCall,
     ToolDescriptor,
     ToolParameter,
@@ -419,6 +420,9 @@ def test_standing_tool_auto_approves_without_prompt(
         name="search_safe", description="x",
         parameters_schema={},
         required_approval=ApprovalPolicy.STANDING,
+        # E-026: a stated read-only access class is what lets the
+        # approval gate honour STANDING (UNSPECIFIED now prompts).
+        access=ToolAccess.READ_ONLY,
     )
     register(
         safe_descriptor,
