@@ -248,6 +248,64 @@ MEASURED_TOASTER_PI_PEAK_RSS_MIB = 27.2
 #: ceiling.
 MEASURED_TOASTER_PI_INSTALLED_BYTES = 1_956_428
 
+# --------------------------------------------------------------------- #
+# Measured anchors (a simulated month of companionship — E-050)         #
+# --------------------------------------------------------------------- #
+
+#: **Storage growth, measured at month scale (E-050).** A
+#: simulated month of companionship — 30 days × 20 turns at
+#: the book's reference workload, E-041's typical-turn
+#: fixture (~40 words a side) — was run against the real
+#: stores on the VM: the real sqlite_vec Well at the
+#: production embedding dimension (768; episode rows carry
+#: text only, so the dimension does not price episodes) and
+#: the real diary in chat's connected shape (one session a
+#: day; start + memory-connected + end lines, two lines per
+#: turn). The Well was closed and weighed after every day;
+#: growth was linear in 4 KiB page steps with no superlinear
+#: component, and retrieval still worked at day 30. The
+#: same Well then grew to 3,000 episodes for the steady
+#: marginal. Method and the full curve live in
+#: ``docs/architecture/E-050_STORAGE_GROWTH.md``.
+#:
+#: The Well's growth over the 600-episode month: 352,256 B
+#: (587.1 B/episode averaged over the month; the file stood
+#: at 434,176 B from an 81,920 B empty schema).
+MEASURED_MONTH_WELL_GROWTH_BYTES = 352_256
+
+#: The diary's growth over the same month: 56,310 B across
+#: 30 daily files — 93.85 B/turn all-in (85 B/turn marginal:
+#: the two per-turn lines; the rest is one header + three
+#: session lines per day).
+MEASURED_MONTH_DIARY_BYTES = 56_310
+
+#: The whole month's growth, both stores: 408,566 B
+#: (0.39 MiB) over 600 turns — 680.9 B/turn all-in, inside
+#: the book's 694 B/turn statement, which therefore stands
+#: unrevised (docket 91, closed at E-050: E-042's 808 B/turn
+#: was 30-episode page rounding plus a different diary
+#: session shape, not the month's truth).
+MEASURED_MONTH_TOTAL_BYTES = 408_566
+
+#: Turns in the simulated month (30 days × the reference
+#: 20 turns/day).
+MEASURED_MONTH_TURNS = 600
+
+#: The Well's steady-state marginal cost per episode,
+#: measured over episodes 600–3,000 of the same store:
+#: 585.4 B — flat, so a heavier month costs the same per
+#: turn as the reference month.
+MEASURED_WELL_STEADY_BYTES_PER_EPISODE = 585.4
+
+#: The long-turn cost: 60 essay turns (~500 words a side)
+#: in a fresh Well cost 6,144 B/episode at that scale. A
+#: month of essay-length turns at the reference rate
+#: (3.51 MiB) exceeds the toaster's storage ceiling and
+#: fits the phone's — the book's ceilings price typical
+#: turns, as E-041 §4 already stated; E-082's lifecycle
+#: rules own the long-turn store.
+MEASURED_ESSAY_BYTES_PER_EPISODE = 6_144
+
 
 def storage_bytes_per_turn() -> int:
     """The on-disk cost of one ordinary turn, in bytes.
@@ -435,9 +493,15 @@ def measured_shape_fits(profile: ConversationProfile) -> tuple[str, ...]:
 __all__ = [
     "DIARY_BYTES_PER_TURN",
     "MEASURED_COLD_START_FIRST_WORD_S",
+    "MEASURED_ESSAY_BYTES_PER_EPISODE",
     "MEASURED_IDLE_RAM_MIB",
     "MEASURED_INSTALL_BYTES",
+    "MEASURED_MONTH_DIARY_BYTES",
+    "MEASURED_MONTH_TOTAL_BYTES",
+    "MEASURED_MONTH_TURNS",
+    "MEASURED_MONTH_WELL_GROWTH_BYTES",
     "MEASURED_TURN_RAM_MIB",
+    "MEASURED_WELL_STEADY_BYTES_PER_EPISODE",
     "PROFILE_ORDER",
     "REFERENCE_TURNS_PER_DAY",
     "WELL_BYTES_PER_EPISODE",

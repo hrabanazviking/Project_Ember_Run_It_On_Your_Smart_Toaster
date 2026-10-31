@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 11:52 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-050
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049
-Next slice: E-050 — Storage growth: a month of companionship simulated; growth within budget or the lifecycle rules (Part V) tighten
+Last updated: 2026-10-31 12:14 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-051
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050
+Next slice: E-051 — Thermal & patience etiquette: on shared/small machines the companion yields (load-aware throttling, the Aesir lesson)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2021,6 +2021,44 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head =
   96fb9a2ae7492356321a57fa0dd707cc028446a9 = local HEAD at push time).
 
+## E-050 — Storage growth (DONE, 2026-10-31)
+
+- Record filed at `docs/architecture/E-050_STORAGE_GROWTH.md`: a month of
+  companionship simulated against the real stores on the VM (script + raw
+  results in `~/workspace/.verify-tmp/ember-e050/`): the real sqlite_vec Well
+  at the production embedding_dim=768 (episodes carry text only), 30 days ×
+  20 turns of E-041's typical fixture (600 episodes, closed and weighed
+  after every day), then the same store grown to 3,000 episodes; the real
+  Diary over 30 daily files in chat's connected shape; a separate 60-turn
+  essay Well (~500 words a side).
+- Headline: **the month grew 408,566 B in all (0.39 MiB, 680.9 B/turn
+  all-in)** — Well 352,256 B (81,920 B empty → 434,176 B; 587.1 B/episode
+  over the month, steady marginal **585.4 B/episode** flat across 600→3,000,
+  growth purely in 4 KiB page steps, no superlinear component; retrieval
+  proven at day 30) + diary 56,310 B (93.85 B/turn all-in, 85 B marginal).
+  Judged per profile: fits EVERY storage ceiling — 5.1× headroom on the
+  toaster (2 MiB/month); break-even ~103 turns/day on the toaster; a
+  100-turns/day month totals ~1.92 MiB (inside, barely, stated); a year at
+  reference pace is 4.68 MiB. **No ceiling moves; the lifecycle rules do
+  NOT tighten** — the roadmap's either/or resolves to within-budget.
+- **Docket 91 CLOSED:** E-042's 808 B/turn was small-N page rounding
+  (683 B/episode over 30 episodes; at 600 the average is 587.1, under the
+  book's 614) plus its diary session shape (126 B/turn from ungrounded
+  lines + session notes over 5 turns). The book's 694 B/turn stands
+  unrevised — the month measured 680.9, inside it; six E-050 anchors added
+  to `ember.budgets` record the month beside the book.
+- The honest edge, pinned both ways: essay-length turns cost **6,144
+  B/episode** (N=60); a reference-rate month of them is **3.51 MiB — past
+  the toaster's ceiling** (break-even ~11 essay turns/day), inside the
+  phone's. E-082 inherits the quantified lifecycle brief: nothing to prune
+  for years at reference use; its real subjects are the long-turn store
+  and the diary's one-file-per-day count (365 files/year, trivial bytes).
+  No defect found, no new docket items. No README touched.
+- Slice gate: Run B **975 passed, 6 failed, 25 skipped, 1 warning**
+  (968 E-049 baseline + 7 new; the 6 are the proven environment failures).
+  Run D (whole, extras) **1032 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1025 + 7 new — reconciles exactly).
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -2075,4 +2113,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-048 DONE (2026-10-31) — the phone-class proof, grade SIMULATED: phone profile on the VM in a phone-shaped room (2 CPUs pinned, 512 MiB RSS watchdog never triggered, loopback wire-shape model, contended VM) — ready median 1.77 s, first word median 1.79 s inside the unrelaxed 5.0 s cap (first-ever 3.92 s also inside), peak RSS 43.0 MiB vs phone ceilings 96/128, memory proven at the wire (later processes' prompts carried earlier exchanges verbatim; diary loads 1→2→3); real phone NOT PROVEN (Galaxy S26 Ultra paired but offline; no Android runtime in tree) and named as such; three MEASURED_PHONE_SIM_* anchors pinned by tests/unit/test_phone_proof_e048.py (5 tests); docket 90 phone half settled at simulation grade; gate Run B 962 passed / 6 proven-env failed / 25 skipped, Run D 1019 passed / 0 failed / 19 skipped; filed at docs/architecture/E-048_PHONE_PROOF.md.
 - E-049 DONE (2026-10-31) — the Toaster Test, honestly graded: NAME CASHED for the Ember core, NOT CASHED for a whole self-contained companion on a literal 512 MiB host. Smallest honest target the house can muster = Mimir (Raspberry Pi 5, as E-047; no smaller computer in the house, phone/tablet offline) running the TOASTER profile (512 tok/3 ep) through the day-one flow — fresh clean-venv install at c4c7cdc, fresh Well, real nomic-embed-text, real smallest model rung qwen2.5:0.5b (397 MB, pulled for this test); ready median 0.21 s (Ember-side re-anchor, docket 90 toaster half settled — docket 90 now fully settled at its grades, 5.0 s cap unrelaxed), first word median 2.18 s real-model (record, not cap-judged), peak RSS 27.2 MiB vs toaster ceilings 64/64, installed 1,956,428 B vs 2 MiB ceiling; replies real and correct; memory proven in the machinery (diary loads 0→1→2→3 across processes), recall quality at the 0.5B rung PARTIAL (run 3 reached the first exchange — "Hello." — but did not quote it in full; model's limit, named); docket 66 grading CLOSED by measurement: ollama ps with both day-one models loaded reports qwen runner 442 MB + nomic runner 565 MB = ~1,007 MB of model house alone on a 512 MiB host (chat alone + OS ~150 + core ceiling 64 = ~656 MB) — a literal 512 MiB whole companion does NOT fit on today's rungs; the 1 GB members of the toaster class remain the comfortable floor; 4 anchors pinned in ember.budgets; 6 new tests; gate Run B 968 passed / 6 proven-env failed / 25 skipped, Run D 1025 passed / 0 failed / 19 skipped; filed at docs/architecture/E-049_TOASTER_TEST.md.
 - E-049 push: banking commit edd2760 pushed under Volmarr's 2026-10-31 standing go-ahead after fetch + remote-diff (remote was c4c7cdc = prior local HEAD, no divergence) — remote moved c4c7cdc → edd2760, verified via ls-remote (remote head = edd2760a367e597c5b7ae417cdc601dd7e193f10 = local HEAD at push time).
-- E-050 next — storage growth: a month of companionship simulated; growth within budget or the lifecycle rules (Part V) tighten.
+- E-050 DONE (2026-10-31) — storage growth: a month of companionship simulated against the real Well + real diary (600 typical turns over 30 daily batches, store closed + weighed daily, then grown to 3,000 episodes; script + results in ~/workspace/.verify-tmp/ember-e050/) — month total 408,566 B (0.39 MiB, 680.9 B/turn all-in): Well 352,256 B (587.1 B/episode over the month; steady marginal 585.4 B/episode flat to 3,000; pure 4 KiB page steps, no superlinear growth; retrieval proven at day 30), diary 56,310 B (93.85 B/turn all-in); fits every profile's storage ceiling (5.1× headroom on the toaster's 2 MiB/month; break-even ~103 turns/day; year at reference pace 4.68 MiB) — no ceiling moves, lifecycle rules do NOT tighten; docket 91 CLOSED (E-042's 808 B/turn = 30-episode page rounding + diary session shape; the book's 694 B/turn stands unrevised over the measured 680.9); six E-050 anchors in ember.budgets; honest edge pinned both ways — essay turns 6,144 B/episode, a reference-rate essay month 3.51 MiB passes the toaster ceiling (break-even ~11/day) and fits the phone, E-082's quantified brief; 7 new tests; gate Run B 975 passed / 6 proven-env failed / 25 skipped, Run D 1032 passed / 0 failed / 19 skipped; filed at docs/architecture/E-050_STORAGE_GROWTH.md.
+- E-051 next — thermal & patience etiquette: on shared/small machines the companion yields (load-aware throttling, the Aesir lesson).
