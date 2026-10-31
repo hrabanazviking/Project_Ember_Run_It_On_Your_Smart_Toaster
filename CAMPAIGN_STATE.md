@@ -8,8 +8,8 @@ Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shar
 
 Last updated: 2026-10-30 23:44 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006
-Next slice: E-007 — Dependency & licence audit
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007
+Next slice: E-008 — The codex census
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -219,6 +219,40 @@ Top-level members present (size / file count, working tree excl. .git):
   **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
   Doc-only slice, no code touched, no README touched, no push.
 
+## E-007 — Dependency & licence audit (DONE, 2026-10-30)
+
+- Audit filed at `docs/audit/E-007_DEPENDENCY_LICENCE_AUDIT.md`: every licence
+  file in the tree read + sha256-recorded (filename scan incl. `*notice*` /
+  `*copying*` / `*copyright*`), every packaging file parsed, and each member's
+  actual third-party imports AST-scanned against its declarations (raw
+  inventories in `~/workspace/.verify-tmp/ember-e007/`).
+- Headline: the licence estate is permissive and intact — 11 MIT licence files
+  verified complete (grant + warranty clause; Hamr's carries a poetic coda that
+  removes nothing), astrology-engine full Apache-2.0, NO copyleft licence file
+  anywhere (GPL/AGPL appear only as do-not-vendor discussion in the codices).
+  Upstream-copyright members keep their licences: dictionary (MIT, © Sampo
+  Silvennoinen; underlying 1874 text public domain) and Open-VTT (MIT, © Khazlor).
+- The one trap: CloakBrowser is TWO licences — wrapper MIT intact (© CloakHQ),
+  but its compiled Chromium binary is PROPRIETARY under `BINARY-LICENSE.md`:
+  use + dependency-listing are free, redistribution/bundling into a distributed
+  product is prohibited without an OEM/SaaS licence. Not a violation (binary
+  absent from the tree, never downloaded — E-006) — a release-shape constraint
+  for Part XI (docket 25).
+- Dependency reality vs declarations: astrology-engine has NO packaging file
+  and declares none of its 5 guarded imports (pyswisseph, kerykeion, geopy,
+  timezonefinder, pytz); Verdandi's `eir/layers.py` imports yaml top-level
+  unguarded with pyyaml declared nowhere in the member; the core's optional
+  `keyring` (ADR 0010, lazy + graceful) is declared in no extra; Hamr lazily
+  imports undeclared psutil (guarded) + tomli in a test fallback. Licence
+  metadata gaps: kista pyproject, dictionary + mempalace-website package.json
+  declare no license field. Only mempalace is locked (uv.lock, 122 packages,
+  hashed) and bounded; everything else is unbounded `>=` with no Python
+  lockfile. Root THIRD_PARTY_NOTICES still names Runa Agent/HERETIC and holds
+  ZERO entries. New docket items 18–25 for E-016.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
+  Doc-only slice, no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -227,4 +261,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-004 DONE (2026-10-30) — fresh baseline I: whole root suite classified; with extras 583 passed / 0 failed, filed at docs/audit/E-004_FRESH_BASELINE_I.md.
 - E-005 DONE (2026-10-30) — fresh baseline II: per-member truth table; seidr green, bulk of failures proven environment (proxy-env httpx signature), 8 new docket items (machine-coupled tests family), filed at docs/audit/E-005_FRESH_BASELINE_II.md.
 - E-006 DONE (2026-10-30) — boot census: Verdandi hub + Mímir's Eye proven LIVE, seidr boots+computes bare, ember diagnostics crash bare on the sqlite_vec default backend, astrology/dictionary/Open-VTT cannot boot here for named reasons, 5 new docket items (13–17), filed at docs/audit/E-006_BOOT_CENSUS.md.
-- E-007 next — Dependency & licence audit.
+- E-007 DONE (2026-10-30) — dependency & licence audit: estate permissive + intact (11 MIT verified, astrology Apache-2.0, no copyleft in tree), CloakBrowser binary licence is proprietary (no redistribution/bundling without OEM — constraint, not violation), 4 declaration-vs-reality gaps + metadata/lockfile gaps, 8 new docket items (18–25), filed at docs/audit/E-007_DEPENDENCY_LICENCE_AUDIT.md.
+- E-008 next — The codex census.
