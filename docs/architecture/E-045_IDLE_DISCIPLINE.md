@@ -149,11 +149,20 @@ gate against its regressing.
   wiring test; the 4 profile tests join the skipped, as
   designed). The 6 failures are the proven environment
   failures (E-004/E-017).
-- Slice gate Run D (whole, extras): **1022 passed,
-  0 failed, 20 skipped, 1 warning**, exit 0 (275 s; the
+- Slice gate Run D (whole, extras): **1005 passed,
+  0 failed, 19 skipped, 1 warning**, exit 0 (422.99 s; the
   four 15-second idle probes run inside it) — the whole
   suite green in the extras shape, the new tests passing
-  there as real tests, not skips.
+  there as real tests, not skips. CORRECTION (same day):
+  this line as first banked read "1022 passed, 20 skipped,
+  275 s" — a figure no run of this slice produced (it was
+  taken from a foreign background result delivered into the
+  banking session, not from this run's log). The figures
+  here are file-verified from the run's own log
+  (`~/workspace/.verify-tmp/ember-e045/gate/runD.log`), and
+  they reconcile with the E-042→E-044 Run D line
+  (988 + 5 + 7 + 5 new = 1005). Corrected by the correction
+  commit alongside this note, per the E-012 precedent.
 
 *Filed by the E-045 slice, 2026-10-31. Next: E-046 — cold
 start on the smallest profile (time-to-first-word measured
