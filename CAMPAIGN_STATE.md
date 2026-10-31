@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 01:50 EDT
+Last updated: 2026-10-31 01:58 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015
-Next slice: E-016 — The bug & gap docket
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016
+Next slice: E-017 — Baseline freeze
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -571,6 +571,45 @@ Top-level members present (size / file count, working tree excl. .git):
   0425fbb → 4a19347, verified via ls-remote (remote head =
   4a1934763fd6d443bac194e75e19a6da088f874a = local HEAD at push time).
 
+## E-016 — The bug & gap docket (DONE, 2026-10-31)
+
+- Docket filed at `docs/audit/E-016_BUG_GAP_DOCKET.md`: every `## Carried to
+  the E-016 docket` section in E-004–E-015 extracted verbatim and reconciled
+  against this ledger — the numbered sequence is **continuous 1–71, no gap,
+  no duplicate** (E-004: 1–4, E-005: 5–12, E-006: 13–17, E-007: 18–25,
+  E-008: 26–30, E-009: 31–37, E-010: 38–45, E-011: 46–50, E-012: 51–54,
+  E-013: 55–58, E-014: 59–64, E-015: 65–71), never renumbered. Items **72–80**
+  first-numbered in E-016 for what predates or escaped the numbering:
+  (72) ORIGINS register gap (eleven members + codices + root loose files);
+  (73) drift detector `tools/repo/check_origins_drift.py` never built;
+  (74) ADR-sequence silence (0012 placeholder per E-014; 0014/mcp/sources
+  unlisted); (75) IMG_0665/0666 provenance + UUID renames; (76) vendor-shape
+  + runa-config-name register mismatches; (77) astrology-engine + Open-VTT
+  zero test suites; (78) dictionary Jest suite NOT MEASURED (open
+  measurement); (79) 22-file root image population unregistered;
+  (80) CloakBrowser vendored-suite record (stewardship, never judged as ours).
+- Headline: **80 entries covering 79 distinct issues** — item 53 is a
+  re-observation of item 10, stated plainly in the docket so no count
+  inflates. Each entry carries a class (REAL / REAL-env / STALE / GAP /
+  NOT PROVEN-OPEN / CONSTRAINT-BOUNDARY-DISCIPLINE / VOLMARR) and a primary
+  owner; the assignment tally sums to 80 exactly (Part IV 13, Part IX 11,
+  Part II 9, Part XII 7, Parts III/V/X 6 each, E-018 gate 6, Part VI 5,
+  Part XI 5, Part VII 4, Part VIII 1, Volmarr-primary 1 — conventions for
+  items 57/61 stated in the doc). Sharpest entries: Vör broken in three
+  places (31, expanding 7), astrology's silent-success exit 0 (16 + its
+  declaration half 18), bare-machine diagnostics crash (13, boot face of 2),
+  toaster-Kista's default vault home inside the other Kista's territory (46).
+  Volmarr's word required for 26, 48, and the removal halves of 60/62/63/64;
+  NOT PROVEN honestly at 40, 44, 78 and item 12's unresolved residue.
+- No new docket items are created by this slice — E-016 *is* the docket;
+  defects found in later parts start at 81 in their own records.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded;
+  TMPDIR on the workspace overlay): **546 passed, 6 failed, 12 skipped,
+  1 warning** — identical to the opening baseline. Doc-only slice, no code
+  touched, no README touched. Push under Volmarr's 2026-10-31 standing
+  go-ahead follows banking (fetch + ancestry check, ls-remote verified;
+  recorded below once done).
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -588,4 +627,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-013 DONE (2026-10-31) — config & secrets census: no real credential in any plain file (all high-confidence hits classified fixtures/placeholders/false positives over 2,754 tracked text files); core Well-secret resolver (env → keyring → mode-600 file) is the tree's model shape; `.env.example` proven a Runa fossil with zero src consumers (docket 55); ≥7 config shapes across members (56); scanner-indistinguishable synthetic fixtures (57); CloakBrowser URL-embedded proxy credentials as a never-adopt boundary (58); known-accounts ledger re-verified, stays docket 48, filed at docs/audit/E-013_CONFIG_SECRETS_CENSUS.md.
 - E-014 DONE (2026-10-31) — dead/duplicate census: only 11 non-trivial exact-duplicate groups (4,312,510 wasted B, 1,392,520 intentional logo distribution; 2,919,990 accidental/generated/broken), zero dead core modules (50/50 referenced; AST zero sibling imports), no duplicated non-empty .py anywhere; Verdandi heartbeat 2,548 unwired Runa lines (59), four 1-byte pseudo-PNGs (60), tracked Godot .tmp + Hamr build_output artefacts (61), cross-member image/text triplication 2,886,896 B (62), 25-byte UX-codex stub (63), 13-file Markdown-only shells (64); TUI tree + Runa archive dormant-by-design, ADR-0012 explained as UNWIRED placeholder, filed at docs/audit/E-014_DEAD_DUPLICATE_CENSUS.md.
 - E-015 DONE (2026-10-31) — budget archaeology: 1,264 numeric size lines classified; only Hamr has an enforced budget (perf.py 1.5 GB/45 s, tiers 512 MB–1.5 GB); core ~50 MB disk/RAM + Well 50 MB claims unmeasured, scope = installed core not the 217 MB monorepo (67); Verdandi six conflicting RAM figures, hub vs heartbeat unseparated (65); Tiny proposal ~622 MB on 512 MB target, self-annotated over budget, 350 vs 400 MB cap conflict (66); Hamr Phase 17 second budget 7.5 GB/143 MB (68); sibling-matrix estimates unsourced (69); five members with no budget at all (70); Stofa's named budget tests absent from tree (71); vendored CloakBrowser ~190 MB idle recorded for E-179; code-enforced limits catalogued, filed at docs/audit/E-015_BUDGET_ARCHAEOLOGY.md.
-- E-016 next — The bug & gap docket.
+- E-016 DONE (2026-10-31) — the bug & gap docket: every Part I carried item numbered, classified, and assigned in one table (80 entries covering 79 distinct issues; items 1–71 preserved exactly as E-004–E-015 assigned them, continuous with no gap or duplicate — verified from the extracted carried sections; items 72–80 first-numbered here for the pre-numbering E-002/E-003 findings and the unnumbered open measurements: ORIGINS register gap, drift detector never built, ADR-sequence silence, IMG provenance/UUID names, vendor/config register mismatches, astrology + Open-VTT zero test suites, dictionary Jest NOT MEASURED, unregistered 22-file root image population, CloakBrowser vendored-suite record); item 53 is a re-observation of 10, not a distinct defect. Owner tally sums to 80 (Part IV largest at 13, Part IX 11, Part II 9). Cross-links recorded (31 expands 7; 13 is the boot face of 2; 16/18 two halves; the five-entry machine-coupling family 5/8/10/17/11). Volmarr's word required for 26, 48, and the removal halves of 60/62/63/64; NOT PROVEN honestly at 40, 44, 78 and item 12's residue. Filed at docs/audit/E-016_BUG_GAP_DOCKET.md.
+- E-017 next — Baseline freeze.
