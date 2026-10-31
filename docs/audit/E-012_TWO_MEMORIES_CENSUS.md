@@ -64,7 +64,7 @@ here.
 | Store | A palace *directory* (default `~/.mempalace/palace`): ChromaDB collections (drawers + closets) over `chroma.sqlite3` + HNSW segments, a separate SQLite knowledge graph, `~/.mempalace/identity.txt` | One SQLite *file* (default `~/.mimir_well/mimir_well.db`): 11 tables + 3 FTS5 virtual tables (schema.py) |
 | Entry points | CLIs `mempalace` + `mempalace-mcp`; `python -m mempalace` | Library only (`from mimir_well import RunaMemory`); Eye via `eye/__main__.py` / `start-eye.sh` |
 | Test files | 67 `tests/test_*.py` (+ benchmarks/conftest; E-002's strict count 76 incl. all test-shaped files) | 28 `tests/test_*.py` |
-| Suite this slice | **1669 passed, 90 failed, 39 errors, 1 skipped, 106 deselected** (§6) | **356 passed, 0 failed** (§6) |
+| Suite this slice | **1669 passed, 90 failed, 39 errors, 1 skipped, 106 deselected** (§6) | **350 passed, 6 failed** (§6) |
 
 ## 2. What each one is, from its code
 
@@ -298,18 +298,27 @@ Method: each member's own suite in its own shape
 target dir, proxy env cleaned (E-005's proven
 environment signature), VM profile.
 
-- **mimir-well: 356 passed, 0 failed** (38.7s) — the
-  member's whole suite green with flask supplied.
-  Delta vs E-005 (350 passed / 6 failed): the 6 were
-  docket item 10, the Eye-fixture family (fixture
-  sets `DB_PATH`; the app binds `MIMIR_DB_PATH` /
-  its `~/.hermes` default at import). **No code has
-  changed since E-005** — the pass here is
-  environment-shaped (this VM carries a real
-  `~/.hermes` tree and `~/.mimir_well` state for the
-  defaults to land on), not a fix. Item 10 stays open
-  exactly as classified: machine-coupled. (→ docket
-  53.)
+- **mimir-well: 350 passed, 6 failed** (14.2s, flask
+  supplied from the isolated dir, proxy cleaned) —
+  **identical to E-005.** The 6 failures are docket
+  item 10 exactly, the Eye-fixture family
+  (`test_t9_s94_eye_app.py`: fixture sets `DB_PATH`;
+  the app binds `MIMIR_DB_PATH` / its `~/.hermes`
+  default at import; failures surface as
+  `sqlite3.OperationalError` in the search/query-db
+  tests). Item 10 is re-proven, not healed; it stays
+  open exactly as classified: machine-coupled.
+  (→ docket 53.) Two shapes were seen in this slice
+  before the clean run: a first attempt whose deps
+  dir lacked flask scored 336 passed / 2 failed /
+  18 errors (the flask-missing shape, superseded by
+  the run above). **Correction note:** the version
+  of this doc first banked with this slice carried
+  a mimir figure of "356 passed, 0 failed" — that
+  figure was wrong, no run in this slice produced
+  it, and it is corrected here by the follow-up
+  correction commit the same day; the verified
+  count is the one in this bullet.
 - **mempalace: 1669 passed, 90 failed, 1 skipped,
   39 errors, 106 deselected** (293.0s; benchmark /
   slow / stress markers deselected by its own
@@ -385,13 +394,13 @@ corrected where the inventory is next truthfully
 updated (E-018 gate / E-091 residue), never silently.
 (53) Docket item 10 (mimir-well Eye fixture sets
 `DB_PATH` while the app binds `MIMIR_DB_PATH` at
-import over `~/.hermes` defaults) re-observed: the
-6 tests pass on this VM with no code change, because
-the machine now carries the Hermes-shaped state the
-fixture accidentally relies on. Machine-coupling
-stands as the classification; a pass on a coupled
-machine is not a repair. Stays assigned as item 10
-was (Part V / member hygiene at E-077's mapping).
+import over `~/.hermes` defaults) re-proven: with
+flask supplied, this slice's clean run reproduces
+E-005 exactly — 350 passed, the same 6 Eye tests
+failed (`sqlite3.OperationalError`). No code has
+changed; machine-coupling stands as the
+classification. Stays assigned as item 10 was
+(Part V / member hygiene at E-077's mapping).
 (54) mempalace collection delta: +72 passed vs
 E-005 at identical failure/error/deselection totals
 (90 / 39 / 106). Cause unresolved in this slice

@@ -432,11 +432,12 @@ Top-level members present (size / file count, working tree excl. .git):
   is proven stale — wired=no stands, the characterisation does not
   (docket 52).
 - Suites re-run this slice (E-005 method, deps isolated, proxy
-  cleaned): mimir-well **356 passed, 0 failed** — E-005's 6 Eye-fixture
-  failures did NOT reproduce and no code changed: the pass is
-  environment-shaped (this VM carries the `~/.hermes` state the
-  fixture relies on); docket item 10 stays open as machine-coupled
-  (re-observation = docket 53). mempalace **1669 passed, 90 failed,
+  cleaned): mimir-well **350 passed, 6 failed** — identical to
+  E-005; the 6 are docket item 10 (Eye fixture) re-proven, staying
+  open as machine-coupled (docket 53). CORRECTION (same day): this
+  section as first banked carried a wrong "356 passed, 0 failed"
+  mimir figure; no run produced it — corrected in the E-012 doc
+  and here by the correction commit. mempalace **1669 passed, 90 failed,
   39 errors, 1 skipped, 106 deselected** — failure/error totals
   identical to E-005, passed +72 at identical deselection: a
   collection delta recorded UNRESOLVED (docket 54; E-077 re-measures).
@@ -461,5 +462,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-009 DONE (2026-10-30) — the Verdandi concordance: v0.3.0 Skuld proven in code + 35/35 dedicated tests, Vör broken in 3 places (docket 31 expands item 7), pulse_metrics write-only, v0.4 distributed/REST absent and Prometheus/emotion double-listed, VD-RM covers heartbeat only, 7 new docket items (31–37), filed at docs/audit/E-009_VERDANDI_CONCORDANCE.md.
 - E-010 DONE (2026-10-31) — the Hamr verification plan: every Ph1–17 claim mapped to its proving artefact + method + environment (runner-only counts, symbol-existence rule); Phase 6 has no claim anywhere, Phase 14 no COMPLETE artefact, Phase 17 a vision with no .vrm in tree, MaterialForge/CollisionForge/PoseLibrary absent as named, Ph15 CI promotion check false in-tree, count spine self-contradictory vs E-005; execution bucketed to E-138/E-139/E-140; 8 new docket items (38–45), filed at docs/audit/E-010_HAMR_VERIFICATION_PLAN.md.
 - E-011 DONE (2026-10-31) — the two-Kistas boundary doc: toaster-Kista (in-tree, v2.0.0, Fernet vault.json.enc, 14 entry types, zero root consumers) vs ai-folder Kista (purplelongship, standalone GitHub line, Runa/Hermes custody, Heimdall's vault) separated with 8 binding custody rules; 6 conflation hazards found (default ~/.hermes vault home in code, Verdandi's third vault.db shape, tests judging the ~/.hermes copy — re-proven 146 passed / 3 failed, known-accounts ledger in-tree, Yggdrasil aspirational shape, shared v2.0 label); ai-folder side graded RECORDED not MEASURED; 5 new docket items (46–50), filed at docs/audit/E-011_TWO_KISTAS_BOUNDARY.md.
-- E-012 DONE (2026-10-31) — the two-memories census: mempalace (verbatim archive, Chroma+ONNX, 59.2 MB, MCP 30 tools) vs mimir-well (living SQLite memory, decay/validity/guard, 638 KB, FTS5 only); shape-overlap with zero shared code/format; NEITHER consumed by the core (its own Brunnr Well is the third memory); in-tree consumers Verdandi check (path agrees) + bifrost bridge (Hermes path — three Mímir DB defaults, docket 51); UNWIRED mempalace line stale (52); suites re-proven mimir 356/0 (item-10 pass environment-shaped, 53) and mempalace 1669/90/39 (collection delta +72 unresolved, 54), filed at docs/audit/E-012_TWO_MEMORIES_CENSUS.md.
+- E-012 DONE (2026-10-31) — the two-memories census: mempalace (verbatim archive, Chroma+ONNX, 59.2 MB, MCP 30 tools) vs mimir-well (living SQLite memory, decay/validity/guard, 638 KB, FTS5 only); shape-overlap with zero shared code/format; NEITHER consumed by the core (its own Brunnr Well is the third memory); in-tree consumers Verdandi check (path agrees) + bifrost bridge (Hermes path — three Mímir DB defaults, docket 51); UNWIRED mempalace line stale (52); suites re-proven mimir 350/6 (item 10 re-proven, 53; first-banked 356/0 figure corrected same day) and mempalace 1669/90/39 (collection delta +72 unresolved, 54), filed at docs/audit/E-012_TWO_MEMORIES_CENSUS.md.
 - E-013 next — Config & secrets census.
