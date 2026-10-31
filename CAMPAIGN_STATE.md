@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 22:32 EDT
+Last updated: 2026-10-30 22:38 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003
-Next slice: E-004 — Fresh baseline I
+Banked: E-001, E-002, E-003, E-004
+Next slice: E-005 — Fresh baseline II
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -120,9 +120,39 @@ Top-level members present (size / file count, working tree excl. .git):
   the 6 failures are the proven environment failures. Doc-only slice, no code
   touched, no README touched, no push.
 
+## E-004 — Fresh baseline I (DONE, 2026-10-30)
+
+- Baseline filed at `docs/audit/E-004_FRESH_BASELINE_I.md`: the root `tests/`
+  suite run whole in four runner shapes (VM, Python 3.12.3, pytest 9.1.1),
+  every failure classified REAL / ENVIRONMENT / STALE.
+- Headline: **with the optional extras supplied from an isolated target dir,
+  the whole suite is green — 583 passed, 0 failed, 19 skipped, 1 warning**
+  (25.18s). In the default stdlib-only env the whole run is interrupted at
+  collection (1 error, 8 skipped, 0 run): `test_pgvector_real_backend.py`
+  imports `psycopg` at line 35, *above* its own importorskip guards at
+  lines 51–52 — a REAL guard-placement defect, environment-triggered.
+- Excluding that file, the default-env run reproduces the E-001 baseline
+  exactly: **546 passed, 6 failed, 12 skipped**. All 6 failures are
+  ENVIRONMENT: Batch CDE ×3 + Batch J ×1 need `sqlite_vec`; Batch G ×2 die
+  through the pgvector adapter's sanitiser import from the sqlite_vec
+  adapter (`adapter.py:588`), whose top-level `import sqlite_vec` (line 27)
+  couples even pure helpers to the extra. With extras, the affected files
+  run 69 passed / 15 skipped / 0 failed. STALE failures: none.
+- The 1 warning (both full runs): the MCP runner submit-after-close test
+  leaks an un-awaited coroutine — test hygiene only, product behaviour
+  correct. Skips are honest guards in both configs (sqlite_vec / MCP /
+  Ollama / podman / Gungnir); MCP extra was never supplied in this slice,
+  so MCP-guarded tests remain guarded, not proven.
+- Four defects carried to the E-016 docket: (1) pgvector module's
+  unreachable import guard; (2) sqlite_vec adapter top-level optional
+  import coupling; (3) unguarded tests failing instead of skipping
+  (CDE ×3, J ×1); (4) the un-awaited-coroutine warning. Doc-only slice,
+  no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
 - E-002 DONE (2026-10-30) — member census in depth, filed at docs/audit/E-002_MEMBER_CENSUS.md.
 - E-003 DONE (2026-10-30) — ORIGINS concordance, filed at docs/audit/E-003_ORIGINS_CONCORDANCE.md.
-- E-004 next — Fresh baseline I.
+- E-004 DONE (2026-10-30) — fresh baseline I: whole root suite classified; with extras 583 passed / 0 failed, filed at docs/audit/E-004_FRESH_BASELINE_I.md.
+- E-005 next — Fresh baseline II.
