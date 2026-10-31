@@ -2553,3 +2553,9 @@ Top-level members present (size / file count, working tree excl. .git):
   `~/workspace/.verify-tmp/ember-e061/gate/`. No README touched.
 - E-062 next — context injection discipline: what may be injected,
   when, with what budget — the injector's rules as tests.
+- E-061 push: banking commit 76c47fa pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 037fc0a,
+  an ancestor; the push also carried the tick's IN PROGRESS marker
+  1b0c1f8) — remote moved 037fc0a → 76c47fa, verified via ls-remote
+  (remote head = 76c47fa3bc63a9b45e5baf15eebb7c54957770f9 = local HEAD
+  at push time).
