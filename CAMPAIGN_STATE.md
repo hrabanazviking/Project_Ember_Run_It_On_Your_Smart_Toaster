@@ -679,7 +679,12 @@ Top-level members present (size / file count, working tree excl. .git):
   Run A whole/default **1 error, 8 skipped, exit 2**; Run B default excl.
   pgvector file **546 passed, 6 failed, 12 skipped, 1 warning**; Run D
   whole with extras **583 passed, 0 failed, 19 skipped, 1 warning**,
-  exit 0. Doc-only slice, no code touched, no README touched.
+  exit 0. Doc-only slice, no code touched, no README touched. Pushed under
+  Volmarr's 2026-10-31 standing go-ahead: banking commit f4de7c6 pushed
+  after fetch + ancestry check — remote moved 2e17247 → f4de7c6, verified
+  via ls-remote (remote head = f4de7c625a2f8dba2dadc187e84c392a687fb043 =
+  local HEAD at push time; the push also carried the previously unpushed
+  E-017 push-record commit 8cf35cc).
 
 ## Slice ledger
 
