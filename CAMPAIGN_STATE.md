@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 08:10 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-041
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041
-Next slice: E-042 — Budget tests (the ceilings become automated tests wired into the slice gate)
+Last updated: 2026-10-31 08:22 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-042
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042
+Next slice: E-043 — Install weight cut I (the heaviest members measured; optional members made truly optional at install)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1715,6 +1715,39 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head =
   3d79c1117d624e7867363487410e21132d22aab5 = local HEAD at push time).
 
+## E-042 — Budget tests (DONE, 2026-10-31)
+
+- Tests filed at `tests/unit/test_budget_gate_e042.py` (**9 tests**), doc at
+  `docs/architecture/E-042_BUDGET_TESTS.md`: E-041's ceilings are now a gate.
+  Every test RE-DERIVES its shape in a fresh subprocess (per E-041 §4) and judges
+  it against ceilings read live from `ember.budgets` (no second copy): install
+  (package tree weighed byte-by-byte: 740,135 B vs toaster 2 MiB and vs the
+  978,843 B all-in anchor), idle RAM (CLI surface peak 25.2 MiB; Well-open
+  35.9 MiB where sqlite_vec present, honest skip where absent), turn RAM (five
+  real chat turns per profile, peaks flat at 24.3 MiB, judged against each
+  profile's ceiling AND the toaster's — flatness re-derived), storage (real Well
+  683 B/episode over 30 + diary 126 B/turn from two real sessions; projected
+  0.46 MiB/month vs toaster 2 MiB). A wiring test pins the file under
+  `tests/unit/` so Runs B/D collect it — every future slice gate runs it.
+  Sensitivity proven by mutation (toaster turn ceiling shrunk to 1.0 MiB in
+  memory → the turn test fails in the book's own words).
+- **Measurement bug found by the gate, fixed in scope:** the first whole-suite
+  Run D failed 6 of the 9 — every probe reported the identical 71.9 MiB, which
+  was the PYTEST process's own peak: on Linux `ru_maxrss` survives exec in the
+  signal_struct, so a fork+exec'd probe inherits its parent's high-water mark.
+  Probe now reads `/proc/self/status` VmHWM (the child's own mm, resets at
+  exec); the failing nine-file reproduction set then passed whole (122 passed)
+  and VmHWM re-derivation lands on E-041's numbers (its scripts ran top-level,
+  anchors stand). Lesson recorded in the test header + the E-042 doc.
+- New docket item 91: re-derived storage 808 B/turn vs the book's 694 (Well
+  683 vs 614 at 30-episode scale — page rounding suspected; diary 126 vs ~80
+  estimated) — inside the 2× drift band and every ceiling; assigned to E-050
+  to re-anchor from a larger-N measurement. No ceiling or anchor changed here.
+- Slice gate: Run B **936 passed, 6 failed, 20 skipped, 1 warning** (929
+  E-041 baseline + 7 new; the 6 are the proven environment failures; 2 of the
+  9 skip bare by their stated sqlite_vec guard). Run D **988 passed, 0 failed,
+  19 skipped, 1 warning**, exit 0 (979 + all 9 new). No README touched.
+
 ## E-041 — The budget book (DONE, 2026-10-31)
 
 - Book filed at `docs/architecture/E-041_BUDGET_BOOK.md`, in code at
@@ -1814,4 +1847,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-039 DONE (2026-10-31) — core docs + runnable examples: three runnable examples where none existed (first_chat — the real chat loop against a labelled fake model + in-memory Well; member_binding — frozen API v1 only, AST-pinned; offline_turns — banner, pending journal, facts-only diary, clean drain) plus a worked phone-class TOML config that loads through the frozen loader; docket 84's DATA_FLOW half CLOSED (k=5, no AskTurn, streaming default, per-turn JSON journal — facts only, voice intact); new docket 89 (stale examples/ scaffold READMEs → E-195, README care); honest limits: no live model (Part III's burden), chat examples use the operator surface's test seams (not frozen API); 8 new tests; gate Run B 918 passed / 6 proven-env failed / 18 skipped, Run D 968 passed / 0 failed; filed at docs/architecture/E-039_CORE_DOCS_EXAMPLES.md; banking commit a3da82a pushed (remote c677a79 → a3da82a, ls-remote = local HEAD).
 - E-040 DONE (2026-10-31) — Part II gate PASS: day-one flow re-proven on the VM profile (targeted 50 passed; three runnable examples each exit 0; E-032 clean-venv timings stand; real-model day one NOT PROVEN — loopback wire-shape model only, Part III owns real-device proof), API freeze checked live (1.0.0, 155 manifest entries, verify_api_surface clean), gate re-measurement identical to E-039 (Run B 918 passed / 6 proven-env failed / 18 skipped; Run D 968 passed / 0 failed / 19 skipped; Run A 1 error docket 1, skips 11 explained by Part II's three new skip-guarded files); Part II docket accounted (closed 15, 55, 56, 81–83, 85–88, 84's DATA_FLOW half; carried open 1, 2, 3, 4, 13 → E-187/E-200, 20 → E-044, 89 → E-195); no road re-cut; filed at docs/architecture/E-040_PART_II_GATE.md. **Part II (E-019–E-040) is CLOSED.**
 - E-041 DONE (2026-10-31) — the budget book: `ember.budgets` + docs/architecture/E-041_BUDGET_BOOK.md; core measured on the VM (install 978,843 B all-in — "~50 MB installed" struck; idle 40.7 MiB with Well open; turn peak 39.4–40.1 MiB flat across profiles — "~50 MB RAM" true and generous, docket 67 measured; storage 694 B/turn → 0.40 MiB/month at 20 turns/day); ceilings per profile (toaster 2 MiB/64/64/2 MiB-mo … laptop 16/256/384/100), history read from E-021's config; docket 65 measurement half settled (Verdandi hub live 21.9 MiB, heartbeat 18.4 MiB import-level; "~1 MB" not a process figure), 66 settled by replacement (toaster sum ~514 MB on a 512 MiB host — marginal, E-049 grades it); new docket 90 (VM anchors only, devices re-anchor at E-047–E-049); 11 new tests; gate Run B 929 passed / 6 proven-env failed / 18 skipped, Run D 979 passed / 0 failed.
-- E-042 next — budget tests: the ceilings become automated tests wired into the slice gate.
+- E-042 DONE (2026-10-31) — budget tests: `tests/unit/test_budget_gate_e042.py` (9 tests) re-derives every shape in fresh subprocesses (install 740,135 B; idle 25.2 / Well-open 35.9 MiB; turn peaks flat 24.3 MiB all profiles; storage 683 B/ep + 126 B/turn diary → 0.46 MiB/mo) judged against ceilings read live from `ember.budgets`, wired into Runs B/D by living in tests/unit (collection pinned by test); mutation-proven to bite; the gate caught its own probe's ru_maxrss-through-exec parent-peak bug (identical 71.9 MiB = pytest's peak) — fixed in scope to VmHWM, anchors stand; new docket 91 (re-derived storage 808 vs book 694 B/turn → E-050 re-anchor); gate Run B 936 passed / 6 proven-env failed / 20 skipped, Run D 988 passed / 0 failed.
+- E-043 next — install weight cut I: the heaviest members measured; optional members made truly optional at install.
