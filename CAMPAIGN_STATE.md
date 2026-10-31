@@ -725,7 +725,13 @@ Top-level members present (size / file count, working tree excl. .git):
   file excluded; TMPDIR on the workspace overlay): **546 passed, 6 failed,
   12 skipped, 1 warning** — identical to the E-017 freeze; the 6 failures
   are the proven environment failures. Doc-only slice (plus this state
-  file), no code touched, no README touched.
+  file), no code touched, no README touched. Pushed under Volmarr's
+  2026-10-31 standing go-ahead: banking commit 6846e26 pushed after fetch +
+  ancestry check (FETCH_HEAD = remote head was an ancestor; the clone's
+  fetch refspec covers only `development`, so the check ran against
+  FETCH_HEAD / ls-remote) — remote moved 45970aa → 6846e26, verified via
+  ls-remote (remote head = 6846e266ec41917f108c7e1720463ecf067f27b6 =
+  local HEAD at push time).
 
 ## Slice ledger
 
