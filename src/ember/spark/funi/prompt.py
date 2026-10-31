@@ -23,6 +23,7 @@ from ember.schemas.chunks import RetrievalHit
 from ember.schemas.config import IdentityConfig
 from ember.schemas.episode import Episode
 from ember.schemas.funi import ContextItem, ContextKind
+from ember.schemas.persona import Persona
 
 _HONESTY_INSTRUCTION = (
     "Answer honestly and concisely. When you do not know something, "
@@ -50,6 +51,7 @@ def assemble(
     hits: Sequence[RetrievalHit] = (),
     well_disconnected: bool = False,
     summary: str | None = None,
+    persona: Persona | None = None,
 ) -> list[ContextItem]:
     """Return the per-turn context items in canonical order.
 
@@ -58,13 +60,28 @@ def assemble(
     first). The operator's current line is **not** included; the
     caller passes it separately to :meth:`FuniHandle.complete` as
     ``prompt``.
+
+    E-025: when ``persona`` is given it, not ``identity``, names
+    who is speaking — the persona's name/role open the system
+    text and its instructions ride after the honesty instruction,
+    attributed to the persona so prompt text never poses as
+    anything else. Persona is also the prompt boundary's memory
+    wall: **only episodes tagged with this persona's id are
+    assembled**, whatever the caller passed in, so one persona's
+    conversation can never ride into another's turn through this
+    door. Without a persona there is no wall (the pre-E-025
+    single-companion shape, unchanged for its existing callers).
     """
     items: list[ContextItem] = []
 
+    if persona is not None:
+        episodes = [ep for ep in episodes if ep.persona_id == persona.id]
+
     system_text = _system_text(
-        identity=identity,
+        identity=persona.identity if persona is not None else identity,
         has_hits=bool(hits),
         well_disconnected=well_disconnected,
+        persona=persona,
     )
     items.append(ContextItem(kind=ContextKind.SYSTEM, text=system_text))
 
@@ -77,7 +94,9 @@ def assemble(
                 kind=ContextKind.EPISODE,
                 text=_episode_text(episode),
                 metadata=(
-                    {"episode_id": episode.id} if episode.id is not None else {}
+                    {"episode_id": episode.id, "persona_id": episode.persona_id}
+                    if episode.id is not None
+                    else {"persona_id": episode.persona_id}
                 ),
             )
         )
@@ -108,8 +127,16 @@ def _system_text(
     identity: IdentityConfig,
     has_hits: bool,
     well_disconnected: bool,
+    persona: Persona | None = None,
 ) -> str:
     lines = [f"You are {identity.name}, {identity.role}.", _HONESTY_INSTRUCTION]
+    if persona is not None and persona.instructions:
+        # Persona instructions are operator-authored persona data,
+        # labelled as such in the prompt itself — they extend who
+        # the companion is; they do not outrank the honesty
+        # instruction above them, and the label keeps that order
+        # visible to the model reading it.
+        lines.append(f"{persona.name}'s own notes on how to be:\n{persona.instructions}")
     if well_disconnected:
         lines.append(_DISCONNECTED_INSTRUCTION)
     elif has_hits:

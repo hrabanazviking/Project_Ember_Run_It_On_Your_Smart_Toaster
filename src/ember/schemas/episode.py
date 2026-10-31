@@ -14,10 +14,23 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from ember.schemas.persona import DEFAULT_PERSONA_ID
+
 
 @dataclass(frozen=True, slots=True)
 class Episode:
-    """One remembered conversation turn."""
+    """One remembered conversation turn.
+
+    ``persona_id`` (E-025) tags the turn with the persona who
+    lived it. It defaults to :data:`DEFAULT_PERSONA_ID`, the
+    namespace every pre-persona episode already belongs to, so
+    existing stores and fixtures keep their meaning. The Brunnr
+    adapters in this build do not yet persist the tag (their
+    schemas predate it) — separation is enforced at the prompt
+    boundary by ``ember.spark.funi.prompt`` and in-process by
+    ``ember.spark.persona`` until a storage slice carries the
+    tag to disk; the E-025 doc states this limit plainly.
+    """
 
     operator_input: str
     ember_reply: str
@@ -27,6 +40,7 @@ class Episode:
     started_at: datetime | None = None
     completed_at: datetime | None = None
     id: int | None = None
+    persona_id: str = DEFAULT_PERSONA_ID
 
 
 __all__ = ["Episode"]

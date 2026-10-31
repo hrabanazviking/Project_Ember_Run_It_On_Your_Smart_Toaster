@@ -474,6 +474,28 @@ class CognitionConfig:
 
 
 # --------------------------------------------------------------------- #
+# Personae (E-025 — who the companion is)                               #
+# --------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class PersonasConfig:
+    """Which persona the companion runs as (E-025).
+
+    ``active`` names a persona file under
+    ``<config_root>/personas/<id>.json``. It is empty by default:
+    no explicit choice, so resolution falls to a ``default.json``
+    persona file when one exists, else to the identity projected
+    onto the default persona (see
+    ``ember.spark.persona.resolve_persona``). Naming an id that
+    does not load is an error at resolve time, never a silent
+    substitution of a different companion.
+    """
+
+    active: str = ""
+
+
+# --------------------------------------------------------------------- #
 # Top-level                                                             #
 # --------------------------------------------------------------------- #
 
@@ -481,6 +503,7 @@ class CognitionConfig:
 @dataclass(frozen=True, slots=True)
 class EmberConfig:
     identity: IdentityConfig = field(default_factory=IdentityConfig)
+    personas: PersonasConfig = field(default_factory=PersonasConfig)
     conversation: ConversationConfig = field(default_factory=ConversationConfig)
     cognition: CognitionConfig = field(default_factory=CognitionConfig)
     funi: FuniConfig = field(default_factory=FuniConfig)
@@ -515,6 +538,7 @@ __all__ = [
     "LoggingDestination",
     "MCPConfig",
     "MCPServerSpec",
+    "PersonasConfig",
     "PgVectorConfig",
     "SmidjaConfig",
     "SqliteVecConfig",

@@ -83,6 +83,21 @@ funi:
 #   # model_path: "~/models/phi-3-mini-q4.gguf"
 
 # ---------------------------------------------------------------------------
+# Personae — who the companion is (E-025)
+# A persona is one JSON file in ~/.ember/personas/<id>.json:
+# {"id": "ember", "name": "Ember", "role": "your small local AI
+# companion", "description": "...", "instructions": "..."}.
+# Each persona remembers only its own conversations. Leave `active`
+# unset to use a default.json persona when you have one, or your
+# Hjarta identity (as the default persona) when you have none.
+# Naming a persona that does not load is an error, never a quiet
+# swap to a different companion. See
+# docs/architecture/E-025_PERSONA_CORE.md.
+# ---------------------------------------------------------------------------
+# personas:
+#   active: "ember"
+
+# ---------------------------------------------------------------------------
 # Strengr — the tether
 # Wraps Brunnr-handle acquisition with graceful-offline handling.
 # ---------------------------------------------------------------------------

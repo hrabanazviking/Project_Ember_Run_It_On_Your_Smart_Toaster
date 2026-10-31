@@ -17,6 +17,10 @@ a banner. The Episode is written locally.
   windows it per turn under the profile-aware token budget
   (``ember.spark.funi.windowing``), with dropped turns summarised
   through the summarisation hook rather than silently forgotten.
+* **E-025** resolves the session's persona (``ember.spark.persona``),
+  starts from that persona's own remembered turns only, assembles
+  each turn under that persona, and tags every new Episode with
+  its id — one persona's conversation never rides in another's.
 * **Phase 16 (ADR 0011 part 3)** wires the tool-use loop. When
   ``config.tools.enabled`` is True and Funi produces ``tool_calls`` in
   the final stream chunk, this module: validates arguments → resolves
@@ -67,6 +71,8 @@ from ember.spark.funi.tools import (
 )
 from ember.spark.hjarta.identity import has_identity, load_identity
 from ember.spark.munnr import render
+from ember.spark.persona import episodes_for_persona, resolve_persona
+from ember.spark.persona.core import PersonaError
 from ember.thread import strengr
 from ember.well.smidja.embed_client import OllamaEmbedClient
 
@@ -133,6 +139,19 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
         load_identity(config_root) if has_identity(config_root) else config.identity
     )
 
+    # Persona (E-025): who the companion is this session. An
+    # explicitly configured persona that cannot load stops the
+    # session with the reason named — never a silent swap to a
+    # different companion. With no persona configured and no
+    # persona files, this is the identity above, projected onto
+    # the default persona unchanged.
+    try:
+        persona = resolve_persona(config_root, config.personas.active or None)
+    except PersonaError as exc:
+        stdout.write(f"Persona could not be loaded: {exc}\n")
+        return 1
+    identity = persona.identity
+
     # Open Funi first — without a reasoner, the REPL has nothing to do.
     funi_result = open_funi(config.funi)
     if isinstance(funi_result, Unavailable):
@@ -181,7 +200,11 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     episodes: list[Episode] = []
     if brunnr is not None:
         with contextlib.suppress(Exception):
-            episodes = list(brunnr.recent_episodes(_HISTORY_LOAD_LIMIT))
+            # Per-persona separation (E-025): this persona's
+            # session starts from its own remembered turns only.
+            episodes = episodes_for_persona(
+                brunnr.recent_episodes(_HISTORY_LOAD_LIMIT), persona.id
+            )
     streaming = config.funi.streaming
 
     try:
@@ -206,6 +229,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 hits=hits,
                 well_disconnected=disconnect is not None,
                 summary=windowed.summary,
+                persona=persona,
             )
 
             if streaming:
@@ -227,6 +251,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     well_disconnected=disconnect is not None,
                     started_at=started,
                     completed_at=completed,
+                    persona_id=persona.id,
                 )
             else:
                 # Non-streaming opt-out path. Tool use here is intentionally
@@ -254,6 +279,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     well_disconnected=disconnect is not None,
                     started_at=started,
                     completed_at=completed,
+                    persona_id=persona.id,
                 )
 
             episodes.append(episode)
