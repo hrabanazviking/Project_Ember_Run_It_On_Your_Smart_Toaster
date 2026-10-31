@@ -19,7 +19,7 @@ turn, persistence — is the real code, installed from this tree.
 
 | Step | Measured (VM profile) | Notes |
 |---|---|---|
-| `python3 -m venv` | 1.85 s | |
+| `python3 -m venv` (fresh) + `pip install --upgrade pip` | 26.79 s + 19.92 s | CORRECTION (same day): the figure first banked here, 1.85 s, was a venv re-run over the already-created venv, not a fresh create — the fresh-create runner log (26.79 s) arrived after banking and supersedes it |
 | `pip install <tree>[sqlite_vec]` | 19.24 s | builds the wheel (290,650 B) + sqlite-vec 0.1.9 from PyPI |
 | `ember --help` | 0.46 s | exit 0 |
 | Day one: `ember ask "Hello, who are you?"` (wizard + first chat) | 1.28 s | exit 0; wizard's 5 prompts answered with defaults; reply `day-one answer` with the probe citation |
