@@ -1747,6 +1747,10 @@ Top-level members present (size / file count, working tree excl. .git):
   E-041 baseline + 7 new; the 6 are the proven environment failures; 2 of the
   9 skip bare by their stated sqlite_vec guard). Run D **988 passed, 0 failed,
   19 skipped, 1 warning**, exit 0 (979 + all 9 new). No README touched.
+  Pushed under Volmarr's 2026-10-31 standing go-ahead: banking commit
+  023de04 pushed after fetch + ancestry check — remote moved d0513b7 →
+  023de04, verified via ls-remote (remote head =
+  023de04bfeebde1d5f24152fc973e5ccfb67f6b3 = local HEAD at push time).
 
 ## E-041 — The budget book (DONE, 2026-10-31)
 
