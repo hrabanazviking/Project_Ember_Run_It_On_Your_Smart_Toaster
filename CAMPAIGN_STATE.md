@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 13:24 EDT
-Status: IN PROGRESS — E-054 (graceful smallness) being built by the 13:12 keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053
-Next slice: E-054 — Graceful smallness: at budget's edge the companion sheds features by the stated ladder, announcing each shed
+Last updated: 2026-10-31 13:52 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-055
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054
+Next slice: E-055 — The budget book published in-repo with its measurements
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2131,3 +2131,47 @@ Top-level members present (size / file count, working tree excl. .git):
 - Measured drain shape (VM, probe in `~/workspace/.verify-tmp/ember-e053/`, two runs): a single blocking 5 s rest spent **0.000 s process CPU** (run 2: 0.0001 s); a background job of 0.25 s-CPU units ran FULL at CPU/wall **0.4117** (4.001 s CPU / 9.719 s wall, 16 units, 0 rests) vs CONSERVE **0.1885** (3.001 s / 15.921 s, 12 units, exactly 2 rests totalling 10.0 s) — less than half under the same heavy contention (run 2: 0.1722 vs 0.4653); work+rest duty ≈23% vs 100%. All three pinned as `MEASURED_BATTERY_REST_CPU_S` / `MEASURED_DUTY_FULL_CPU_FRACTION` / `MEASURED_DUTY_CONSERVE_CPU_FRACTION` anchors in `ember.budgets`. A real battery's percent-per-hour drain is **NOT PROVEN** — no house battery device can run Ember (phone offline at E-048, no phone runtime in tree); the anchors price the drain's cause (CPU duty), and the record says so. No defect found in existing code, no new docket items. 15 new tests; gate Run B 1017 passed / 6 proven-env failed / 25 skipped, Run D 1074 passed / 0 failed / 19 skipped (both file-verified from the gate logs in `~/workspace/.verify-tmp/ember-e053/gate/`).
 - E-053 push: banking commit 3e5efc3 pushed under Volmarr's 2026-10-31 standing go-ahead after fetch + remote-diff (remote was 0f10adb = prior local HEAD, no divergence) — remote moved 0f10adb → 3e5efc3, verified via ls-remote (remote head = 3e5efc3e989baa9267ac2d25a89cdc1de1504806 = local HEAD at push time).
 - E-054 next — graceful smallness: at budget's edge the companion sheds features by the stated ladder, announcing each shed.
+
+## E-054 — Graceful smallness (DONE, 2026-10-31)
+
+- Record filed at `docs/architecture/E-054_GRACEFUL_SMALLNESS.md`: at budget's
+  edge the companion now sheds features by a stated ladder, announcing each
+  shed. New module `ember.smallness`: reads the process's own VmRSS from
+  /proc/self/status (unknown reads None and never votes), judges it against the
+  profile's turn-RAM ceiling from the budget book — EDGE ≥75% sheds history
+  summaries, STRAINED ≥90% also sheds semantic retrieval, OVER ≥100% also
+  sheds the wide history window (narrowed to the book's smallest allowance,
+  512 tokens / 3 episodes; an operator's smaller override is never widened).
+  Never shed: answering, saving, the announcements themselves, tool safety.
+  Sheds are per-turn, not sticky; restores are announced too; announcements
+  fire only on change.
+- Wiring is the chat turn (the place all three rungs have real consumers):
+  per-turn guard consult; rung 2 runs `_retrieve(text_only=True)` — the embed
+  call is skipped entirely and the existing honest text-search path runs;
+  rungs 1+3 build the window under `plan.conversation_config(...)` (identity
+  when unshed, so a comfortable turn is byte-for-byte the pre-E-054 shape).
+  Announcements go to the person's screen as `[room: …]` and to the diary.
+  Bulk ingest deliberately NOT wired: a shed embed batch would return None
+  vectors whose chunks the journal counts failed while marking their document
+  done — lost, not deferred (record §3).
+- Live ladder proof on the VM (probe in `~/workspace/.verify-tmp/ember-e054/`):
+  a chat-shaped process (24.29 MiB base RSS, beside E-041's 25.3 MiB anchor)
+  holding memory in 4 MiB steps crossed EDGE at 48.31 MiB (0.755, summaries
+  announced), STRAINED at 60.32 MiB (0.943, semantic announced), OVER at
+  64.33 MiB (1.005, wide history announced) against the toaster's 64 MiB
+  ceiling — every line in ladder order, one announcement per rung, none
+  repeated at steady levels.
+- Defect found by this slice's gate and fixed in scope (record §4): the
+  E-021 tiny-budget chat test failed — the ladder judged the *pytest
+  harness's* RSS (~100 MiB-class) against the toaster ceiling and shed the
+  summary that test asserts; the same coupling would give any embedding host
+  (E-037 library shape) sheds driven by the host's memory. Fix: `chat.run`
+  gained a `smallness_guard` test seam beside its existing seams; the E-021
+  chat helper pins a comfortable guard (its subject is windowing; no E-021
+  assertion changed).
+- 15 new tests; gate Run B **1032 passed, 6 failed, 25 skipped, 1 warning**
+  (1017 E-053 baseline + 15 new; the 6 are the proven environment failures,
+  identical set). Run D **1089 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1074 + 15 — reconciles exactly). No new docket items. No README
+  touched.
+- E-055 next — the budget book published in-repo with its measurements.

@@ -36,6 +36,15 @@ a banner. The Episode is written locally.
   closes docket 83: the non-streaming path now executes returned
   ``tool_calls`` through the same bounded loop instead of dropping
   them.
+* **E-054** consults graceful smallness once per turn
+  (``ember.smallness``): as this process's memory approaches
+  the conversation profile's turn budget, the companion sheds
+  features by the stated ladder — history summaries, then
+  semantic retrieval (this turn's search runs text-only and
+  the embed call is skipped), then the wide history window —
+  announcing each shed (and each restore) in plain words on
+  screen and in the diary. Answering, saving, and tool safety
+  are never shed.
 * **E-030** completes the error-honesty shape: a failure the
   operator cannot see is a lie of omission, so the three silent
   degradations are now spoken — a history load that fails says so
@@ -114,6 +123,7 @@ from ember.spark.funi.tools import (
     validate_arguments,
 )
 from ember.diary import Diary, diary_root
+from ember.smallness import SmallnessGuard
 from ember.schemas.conversation import DEFAULT_CONVERSATION_ID
 from ember.spark.conversation import (
     episodes_for_conversation,
@@ -178,6 +188,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     embed_client: OllamaEmbedClient | None = None,
     funi_opener: Callable | None = None,
     strengr_opener: Callable | None = None,
+    smallness_guard: SmallnessGuard | None = None,
     approval_prompter: ApprovalPrompter | None = None,
     conversation_id: str | None = None,
 ) -> int:
@@ -211,6 +222,28 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 "The chat itself is unaffected.]\n"
             )
             stdout.flush()
+
+    # Graceful smallness (E-054): the shed ladder, consulted
+    # once per turn against this process's own memory and the
+    # conversation profile's turn budget from the book. A shed
+    # (or a restore) is announced in plain words — on the
+    # person's screen and in the diary — at the moment it
+    # happens, never silently. The plan shapes the turn below:
+    # semantic retrieval goes text-only, and the history window
+    # is built under the plan's (possibly narrowed) config.
+    # ``smallness_guard`` is a test seam: an injected guard
+    # judges by its own assessor (a test process's resident
+    # memory is the harness's, not a companion's, so a suite
+    # that means to pin windowing must not inherit whatever
+    # pressure the harness happens to be under).
+    def announce_smallness(sentence: str) -> None:
+        stdout.write(f"[room: {sentence}]\n")
+        stdout.flush()
+        diary_note(sentence)
+
+    smallness = smallness_guard or SmallnessGuard(
+        config.conversation.profile, announce=announce_smallness
+    )
 
     # Persona (E-025): who the companion is this session. An
     # explicitly configured persona that cannot load stops the
@@ -413,8 +446,18 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 break
 
             started = datetime.now(tz=UTC)
+            # E-054: judge this turn's room before any of the
+            # turn's priced work runs — the plan decides whether
+            # retrieval embeds (semantic) or reads plain words,
+            # and under what history window the prompt is built.
+            smallness_plan = smallness.consult().plan
             try:
-                hits, retrieval_failure = _retrieve(text, brunnr, embedder)
+                hits, retrieval_failure = _retrieve(
+                    text,
+                    brunnr,
+                    embedder,
+                    text_only=not smallness_plan.semantic_retrieval,
+                )
             except KeyboardInterrupt:
                 # E-028: talked over during retrieval — before any
                 # reply existed. The turn is abandoned (nothing is
@@ -441,7 +484,9 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                     "grounded in your documents]\n"
                 )
                 stdout.flush()
-            windowed = window_history(episodes, config.conversation)
+            windowed = window_history(
+                episodes, smallness_plan.conversation_config(config.conversation)
+            )
             context = funi_prompt.assemble(
                 identity=identity,
                 episodes=windowed.episodes,
@@ -1295,6 +1340,8 @@ def _retrieve(
     text: str,
     brunnr: BrunnrHandle | None,
     embedder: OllamaEmbedClient,
+    *,
+    text_only: bool = False,
 ) -> tuple[list[RetrievalHit], str | None]:
     """Search the Well for one turn; return ``(hits, failure)``.
 
@@ -1315,6 +1362,15 @@ def _retrieve(
     """
     if brunnr is None:
         return [], None
+    # E-054: graceful smallness may shed semantic retrieval —
+    # the turn then skips the embed call entirely (saving the
+    # work, not just its use) and searches on plain words,
+    # the same honest text shape the no-vector degrade uses.
+    if text_only:
+        try:
+            return brunnr.text_search(text, k=_DEFAULT_K), None
+        except Exception as exc:
+            return [], f"{type(exc).__name__}: {exc}"
     try:
         vectors = embedder.embed([text])
     except Exception:
