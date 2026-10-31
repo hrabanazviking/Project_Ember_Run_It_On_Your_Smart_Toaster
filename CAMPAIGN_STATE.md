@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 13:50 EDT
-Status: IN PROGRESS — E-055 (the budget book published in-repo) being built by the 13:42 keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054
-Next slice: E-055 — The budget book published in-repo with its measurements
+Last updated: 2026-10-31 13:57 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-056
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055
+Next slice: E-056 — Regression armour: budget tests join the permanent gate
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2180,3 +2180,42 @@ Top-level members present (size / file count, working tree excl. .git):
   remote moved fba8c6a → 24be2b5, verified via ls-remote (remote head =
   24be2b54fc41e1509ad924b9c76d08bf51ce914e = local HEAD at push time).
 - E-055 next — the budget book published in-repo with its measurements.
+
+## E-055 — The budget book published (DONE, 2026-10-31)
+
+- Published book filed at `docs/BUDGET_BOOK.md`, record at
+  `docs/architecture/E-055_BUDGET_BOOK_PUBLISHED.md`: the whole budget book in
+  one reader-facing document — plain words first; the four profiles' ceiling
+  table exactly as `ember.budgets` states it (incl. the flat 5.0 s cold-start
+  cap and the config-read history allowances); E-041's founding measurements
+  (install 978,843 B, idle 40.7 MiB, turn 40.1 MiB, 694 B/turn; "~50 MB
+  installed" struck, "~50 MB RAM" true-and-generous); the lightening
+  (E-043 sdist 127,162,419 → 3,464,529 B unpacked; E-044 dependency diet);
+  the behaviour table (E-045 idle hour 0.0 s CPU / 1 thread / disk identical,
+  E-046 cold start 2.87 s median, E-052 update 293,387 / 775,675 /
+  1,844,737 B, E-050 month 408,566 B + essay edge 6,144 B/episode, E-053 duty
+  0.1885 vs 0.4117, E-051 thermal lines, E-054 shedding ladder); the device
+  proofs with grades attached (E-047 Pi REAL — ready 0.18 s, RSS 27.1 MiB,
+  installed 1,951,508 B; E-048 phone SIMULATED — ready 1.77 s, RSS 43.0 MiB;
+  E-049 Toaster REAL — ready 0.21 s, RSS 27.2 MiB, installed 1,956,428 B,
+  verdict in two halves: name cashed for the core, NOT CASHED for a whole
+  companion on a literal 512 MiB host, model runners 442 + 565 MB measured);
+  exclusions + NOT PROVEN lines in the book's own §6 (real phone, real
+  battery drain %/h, Pi thermals); and an appendix carrying every
+  `MEASURED_*` anchor by code name and value.
+- Drift armour: `tests/unit/test_budget_book_e055.py` — **8 tests** judging
+  the published document against the LIVE code (no second copy of any
+  number): ceiling-table cells == `all_budgets()`, history allowances ==
+  config-derived budgets, every `MEASURED_*` anchor (27 at banking) present
+  at its coded value, storage arithmetic == the code's functions, honesty
+  lines present, ceiling table holds exactly the four profiles (member rows
+  stay E-057's). Two first-draft presentation defects caught by these tests
+  and fixed before banking (abbreviated history allowances in the book;
+  the test's cold-start print format). No new measurements taken, no ceiling
+  moved, no `src/` code changed, no new docket items. No README touched.
+- Slice gate: Run B **1040 passed, 6 failed, 25 skipped, 1 warning**
+  (1032 E-054 baseline + 8 new; the 6 are the proven environment failures,
+  identical set). Run D **1097 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1089 + 8 — reconciles exactly). Logs in
+  `~/workspace/.verify-tmp/ember-e055/gate/`.
+- E-056 next — regression armour: budget tests join the permanent gate.
