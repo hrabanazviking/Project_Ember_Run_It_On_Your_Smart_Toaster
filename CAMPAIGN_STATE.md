@@ -2612,3 +2612,9 @@ Top-level members present (size / file count, working tree excl. .git):
   exit 0 (1133 + 18). Logs in `~/workspace/.verify-tmp/ember-e062/gate/`.
 - E-063 next — the conversation logger's law: what is logged, where,
   for whom; retention + the user's delete right (total, provable).
+- E-062 push: banking commit 49a43ab pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 8c946b5,
+  an ancestor; the push also carried the tick's IN PROGRESS marker
+  801bf77) — remote moved 8c946b5 → 49a43ab, verified via ls-remote
+  (remote head = 49a43ab528f64c5b950bc2fd42a9d135ef67d6f9 = local HEAD
+  at push time).
