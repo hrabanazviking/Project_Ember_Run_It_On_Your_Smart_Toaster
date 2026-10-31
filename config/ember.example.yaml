@@ -1,11 +1,23 @@
 # Ember Agent — main configuration template
 #
-# Copy this file to ~/.ember/config/ember.yaml and edit per your
-# deployment. Every key is optional; absent keys fall through to the
-# defaults in src/ember/schemas/config.py.
+# THIS IS THE ONE CONFIG FILE (E-033). Ember reads exactly one
+# operator config file: ~/.ember/config/ember.yaml — or, on an
+# install without PyYAML, ~/.ember/config/ember.toml with the same
+# keys in TOML shape. There is no second Ember config file to find:
+# the other files in this folder (storage.example.yaml,
+# sources.example.yaml) are copy-paste excerpts of THIS file, not
+# separate surfaces. You do not need to copy or edit anything to
+# start: every key is optional, and absent keys fall through to
+# the sensible defaults in src/ember/schemas/config.py. A key
+# Ember does not know is refused at startup with the key named —
+# a typo can never silently change who your companion is.
 #
-# Loaded by `ember.config.load_ember_config`. Environment variables
-# (e.g. OLLAMA_HOST) overlay on top of anything set here.
+# Loaded by `ember.config.load_ember_config`. Exactly two
+# environment variables overlay on top of anything set here —
+# OLLAMA_HOST and EMBER_WELL_PASSWORD (see .env.example at the
+# repo root; Ember does not load a .env file itself). A handful
+# of command-line flags (e.g. --allow-tools) override for one
+# run only and are never saved.
 #
 # Cross-reference:
 #   docs/architecture/{ARCHITECTURE,DATA_FLOW,DOMAIN_MAP}.md
@@ -33,6 +45,10 @@ identity:
 # ---------------------------------------------------------------------------
 funi:
   runtime: ollama
+  # true: replies appear word by word as they are written.
+  # false: each reply arrives whole. Leave true unless your
+  # terminal struggles with streams or you pipe output to a log.
+  streaming: true
   ollama:
     base_url: "http://localhost:11434"
     model: "phi3:mini"
@@ -59,6 +75,9 @@ funi:
   #   # 256 is the Aesir service's own default reply ceiling; a
   #   # request may lower but never raise the service's ceiling.
   #   max_tokens: 256
+  #   # How long one request may take, in milliseconds. Leave
+  #   # unset (null) to use the Aesir service's own limit.
+  #   timeout_ms: null
 
 # ---------------------------------------------------------------------------
 # Cognition — optional ThoughtForge layer (E-024, candidate)
@@ -75,12 +94,23 @@ funi:
 #   provider: thoughtforge
 #   # phone / pi / laptop can afford the layer; toaster cannot.
 #   profile: pi
+#   # The ThoughtForge thinking-API generation this Ember was
+#   # written against. A ThoughtForge reporting a different
+#   # generation is refused at startup, never silently adapted to.
+#   expected_api_major: 1
 #   # ThoughtForge's own state, kept inside Ember's folder so
 #   # custody of the folder is custody of the companion.
 #   memory_dir: "~/.ember/thoughtforge/memory"
 #   db_path: "~/.ember/thoughtforge/knowledge.db"
 #   # Empty/unset → ThoughtForge runs knowledge-only (no model).
 #   # model_path: "~/models/phi-3-mini-q4.gguf"
+#   # How many draft answers ThoughtForge may prepare per turn.
+#   # Unset → your profile's cap (phone/pi 1, laptop 2). This is a
+#   # cap, never a raise: the engines draft fewer by construction.
+#   # num_drafts: 1
+#   # Any extra settings, passed to ThoughtForge exactly as
+#   # written — Ember does not rename or reinterpret them.
+#   # tf_config: {}
 
 # ---------------------------------------------------------------------------
 # Personae — who the companion is (E-025)
@@ -96,6 +126,29 @@ funi:
 # ---------------------------------------------------------------------------
 # personas:
 #   active: "ember"
+
+# ---------------------------------------------------------------------------
+# Conversation — how much of your past talks ride along (E-021)
+# Each turn, Ember carries a window of your earlier conversation
+# so it can follow the thread. Smaller machines carry less. Pick
+# the profile closest to your machine; the numbers below it are
+# the profile's own and only need setting if you want different.
+# ---------------------------------------------------------------------------
+conversation:
+  # toaster / phone / pi / laptop. pi is the middle default.
+  profile: pi
+  # How much history may ride along, counted roughly in tokens
+  # (about 3/4 of a word each). Unset → the profile's amount
+  # (toaster 512, phone 1024, pi 2048, laptop 4096).
+  token_budget: null
+  # How many past exchanges are kept word-for-word at most.
+  # Unset → the profile's count (toaster 3, phone 5, pi 8,
+  # laptop 12).
+  max_episodes: null
+  # true: what falls out of the window is first boiled down to a
+  # short summary that still rides along, so Ember never acts as
+  # if the earlier talk simply never happened.
+  summarise_dropped: true
 
 # ---------------------------------------------------------------------------
 # Strengr — the tether
@@ -181,6 +234,30 @@ tools:
     # fetch_url:   forbidden   # example: mechanically disable a tool
   # Where the JSONL audit log lands. null → <config_root>/state/tool_audit/
   audit_root: null
+
+# ---------------------------------------------------------------------------
+# MCP — outside tool programs (ADR 0014)
+# MCP lets Ember use tools provided by small helper programs, and
+# can also let other programs use Ember's own Well. Both are off
+# by default: Ember starts no helper program and offers itself
+# to nobody until you say so here.
+# ---------------------------------------------------------------------------
+mcp:
+  enabled: false        # set true to start the helper programs below
+  expose_self: false    # set true to let `ember mcp serve` offer Ember's Well + diagnostics to other programs
+  startup_timeout_s: 10.0   # how long a helper program may take to start before Ember gives up on it
+  call_timeout_s: 30.0      # how long one helper call may take
+  servers: []
+  # One entry per helper program. Its tools appear in chat as
+  # mcp__<name>__<tool> and ask your approval per call, except
+  # any you list in auto_approve. Example:
+  # servers:
+  #   - name: "notes"
+  #     command: "notes-mcp-server"
+  #     args: ["--readonly"]
+  #     env: {}
+  #     cwd: null
+  #     auto_approve: []
 
 # ---------------------------------------------------------------------------
 # Logging

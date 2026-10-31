@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 06:10 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-032 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032
-Next slice: E-033 — Config for humans: one config surface, sane defaults, every key documented in plain words (E-013's live keys only)
+Last updated: 2026-10-31 06:20 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-033 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033
+Next slice: E-034 — Logging a friend can read: the companion's diary-shaped log (what happened, in words) beside the technical trace
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1318,6 +1318,43 @@ Top-level members present (size / file count, working tree excl. .git):
   fad2f1a → bfa0e35, verified via ls-remote (remote head =
   bfa0e35d403dcb54be2503b977b5b2bdf8d1af12 = local HEAD at push time).
 
+
+## E-033 — Config for humans (DONE, 2026-10-31)
+
+- Filed at `docs/architecture/E-033_CONFIG_FOR_HUMANS.md`: the one config
+  surface stated plainly — one file (`~/.ember/config/ember.yaml`, or
+  `ember.toml` on a PyYAML-less install, E-032 shape; both present → YAML
+  wins with a warning), no file at all = the sane defaults, and an unknown
+  key refused at startup BY NAME (the refusal is what makes one surface a
+  fact; pinned by test incl. a fossil `openai_api_key`). Thin layers only:
+  exactly two env vars (E-013's live keys re-verified in code —
+  `OLLAMA_HOST`, `EMBER_WELL_PASSWORD`; Ember loads no .env file), CLI
+  flags for one run, persona/identity files as content inside the same root.
+- **Docket 55 CLOSED** — `.env.example` rewritten: the Runa fossil (a dozen
+  provider/bridge keys to `~/.runa/secrets/runa.env`, zero consumers) now
+  documents exactly the two live variables, the no-.env-loading truth, and
+  the one config file. **Docket 56 closed for the core** — the template
+  `config/ember.example.yaml` now documents EVERY `EmberConfig` field:
+  the audit (dataclass-tree walk × template) found `conversation` (E-021),
+  `mcp`, `funi.streaming`, `funi.aesir.timeout_ms`, and cognition's
+  `expected_api_major` / `num_drafts` / `tf_config` entirely undocumented;
+  all now present with plain-words comments + defaults, and a tree-walk
+  test fails the gate if any future field is undocumented. The excerpt
+  files stopped promising a split: `config/storage.example.yaml` and
+  `config/sources.example.yaml` now state they are NOT config files
+  (storage = brunnr excerpt of the one file; Smiðja sources are CLI-given,
+  no registry). Member half of 56 stays with E-037 as assigned.
+- Defaults audited from a constructed `EmberConfig()`, none changed (local
+  model/Well, tools/MCP/cognition off, streaming on, pi history window) —
+  the defect was documentation + the fossil, not the numbers. Recorded
+  behaviour: file-loaded paths are ~-expanded at load by the coercion
+  layer's documented design; schema defaults stay unexpanded until use.
+- Tests: `test_config_for_humans_e033.py` **6 passed**. Slice gate Run B:
+  **796 passed, 6 failed, 15 skipped, 1 warning** (790 E-032 baseline + 6
+  new; the 6 are the proven environment failures). Run D (whole, extras):
+  **842 passed, 0 failed, 19 skipped, 1 warning**, exit 0. No production
+  code changed, no README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1352,4 +1389,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-030 DONE (2026-10-31) — error honesty: the chat session's three silent failures are now spoken in plain warnings at the moment they happen — an Episode that cannot be saved (docket 85 CLOSED; "remembered only until this session ends"), a mid-session Well search that fails (docket 86 CLOSED; operator told, prompt carries do-not-invent, Episode flagged well_disconnected, catch broadened beyond BrunnrError), and a startup history load that fails (found in this slice's audit, fixed in scope; "they have not been deleted") — and ERROR/LENGTH finishes are persisted with their error/truncation tags on both roads so a failed or partial reply never reads back as a completed answer; an embedding failure alone is not a retrieval failure (text-search degrade returns real hits, test-pinned); 12 new tests; gate Run B 773 passed / 6 proven-env failed / 14 skipped, Run D 815 passed / 0 failed; filed at docs/architecture/E-030_ERROR_HONESTY.md.
 - E-031 DONE (2026-10-31) — session persistence: the pending-episodes journal built (ember.well.pending_journal, per-episode atomic JSON files under <config_root>/state/pending_episodes/, fsync + os.replace + dir fsync) — disconnected turns and Well-save failures are journaled instead of lost (docket 82 CLOSED), a connected startup drains the journal in order before history loads with outcomes spoken, corrupt journal files are quarantined to corrupt/ (never deleted) and reported; sqlite_vec gains synchronous=FULL beside WAL and a BrunnrError-wrapped add_episode, and both adapters skip single corrupt episode rows instead of failing the whole history; 8 + 4 new tests; gate Run B 781 passed / 6 proven-env failed / 15 skipped, Run D 827 passed / 0 failed; filed at docs/architecture/E-031_SESSION_PERSISTENCE.md.
 - E-032 DONE (2026-10-31) — the day-one flow, timed and friction-audited in a clean venv (VM profile, loopback wire-shape model): fresh venv 26.79 s + pip upgrade 19.92 s (corrected same day — the first-banked 1.85 s was a re-run over the existing venv), install 19.24 s, day-one ask (wizard + first chat) 1.28 s, second run 0.93 s; three breaks fixed in scope — Hjarta EOF crash (docket 15 CLOSED; clean abort, nothing written), Hjarta writing an `ember.yaml` the documented `[sqlite_vec]`-only install cannot read back without PyYAML (new docket 88 CLOSED; writer falls back to stdlib-readable `ember.toml`, YAML unchanged when PyYAML present), and a Well path typed in the wizard being probed then forgotten (new docket 87 CLOSED; persisted as `brunnr.sqlite_vec.path`, no override for the default); INSTALL.md's wizard list corrected (tools question, TOML case) and the wizard prompt's hardcoded yaml path fixed; real-model day one NOT PROVEN (no Ollama on the VM; Part III owns it); 9 new tests; gate Run B 790 passed / 6 proven-env failed / 15 skipped, Run D 836 passed / 0 failed; filed at docs/architecture/E-032_DAY_ONE_FLOW.md.
-- E-033 next — Config for humans: one config surface, sane defaults, every key documented in plain words (E-013's live keys only).
+- E-033 DONE (2026-10-31) — config for humans: one surface stated + enforced (unknown/fossil keys refused by name at startup), `.env.example` Runa fossil rewritten to the two live env vars (docket 55 CLOSED), template now documents every EmberConfig field (conversation/mcp/streaming/aesir timeout_ms/cognition keys were missing; tree-walk test guards it), storage/sources excerpts state they are not config files (docket 56 core half closed, member half stays E-037), defaults audited unchanged; 6 new tests; gate Run B 796 passed / 6 proven-env failed / 15 skipped, Run D 842 passed / 0 failed; filed at docs/architecture/E-033_CONFIG_FOR_HUMANS.md.
+- E-034 next — Logging a friend can read: the companion's diary-shaped log beside the technical trace.
