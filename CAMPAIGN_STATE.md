@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-30 22:38 EDT
+Last updated: 2026-10-30 23:35 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004
-Next slice: E-005 — Fresh baseline II
+Banked: E-001, E-002, E-003, E-004, E-005
+Next slice: E-006 — Boot census
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -149,10 +149,47 @@ Top-level members present (size / file count, working tree excl. .git):
   (CDE ×3, J ×1); (4) the un-awaited-coroutine warning. Doc-only slice,
   no code touched, no README touched, no push.
 
+## E-005 — Fresh baseline II (DONE, 2026-10-30)
+
+- Truth table filed at `docs/audit/E-005_FRESH_BASELINE_II.md`: every member's
+  own suite run in its own shape (default env + with-declared-deps shape, deps
+  supplied from an isolated target dir outside the repo, E-004 method).
+- Headline counts (with-deps shape where deps were needed): seidr_engine
+  **38 passed** (the one fully green member); kista 146 passed / 3 failed;
+  Verdandi 539 passed / 19 failed; mimir-well 350 passed / 6 failed; bifrost
+  18 passed / 7 failed (cannot collect uninstalled); Hamr 2170 passed /
+  28 failed / 33 skipped / 2 errors (cannot collect uninstalled); mempalace
+  1597 passed / 90 failed / 39 errors / 106 deselected; CloakBrowser
+  (vendored) 385 passed / 39 failed / 15 errors. Dictionary Jest suite NOT RUN
+  (node_modules absent); astrology-engine and Open-VTT have NO test suites.
+- Dominant cause class is ENVIRONMENT, *proven*: the VM's proxy env
+  (bracketed IPv6 in `no_proxy`) makes httpx die with `Invalid port: ':1]'`
+  inside chromadb/CloakBrowser clients — with a cleaned `no_proxy`,
+  mempalace's searcher+closets files pass 85/85. Blender absent accounts
+  for Hamr's 18F+2E; flask/pytest-asyncio/sqlite-style declared deps absent
+  in the default env account for the rest of the environment class.
+- REAL defects found (all carried to the E-016 docket as items 5–12 in the
+  E-005 doc): a machine-coupling family — kista tests judge a `~/.hermes`
+  copy of credstore (3 tests), Verdandi CLI tests cd to `~/Verdandi` (5),
+  mimir-well eye fixture sets `DB_PATH` while the app reads `MIMIR_DB_PATH`
+  over `~/.hermes` defaults (6), Hamr tests name `/home/pi/Hamr` (3 of its 7
+  machine-shape failures); Verdandi `vor_action.py:69` AttributeError breaks
+  the pulse cycle (7 tests); Verdandi YAML loader raises IsADirectoryError
+  instead of defaults (1); bifrost tests import optional muninn unguarded (6)
+  and bifrost/Hamr pytest configs lack `pythonpath` (suites cannot collect
+  uninstalled, unlike mimir-well); Hamr release-promotion tests judge the
+  standalone repo's `.github` layout (STALE, 3); mempalace hook tests judge
+  a `.claude-plugin/` directory absent from the tree (STALE, 10) plus a small
+  UNRESOLVED residue (lock timeout, MCP diary/write asserts), recorded as such.
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
+  Doc-only slice, no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
 - E-002 DONE (2026-10-30) — member census in depth, filed at docs/audit/E-002_MEMBER_CENSUS.md.
 - E-003 DONE (2026-10-30) — ORIGINS concordance, filed at docs/audit/E-003_ORIGINS_CONCORDANCE.md.
 - E-004 DONE (2026-10-30) — fresh baseline I: whole root suite classified; with extras 583 passed / 0 failed, filed at docs/audit/E-004_FRESH_BASELINE_I.md.
-- E-005 next — Fresh baseline II.
+- E-005 DONE (2026-10-30) — fresh baseline II: per-member truth table; seidr green, bulk of failures proven environment (proxy-env httpx signature), 8 new docket items (machine-coupled tests family), filed at docs/audit/E-005_FRESH_BASELINE_II.md.
+- E-006 next — Boot census.
