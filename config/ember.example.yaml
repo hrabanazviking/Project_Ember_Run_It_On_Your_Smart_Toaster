@@ -40,6 +40,25 @@ funi:
     temperature: 0.7
     top_p: 0.9
     num_predict: 1024
+  # ─── Project Aesir (E-023) ──────────────────────────────────────
+  # To run Ember on Volmarr's own Aesir engine instead, set
+  # `runtime: aesir` above and start Aesir's native service first
+  # (loopback only). The native route holds ONE resident model and
+  # accepts no tool calls; Ember sends the conversation in the
+  # prompt each turn. See docs/architecture/E-023_AESIR_BACKEND.md.
+  # aesir:
+  #   base_url: "http://127.0.0.1:18434"
+  #   # Expected resident model; "" accepts whatever the service
+  #   # reports ready. A mismatch is refused at startup, not swapped.
+  #   model: ""
+  #   # The bearer key's FILE — a reference, never the key itself.
+  #   # Create it with Aesir's keygen; Ember reads it at startup.
+  #   api_key_file: "~/.config/aesir/service.key"
+  #   temperature: 0.7
+  #   top_p: 0.9
+  #   # 256 is the Aesir service's own default reply ceiling; a
+  #   # request may lower but never raise the service's ceiling.
+  #   max_tokens: 256
 
 # ---------------------------------------------------------------------------
 # Strengr — the tether

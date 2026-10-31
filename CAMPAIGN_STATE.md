@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 03:10 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-022 banked
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022
-Next slice: E-023 — Aesir backend for Ember: Project Aesir bound under E-022's contract
+Last updated: 2026-10-31 03:27 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-023 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023
+Next slice: E-024 — ThoughtForge binding (candidate): MindSpark ThoughtForge as the core's cognition layer on profiles that afford it
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -856,6 +856,51 @@ Top-level members present (size / file count, working tree excl. .git):
   remote moved 80a56fa → ab67b65, verified via ls-remote (remote head =
   ab67b656c6751610afe357e545319e8e588083de = local HEAD at push time).
 
+## E-023 — Aesir backend for Ember (DONE, 2026-10-31)
+
+- Binding filed at `docs/architecture/E-023_AESIR_BACKEND.md`. Project Aesir is
+  Ember's second implemented Funi backend, bound under E-022's contract against
+  Aesir's own API support matrix v1 + native-service doc. **Native mode only**
+  (`POST /v1/generate` on loopback :18434, bearer-authenticated) — Aesir's
+  Ollama-compatible mode was deliberately not used, so the registry never
+  disguises Aesir as Ollama.
+- Built: `FuniRuntime.AESIR` + `FuniAesirConfig` (base_url :18434, expected
+  resident `model` — empty accepts the probe's report, key file path,
+  max_tokens default **256** = the service's own default ceiling, optional
+  timeout_ms); `AesirFuni` adapter (`src/ember/spark/funi/aesir/`, stdlib
+  urllib only, zero new deps) with open-probe `GET /health/ready`
+  (unreachable → ENDPOINT_UNREACHABLE; 401/403 → CONFIG_INVALID; 503 /
+  ready≠true / expected-model mismatch → NOT_LOADED; success names the
+  resident model). Context flattens to the route's two fields (SYSTEM+SUMMARY
+  → system; EPISODE/CHUNK/TOOL_REPLY-as-labelled-text + operator line →
+  prompt, since each generation resets history server-side). Finish mapping:
+  eos/stop → STOP, length → LENGTH, **timeout → LENGTH** (deadline partial),
+  tool_calls → TOOL_CALL, refused → REFUSED; counts ← prompt/generated_tokens;
+  native streaming with EOF-without-terminal-record = ERROR chunk.
+- **Key custody:** config carries the key file's path only (Well shape,
+  E-013/E-020); open() validates Aesir's key grammar and never echoes key
+  material in any detail, log, or error; the key travels only as the
+  Authorization header.
+- **Tools refused, not dropped:** the native route rejects a tools field, so
+  a turn carrying descriptors returns an ERROR reply and nothing is sent —
+  capabilities declare `tool_calls=False` (not model-dependent).
+  `AESIR_CAPABILITIES`: native streaming, token counts yes, RAM never
+  reported, endpoint required, all ContextKinds translated. Registry now
+  publishes two implemented backends; E-022's conformance tests updated with
+  attribution to pin the implemented set `[OLLAMA, AESIR]`.
+- **Ledger respected / NOT PROVEN:** no accelerator claim is made from the
+  server's `backend` field (Aesir's capability ledger is the authority,
+  incl. its Hailo distinctions); **no live Aesir service was run** — all
+  behaviour is proven over a mocked transport shaped from the published
+  matrix/fixtures, and a live end-to-end turn is NOT PROVEN, awaiting a
+  machine with the service up (Part III proof work, device named then).
+  One-generation-at-a-time is the service's shape, noted for E-038.
+- Tests: `test_aesir_backend_e023.py` **26 passed** (default env);
+  E-022 file **16 passed** with its updated pins. Slice gate Run B:
+  **616 passed, 6 failed, 13 skipped, 1 warning** — 590 E-022 baseline + 26
+  new; the 6 are the proven environment failures. Run D (whole, extras):
+  **657 passed, 0 failed, 19 skipped**, exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -880,4 +925,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-020 DONE (2026-10-31) — tethering made explicit: three tethers specified from code at docs/architecture/E-020_TETHERING_SPEC.md (person = one config root, identity name+role only, no account/person record, env surface exactly OLLAMA_HOST + EMBER_WELL_PASSWORD; machine = localhost Ollama/embedder defaults, one implemented runtime with typed Unavailable for the rest, `~` unexpanded until use, tools/MCP off by default; memory = Well only via Strengr, 3 attempts / 30 s cap / fast-fail set / health never raises / typed Disconnected), the hard-model vs soft-memory startup asymmetry named, Hjarta as the binding ceremony, and T-W6's honest centre (Episodes write-only, docket 81/82 → E-021/E-031); 13 new spec-pinning tests in tests/unit/test_tethering_e020.py all passing; plain-language statement added to docs/OPERATOR_PLAYBOOK.md and its Recipe 10 conversation-recall overclaim found and fixed in scope; slice gate 559 passed / 6 proven-environment failed / 12 skipped / 1 warning.
 - E-021 DONE (2026-10-31) — conversation engine hardening: episode reader on the Brunnr protocol + both adapters (docket 81 CLOSED — history survives restarts for connected sessions), profile-aware token-budget windowing (ConversationConfig: toaster 512/3, phone 1024/5, pi 2048/8 default, laptop 4096/12; caps + budget, newest always kept, dropped always reported), Summariser hook protocol with a deterministic model-free extractive default riding as ContextKind.SUMMARY, chat startup history load + per-turn windowing replacing the fixed [-5:]; 15 + 4 new tests; gate Run B 574 passed / 6 proven-env failed / 13 skipped, Run D with extras 615 passed / 0 failed; docket 82 stays E-031's, filed at docs/architecture/E-021_CONVERSATION_HARDENING.md.
 - E-022 DONE (2026-10-31) — model backends: `BackendCapabilities` + `StreamingMode` declared in schemas and added to the FuniHandle protocol; `backend_registry()`/`capabilities_for()` publish per-runtime truth (Ollama the only implemented backend: native streaming, tool calls model-dependent, token counts yes, RAM never reported, all context kinds; the other four runtimes capability-free and typed-Unavailable); 16 conformance tests in test_backend_contract_e022.py incl. a WRAPPED complete-only fake; FUNI_LOCAL_MODEL_OPTIONS §4 drift (/api/generate, embed(), 127000 tokens) fixed in scope; gate Run B 590 passed / 6 proven-env failed / 13 skipped, Run D 631 passed / 0 failed; filed at docs/architecture/E-022_BACKEND_CONTRACT.md.
-- E-023 next — Aesir backend for Ember: Project Aesir bound under E-022's contract (its ledger respected).
+- E-023 DONE (2026-10-31) — Aesir backend for Ember: Project Aesir bound under E-022's contract in its native mode only (POST /v1/generate, loopback :18434, bearer key from a key *file* — config carries the path, never the value, and no detail/log ever echoes key material); FuniRuntime.AESIR + FuniAesirConfig (max_tokens default 256 = the service's own ceiling); context flattened to prompt+system (each generation resets history server-side); tools refused as ERROR replies, never dropped (capabilities tool_calls=False); native streaming, EOF-without-terminal = ERROR; finish mapping eos→STOP / timeout→LENGTH; registry implemented set now [OLLAMA, AESIR] with E-022's tests updated under attribution; 26 new tests; gate Run B 616 passed / 6 proven-env failed / 13 skipped, Run D 657 passed / 0 failed. Ledger respected: no accelerator claim from the server's backend field, and a live end-to-end turn against a running Aesir service is NOT PROVEN (mocked transport only), filed at docs/architecture/E-023_AESIR_BACKEND.md.
+- E-024 next — ThoughtForge binding (candidate): MindSpark ThoughtForge as the core's cognition layer on profiles that afford it (TF-road's TF-159 consumes the same contract from its side).

@@ -40,6 +40,7 @@ class FuniRuntime(StrEnum):
     LMSTUDIO = "lmstudio"
     PHI_SILICA = "phi_silica"
     APPLE_FOUNDATION = "apple_foundation"
+    AESIR = "aesir"  # E-023 — Project Aesir native service
 
 
 class LogLevel(StrEnum):
@@ -107,6 +108,41 @@ class FuniOllamaConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class FuniAesirConfig:
+    """Operator-facing config for the Project Aesir backend (E-023).
+
+    Aesir's native service is loopback-only (``127.0.0.1:18434`` by
+    default) and authenticated with a bearer key that lives in a
+    protected key file the service reads at startup (see Aesir's
+    NATIVE_SERVICE doc). Ember follows the Well-secret shape
+    (E-013/E-020): the config carries the key file's *path* — a
+    reference, never the key value — and the adapter reads the file
+    at ``open()`` time, keeping the value in memory only.
+
+    ``model`` is the *expected* resident model identity. The native
+    ``/v1/generate`` route names no model (the service holds exactly
+    one resident model), so an empty value accepts whatever model
+    the service reports ready; a non-empty value is verified against
+    the readiness probe at ``open()`` and a mismatch is a typed
+    ``Unavailable``, never a silent substitution.
+
+    ``max_tokens`` defaults to 256, the Aesir service's own default
+    reply ceiling — a request may lower but never raise the service
+    ceiling, so Ember's default must not promise more than the
+    service's default grants. ``timeout_ms`` is omitted from requests
+    when None (the service's own limit then applies).
+    """
+
+    base_url: str = "http://127.0.0.1:18434"
+    model: str = ""
+    api_key_file: Path = Path("~/.config/aesir/service.key")
+    temperature: float = 0.7
+    top_p: float = 0.9
+    max_tokens: int = 256
+    timeout_ms: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class FuniConfig:
     runtime: FuniRuntime = FuniRuntime.OLLAMA
     streaming: bool = True
@@ -116,6 +152,7 @@ class FuniConfig:
     or operators piping output to log collectors, may set ``false``
     in their ``ember.yaml``."""
     ollama: FuniOllamaConfig = field(default_factory=FuniOllamaConfig)
+    aesir: FuniAesirConfig = field(default_factory=FuniAesirConfig)
     # Other runtime sub-configs (llamacpp, lmstudio, phi_silica,
     # apple_foundation) land alongside their adapters in Phase 5+.
 
@@ -381,6 +418,7 @@ __all__ = [
     "ConversationProfile",
     "EmbeddingConfig",
     "EmberConfig",
+    "FuniAesirConfig",
     "FuniConfig",
     "FuniOllamaConfig",
     "FuniRuntime",

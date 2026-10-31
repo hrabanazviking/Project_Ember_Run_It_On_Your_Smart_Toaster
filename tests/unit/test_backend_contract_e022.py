@@ -4,9 +4,11 @@ Before E-022 the Funi contract was four methods on a Protocol and
 capability claims lived only in prose. These tests pin:
 
 - the registry covers every FuniRuntime exactly once;
-- exactly one backend (Ollama) is implemented; the other four are
-  honestly unimplemented — open() says Unavailable and the registry
-  grants them no capabilities;
+- the implemented backends are exactly the ones slices have shipped
+  (Ollama at E-022; Aesir added at E-023, whose own conformance lives
+  in test_aesir_backend_e023.py); the rest are honestly
+  unimplemented — open() says Unavailable and the registry grants
+  them no capabilities;
 - Ollama's declared capabilities match its registry entry and the
   adapter's actual mocked-transport behaviour;
 - a minimal complete()-only backend conforms via the WRAPPED
@@ -52,14 +54,20 @@ def test_registry_covers_every_runtime_exactly_once() -> None:
     assert len({e.runtime for e in registry}) == len(registry)
 
 
-def test_exactly_one_backend_is_implemented() -> None:
+# E-023: Aesir joined Ollama as an implemented backend. This list
+# is the implemented set as of E-023; a future backend slice extends
+# it here with its own attribution, as E-021 did for ContextKind.
+_IMPLEMENTED = [FuniRuntime.OLLAMA, FuniRuntime.AESIR]
+
+
+def test_implemented_backends_are_exactly_the_shipped_set() -> None:
     implemented = [e.runtime for e in funi_handle.backend_registry() if e.implemented]
-    assert implemented == [FuniRuntime.OLLAMA]
+    assert implemented == _IMPLEMENTED
 
 
 def test_unimplemented_runtimes_have_no_capabilities() -> None:
     for entry in funi_handle.backend_registry():
-        if entry.runtime is FuniRuntime.OLLAMA:
+        if entry.runtime in _IMPLEMENTED:
             assert entry.capabilities is not None
         else:
             assert entry.implemented is False
@@ -69,7 +77,7 @@ def test_unimplemented_runtimes_have_no_capabilities() -> None:
 
 @pytest.mark.parametrize(
     "runtime",
-    [r for r in FuniRuntime if r is not FuniRuntime.OLLAMA],
+    [r for r in FuniRuntime if r not in _IMPLEMENTED],
 )
 def test_unimplemented_runtime_open_is_typed_unavailable(
     runtime: FuniRuntime,
