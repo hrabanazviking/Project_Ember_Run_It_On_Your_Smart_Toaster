@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 00:08 EDT
+Last updated: 2026-10-31 00:17 EDT
 Status: STOPPED between slices (no slice IN PROGRESS)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010
-Next slice: E-011 — The two-Kistas boundary doc
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011
+Next slice: E-012 — The two-memories census
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -359,6 +359,49 @@ Top-level members present (size / file count, working tree excl. .git):
   **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
   Doc-only slice, no code touched, no README touched, no push.
 
+## E-011 — The two-Kistas boundary doc (DONE, 2026-10-31)
+
+- Boundary filed at `docs/audit/E-011_TWO_KISTAS_BOUNDARY.md`: the two
+  Kistas separated plainly — codebases, purposes, custody rules (§5,
+  8 binding rules) — so no future worker conflates them. Toaster side
+  proven from this tree; ai-folder side stated from the roadmap §2 +
+  recorded purplelongship evidence (2026-10-30/31), graded RECORDED
+  not MEASURED (that side was not accessed this slice; no credential
+  value or account address reproduced anywhere in the doc).
+- Headline: **toaster-Kista** is `kista/` here — one import commit
+  (4f81633, 2026-05-21), v2.0.0, one-file credstore (2,382 lines),
+  Fernet whole-vault `vault.json.enc` + plaintext `vault_meta.json`,
+  14 entry types in code, ~25 subcommands, **zero consumers in root
+  `src/`** (UNWIRED: wired = no). **Ai-folder Kista** is the living
+  line on purplelongship, kept current with standalone GitHub
+  `runafreyjasdottir/kista` (head recorded 54e31f1090, 2026-06-07),
+  Runa/Hermes custody, the one Heimdall uses; Volmarr stored +
+  verified his Second Life credentials in it 2026-10-30. Volmarr's
+  boundary ruling recorded verbatim in the doc. Shared name/spirit/
+  lineage is fact; shared custody or sync is forbidden (roadmap §6).
+- Six hazards found, all in-tree: H1 the toaster copy's default vault
+  dir is the OTHER Kista's home (`~/.hermes/credentials`, same
+  filenames) — the dangerous one, in code; H2 Verdandi's Mímir check
+  expects a THIRD shape (`~/.kista/vault.db`, SQLite `entries`) that
+  neither Kista writes; H3 the toaster tests judge the other
+  installation (see below); H4 `kista/references/known-accounts.md`
+  is the ai-side vault's operational status ledger sitting in the
+  toaster tree (status only, no credentials — recorded, not removed);
+  H5 the Yggdrasil design docs' aspirational fourth shape
+  (`~/.ember/kista.vault`, `kista://` URIs, stale "8 entry types");
+  H6 both sides answer to "v2.0" — cite Kista by which + where + when.
+- Kista suite re-run this slice as boundary evidence: **146 passed,
+  3 failed** — identical to E-005, and the 3 failures are H3 exactly
+  (subprocess tests exec `~/.hermes/skills/devops/runa-credentials/
+  scripts/credstore.py`, absent here, FileNotFoundError in raw output).
+  New docket items 46–50 for E-016 (default-home collision → Part VI;
+  Verdandi vault.db check → Part IV; known-accounts custody →
+  Volmarr's word; SKILL.md Hermes framing/stale count → E-104;
+  Hermes-shaped add-soul/add-cron-backup/github-backup → E-098).
+- Slice gate: root suite re-run in the E-001 shape (pgvector file excluded):
+  **546 passed, 6 failed, 12 skipped** — identical to the opening baseline.
+  Doc-only slice, no code touched, no README touched, no push.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -371,4 +414,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-008 DONE (2026-10-30) — the codex census: four elder codices DONE-in-fact (Hermes 58 total, Chatdoll 69, SAP 83, Waifu 21 — every content doc present with its Ember closer, none under its word floor), Ragnarok scaffold-only with 0/46 content docs, all five TASK status lines stale, no codex referenced in src/, 5 new docket items (26–30), filed at docs/audit/E-008_CODEX_CENSUS.md.
 - E-009 DONE (2026-10-30) — the Verdandi concordance: v0.3.0 Skuld proven in code + 35/35 dedicated tests, Vör broken in 3 places (docket 31 expands item 7), pulse_metrics write-only, v0.4 distributed/REST absent and Prometheus/emotion double-listed, VD-RM covers heartbeat only, 7 new docket items (31–37), filed at docs/audit/E-009_VERDANDI_CONCORDANCE.md.
 - E-010 DONE (2026-10-31) — the Hamr verification plan: every Ph1–17 claim mapped to its proving artefact + method + environment (runner-only counts, symbol-existence rule); Phase 6 has no claim anywhere, Phase 14 no COMPLETE artefact, Phase 17 a vision with no .vrm in tree, MaterialForge/CollisionForge/PoseLibrary absent as named, Ph15 CI promotion check false in-tree, count spine self-contradictory vs E-005; execution bucketed to E-138/E-139/E-140; 8 new docket items (38–45), filed at docs/audit/E-010_HAMR_VERIFICATION_PLAN.md.
-- E-011 next — The two-Kistas boundary doc.
+- E-011 DONE (2026-10-31) — the two-Kistas boundary doc: toaster-Kista (in-tree, v2.0.0, Fernet vault.json.enc, 14 entry types, zero root consumers) vs ai-folder Kista (purplelongship, standalone GitHub line, Runa/Hermes custody, Heimdall's vault) separated with 8 binding custody rules; 6 conflation hazards found (default ~/.hermes vault home in code, Verdandi's third vault.db shape, tests judging the ~/.hermes copy — re-proven 146 passed / 3 failed, known-accounts ledger in-tree, Yggdrasil aspirational shape, shared v2.0 label); ai-folder side graded RECORDED not MEASURED; 5 new docket items (46–50), filed at docs/audit/E-011_TWO_KISTAS_BOUNDARY.md.
+- E-012 next — The two-memories census.
