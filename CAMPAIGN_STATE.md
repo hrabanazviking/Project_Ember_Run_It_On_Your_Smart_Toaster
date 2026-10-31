@@ -2468,3 +2468,8 @@ Top-level members present (size / file count, working tree excl. .git):
   Doc-only slice, no code touched, no README touched.
 - E-061 next — event contract v1: event shapes versioned; producers/
   consumers listed per event.
+- E-060 push: banking commit be93dfb pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 669655d, an
+  ancestor; the push also carried the tick's IN PROGRESS marker eb3d440) —
+  remote moved 669655d → be93dfb, verified via ls-remote (remote head =
+  be93dfb9453fea2ee7bce1fe7415ddd3d8858693 = local HEAD at push time).
