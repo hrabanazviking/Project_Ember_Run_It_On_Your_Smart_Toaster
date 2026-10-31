@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 02:17 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I CLOSED at E-018
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018
-Next slice: E-019 — Part II opens: core loop mapped
+Last updated: 2026-10-31 02:27 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part II open, E-019 banked
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019
+Next slice: E-020 — Tethering made explicit
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -686,6 +686,47 @@ Top-level members present (size / file count, working tree excl. .git):
   local HEAD at push time; the push also carried the previously unpushed
   E-017 push-record commit 8cf35cc).
 
+## E-019 — Core loop mapped (DONE, 2026-10-31)
+
+- Map filed at `docs/architecture/E-019_CORE_LOOP_MAP.md`: the companion's turn
+  lifecycle drawn from code only (`src/ember/`: 70 Python files, 11,002 lines;
+  the turn lives in `spark/munnr/chat.py`'s `run()` + helpers; `ask` is the
+  same loop fed one line via StringIO). Startup order proven: config → tool
+  overrides → logging → Hjarta first-run gate (chat/ask) → dispatch; session
+  opens Funi FIRST (Unavailable → exit 1, Well never opened) and the Well
+  SECOND via Strengr retry (Disconnected is honest, not fatal).
+- The turn: retrieve (embed → hybrid k=5 if the vector matches
+  `embedding_dim`, else text k=5; failures degrade silently to no vector /
+  no hits) → assemble (SYSTEM + last-5 in-process episodes + hits, in that
+  order; no token budget or summarisation anywhere) → generate (streaming
+  default True; Ollama the only implemented Funi adapter, stdlib urllib,
+  errors folded into typed ERROR replies/chunks, never raised) → tool loop
+  when enabled (default off; validate → approve → timeout-execute → audit,
+  ≤8 rounds, replies fed back as TOOL_REPLY context; only the final text
+  persists) → render (live deltas, finish tag, citations) → persist Episode.
+  No event bus and no other member (Verdandi / mempalace / mimir-well) is
+  referenced anywhere in `src/ember/`.
+- Six new docket items 81–86 (numbering continues E-016's, per its rule):
+  81 Episodes are WRITE-ONLY — `BrunnrHandle` has `add_episode` and no
+  reader (mcp/server.py's own comment says so), so history never survives a
+  restart despite DATA_FLOW §2.1 claiming episodes are "read from Well"
+  → E-021/E-031; 82 the pending-episodes journal promised in
+  `schemas/episode.py` + DATA_FLOW §2.2 does not exist in code — a
+  disconnected session's turns are lost at exit → E-031; 83 non-streaming
+  tool_calls are passed descriptors but never executed, contradicting
+  chat.py's own comment → E-026/E-028; 84 DATA_FLOW stale vs code (k=8 vs 5,
+  "no streaming / no tool use" §7, the nonexistent `AskTurn` type)
+  → E-039/E-194; 85 `add_episode` failures suppressed with no operator
+  warning → E-030/E-031; 86 mid-session `BrunnrError` retrieval failure is
+  silent (no banner, prompt reads as an honestly empty Well) → E-030.
+  No defect fixed in this mapping slice — each has its Part II fixing home
+  named, per the E-016 docket rule.
+- Slice gate: root suite re-run in the E-001/E-017 Run B shape (pgvector
+  file excluded; TMPDIR on the workspace overlay): **546 passed, 6 failed,
+  12 skipped, 1 warning** — identical to the E-017 freeze; the 6 failures
+  are the proven environment failures. Doc-only slice (plus this state
+  file), no code touched, no README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -706,4 +747,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-016 DONE (2026-10-31) — the bug & gap docket: every Part I carried item numbered, classified, and assigned in one table (80 entries covering 79 distinct issues; items 1–71 preserved exactly as E-004–E-015 assigned them, continuous with no gap or duplicate — verified from the extracted carried sections; items 72–80 first-numbered here for the pre-numbering E-002/E-003 findings and the unnumbered open measurements: ORIGINS register gap, drift detector never built, ADR-sequence silence, IMG provenance/UUID names, vendor/config register mismatches, astrology + Open-VTT zero test suites, dictionary Jest NOT MEASURED, unregistered 22-file root image population, CloakBrowser vendored-suite record); item 53 is a re-observation of 10, not a distinct defect. Owner tally sums to 80 (Part IV largest at 13, Part IX 11, Part II 9). Cross-links recorded (31 expands 7; 13 is the boot face of 2; 16/18 two halves; the five-entry machine-coupling family 5/8/10/17/11). Volmarr's word required for 26, 48, and the removal halves of 60/62/63/64; NOT PROVEN honestly at 40, 44, 78 and item 12's residue. Filed at docs/audit/E-016_BUG_GAP_DOCKET.md.
 - E-017 DONE (2026-10-31) — baseline freeze: the campaign's zero line pinned at docs/audit/E-017_BASELINE_FREEZE.md, measured at HEAD 37fc2f2 (3,246 tracked files; VM, Python 3.12.3, pytest 9.1.1). Root suite re-measured in full this slice, all three shapes IDENTICAL to E-004/E-001: Run A whole/default interrupted at collection (1 error, 8 skipped, exit 2 — docket 1); Run B default excl. pgvector file **546 passed, 6 failed, 12 skipped, 1 warning**; Run D whole with extras **583 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (counts frozen; wall time is not). Per-member truth table pinned from E-005 as corrected by E-012 (seidr 38 green; kista 146/3; Verdandi 539/19; mimir-well 350/6; bifrost 18/7; Hamr 2170/28/33/2E; mempalace corrected 1712/14/1/106-desel/0E with volatility caveat docket 54; CloakBrowser vendored 385/39/15E, docket 80; dictionary NOT MEASURED docket 78; astrology + Open-VTT no suites docket 77). Boot zero line pinned from E-006 with key rows re-probed identical this slice (ember --help exit 0, seidr composes exit 0, ember doctor bare still crashes on sqlite_vec docket 13; Verdandi hub + Mímir's Eye LIVE-proven in E-006). Keeper re-measurement method recorded in the freeze doc (Run B is the per-slice gate; Runs A/D at part gates and on docket 1–4 touches; TMPDIR on workspace overlay always; counts from runner logs only). MCP/Ollama/podman/Gungnir-guarded tests NOT PROVEN — guarded, not passed. Doc-only slice, no code touched, no README touched.
 - E-018 DONE (2026-10-31) — Part I gate PASS: audit published in-repo (16 docs, E-002–E-017, under docs/audit/), verdicts prepared (not executed) for every member (all KEEP / KEEP-STEWARD / KEEP-PENDING-VERDICT; nothing removed, merged, or retired), the six gate-owned docket items verdict-prepared (52, 60, 62, 63, 64, 71 — removals/folds in 60/62/64 await Volmarr's word, as do 26 Ragnarok and 48 known-accounts custody; none blocks Part II), plain-language summary filed, and the road checked against five re-cut triggers with NO structural re-cut demanded (four sharpenings S1–S4 recorded). Gate re-measurement identical to the E-017 freeze in all three shapes (A: 1 error/8 skipped; B: 546 passed/6 failed/12 skipped/1 warning; D with extras: 583 passed/0 failed/19 skipped/1 warning). Filed at docs/audit/E-018_PART_I_GATE.md. **Part I (E-001–E-018) is CLOSED.**
-- E-019 next — Part II opens: core loop mapped (the companion's turn lifecycle drawn from code; architecture doc published).
+- E-019 DONE (2026-10-31) — core loop mapped: entry → startup (Funi first, Well second) → retrieve k=5 → assemble (system + last-5 in-process episodes + hits, no token budget) → Ollama streaming generation → ≤8-round tool loop → render → Episode persist, all drawn from code at docs/architecture/E-019_CORE_LOOP_MAP.md; no event bus / no other member in the loop; six new docket items 81–86 (episodes write-only with no cross-restart history, pending-episodes journal unimplemented, non-streaming tool calls dropped, DATA_FLOW drift, silent persistence and retrieval failures), each with its Part II fixing home named.
+- E-020 next — tethering made explicit: what "tethered" means in the code (to its person, its machine, its memory) — specified, tested, and stated in user docs.
