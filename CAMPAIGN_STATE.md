@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 17:35 EDT
-Status: IN PROGRESS — E-065 (the reflex layer: fast, dumb, safe reactions below cognition)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064
-Next slice: E-065 — The reflex layer: fast, dumb, safe reactions below cognition (never speaks for the companion)
+Last updated: 2026-10-31 17:58 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-066
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065
+Next slice: E-066 — Nerve health: a stuck/dead nerve is detected and reported; the hub degrades honestly
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2727,3 +2727,57 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried the tick's IN PROGRESS marker 8c560a6) —
   remote moved 649ab88 → a2e729c, verified via ls-remote (remote head =
   a2e729c1381601d40a495aec8562d7fc61fb9748 = local HEAD at push time).
+
+## E-065 — The reflex layer (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-065_REFLEX_LAYER.md` and in code
+  at `Verdandi/reflexes.py` (stdlib-only, standalone like event_contract.py /
+  context_budget.py / logger_law.py / stimuli.py): the reactions below
+  cognition are registered and bounded. Five reflexes — auto_push,
+  auto_restart, auto_cleanup, auto_heal, preemptive_heal — mapped by the
+  heartbeat Reactor's six rules onto five checks; each spec states trigger
+  checks, floor severity, effect and BaseAction cooldown, pinned equal to
+  the live ACTION_REGISTRY, each action class's declared fields, and the
+  Reactor's rule set by the conformance tests. The three words made
+  testable: FAST (deterministic rule match, no model, no core import),
+  DUMB (fixed rules; an unregistered action is not a reflex), SAFE (WARNING
+  floor — OK/UNKNOWN fire nothing — positive cooldown, dry-run honoured,
+  and every reflex runs through BaseAction.execute's wrapper: no registered
+  action overrides execute(), pinned). NEVER SPEAKS: a reflex's only output
+  is the ActionResult record; validate_reflex_result refuses any record
+  carrying a speech field or an unregistered name (the Heimdall doc-05
+  instinct applied). Directives propose (conversation reactor), reflexes
+  act, cognition speaks.
+- **Docket 31 CLOSED** — Vör (preemptive_heal) repaired in
+  `heartbeat/actions/vor_action.py`: should_trigger / _get_capacity_prediction
+  / _get_capacity_summary guard Skuld's string capacity shapes
+  ({"status": "no_resource_data"} / "insufficient_data") with the isinstance
+  guard Skuld's own consumer uses, plus a non-dict emotion guard; both
+  ActionResult constructions use action_name= (was name=) and the no-action
+  return is ActionSeverity.SKIPPED (was the nonexistent INFO); execute()
+  became _execute() so the reflex runs under BaseAction's wrapper, with
+  trigger_checks=["prediction"] / trigger_severity=WARNING /
+  cooldown_seconds=300 declared like its siblings. Vör's FIRST tests land
+  in this slice's conformance suite (string shapes, real urgency, capacity
+  helpers, SKIPPED record, wrapper dry-run, one real pre-emptive path).
+- **Docket 95 CLOSED** — the conversation reactor's react(focus=…) was
+  accepted and silently ignored for its whole life; it now applies
+  FOCUS_MAP (each focus keeps exactly its category + its directive, other
+  categories returned empty, shape unchanged, the context injector's
+  react() call untouched) and an unknown focus raises ValueError.
+- No new reflex added; no trigger, floor, cooldown or effect changed;
+  no new docket items. Transport (E-067), nerve health incl. dockets
+  96/34 (E-066) and backpressure (E-070) keep their owners.
+- E-057 table re-measured for the Verdandi weight change (184 files /
+  16,903,436 B; total 131,297,395 B; laptop miss 126,220 B), both
+  published copies updated. Conformance:
+  `tests/unit/test_reflex_layer_e065.py` **18 passed**; Verdandi focal
+  conversation set **101 passed** (identical to E-059–E-064) and heartbeat
+  set **374 passed** (identical to E-060; pytest-asyncio from the
+  e005-extras dir, short TMPDIR). Slice gate: Run B **1144 passed,
+  6 failed, 25 skipped, 1 warning** (1126 + 18; the 6 are the proven
+  environment failures, identical set, verified in three runs); Run D
+  **1201 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1183 + 18).
+  Logs in `~/workspace/.verify-tmp/ember-e065/gate/`. No README touched.
+- E-066 next — nerve health: a stuck/dead nerve is detected and reported;
+  the hub degrades honestly.

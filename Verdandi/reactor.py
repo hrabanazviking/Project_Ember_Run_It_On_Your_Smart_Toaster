@@ -26,6 +26,23 @@ STATE_DIR = Path.home() / ".hermes" / "state"
 CONV_LOG = STATE_DIR / "conversation_log.jsonl"
 CURRENT_FILE = STATE_DIR / "current.json"
 
+# Focus discipline (E-065, docket 95): --focus / react(focus=…)
+# was accepted and silently ignored before this slice. Each
+# focus value names the ONE category it keeps and the ONE
+# top-level directive that belongs to it; every other
+# category is returned empty, so a focused report cannot
+# quietly carry the whole report with it. "all" keeps
+# everything (the default, and what the context injector
+# calls). Focus values are exactly the CLI's choices.
+FOCUS_MAP = {
+    "all": None,
+    "blockers": ("blockers_needing_reaction", "resolve_blockers"),
+    "learnings": ("recent_learnings_to_store", "store_learnings"),
+    "files": ("files_changed_needing_push", "verify_pushed"),
+    "next": ("next_actions_to_pick_up", "continue_work"),
+}
+FOCUS_CHOICES = tuple(FOCUS_MAP)
+
 
 def _read_all_entries() -> list[dict]:
     """Read all entries from the JSONL log."""
@@ -252,7 +269,26 @@ def react(focus: str = "all") -> dict:
             "detail": f"{len(reactions['milestones_to_acknowledge'])} milestone(s) achieved",
             "items": [m["reaction"] for m in reactions["milestones_to_acknowledge"]]
         })
-    
+
+    # Focus filter (E-065, docket 95): keep only the focused
+    # category and its directive; all other categories are
+    # returned empty (the shape is unchanged, so format and
+    # consumers keep working). An unknown focus is refused,
+    # never silently treated as "all".
+    if focus not in FOCUS_MAP:
+        raise ValueError(
+            f"unknown focus {focus!r}; expected one of {sorted(FOCUS_MAP)}")
+    focused = FOCUS_MAP[focus]
+    if focused is not None:
+        keep_category, keep_action = focused
+        for key in reactions:
+            if key == "reactions":
+                reactions[key] = [
+                    r for r in reactions[key] if r.get("action") == keep_action
+                ]
+            elif key != keep_category:
+                reactions[key] = []
+
     return reactions
 
 
