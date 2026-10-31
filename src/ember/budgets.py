@@ -1,0 +1,272 @@
+"""The budget book — per-profile ceilings for the Ember core (E-041).
+
+Part III opens here. Tiny hardware is this project's soul, and
+until this slice the core's size had never been weighed by the
+campaign: the front door claimed "~50 MB" of RAM and "~50 MB"
+installed (E-015, docket 67) and nobody had measured either.
+E-041 measured the core on the VM profile (method and full
+numbers in ``docs/architecture/E-041_BUDGET_BOOK.md``) and this
+module is the book those measurements bought, in code:
+
+* **Four profiles**, the ones E-021 already names —
+  :class:`~ember.schemas.config.ConversationProfile`'s
+  ``toaster`` (the smallest, the project's namesake floor),
+  ``phone``, ``pi`` and ``laptop``. Each profile's ceiling set
+  covers the four costs the roadmap names: install size, idle
+  RAM, turn RAM, and storage growth per month.
+* **Ceilings price the Ember core only** — the Python package,
+  its default local Well, its diary and journal. The language
+  model is *not* Ember's cost and is never folded in: the model
+  ladder (which model fits which host) is the FUNI docs' table,
+  and the book states each profile's reference host so a reader
+  can add the two honestly. A ceiling that silently included a
+  model would be a claim Ember cannot keep on its own.
+* **Measured anchors, not wishes.** The constants below record
+  what the core actually cost on measurement day; every ceiling
+  is a stated multiple of the anchor it governs, so a future
+  slice (E-042) can turn the book into tests that fail loudly
+  when the core outgrows its profile instead of drifting.
+* **Storage growth is workload-shaped.** A turn costs a fixed
+  number of bytes (one Well episode + its diary lines); a
+  month's growth is that cost times the turns, so the book
+  projects growth at a stated reference workload (20 turns a
+  day) instead of pretending growth is a property of the code
+  alone. Documents an operator ingests into the Well are their
+  own act, not growth — they are bounded by the ingest caps
+  (E-015 §4), not by this book.
+
+Stdlib only, like the rest of the core. This module measures
+nothing at runtime; it *states* the book. The measuring lives
+in the E-041 slice record and in E-042's tests.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from ember.schemas.config import ConversationConfig, ConversationProfile
+
+_MIB = 1024 * 1024
+
+# --------------------------------------------------------------------- #
+# Measured anchors (VM profile, 2026-10-31 — E-041 slice record)        #
+# --------------------------------------------------------------------- #
+
+#: Bytes of one persisted turn in the default (sqlite_vec) Well:
+#: a typical turn (operator ~40 words, reply ~40 words) measured
+#: over 100 episodes — (143,360 − 81,920) / 100 = 614.4, recorded
+#: as the whole-byte floor the projection uses.
+WELL_BYTES_PER_EPISODE = 614
+
+#: Bytes of diary per turn (E-034): two short fact lines
+#: ("answered", "saved") at ~40 bytes each, measured from a real
+#: session file (660 bytes held a session's start/stop lines plus
+#: five turns of two lines each).
+DIARY_BYTES_PER_TURN = 80
+
+#: The reference workload the monthly projection is stated at:
+#: twenty turns a day, every day — a companion in daily use,
+#: not a benchmark burst.
+REFERENCE_TURNS_PER_DAY = 20
+
+#: What the installed core weighed on measurement day: the
+#: package itself (729,802 B, byte-identical installed and in
+#: source), its dist-info (83,102 B) and the one default extra a
+#: working install carries, ``sqlite-vec`` (165,939 B with its
+#: dist-info) — 978,843 bytes in all, bytecode caches excluded
+#: (they are a runtime artefact, counted in the book's prose).
+MEASURED_INSTALL_BYTES = 978_843
+
+#: The heaviest idle shape measured: the CLI surface imported
+#: and the default Well open — 40.7 MiB RSS on the VM. (Idle
+#: without the Well measured 25.3 MiB; the Well is part of a
+#: running companion, so the book anchors on the heavier shape.)
+MEASURED_IDLE_RAM_MIB = 40.7
+
+#: The heaviest turn shape measured: five real chat turns
+#: against the real Well (labelled fake model), the largest
+#: per-profile peak — 40.1 MiB RSS, flat across all four
+#: profiles at fixture scale.
+MEASURED_TURN_RAM_MIB = 40.1
+
+
+def storage_bytes_per_turn() -> int:
+    """The on-disk cost of one ordinary turn, in bytes.
+
+    One Well episode plus its diary lines. The pending journal's
+    per-episode file (741 B measured) is *transient* — it drains
+    into the Well at the next connected session (E-031) — so it
+    is not growth and is not counted here.
+    """
+    return WELL_BYTES_PER_EPISODE + DIARY_BYTES_PER_TURN
+
+
+def projected_monthly_growth_mib(turns_per_day: int = REFERENCE_TURNS_PER_DAY) -> float:
+    """Projected storage growth for a 30-day month of companionship."""
+    return storage_bytes_per_turn() * turns_per_day * 30 / _MIB
+
+
+# --------------------------------------------------------------------- #
+# The book                                                              #
+# --------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileBudget:
+    """One profile's ceilings — the most the core may cost there.
+
+    ``reference_host_ram_mib`` is the smallest host the profile
+    is named for *in this book* (the toaster's 512 MiB is the
+    Tiny Device Profile's Pi Zero 2 W target, E-015 §5; the
+    others are this book's definitions, stated so the model
+    ladder can be added honestly). It is context, not a ceiling
+    on Ember: Ember's ceilings are the four cost fields.
+
+    ``history_token_budget`` is not a second copy of E-021's
+    numbers — it is read from the conversation config the
+    profile actually runs with, so the book can never drift
+    from the code it describes.
+    """
+
+    profile: ConversationProfile
+    reference_host_ram_mib: int
+    install_mib: float
+    idle_ram_mib: float
+    turn_ram_mib: float
+    storage_growth_mib_per_month: float
+
+    @property
+    def history_token_budget(self) -> int:
+        return ConversationConfig(profile=self.profile).resolved_token_budget
+
+    @property
+    def history_max_episodes(self) -> int:
+        return ConversationConfig(profile=self.profile).resolved_max_episodes
+
+
+_BUDGETS: dict[ConversationProfile, ProfileBudget] = {
+    ConversationProfile.TOASTER: ProfileBudget(
+        profile=ConversationProfile.TOASTER,
+        reference_host_ram_mib=512,
+        install_mib=2.0,
+        idle_ram_mib=64.0,
+        turn_ram_mib=64.0,
+        storage_growth_mib_per_month=2.0,
+    ),
+    ConversationProfile.PHONE: ProfileBudget(
+        profile=ConversationProfile.PHONE,
+        reference_host_ram_mib=2048,
+        install_mib=4.0,
+        idle_ram_mib=96.0,
+        turn_ram_mib=128.0,
+        storage_growth_mib_per_month=10.0,
+    ),
+    ConversationProfile.PI: ProfileBudget(
+        profile=ConversationProfile.PI,
+        reference_host_ram_mib=4096,
+        install_mib=8.0,
+        idle_ram_mib=128.0,
+        turn_ram_mib=192.0,
+        storage_growth_mib_per_month=25.0,
+    ),
+    ConversationProfile.LAPTOP: ProfileBudget(
+        profile=ConversationProfile.LAPTOP,
+        reference_host_ram_mib=8192,
+        install_mib=16.0,
+        idle_ram_mib=256.0,
+        turn_ram_mib=384.0,
+        storage_growth_mib_per_month=100.0,
+    ),
+}
+
+#: The profiles in smallest-first order — the book's spine.
+PROFILE_ORDER: tuple[ConversationProfile, ...] = (
+    ConversationProfile.TOASTER,
+    ConversationProfile.PHONE,
+    ConversationProfile.PI,
+    ConversationProfile.LAPTOP,
+)
+
+
+def budget_for(profile: ConversationProfile) -> ProfileBudget:
+    """The budget book's entry for one profile."""
+    return _BUDGETS[profile]
+
+
+def all_budgets() -> tuple[ProfileBudget, ...]:
+    """Every profile's budget, smallest first."""
+    return tuple(_BUDGETS[profile] for profile in PROFILE_ORDER)
+
+
+def check_against(
+    profile: ConversationProfile,
+    *,
+    install_mib: float,
+    idle_ram_mib: float,
+    turn_ram_mib: float,
+    storage_growth_mib_per_month: float,
+) -> tuple[str, ...]:
+    """Judge one measured shape against a profile's ceilings.
+
+    Returns one plain sentence per ceiling the shape exceeds,
+    empty when the shape fits. This is the judgement E-042's
+    budget tests will call; keeping it beside the book means a
+    test failure speaks in the book's own words.
+    """
+    budget = _BUDGETS[profile]
+    problems: list[str] = []
+    if install_mib > budget.install_mib:
+        problems.append(
+            f"install {install_mib:.2f} MiB exceeds the {profile.value} "
+            f"ceiling of {budget.install_mib:.2f} MiB"
+        )
+    if idle_ram_mib > budget.idle_ram_mib:
+        problems.append(
+            f"idle RAM {idle_ram_mib:.1f} MiB exceeds the {profile.value} "
+            f"ceiling of {budget.idle_ram_mib:.1f} MiB"
+        )
+    if turn_ram_mib > budget.turn_ram_mib:
+        problems.append(
+            f"turn RAM {turn_ram_mib:.1f} MiB exceeds the {profile.value} "
+            f"ceiling of {budget.turn_ram_mib:.1f} MiB"
+        )
+    if storage_growth_mib_per_month > budget.storage_growth_mib_per_month:
+        problems.append(
+            f"storage growth {storage_growth_mib_per_month:.2f} MiB/month exceeds "
+            f"the {profile.value} ceiling of "
+            f"{budget.storage_growth_mib_per_month:.2f} MiB/month"
+        )
+    return tuple(problems)
+
+
+def measured_shape_fits(profile: ConversationProfile) -> tuple[str, ...]:
+    """Judge the E-041 measured anchors against one profile.
+
+    Empty when the core as measured fits the profile — the
+    book's founding fact, pinned by the E-041 tests.
+    """
+    return check_against(
+        profile,
+        install_mib=MEASURED_INSTALL_BYTES / _MIB,
+        idle_ram_mib=MEASURED_IDLE_RAM_MIB,
+        turn_ram_mib=MEASURED_TURN_RAM_MIB,
+        storage_growth_mib_per_month=projected_monthly_growth_mib(),
+    )
+
+
+__all__ = [
+    "DIARY_BYTES_PER_TURN",
+    "MEASURED_IDLE_RAM_MIB",
+    "MEASURED_INSTALL_BYTES",
+    "MEASURED_TURN_RAM_MIB",
+    "PROFILE_ORDER",
+    "REFERENCE_TURNS_PER_DAY",
+    "WELL_BYTES_PER_EPISODE",
+    "ProfileBudget",
+    "all_budgets",
+    "budget_for",
+    "check_against",
+    "measured_shape_fits",
+    "projected_monthly_growth_mib",
+    "storage_bytes_per_turn",
+]

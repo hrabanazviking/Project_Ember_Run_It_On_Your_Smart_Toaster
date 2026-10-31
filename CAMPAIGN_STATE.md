@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 07:52 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part II CLOSED at E-040, Part III open
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040
-Next slice: E-041 — The budget book (Part III opens)
+Last updated: 2026-10-31 08:10 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II CLOSED, Part III open at E-041
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041
+Next slice: E-042 — Budget tests (the ceilings become automated tests wired into the slice gate)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -1715,6 +1715,57 @@ Top-level members present (size / file count, working tree excl. .git):
   via ls-remote (remote head =
   3d79c1117d624e7867363487410e21132d22aab5 = local HEAD at push time).
 
+## E-041 — The budget book (DONE, 2026-10-31)
+
+- Book filed at `docs/architecture/E-041_BUDGET_BOOK.md`, in code at
+  `src/ember/budgets.py`: per-profile ceilings (install / idle RAM /
+  turn RAM / storage growth per month) for toaster (512 MiB host),
+  phone (2,048), pi (4,096), laptop (8,192) — core only, the model
+  never folded in. Ceilings: toaster 2 MiB / 64 / 64 / 2 MiB/mo;
+  phone 4 / 96 / 128 / 10; pi 8 / 128 / 192 / 25; laptop 16 / 256 /
+  384 / 100. History budgets read from E-021's conversation config
+  by the book itself (no second copy).
+- Measured on the VM (fresh processes, RSS from /proc; scripts +
+  logs in `~/workspace/.verify-tmp/ember-e041/`): install **978,843 B**
+  all-in (wheel 308,422 B; package 729,802 B = source weight exactly;
+  + dist-info + sqlite-vec extra) — the front door's "~50 MB
+  installed" is STRUCK (~50× over; the 3.5 GB story is Ollama +
+  models, E-197 owns the wording). Idle: CLI surface 25.3 MiB,
+  **40.7 MiB with the default Well open** (Well share ~15 MiB).
+  Turn: five real chat turns against the real Well, history at cap,
+  fake model — **39.4–40.1 MiB peak, flat across all four profiles**.
+  The "~50 MB RAM" claim is TRUE and generous (docket 67 measured;
+  E-045 re-measures idle over an hour).
+- Storage: Well empty 81,920 B, **614 B/episode** over 100 typical
+  turns; diary ~80 B/turn; journal 741 B/episode transient (drains,
+  not growth) — **694 B/turn, 0.40 MiB/month at 20 turns/day**; the
+  toaster ceiling (2 MiB/mo) is reached at ~86 turns/day, stated not
+  rounded away.
+- Docket 65 measurement half SETTLED: Verdandi's two programs
+  measured separately — nerve hub LIVE at **21.9 MiB RSS** (VM,
+  status Running), heartbeat import-level **18.4 MiB**; the hub's
+  "~1 MB" is not a process figure; wording fix stays E-060's, load
+  truth E-075's. Docket 66 SETTLED by replacement: Tiny's
+  622 MB sum / 350 / 400 caps replaced for the shipped core
+  (toaster host 512, core turn ceiling 64); the honest sum OS 150 +
+  core 64 + smallest model ~300 = ~514 MB — marginal on 512 MiB,
+  E-049 grades the real device. Docket 68 recorded with scopes for
+  Part IX; 69 superseded for the core (member table stays E-057);
+  70's member rows stay E-057/E-078/E-103. New docket 90: anchors
+  are VM-only — E-047/E-048/E-049 re-anchor per device, E-042's
+  tests pin the VM anchors and must be re-derived if a device
+  anchor moves a ceiling.
+- Tests: `test_budgets_e041.py` **11 passed** (anchors pinned at
+  measured values so they cannot be quietly "adjusted"; the
+  measured shape fits every profile incl. toaster; one test bug
+  of the slice's own — a 200-turns/day storage assertion that
+  exceeded the toaster ceiling — caught by the runner and
+  corrected to state the true bound). Slice gate Run B: **929
+  passed, 6 failed, 18 skipped, 1 warning** — 918 E-040 baseline
+  + 11 new; the 6 are the proven environment failures. Run D
+  (whole, extras): **979 passed, 0 failed, 19 skipped, 1
+  warning**, exit 0. No README touched.
+
 ## Slice ledger
 
 - E-001 DONE (2026-10-30) — opening: clone, branch, roadmap filed + filing push verified, state file, opening baseline.
@@ -1758,4 +1809,5 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-038 DONE (2026-10-31) — concurrency on small hardware: two chats at once (threads, shared Well, barrier-proven mid-turn overlap, phone profile 1024 tok/5 ep per session) — three races fixed in scope: pending-journal drain double-flush (claim-by-atomic-rename; refusal releases in order), diary double header (flock around size-check + write), sqlite Well "database is locked" (PRAGMA busy_timeout=5000); appends + audit log pinned already safe; measured on VM (fake 50 ms backend, 5 turns/chat): sequential 1.285 s / 23.7 MiB, concurrent 0.93+0.81 s / 23.9+24.2 MiB — second concurrent session <0.5 MiB over serial; each window ≤1024 tokens, two ≤2048; honest limits: threads not two processes (NOT PROVEN), process-global tool Well binding named not fixed, no live model; 9 new tests; gate Run B 910 passed / 6 proven-env failed / 18 skipped, Run D 960 passed / 0 failed; filed at docs/architecture/E-038_CONCURRENCY_SMALL_HARDWARE.md; banking commit 5e9047a pushed (remote a151b89 → 5e9047a, ls-remote = local HEAD).
 - E-039 DONE (2026-10-31) — core docs + runnable examples: three runnable examples where none existed (first_chat — the real chat loop against a labelled fake model + in-memory Well; member_binding — frozen API v1 only, AST-pinned; offline_turns — banner, pending journal, facts-only diary, clean drain) plus a worked phone-class TOML config that loads through the frozen loader; docket 84's DATA_FLOW half CLOSED (k=5, no AskTurn, streaming default, per-turn JSON journal — facts only, voice intact); new docket 89 (stale examples/ scaffold READMEs → E-195, README care); honest limits: no live model (Part III's burden), chat examples use the operator surface's test seams (not frozen API); 8 new tests; gate Run B 918 passed / 6 proven-env failed / 18 skipped, Run D 968 passed / 0 failed; filed at docs/architecture/E-039_CORE_DOCS_EXAMPLES.md; banking commit a3da82a pushed (remote c677a79 → a3da82a, ls-remote = local HEAD).
 - E-040 DONE (2026-10-31) — Part II gate PASS: day-one flow re-proven on the VM profile (targeted 50 passed; three runnable examples each exit 0; E-032 clean-venv timings stand; real-model day one NOT PROVEN — loopback wire-shape model only, Part III owns real-device proof), API freeze checked live (1.0.0, 155 manifest entries, verify_api_surface clean), gate re-measurement identical to E-039 (Run B 918 passed / 6 proven-env failed / 18 skipped; Run D 968 passed / 0 failed / 19 skipped; Run A 1 error docket 1, skips 11 explained by Part II's three new skip-guarded files); Part II docket accounted (closed 15, 55, 56, 81–83, 85–88, 84's DATA_FLOW half; carried open 1, 2, 3, 4, 13 → E-187/E-200, 20 → E-044, 89 → E-195); no road re-cut; filed at docs/architecture/E-040_PART_II_GATE.md. **Part II (E-019–E-040) is CLOSED.**
-- E-041 next — Part III opens: the budget book (per-profile ceilings from E-015's archaeology + measurement).
+- E-041 DONE (2026-10-31) — the budget book: `ember.budgets` + docs/architecture/E-041_BUDGET_BOOK.md; core measured on the VM (install 978,843 B all-in — "~50 MB installed" struck; idle 40.7 MiB with Well open; turn peak 39.4–40.1 MiB flat across profiles — "~50 MB RAM" true and generous, docket 67 measured; storage 694 B/turn → 0.40 MiB/month at 20 turns/day); ceilings per profile (toaster 2 MiB/64/64/2 MiB-mo … laptop 16/256/384/100), history read from E-021's config; docket 65 measurement half settled (Verdandi hub live 21.9 MiB, heartbeat 18.4 MiB import-level; "~1 MB" not a process figure), 66 settled by replacement (toaster sum ~514 MB on a 512 MiB host — marginal, E-049 grades it); new docket 90 (VM anchors only, devices re-anchor at E-047–E-049); 11 new tests; gate Run B 929 passed / 6 proven-env failed / 18 skipped, Run D 979 passed / 0 failed.
+- E-042 next — budget tests: the ceilings become automated tests wired into the slice gate.
