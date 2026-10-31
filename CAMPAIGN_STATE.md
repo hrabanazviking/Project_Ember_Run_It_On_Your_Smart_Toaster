@@ -779,6 +779,11 @@ Top-level members present (size / file count, working tree excl. .git):
   TMPDIR on the workspace overlay): **559 passed, 6 failed, 12 skipped,
   1 warning** — the 546 freeze baseline + the 13 new tests; the 6 failures
   are the proven environment failures, identical to the freeze.
+  Pushed under Volmarr's 2026-10-31 standing go-ahead: banking commit
+  315032e pushed after fetch + ancestry check (remote head was an
+  ancestor of local HEAD) — remote moved 6846e26 → 315032e, verified
+  via ls-remote (remote head =
+  315032ef4883348439be1a9a9a161a3c9c35d67c = local HEAD at push time).
 
 ## Slice ledger
 
