@@ -1920,7 +1920,11 @@ Top-level members present (size / file count, working tree excl. .git):
   **1009 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1005 + 4
   new — reconciles exactly). The pre-fix first Run D read 1006/3, the
   3 being exactly the wander failures. No new docket items (90 stands,
-  now covering the cold-start anchor). No README touched.
+  now covering the cold-start anchor). No README touched. Pushed under
+  Volmarr's 2026-10-31 standing go-ahead: banking commit ea930a5 pushed
+  after fetch + ancestry check — remote moved ad18ee5 → ea930a5,
+  verified via ls-remote (remote head =
+  ea930a5b0628b7e1593c8b67093c025fc18364de = local HEAD at push time).
 
 ## Slice ledger
 
