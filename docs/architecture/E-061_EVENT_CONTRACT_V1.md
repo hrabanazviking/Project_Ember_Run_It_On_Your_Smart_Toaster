@@ -284,3 +284,21 @@ requires `mood_shift` among the offered choices.
 
 *Filed by the E-061 slice, 2026-10-31. Next: E-062 — context
 injection discipline.*
+
+## Addendum (E-067, 2026-10-31) — the wiring this contract ordered
+
+E-067 executed §4/§8's assignments. The heartbeat's two legacy
+producers are retired: `heartbeat_pulse` and
+`heartbeat_state_change` are now ALSO registered in the hub
+dialect above (canonical, producer `heartbeat/core … via
+_send_nerve_event`, source `verdandi-heartbeat`), and the
+legacy-dialect registrations stay as the explanation for
+pre-E-067 feed lines. Two new hub-dialect events are
+registered with their producers in the same change, per §2's
+rule: `ember_session` and `ember_turn`, produced by the Ember
+core's nerve bridge (`src/ember/nerve.py`, from
+`spark/munnr/chat.run`), source `ember_core`. The full wiring
+record — the three legs, the memory facts the turn event
+carries, and the reverse direction's honest state — is
+`docs/architecture/E-067_CROSS_MEMBER_NERVES.md`; the wiring
+registry in code is `Verdandi/cross_member.py`.

@@ -114,7 +114,7 @@ DEFAULTS: dict[str, Any] = {
     "nerve": {
         "publish_pulses": True,             # Send every pulse to nerve hub
         "publish_alerts": True,             # Send alerts to nerve hub
-        "socket_path": "",                  # Empty = use default from paths
+        "socket_path": "",                  # Empty = canonical hub socket (E-067: runa.sock in the hub state dir)
         "fallback_to_file": True,           # If socket unavailable, write to file
     },
     

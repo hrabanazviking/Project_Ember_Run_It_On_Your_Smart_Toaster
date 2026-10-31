@@ -118,11 +118,20 @@ def test_logger_conv_family_is_registered():
 
 
 def test_heartbeat_legacy_fires_are_registered():
+    # Updated by E-067, the slice E-061 assigned the transport
+    # rewiring to: the heartbeat's producers now emit the
+    # canonical hub envelope via _send_nerve_event, and the
+    # legacy-dialect specs stay registered (status legacy) as
+    # the explanation for pre-E-067 feed lines.
     core = _source(VERDANDI / "heartbeat" / "core.py")
     for name in ("heartbeat_pulse", "heartbeat_state_change"):
-        assert f'"event_type": "{name}"' in core
-        spec = contract.spec_for(name, contract.DIALECT_HEARTBEAT)
-        assert spec is not None and spec.name == name and spec.status == "legacy"
+        assert f'"event_type": "{name}"' not in core
+        assert f'_send_nerve_event(\n            "{name}"' in core or f'"{name}"' in core
+        legacy = contract.spec_for(name, contract.DIALECT_HEARTBEAT)
+        assert legacy is not None and legacy.name == name and legacy.status == "legacy"
+        canonical = contract.spec_for(name, contract.DIALECT_HUB)
+        assert canonical is not None and canonical.name == name
+        assert canonical.status == "canonical" and canonical.source == "verdandi-heartbeat"
     fallback = contract.spec_for("heartbeat_pulse", contract.DIALECT_HEARTBEAT_FALLBACK)
     assert fallback is not None and fallback.source == "verdandi-heartbeat"
 

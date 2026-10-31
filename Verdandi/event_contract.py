@@ -51,8 +51,11 @@ LEGACY DIALECTS (recognised, deprecated — E-059 §6/§8, docket 93)
 
 - ``heartbeat``: flat ``{"event_type": <str>, ...fields}`` sent by
   heartbeat/core.py to ``verdandi.sock`` — a socket NOTHING in
-  this tree listens on. Its producer's transport rewiring to the
-  canonical socket under this contract is E-067's work.
+  this tree listens on. RETIRED as a producer shape by E-067:
+  the heartbeat now publishes the canonical envelope to the
+  hub socket (see the hub-dialect heartbeat specs below). The
+  dialect stays recognised because deployed copies and old
+  feed lines still carry it.
 - ``heartbeat_fallback``: the same flat shape plus ``timestamp``
   and ``source: "verdandi-heartbeat"``, appended directly to
   nerve_feed.jsonl when the legacy socket connect fails.
@@ -161,8 +164,9 @@ class EventSpec:
 # hub itself (feed + ring + broadcast), the hub CLI's subscribe /
 # recent views, and the conversation logger's context builder,
 # which reads the feed FILE (never the live hub). No event in the
-# tree has a typed in-tree subscriber beyond these — that is the
-# honest state E-067's wiring starts from.
+# tree has a typed in-tree subscriber beyond these — E-067 wired
+# the producers (heartbeat, logger in-tree, ember core) onto this
+# contract; typed subscribers remain the honest gap it recorded.
 _HUB_CONSUMERS = (
     "nervous_system.NerveHub (feed, ring buffer, broadcast)",
     "nervous_system CLI (subscribe / recent)",
@@ -337,6 +341,74 @@ EVENT_SPECS = (
         status="canonical",
         notes="Suffix is the location name (a LOCATION_MODIFIERS key).",
     ),
+    # ── Hub dialect: cross-member nerves (E-067) ──────────────
+    # The wiring registry in code is Verdandi/cross_member.py;
+    # these registrations are pinned equal to it by the E-067
+    # conformance tests.
+    EventSpec(
+        name="heartbeat_pulse",
+        dialect=DIALECT_HUB,
+        producer="heartbeat/core.HeartbeatDaemon._fire_nerve_pulse "
+                 "(via _send_nerve_event)",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("pulse_count", "state", "health_score", "health_trend",
+                     "emotional_state", "checks"),
+        source="verdandi-heartbeat",
+        status="canonical",
+        notes="Canonical since E-067: the pulse now reaches the "
+              "hub socket (runa.sock) in the v1 envelope. Carries "
+              "the PRE-transition daemon state, as the legacy "
+              "shape did (fires before the reactor and before "
+              "the state machine transitions — E-059 §8). The "
+              "heartbeat leg's checks include the Mimir memory "
+              "check, so memory state crosses the nerve in this "
+              "event's checks payload.",
+    ),
+    EventSpec(
+        name="heartbeat_state_change",
+        dialect=DIALECT_HUB,
+        producer="heartbeat/core.HeartbeatDaemon._fire_nerve_state_change "
+                 "(via _send_nerve_event)",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("old_state", "new_state", "pulse_count"),
+        source="verdandi-heartbeat",
+        status="canonical",
+        notes="Canonical since E-067. Unlike the legacy shape, "
+              "the canonical sender falls back to the feed file "
+              "when the hub is unreachable — a state change is "
+              "no longer silently lost (E-059 §8).",
+    ),
+    EventSpec(
+        name="ember_session",
+        dialect=DIALECT_HUB,
+        producer="src/ember/nerve.publish_session (from spark/munnr/chat.run)",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("phase", "persona_id", "conversation_id",
+                     "well_connected", "model", "turns"),
+        source="ember_core",
+        status="canonical",
+        notes="E-067: the Ember core's first nerve events. "
+              "phase is start (turns 0, published when the "
+              "session opens) or end (turns = completed turns, "
+              "published from the session's finally block). "
+              "Facts only — never conversation content.",
+    ),
+    EventSpec(
+        name="ember_turn",
+        dialect=DIALECT_HUB,
+        producer="src/ember/nerve.publish_turn (from spark/munnr/chat.run)",
+        consumers=_HUB_CONSUMERS,
+        data_fields=("conversation_id", "persona_id", "hits", "cited",
+                     "persisted", "ungrounded", "outcome", "model"),
+        source="ember_core",
+        status="canonical",
+        notes="E-067: one per completed chat turn. hits/cited "
+              "are the turn's Well retrieval facts; persisted is "
+              "well / journal / memory_only (where the Episode "
+              "landed, E-031); outcome is answered / interrupted "
+              "/ error / truncated / ungrounded. Memory crosses "
+              "the nerve as these facts — never as content.",
+    ),
     # ── Legacy heartbeat dialect (verdandi.sock — no listener) ─
     EventSpec(
         name="heartbeat_pulse",
@@ -350,8 +422,10 @@ EVENT_SPECS = (
         notes="Sent to the legacy verdandi.sock, which nothing in "
               "the tree listens on (E-059 §8); when the connect "
               "fails, the heartbeat_fallback shape below is what "
-              "actually lands in the feed. Canonical transport "
-              "rewiring is E-067's work, under this contract. "
+              "actually lands in the feed. Producer RETIRED at "
+              "E-067: the pulse now publishes the canonical hub "
+              "spec above. This spec stays registered so "
+              "pre-E-067 feed lines keep their explanation. "
               "Carries the PRE-transition daemon state (fires "
               "before the reactor and before the state machine "
               "transitions — E-059 §8).",
@@ -364,8 +438,11 @@ EVENT_SPECS = (
         data_fields=("old_state", "new_state", "pulse_count"),
         source=None,
         status="legacy",
-        notes="Same legacy socket; unlike the pulse it has NO file "
-              "fallback — a failed connect is silent (E-059 §8).",
+        notes="Same legacy socket; unlike the pulse it had NO "
+              "file fallback — a failed connect was silent "
+              "(E-059 §8). Producer RETIRED at E-067: the state "
+              "change now publishes the canonical hub spec above, "
+              "whose sender does fall back to the feed.",
     ),
     EventSpec(
         name="heartbeat_pulse",
@@ -379,11 +456,13 @@ EVENT_SPECS = (
                      "emotional_state", "checks"),
         source="verdandi-heartbeat",
         status="legacy",
-        notes="The pulse's file shape: {timestamp, source, "
-              "event_type, ...fields} written directly to the "
-              "feed. Hub-dialect readers misread it (the hub CLI "
-              "prints its type as '?') — normalize_event exists "
-              "for exactly this line.",
+        notes="The pulse's pre-E-067 file shape: {timestamp, "
+              "source, event_type, ...fields} written directly "
+              "to the feed. Hub-dialect readers misread it (the "
+              "hub CLI prints its type as '?') — normalize_event "
+              "exists for exactly this line. Producer RETIRED at "
+              "E-067: the canonical sender's fallback writes the "
+              "v1 envelope with _fallback instead.",
     ),
 )
 

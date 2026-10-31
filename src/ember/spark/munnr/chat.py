@@ -122,6 +122,7 @@ from ember.spark.funi.tools import (
     resolve_with_answer,
     validate_arguments,
 )
+from ember import nerve
 from ember.diary import Diary, diary_root
 from ember.smallness import SmallnessGuard
 from ember.schemas.conversation import DEFAULT_CONVERSATION_ID
@@ -313,6 +314,21 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
     else:
         brunnr, disconnect = well_result, None
         diary_note("The memory store was connected.")
+
+    # Cross-member nerves (E-067): the session announces itself
+    # to the Verdandi hub — facts only (persona, conversation,
+    # memory connected or not, model), never content. The
+    # bridge never raises and a missing hub degrades to the
+    # feed file inside the bridge; the chat is never affected.
+    nerve.publish_session(
+        "start",
+        persona_id=persona.id,
+        conversation_id=session_conversation,
+        well_connected=brunnr is not None,
+        model=_model,
+        turns=0,
+    )
+    nerve_turns = 0
 
     # Session persistence (E-031, docket 82): the pending-episodes
     # journal for this config root. A connected session drains it
@@ -571,6 +587,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 )
 
             episodes.append(episode)
+            nerve_turns += 1
             # Diary (E-034): the turn's outcome in plain words,
             # read off the same tags the operator saw and the
             # Episode carries — never the turn's content.
@@ -584,6 +601,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 diary_note("A turn was answered without memory grounding.")
             else:
                 diary_note("A turn was answered.")
+            persisted_shape = "memory_only"
             if brunnr is not None:
                 # Persistence failure is recoverable — we keep serving
                 # the operator with the in-memory episode window.
@@ -602,10 +620,12 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 # remembered only until this session ends.
                 try:
                     brunnr.add_episode(episode)
+                    persisted_shape = "well"
                     diary_note("The turn was saved to the memory store.")
                 except Exception as exc:
                     try:
                         pending.append(episode)
+                        persisted_shape = "journal"
                     except Exception as journal_exc:
                         diary_note(
                             "The turn could not be saved anywhere, so "
@@ -642,6 +662,7 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                 # fact, and it is spoken like any save failure.
                 try:
                     pending.append(episode)
+                    persisted_shape = "journal"
                     diary_note(
                         "The turn was saved locally, to be added to "
                         "the memory store when it can be reached again."
@@ -658,7 +679,44 @@ def run(  # noqa: PLR0912,PLR0913,PLR0915 — orchestrator naturally takes confi
                         "ends.]\n"
                     )
                     stdout.flush()
+            # Cross-member nerves (E-067): the completed turn
+            # crosses to the Verdandi hub as memory FACTS — hits
+            # that grounded it, chunks cited, where the Episode
+            # was persisted, its outcome — never its content.
+            # The outcome words are read off the same tags the
+            # diary reads above. The bridge never raises.
+            if render.INTERRUPTED_TAG in episode.ember_reply:
+                nerve_outcome = "interrupted"
+            elif render.ERROR_TAG in episode.ember_reply:
+                nerve_outcome = "error"
+            elif render.TRUNCATED_TAG in episode.ember_reply:
+                nerve_outcome = "truncated"
+            elif turn_ungrounded:
+                nerve_outcome = "ungrounded"
+            else:
+                nerve_outcome = "answered"
+            nerve.publish_turn(
+                conversation_id=session_conversation,
+                persona_id=persona.id,
+                hits=len(hits),
+                cited=len(episode.cited_chunk_ids),
+                persisted=persisted_shape,
+                ungrounded=turn_ungrounded,
+                outcome=nerve_outcome,
+                model=episode.funi_model,
+            )
     finally:
+        # Cross-member nerves (E-067): the session's end crosses
+        # too, from the finally block so every exit path reports
+        # it, with the count of completed turns.
+        nerve.publish_session(
+            "end",
+            persona_id=persona.id,
+            conversation_id=session_conversation,
+            well_connected=brunnr is not None,
+            model=_model,
+            turns=nerve_turns,
+        )
         # Close each handle independently so a raise from one doesn't
         # leak the other. Neither adapter's close() is documented to
         # raise, but we defend in depth.

@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 18:52 EDT
-Status: IN PROGRESS — E-067 (18:42 keeper tick)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066
-Next slice: E-067 — Cross-member nerves: ember core ⇄ Verdandi ⇄ memory (Part V) wired under E-061's contract (IN PROGRESS)
+Last updated: 2026-10-31 19:32 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-068
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067
+Next slice: E-068 — Hermes-shaped nerves: the Verdandi event shapes matched against the Hermes hack's volmarr-core session/turn/tool events (post-refresh surfaces) — one dialect or a documented translation
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2854,3 +2854,58 @@ Top-level members present (size / file count, working tree excl. .git):
   this tick's IN PROGRESS marker 905da16) — remote moved 06aff9b → 471cc9d,
   verified via ls-remote (remote head =
   471cc9dccc8fdb7ff053b74f04623a2539f13acb = local HEAD at push time).
+
+## E-067 — Cross-member nerves (DONE, 2026-10-31)
+
+- Wiring filed at `docs/architecture/E-067_CROSS_MEMBER_NERVES.md`, registry
+  in code at `Verdandi/cross_member.py` (stdlib-only, standalone like
+  event_contract.py): the three legs E-061/E-064/E-066 assigned to this slice,
+  wired under contract v1. **Leg 1, heartbeat → hub:** `heartbeat/core.py`
+  gains `_send_nerve_event` — pulse + state change now go as canonical v1
+  envelopes (literals inline, pinned) to the canonical hub socket
+  (runa.sock; `nerve.socket_path` override still honoured), source
+  verdandi-heartbeat; `_nerve_fallback_file` writes the canonical envelope
+  + hub fallback stamps for BOTH events — the state change's legacy shape
+  had NO fallback and was silently lost (E-059 §8). **Docket 93 COMPLETE.**
+  **Leg 2, logger → hub in-tree (docket 94, E-067 half CLOSED):**
+  `conversation_logger._nerve_candidate_paths()` — deployed
+  ~/.hermes/state copy first (behaviour unchanged where deployed, pinned),
+  sibling in-tree copy second; the standalone half stays E-073's.
+  **Leg 3, core → hub (the core's first nerves):** new `src/ember/nerve.py`
+  bridge (stdlib only, never raises, ack/sent/fallback/error honesty) +
+  chat.run wired at session start, each completed turn, and session end
+  (finally block): `ember_session` / `ember_turn` events carry FACTS ONLY —
+  the turn's memory facts (Well hits, cited chunks, persisted =
+  well/journal/memory_only, ungrounded, outcome from the diary's tags) —
+  never content (sentinel-proven in tests). Memory crosses additionally
+  inside heartbeat_pulse's checks (the Mimir check, as before in intent).
+- Registration per the contract's own rule: event_contract gains canonical
+  hub specs for heartbeat_pulse / heartbeat_state_change / ember_session /
+  ember_turn (pinned equal to cross_member.py); the legacy heartbeat specs
+  stay as pre-E-067 feed lines' explanation; the E-061 doc gains a dated
+  E-067 addendum naming the new events, and E-061's heartbeat-fire test was
+  updated by this slice (the one E-061 assigned the rewiring to) to pin the
+  post-rewiring truth across both dialects. The reverse direction is
+  honestly publish-only: bridge `read_recent` offered + live-proven, no
+  typed subscriber exists, chat does not consume nerves — new **docket 102**
+  (nerve-consumption gap) owned by the E-076 gate review. Suite hygiene:
+  tests/conftest.py gains an autouse fixture redirecting the bridge's hub
+  home to a short per-test /tmp dir (tests must never write the operator's
+  live feed; AF_UNIX's ~108-char cap is why short — this slice's first run
+  proved the trap with 4 socket failures at deep TMPDIR paths).
+- E-057 table re-measured for BOTH changed members (Verdandi 186 files /
+  16,935,635 B; core 130 files / 826,913 B; total 131,342,243 B; laptop
+  miss 158,419 B), both published copies updated. Conformance:
+  `tests/unit/test_cross_member_nerves_e067.py` **21 passed**; prior Part IV
+  conformance (E-061 updated + E-062–E-066 + E-057) **116 passed**; Verdandi
+  focal conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-066 / E-060/E-065; a wider run including
+  test_heartbeat_integration scored 418/5, the 5 being that file's
+  `cwd=~/Verdandi` subprocess tests — E-005's proven machine-coupling
+  family, failing at spawn before any heartbeat code runs). Slice gate:
+  Run B **1184 passed, 6 failed, 25 skipped, 1 warning** (1163 + 21; the 6
+  are the proven environment failures); Run D **1241 passed, 0 failed,
+  19 skipped, 1 warning**, exit 0 (1220 + 21). Logs in
+  `~/workspace/.verify-tmp/ember-e067/gate/`. No README touched.
+- E-068 next — Hermes-shaped nerves: Verdandi event shapes matched against
+  the Hermes hack's volmarr-core session/turn/tool events.

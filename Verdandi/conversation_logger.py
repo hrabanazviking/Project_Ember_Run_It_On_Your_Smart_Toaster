@@ -161,6 +161,21 @@ _nerve_module = None
 _nerve_module_path = None
 
 
+def _nerve_candidate_paths():
+    """Where the nerve hub module may live, in search order (E-067).
+
+    The deployed copy (~/.hermes/state/nervous_system.py) wins
+    wherever one exists — deployed behaviour is unchanged. The
+    sibling copy beside this file is the fallback, so the
+    conversation layer works from this tree with no deployment
+    step (docket 94, E-067 half; the standalone half is E-073's).
+    """
+    return [
+        STATE_DIR / "nervous_system.py",
+        Path(__file__).resolve().parent / "nervous_system.py",
+    ]
+
+
 def _nerve_fire(entry: dict):
     """Fire a nerve impulse — publish event to the nervous system for real-time awareness.
 
@@ -170,8 +185,8 @@ def _nerve_fire(entry: dict):
     """
     global _nerve_module, _nerve_module_path
     try:
-        nerve_path = STATE_DIR / "nervous_system.py"
-        if not nerve_path.exists():
+        nerve_path = next((p for p in _nerve_candidate_paths() if p.exists()), None)
+        if nerve_path is None:
             return
 
         # Refresh cache if the file changed on disk

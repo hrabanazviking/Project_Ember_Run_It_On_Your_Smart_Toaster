@@ -47,6 +47,20 @@ from heartbeat.reactor import Reactor
 
 logger = logging.getLogger("verdandi.heartbeat")
 
+# ─────────────────────────────────────────────────────
+# Cross-member nerves (E-067) — canonical contract literals.
+# The heartbeat's nerve impulses are contract-v1 envelopes
+# (Verdandi/event_contract.py, CONTRACT_VERSION 1; the wiring
+# registry is Verdandi/cross_member.py) sent to the canonical
+# hub socket. These are literals, not imports, because the
+# heartbeat package is deployed standalone; the E-067
+# conformance tests pin them equal to the contract modules.
+# The legacy flat dialect at the heartbeat's own verdandi.sock
+# (which nothing listens on) is retired as a producer shape.
+_NERVE_CONTRACT_VERSION = 1
+_NERVE_SOURCE = "verdandi-heartbeat"
+_NERVE_HUB_SOCKET = Path.home() / ".hermes" / "state" / "runa.sock"
+
 
 # ─────────────────────────────────────────────────────
 # Circuit Breaker — Fail-Fast Protection for Checks/Actions
@@ -594,12 +608,42 @@ class HeartbeatDaemon:
             if self.config.get("nerve.publish_pulses", True):
                 self._fire_nerve_state_change(prev_state, new_state)
 
-    def _fire_nerve_pulse(self) -> None:
-        """Fire a nerve impulse for the pulse event."""
+    def _send_nerve_event(self, event_type: str, data: dict) -> None:
+        """Send one canonical v1 nerve event to the hub (E-067).
+
+        The envelope is {v, type, data, source} under contract
+        v1 (Verdandi/cross_member.py). The target socket is the
+        operator's nerve.socket_path override when one is set,
+        else the canonical hub socket (runa.sock in the hub's
+        state dir). When the hub is unreachable and
+        nerve.fallback_to_file holds (the default), the envelope
+        is appended to the feed file with _fallback instead —
+        for BOTH event types, so a state change is no longer
+        silently lost as the legacy shape's was (E-059 §8).
+        Never raises: a nerve failure must not break the pulse.
+        """
+        envelope = {
+            "v": _NERVE_CONTRACT_VERSION,
+            "type": event_type,
+            "data": data,
+            "source": _NERVE_SOURCE,
+        }
         try:
-            socket_path = self.config.get("nerve.socket_path") or str(get_socket_path())
-            nerve_data = {
-                "event_type": "heartbeat_pulse",
+            socket_path = self.config.get("nerve.socket_path") or str(_NERVE_HUB_SOCKET)
+            import socket as sock_mod
+            with sock_mod.socket(sock_mod.AF_UNIX, sock_mod.SOCK_STREAM) as s:
+                s.settimeout(2)
+                s.connect(socket_path)
+                s.sendall(json.dumps(envelope).encode() + b"\n")
+        except Exception:
+            if self.config.get("nerve.fallback_to_file", True):
+                self._nerve_fallback_file(envelope)
+
+    def _fire_nerve_pulse(self) -> None:
+        """Fire a nerve impulse for the pulse event (canonical, E-067)."""
+        self._send_nerve_event(
+            "heartbeat_pulse",
+            {
                 "pulse_count": self.state.pulse_count,
                 "state": self.state.state.value,
                 "health_score": self._health_score.current,
@@ -612,47 +656,36 @@ class HeartbeatDaemon:
                     }
                     for name, result in self.state.checks.items()
                 },
-            }
-
-            import socket as sock_mod
-            with sock_mod.socket(sock_mod.AF_UNIX, sock_mod.SOCK_STREAM) as s:
-                s.settimeout(2)
-                s.connect(socket_path)
-                s.sendall(json.dumps(nerve_data).encode() + b"\n")
-        except Exception:
-            if self.config.get("nerve.fallback_to_file", True):
-                self._nerve_fallback_file(nerve_data if 'nerve_data' in dir() else {})
+            },
+        )
 
     def _fire_nerve_state_change(self, old_state: DaemonState, new_state: DaemonState) -> None:
-        """Fire a nerve impulse for a state change."""
-        try:
-            socket_path = self.config.get("nerve.socket_path") or str(get_socket_path())
-            nerve_data = {
-                "event_type": "heartbeat_state_change",
+        """Fire a nerve impulse for a state change (canonical, E-067)."""
+        self._send_nerve_event(
+            "heartbeat_state_change",
+            {
                 "old_state": old_state.value,
                 "new_state": new_state.value,
                 "pulse_count": self.state.pulse_count,
-            }
+            },
+        )
 
-            import socket as sock_mod
-            with sock_mod.socket(sock_mod.AF_UNIX, sock_mod.SOCK_STREAM) as s:
-                s.settimeout(2)
-                s.connect(socket_path)
-                s.sendall(json.dumps(nerve_data).encode() + b"\n")
-        except Exception:
-            pass
+    def _nerve_fallback_file(self, envelope: dict) -> None:
+        """Fallback: append the canonical envelope to the feed file.
 
-    def _nerve_fallback_file(self, data: dict) -> None:
-        """Fallback: append nerve impulse to file if socket unavailable."""
+        The written line is the envelope itself plus the hub's
+        own fallback stamps (_ts/_iso/_fallback, the E-061
+        shape publish_event_sync writes when the hub is
+        offline) — no longer the retired flat heartbeat_fallback
+        dialect, which stays recognised for pre-E-067 lines.
+        """
         try:
             feed_path = get_state_dir() / "nerve_feed.jsonl"
+            entry = dict(envelope)
+            entry["_ts"] = datetime.now(timezone.utc).timestamp()
+            entry["_iso"] = datetime.now(timezone.utc).isoformat()
+            entry["_fallback"] = True
             with open(feed_path, "a") as f:
-                entry = {
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "source": "verdandi-heartbeat",
-                    "event_type": data.get("event_type", "heartbeat_pulse"),
-                    **data,
-                }
                 f.write(json.dumps(entry) + "\n")
         except Exception:
             pass

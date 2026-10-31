@@ -11,11 +11,11 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,313,883
-bytes (125.24 MiB) of tracked files** between them, and
+imported members of the E-002 census) weigh **131,342,243
+bytes (125.26 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
-and Verdandi (16,919,924 B) — and in each case the weight
+and Verdandi (16,935,635 B) — and in each case the weight
 is data, not code (benchmark corpora, a test snapshot,
 loose images; E-002/E-014).
 
@@ -25,7 +25,7 @@ mimir-well, seidr_engine, bifrost), kista fits the phone,
 four fit the pi (astrology-engine, Hamr, Open-VTT,
 CloakBrowser's tracked tree), and three fit **no profile
 at all** — mempalace, the dictionary, and Verdandi, which
-misses even the laptop's 16 MiB ceiling by 142,708 bytes.
+misses even the laptop's 16 MiB ceiling by 158,419 bytes.
 *(Re-measured at E-061, which changed Verdandi's tracked
 weight: at E-061's filing the totals above and the Verdandi
 row read 131,211,064 bytes and 16,817,105 B / 179 files,
@@ -53,8 +53,14 @@ conversation reactor's focus: Verdandi then read 184 files /
 miss 126,220 bytes. Re-measured again at E-066, which
 added `Verdandi/nerve_health.py` and reworked the hub's
 status probe and Skuld's pulse_metrics reading: Verdandi
-now reads 185 files / 16,919,924 B, the total
-131,313,883 bytes, the laptop miss 142,708 bytes.)*
+then read 185 files / 16,919,924 B, the total
+131,313,883 bytes, the laptop miss 142,708 bytes.
+Re-measured again at E-067, which added
+`Verdandi/cross_member.py` and the core's nerve bridge
+`src/ember/nerve.py` and rewired the heartbeat's nerve
+transport and the chat loop: Verdandi now reads 186 files /
+16,935,635 B, the core 130 files / 826,913 B, the total
+131,342,243 bytes, the laptop miss 158,419 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -94,8 +100,8 @@ table prices exactly that choice, per profile.
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 129 | 814,264 B | toaster | 12.0 MiB |
-| `Verdandi/` | 185 | 16,919,924 B | none | 12.6 MiB |
+| `src/` (ember core) | 130 | 826,913 B | toaster | 12.0 MiB |
+| `Verdandi/` | 186 | 16,935,635 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 58 | 607,675 B | toaster | 20.8 MiB |
