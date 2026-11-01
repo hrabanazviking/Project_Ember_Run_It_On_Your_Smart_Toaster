@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 20:13 EDT
-Status: IN PROGRESS — E-070 (20:13 keeper tick)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069
-Next slice: E-070 — Backpressure on tiny hardware: a flooded hub sheds by rule, reflexes first-protected
+Last updated: 2026-10-31 20:40 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-071
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070
+Next slice: E-071 — Privacy of nerves: stimuli provenance never leaks across personae (fixtures)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3018,3 +3018,57 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor) — remote moved 7d91cf4 → 7908770, verified via ls-remote
   (remote head = 7908770607da92349e7481bbd040c3135feb36db = local HEAD
   at push time).
+
+## E-070 — Backpressure on tiny hardware (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-070_BACKPRESSURE.md` and in code at
+  `Verdandi/backpressure.py` (stdlib-only, standalone like event_contract.py):
+  a flooded hub sheds by rule, reflexes first-protected. **The tiers:**
+  0 protected (`heartbeat_pulse`, `heartbeat_state_change` — the events
+  E-065's reflexes fire on), 1 high (conv_start/conv_end, ember_session,
+  ember_turn, Hermes session/turn events, hermes.tool.failed — a failure is
+  a fact), 2 normal (conv_event, conv_update, Hermes tool started/completed,
+  reward events, and deliberately any unregistered/operator type — the open
+  vocabulary is never punished), 3 low (the mood families `event:*`,
+  `stimulation:*`, `thought:*`, `location:*`, `orgasm`, retired `ping`).
+  Names read from type/event_type/event so every dialect tiers by one table.
+- **Admission (one rule):** not full → accept; full → compare with the
+  lowest-tier oldest queued event: better tier evicts it, equal tier evicts
+  the oldest of that tier (the old ring's FIFO kept inside a tier), worse
+  than everything queued → the incoming event itself is shed. Before this
+  slice the hub's only backpressure was `deque(maxlen=256)` blindly evicting
+  the oldest event with no record; now every shed is counted per tier and
+  per kind, `protected_shed` is its own counter (a protected event sheds
+  only when the ring holds nothing but protected events — the last resort,
+  reported, not hidden), and `apply_backpressure` returns the shed events
+  in loss order so E-069's replay gap report can be checked against them.
+  Pressure words (calm <70% / pressured 70–99% / full) are report
+  vocabulary only; admission is by tier alone. The feed is untouched
+  (shedding governs the recent tail, not the archive); publishers are not
+  throttled and broadcast order is unchanged — stated as honest limits.
+- **Live hub:** `nervous_system.RingBuffer` applies the same rule inline
+  (inline tier table, as with nerve health E-066, because that file is
+  loaded file-by-file), exposing `shed_count` / `protected_shed_count`;
+  typeless events tier normal, so its long-standing FIFO behaviour for
+  generic events is unchanged and the existing Verdandi ring tests pass
+  unmodified. No new docket items; dockets 100/101/102/103 keep their
+  E-076 owner, now with shedding counters to review.
+- E-057 table re-measured for the Verdandi weight change (189 files /
+  16,984,725 B; total 131,391,333 B; laptop miss 207,509 B), both
+  published copies updated. Conformance:
+  `tests/unit/test_backpressure_e070.py` **18 passed**; prior Part IV
+  conformance (E-061–E-069 + E-057 pins) **168 passed**; Verdandi focal
+  conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-069; focal runs need a SHORT TMPDIR — the long
+  workspace TMPDIR makes the hub's unix-socket paths overflow and the
+  nervous_system hub tests fail at baseline too, proven by re-running
+  one against the stashed pre-slice nervous_system.py). Slice gate:
+  Run B first attempt 1232 passed / 7 failed — the extra failure was
+  E-067's live-socket test, which passed standalone immediately after;
+  Run B re-run **1233 passed, 6 failed, 25 skipped, 1 warning**
+  (1215 + 18; the 6 are the proven environment failures, identical set);
+  Run D **1290 passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (1272 + 18). Logs in `~/workspace/.verify-tmp/ember-e070/gate/`.
+  No README touched.
+- E-071 next — privacy of nerves: stimuli provenance never leaks
+  across personae (fixtures).

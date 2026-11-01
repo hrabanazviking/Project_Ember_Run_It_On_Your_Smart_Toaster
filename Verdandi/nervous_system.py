@@ -143,15 +143,91 @@ def _rotate_feed_if_needed():
         log_msg(f"Feed rotation failed: {e}")
 
 
+# Inline copy of Verdandi/backpressure.py's tier table
+# (E-070), for the same deployed-file reason as the nerve-
+# health copy below: this file is loaded file-by-file and
+# cannot import the canonical module. The E-070
+# conformance suite pins this table equal to
+# backpressure.PROTECTED_TYPES / HIGH_TYPES / NORMAL_TYPES
+# / LOW_TYPES / LOW_PREFIXES.
+_BP_PROTECTED = ("heartbeat_pulse", "heartbeat_state_change")
+_BP_HIGH = (
+    "conv_start", "conv_end",
+    "ember_session", "ember_turn",
+    "hermes.session.started", "hermes.session.ended",
+    "hermes.turn.completed", "hermes.turn.failed",
+    "hermes.turn.interrupted", "hermes.tool.failed",
+)
+_BP_NORMAL = (
+    "conv_event", "conv_update",
+    "hermes.tool.started", "hermes.tool.completed",
+    "runa_reward", "runa_negative", "push_reward",
+)
+_BP_LOW_PREFIXES = ("event:", "stimulation:", "thought:", "location:")
+_BP_LOW = ("orgasm", "ping")
+
+
+def _backpressure_tier(event) -> int:
+    """The E-070 shedding tier of an event in this buffer."""
+    name = None
+    if isinstance(event, dict):
+        for key in ("type", "event_type", "event"):
+            value = event.get(key)
+            if isinstance(value, str) and value:
+                name = value
+                break
+    if name is None:
+        return 2
+    if name in _BP_PROTECTED:
+        return 0
+    if name in _BP_HIGH:
+        return 1
+    if name in _BP_NORMAL:
+        return 2
+    if name in _BP_LOW or any(name.startswith(p) for p in _BP_LOW_PREFIXES):
+        return 3
+    return 2
+
+
 class RingBuffer:
-    """Fixed-size in-memory buffer for recent events. O(1) append, O(N) retrieve last N."""
+    """Fixed-size in-memory buffer for recent events.
+
+    O(1) append until full; at capacity the buffer sheds
+    by the E-070 backpressure rule (lowest tier, oldest
+    first; an incoming event worse than everything kept
+    is shed itself) instead of the deque's blind oldest-
+    first eviction. shed_count / protected_shed_count
+    are the buffer's shedding record, never reset.
+    """
 
     def __init__(self, maxlen: int = RING_BUFFER_SIZE):
-        self._buf = deque(maxlen=maxlen)
+        self._buf = deque(maxlen=None)
         self._maxlen = maxlen
+        self.shed_count = 0
+        self.protected_shed_count = 0
 
     def append(self, event: dict):
-        self._buf.append(event)
+        if len(self._buf) < self._maxlen:
+            self._buf.append(event)
+            return
+        incoming_tier = _backpressure_tier(event)
+        items = list(self._buf)
+        victim_index = max(
+            range(len(items)),
+            key=lambda i: (_backpressure_tier(items[i]), -i),
+        )
+        victim_tier = _backpressure_tier(items[victim_index])
+        if incoming_tier > victim_tier:
+            self.shed_count += 1
+            if incoming_tier == 0:
+                self.protected_shed_count += 1
+            return
+        victim = items.pop(victim_index)
+        self.shed_count += 1
+        if victim_tier == 0:
+            self.protected_shed_count += 1
+        items.append(event)
+        self._buf = deque(items, maxlen=None)
 
     def recent(self, count: int = 20) -> list:
         items = list(self._buf)
