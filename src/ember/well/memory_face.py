@@ -67,6 +67,16 @@ episode persona tags + the fact-index map. It is face
 bookkeeping, not a third store: every fact and turn it
 points at lives in its bounded engine.
 
+Lifecycle (E-082): growth, decay, and pruning live on the
+face as :meth:`MemoryFace.lifecycle_report`,
+:meth:`MemoryFace.run_decay` (mimir-well's own Ebbinghaus
+decay, delegated), :meth:`MemoryFace.prune_stale_index`
+(sidecar pointers for facts no longer current are dropped;
+physical Brunnr reclamation is docket 112 — the handle has
+no delete), and :meth:`MemoryFace.run_lifecycle` composing
+them under Part III's storage budget (E-050 consumed:
+a reference month is 0.39 MiB, inside every ceiling).
+
 Loading mimir-well: the core does not import member code at
 module scope anywhere (the E-067 discipline). The face
 loads ``mimir_well`` lazily, only when a face is opened
@@ -119,6 +129,15 @@ FACT_INDEX_TITLE = "Ember memory face — living-fact index"
 #: sqlite_vec store). Priced per profile in the E-080 doc.
 INDEX_BYTES_PER_FACT = 72_239
 
+#: Measured price of one living fact in mimir-well's store:
+#: 745 B per item, E-078's comparison harness.
+FACT_BYTES_PER_FACT = 745
+
+#: Measured price of one conversation turn in Brunnr:
+#: 585 B per episode (E-050's steady-state marginal
+#: 585.4 B/episode; E-078 measured 585 B/episode).
+EPISODE_BYTES_PER_TURN = 585
+
 #: Profiles whose storage story pays the index price by
 #: default. The toaster is absent on purpose (verdict
 #: §5.4): it ships word search over living facts.
@@ -138,6 +157,23 @@ class FactResult:
     fact_id: Optional[int]
     indexed: bool
     note: str
+
+
+@dataclass(frozen=True, slots=True)
+class LifecycleReport:
+    """One lifecycle accounting (E-082), all figures priced
+    from measured anchors, never invented."""
+
+    profile: str
+    ceiling_bytes_per_month: int
+    facts_stored: int  # mimir-well memories rows (all personae)
+    facts_bytes: int  # facts_stored x FACT_BYTES_PER_FACT
+    indexed_facts: int
+    index_bytes: int  # indexed_facts x INDEX_BYTES_PER_FACT
+    brunnr_size_bytes: int  # the store's own on-disk size
+    index_fits_ceiling: bool
+    index_months_of_headroom: float  # ceiling / index price per fact, in facts
+    note: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -561,6 +597,132 @@ class MemoryFace:
         return row
 
     # ------------------------------------------------------------------ #
+    # Lifecycle — growth, decay, pruning (E-082)                          #
+    # ------------------------------------------------------------------ #
+
+    def lifecycle_report(self) -> LifecycleReport:
+        """Growth accounting against this profile's budget.
+
+        E-050 proved a reference month of companionship
+        costs 0.39 MiB — inside every profile's ceiling
+        with years of headroom — so lifecycle here is
+        accounting and hygiene, not emergency pruning.
+        The one growth that can break a small profile is
+        the fact index (72,239 B per indexed fact,
+        E-078/E-080): this report prices the index held
+        today against the profile's monthly ceiling and
+        says plainly whether it fits.
+        """
+        budget = budget_for(self.profile)
+        ceiling = int(budget.storage_growth_mib_per_month * 1024 * 1024)
+        facts_stored = 0
+        if self._mimir is not None:
+            try:
+                facts_stored = int(
+                    self._mimir.get_stats().get("memories", 0))
+            except Exception:  # noqa: BLE001 — accounting degrades to 0
+                facts_stored = 0
+        indexed = len(self._sidecar.fact_chunk)
+        index_bytes = indexed * INDEX_BYTES_PER_FACT
+        brunnr_bytes = 0
+        if self._brunnr is not None:
+            try:
+                brunnr_bytes = int(self._brunnr.count().size_bytes)
+            except Exception:  # noqa: BLE001
+                brunnr_bytes = 0
+        return LifecycleReport(
+            profile=self.profile.value,
+            ceiling_bytes_per_month=ceiling,
+            facts_stored=facts_stored,
+            facts_bytes=facts_stored * FACT_BYTES_PER_FACT,
+            indexed_facts=indexed,
+            index_bytes=index_bytes,
+            brunnr_size_bytes=brunnr_bytes,
+            index_fits_ceiling=index_bytes <= ceiling,
+            index_months_of_headroom=(
+                ceiling / INDEX_BYTES_PER_FACT if INDEX_BYTES_PER_FACT
+                else 0.0),
+            note=(
+                "index priced at the measured 72,239 B/fact; "
+                "facts at 745 B/item (E-078); reference-month "
+                "growth 0.39 MiB fits every ceiling (E-050)"),
+        )
+
+    def prune_stale_index(self) -> dict:
+        """Drop index pointers for facts no longer current.
+
+        A superseded or deleted fact's chunk stays in
+        Brunnr (the handle offers no chunk delete — docket
+        112), but its sidecar pointer is the face's own
+        bookkeeping: dropping it means the stale chunk can
+        never be resolved or counted again, and the index
+        accounting shrinks by the measured price per entry.
+        Physical Brunnr bytes are NOT reclaimed by this —
+        the report says so; reclamation needs a handle
+        delete the core does not have yet.
+        """
+        pruned = 0
+        kept: dict[str, int] = {}
+        kept_persona: dict[str, str] = {}
+        for fact_id_s, chunk_id in self._sidecar.fact_chunk.items():
+            persona = self._sidecar.fact_persona.get(fact_id_s, "")
+            resolved = (
+                self._resolve_current_fact(int(fact_id_s), persona)
+                if self._mimir is not None else None)
+            if resolved is None:
+                pruned += 1
+            else:
+                kept[fact_id_s] = chunk_id
+                kept_persona[fact_id_s] = persona
+        if pruned:
+            self._sidecar.fact_chunk = kept
+            self._sidecar.fact_persona = kept_persona
+            self._sidecar.save()
+        return {
+            "pruned_index_entries": pruned,
+            "index_bytes_logically_reclaimed": pruned * INDEX_BYTES_PER_FACT,
+            "physical_bytes_reclaimed": 0,
+            "note": ("Brunnr's handle has no chunk delete (docket 112): "
+                     "stale chunks become unreachable and uncounted, "
+                     "their bytes await a handle-level delete"),
+        }
+
+    def run_decay(self, *, persona_id: Optional[str] = None,
+                  half_life_days: float = 30.0) -> dict:
+        """Run mimir-well's own Ebbinghaus decay for a persona.
+
+        Delegated, never reimplemented: the member owns the
+        forgetting curve. Its returned ``pruned`` count is
+        the member's word for facts whose decayed importance
+        fell below the floor — read its code and the count
+        means importance was floored at 1, not that rows
+        were deleted; the E-082 doc states this plainly so
+        no report ever claims deletions that did not happen.
+        """
+        if self._mimir is None:
+            return {"decayed": 0, "pruned": 0, "reinforced": 0,
+                    "note": f"mimir-well {self.mimir_state}"}
+        result = self._mimir.decay(
+            half_life_days=half_life_days,
+            user_id=self._persona(persona_id))
+        return dict(result)
+
+    def run_lifecycle(self, *, persona_id: Optional[str] = None,
+                      half_life_days: float = 30.0) -> dict:
+        """One lifecycle pass: decay, prune the index, report.
+
+        Order matters: decay first (importance settles),
+        then stale-index pruning (superseded/vanished facts
+        lose their pointers), then the growth accounting —
+        so the report prices the store as the pass left it.
+        """
+        decay = self.run_decay(persona_id=persona_id,
+                               half_life_days=half_life_days)
+        prune = self.prune_stale_index()
+        report = self.lifecycle_report()
+        return {"decay": decay, "prune": prune, "report": report}
+
+    # ------------------------------------------------------------------ #
     # Documents & episodes — Brunnr's territory                           #
     # ------------------------------------------------------------------ #
 
@@ -627,10 +789,13 @@ class MemoryFace:
 
 __all__ = [
     "CANONICAL_MIMIR_DB_PATH",
+    "EPISODE_BYTES_PER_TURN",
+    "FACT_BYTES_PER_FACT",
     "FACT_INDEX_SOURCE",
     "INDEX_BYTES_PER_FACT",
     "INDEX_DEFAULT_PROFILES",
     "FactResult",
+    "LifecycleReport",
     "MeaningHits",
     "MemoryFace",
     "index_default_for",

@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 02:56 EST
-Status: IN PROGRESS — E-082 (memory lifecycle) underway this tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081
-Next slice: E-082 — memory lifecycle: growth, decay, pruning under Part III's storage budget (E-050 consumed)
+Last updated: 2026-11-01 03:14 EST
+Status: STOPPED — E-082 banked this tick (memory lifecycle live on the face; E-083 next)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082
+Next slice: E-083 — persona separation enforced at the memory face (E-025's fixtures at this layer)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3864,3 +3864,60 @@ review, not this slice.
   a42b722) — remote moved 2f66c54 → fb24043, verified via ls-remote
   (remote head = fb240430df319dabc1e1acd479805f84c1bf23cc = local HEAD
   at push time).
+
+## E-082 — Memory lifecycle: growth, decay, pruning (DONE, 2026-11-01)
+
+- Lifecycle live on the face (`src/ember/well/memory_face.py`,
+  +7,182 B core), filed at
+  `docs/architecture/E-082_MEMORY_LIFECYCLE.md`:
+  `lifecycle_report()` (growth accounting priced from
+  measured anchors only — fact 745 B E-078, turn 585 B
+  E-050/E-078, indexed fact 72,239 B E-078 — judged
+  against the profile's Part III ceiling; the toaster's
+  2 MiB ceiling = ~29 indexed facts, re-proving E-080's
+  pricing), `run_decay()` (mimir-well's own Ebbinghaus
+  decay delegated per persona, nothing reimplemented),
+  `prune_stale_index()` (sidecar pointers for facts no
+  longer current are dropped; meaning search keeps
+  serving the current fact), `run_lifecycle()` (decay →
+  prune → report, in that order).
+- **E-050 consumed, verdict unchanged:** a reference
+  month is 0.39 MiB, inside every ceiling with years of
+  headroom — lifecycle is accounting + hygiene, not
+  emergency pruning; episodes are NOT pruned (history
+  deletion is the user's right, E-084, not a budget
+  reflex); the fact index is the only growth that can
+  break a small profile and stays bounded by E-080's
+  per-profile rule.
+- **Two honest limits, new docket 112 + 113:** (112)
+  Brunnr's handle has no delete — pruned stale chunks
+  become unreachable and uncounted but their physical
+  bytes are NOT reclaimed (every prune report states
+  `physical_bytes_reclaimed: 0`); byte reclamation
+  waits on a handle-level delete, E-092 gate to assign.
+  (113) mimir-well decay()'s `pruned` count names
+  importance-flooring at 1, not row deletion (read in
+  `_decay_inner` this slice) — no face report claims
+  deletions that did not happen.
+- In-scope repair (campaign precedent E-078/E-080):
+  the core's growth re-measured the E-057 table —
+  core 131 files / 864,538 B, twelve-member total
+  131,482,923 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7) with the re-measure note extended.
+- Conformance: `tests/unit/test_memory_lifecycle_e082.py`
+  **9 passed**; combined Part V conformance (E-080 +
+  E-081 + E-082 files) **29 passed**. Slice gate (logs
+  in `~/workspace/.verify-tmp/ember-e082/gate/`): Run A
+  **1 error, 14 skipped**, exit 2 (docket 1, identical;
+  +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 28
+  skipped, 1 warning** — the 6 proven environment
+  failures identical list, plus `test_load_truth_e075`
+  under this run's deep workspace TMPDIR (E-076's
+  proven socket-cap artifact; isolated default-TMPDIR
+  re-run this tick **8 passed**; E-082 touches no hub
+  code); Run D **1407 passed, 1 failed, 19 skipped** —
+  the sole failure is the same load-truth artifact
+  (1399 + 9 new − 1 artifact vs E-081's Run D). No
+  README touched; no member code touched.
