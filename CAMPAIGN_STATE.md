@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 19:45 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-069
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068
-Next slice: E-069 — Ordering & replay: events replay deterministically for debugging (fixtures)
+Last updated: 2026-10-31 20:10 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-070
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069
+Next slice: E-070 — Backpressure on tiny hardware: a flooded hub sheds by rule, reflexes first-protected
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -2973,3 +2973,43 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried this tick's IN PROGRESS marker 7448d2d)
   — remote moved 95cfa79 → fbbcae9, verified via ls-remote (remote head =
   fbbcae99b0e26a6acf049c97e7565c805026df0d = local HEAD at push time).
+## E-069 — Ordering & replay (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-069_ORDERING_AND_REPLAY.md` and in code at
+  `Verdandi/replay.py` (stdlib-only, standalone like event_contract.py): events
+  replay deterministically for debugging. **The order:** sequenced events first
+  by the hub's own `_seq` ascending (file index breaks duplicate-`_seq` ties —
+  `_seq` order IS the hub's broadcast order, E-059/E-061); unsequenced events
+  after them by effective timestamp (`_ts`, else `_iso`, else the legacy
+  `timestamp` — numeric or ISO, naive read as UTC, stated), file index breaking
+  ties, untimestamped last in file order. No sequence is ever invented for a
+  fallback or legacy event, and their after-the-block placement is a stated
+  rule, not a wall-clock reconstruction (the honest limit, in the doc).
+- **Reading + reporting:** `load_feed_lines`/`load_feed_text` parse JSONL
+  without raising — blank lines skipped, corrupt lines (invalid JSON /
+  non-object) skipped and reported by 1-based line number, never hidden and
+  never fatal. Every replay reports the ordered events, a SHA-256 **digest**
+  of their canonical lines (sorted keys, fixed separators — same feed, same
+  digest, even from a shuffled copy of its sequenced events, test-proven),
+  the `_seq` range, **gaps** (the holes the E-061 fallback design promises),
+  duplicate `_seq` values, unsequenced/`_fallback` counts, and per-dialect
+  counts. `replay_to` hands each event to a consumer exactly once in replay
+  order and propagates sink failures. Replay edits nothing and re-publishes
+  nothing: legacy shapes, stimulus provenance (E-064), the raw Hermes inner
+  envelope and the translated `_hermes_*` keys (E-068's handoff, discharged)
+  all survive byte-for-byte at the value level, test-pinned.
+- No new docket items; dockets 100/101/102/103 keep their E-076 owner, and
+  E-070 inherits the report shape (a shedding hub's gaps can be checked
+  against it). E-057 table re-measured for the Verdandi weight change
+  (188 files / 16,968,259 B; total 131,374,867 B; laptop miss 191,043 B),
+  both published copies updated. Conformance:
+  `tests/unit/test_ordering_replay_e069.py` **19 passed**; prior Part IV
+  conformance (E-061–E-068 + E-057 pins) **149 passed**; Verdandi focal
+  conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-068 / E-060/E-065; pytest-asyncio from the
+  e005-extras dir, short TMPDIR). Slice gate: Run B **1215 passed,
+  6 failed, 25 skipped, 1 warning** (1196 + 19; the 6 are the proven
+  environment failures, identical set); Run D **1272 passed, 0 failed, 19 skipped, 1 warning**, exit 0.
+  Logs in `~/workspace/.verify-tmp/ember-e069/gate/`. No README touched.
+- E-070 next — backpressure on tiny hardware: a flooded hub sheds by
+  rule, reflexes first-protected.
