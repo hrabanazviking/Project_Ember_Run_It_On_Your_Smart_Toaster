@@ -11,8 +11,8 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,517,507
-bytes (125.42 MiB) of tracked files** between them, and
+imported members of the E-002 census) weigh **131,536,441
+bytes (125.44 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
 and Verdandi (17,032,082 B) — and in each case the weight
@@ -129,7 +129,13 @@ E-085, which added the logger reconciliation to the
 same face (provenance-tracked feed ingest, orphan
 audit, session retraction): the core now reads
 131 files / 899,122 B, the total 131,517,507 bytes,
-the laptop miss unchanged at 254,866 bytes.)*
+the laptop miss unchanged at 254,866 bytes.
+Re-measured again at E-086, which added the
+WYRD-shaped export to the same face (and the
+delete-order repair its gate duty found): the core
+now reads 131 files / 918,056 B, the total
+131,536,441 bytes, the laptop miss unchanged at
+254,866 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -169,7 +175,7 @@ table prices exactly that choice, per profile.
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 131 | 899,122 B | toaster | 12.0 MiB |
+| `src/` (ember core) | 131 | 918,056 B | toaster | 12.0 MiB |
 | `Verdandi/` | 193 | 17,032,082 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |

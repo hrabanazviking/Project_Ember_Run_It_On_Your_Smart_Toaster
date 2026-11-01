@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 04:45 EST
-Status: IN PROGRESS — E-086 (04:32 keeper tick, executing 04:45): first duty = Run D re-verification for E-085, then WYRD-shaped memory export
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085
-Next slice: E-086 — Memory ↔ WYRD-shaped export: the companion's memory exportable in the shapes the constellation's world-model work consumes (ThoughtForge TF-145's boundary, honoured). FIRST DUTY of E-086's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — E-085's Run D was NOT GREEN under contention (see its entry).
+Last updated: 2026-11-01 05:25 EST
+Status: STOPPED — E-086 banked this tick (WYRD-shaped memory export on the face, TF-145 boundary honoured, live WYRD model validation 8/8; PLUS a real delete-order bug found by E-085's owed Run D re-verification and fixed in scope — see the E-086 entry; Run D NOT GREEN under VM contention in both its duties this tick — re-verification duty heads E-087's tick)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086
+Next slice: E-087 — Corruption & recovery drills (atomicity, kill-mid-write). FIRST DUTY of E-087's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — both Run D duties of E-086's tick ended NOT GREEN under contention (see the E-086 entry).
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4183,3 +4183,124 @@ review, not this slice.
   via ls-remote (remote head =
   bebee70d881a4a726981ff907788a0939956d36a = local HEAD
   at push time).
+
+## E-086 — Memory ↔ WYRD-shaped export (DONE, 2026-11-01)
+
+- **First duty discharged as far as contention allowed —
+  and it caught a real bug.** E-085's owed Run D
+  re-verification ran first (extras supplied, short
+  TMPDIR, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e086/gate/runD_reverify_e085.log`):
+  **1481 passed, 4 failed, 19 skipped** in 633s. The 4
+  classified from the log, none hidden: (1–2) the E-057
+  budget-table pair — contamination by THIS tick's own
+  mid-run edit of `memory_face.py` (that test re-measures
+  the tree from disk live; green again after this slice's
+  re-measure, below); (3) the load-truth live-hub
+  artifact, the known contention class (E-083/E-085
+  precedent); (4) **a REAL BUG** — E-084's
+  `test_delete_all_is_total_for_one_persona` died on
+  mimir-well's `superseded_by` FOREIGN KEY (see the bug
+  paragraph below). So E-085's Run D is **not** recorded
+  green: its credible near-green run exposed a defect
+  instead, the defect is fixed in this slice, and the
+  clean-Run-D duty passes to E-087's tick along with
+  this slice's own.
+- **The export** (`docs/architecture/E-086_MEMORY_WYRD_EXPORT.md`,
+  built on the face as `MemoryFace.export_wyrd()`):
+  the companion's memory for one persona, re-shaped into
+  the WYRD Protocol's own published record shapes —
+  persona + companion as `EntitySummary` entities,
+  current facts as `CanonicalFactRecord`s (the full
+  `MemoryRecord` envelope over a `CanonicalFactPayload`,
+  store `mimir_canonical_store`) and grouped as
+  `FactSummary`s under the subject id, old versions as
+  the same record shape marked superseded (the current
+  record naming what it supersedes), turns as
+  `ObservationRecord` utterances (store
+  `hugin_observation_store`). **TF-145's boundary is
+  honoured and stated in the bundle itself:** cognition
+  and memory are this side's, the world-model is WYRD's;
+  the export shapes a one-way offering — Ember builds no
+  world model, writes nothing into WYRD, and claims no
+  WYRD-side ingestion. Nothing is invented to fill the
+  shapes: `fact_key` is the member's category (the only
+  key it keeps), confidence is importance (1–10)
+  rescaled to 0–1, support names a logger session only
+  where E-085's provenance recorded one, and a timeless
+  turn stamped at export is counted
+  (`turns_time_stamped_at_export`). Persona law is
+  E-084's: built from `inspect_memory`'s lawful view,
+  invalid ids refused empty, documents never included,
+  read-only. **Live-model proof beyond the pinned field
+  tables:** a bundle from the real face (supersede chain
+  + logger-fed fact + turn) validated against WYRD's own
+  pydantic models in the WYRD tree's environment —
+  **8 of 8 objects valid** (3 canonical facts, 1
+  observation, 2 entities, 2 fact summaries); the
+  battery's live test re-proves it where `wyrdforge` is
+  importable and skips honestly where it is not.
+- **THE BUG, fixed in scope (never-leave-a-bug law).**
+  `delete_all_memory` deleted facts in the member's
+  search order (importance, timestamp); an old version's
+  `superseded_by` is a foreign key to the newer fact, so
+  whenever a supersede crossed a timestamp second the
+  total delete met the new fact first, mimir-well
+  refused on the key, and the exception escaped —
+  **a "forget everything" right dying half-done**.
+  Same-second fixtures had hidden it since E-084. The
+  same trap waited in `delete_fact` for any fact an old
+  version points at. Fixes, face only (no member code
+  touched): total delete now goes oldest-first
+  (ascending id — referrers always precede referents);
+  `delete_fact` forgets the fact's lineage with it (its
+  own old versions first, counted as
+  `old_versions_deleted`, logger provenance dropped for
+  them too). Regression-pinned in this slice's battery
+  with a deterministically staggered fixture (the new
+  fact made to sort first — the exact killing order);
+  E-084's + E-085's batteries re-run green with the fix.
+  Full account in the E-086 doc §6.
+- In-scope re-measure (E-080–E-085 precedent): E-057
+  table re-measured for the core's growth — core
+  131 files / 918,056 B, twelve-member total
+  131,536,441 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_wyrd_export_e086.py`
+  **17 passed, 1 skipped** (the skip is the live-WYRD
+  validation, proven separately above; one early focal
+  run under contention showed a single failure that did
+  not reproduce in the focal re-run, the combined run,
+  or isolation — recorded as a contention artifact, not
+  hidden). Combined conformance (E-057 table + E-072
+  feed + Part V E-077–E-086 files, 12 files) **169
+  passed, 1 skipped** (the same live-WYRD skip). Slice
+  gate (logs in `~/workspace/.verify-tmp/ember-e086/gate/`):
+  Run A **1 error, 18 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 32 skipped,
+  1 warning** — the 6 proven environment failures plus
+  the load-truth artifact, the FAILED list byte-identical
+  to E-085's Run B.
+- **Run D NOT GREEN under contention — re-verification
+  duty heads the next tick (E-072/E-085 precedent).**
+  This slice's own Run D attempt collapsed from ~33%
+  with mass environment errors (186 failed, 106 errors,
+  fixture `PermissionError`s across unrelated files;
+  MemAvailable ~1.4 GB, load ~7, fourteen keeper
+  campaigns sharing the VM). No credible failure in it
+  touches this slice's code — the same files passed
+  169/169 in the combined run minutes earlier — but a
+  green Run D is NOT claimed. The next keeper tick
+  re-runs Run D first (for both E-085's and E-086's
+  duties) and records the result here. No README
+  touched; no member code touched; no WYRD or
+  ThoughtForge tree touched.
+- Housekeeping note, recorded honestly: while this
+  entry was first being written, a transient write
+  failure (EPERM under the same contention) truncated
+  this state file to 0 bytes. It was restored
+  byte-identical from the HEAD blob (sha256
+  5dafe3c2…) before this entry was appended — no state
+  was lost.

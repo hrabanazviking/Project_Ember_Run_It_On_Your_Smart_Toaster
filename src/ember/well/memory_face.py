@@ -146,6 +146,27 @@ that stated boundary is the reconciliation, not a silent
 gap. Facts remembered directly (never fed) carry no log
 provenance and are never retracted by either operation.
 
+WYRD-shaped export (E-086): the companion's memory is
+also exportable in the shapes the constellation's
+world-model work consumes, through
+:meth:`MemoryFace.export_wyrd`. The boundary is
+ThoughtForge TF-145's, honoured: ThoughtForge (and this
+face) own cognition and memory; the WYRD Protocol owns
+the world-model. So the export is *data in WYRD's own
+published shapes* — its ``MemoryRecord`` envelope, its
+``CanonicalFactRecord`` (store ``mimir_canonical_store``),
+its ``ObservationRecord`` for turns, and the Passive
+Oracle's ``FactSummary`` grouping — built from what the
+face lawfully holds for one persona, and nothing else.
+Ember builds no world model here, writes nothing into
+WYRD, and claims no WYRD-side ingestion: shaping the
+offering is Ember's side of the interface; modelling it
+is WYRD's. Fields Ember does not hold are never invented:
+a fact's ``fact_key`` is its mimir-well category (the
+only key the member keeps), confidence is the member's
+importance rescaled, and support is named only where
+E-085's logger provenance actually recorded it.
+
 Loading mimir-well: the core does not import member code at
 module scope anywhere (the E-067 discipline). The face
 loads ``mimir_well`` lazily, only when a face is opened
@@ -169,6 +190,7 @@ import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
@@ -226,6 +248,26 @@ LOG_FEED_SOURCE = "conversation_logger"
 LOG_FEED_CATEGORIES = frozenset({
     "lesson", "decision", "milestone", "session_summary",
 })
+
+#: Kind marker of the WYRD-shaped export (E-086).
+WYRD_EXPORT_KIND = "ember memory export (wyrd shapes)"
+
+#: WYRD's own MemoryRecord schema version (its published
+#: default in ``wyrdforge.models.memory``), stamped on
+#: every record envelope the E-086 export emits.
+WYRD_RECORD_SCHEMA_VERSION = "1.0.0"
+
+#: The system id WYRD-shaped records carry: this program.
+WYRD_SYSTEM_ID = "ember-agent"
+
+#: WYRD's store names, as published in its StoreName enum:
+#: canonical facts live in its Mímir store shape, observed
+#: turns in its Hugin store shape.
+WYRD_STORE_MIMIR = "mimir_canonical_store"
+WYRD_STORE_HUGIN = "hugin_observation_store"
+
+#: Entity id of the companion itself in a WYRD export.
+WYRD_COMPANION_ENTITY_ID = "ember-companion"
 
 #: Profiles whose storage story pays the index price by
 #: default. The toaster is absent on purpose (verdict
@@ -937,6 +979,336 @@ class MemoryFace:
             bundle = {**bundle, "written_to": str(target)}
         return bundle
 
+    # ------------------------------------------------------------------ #
+    # WYRD-shaped export — memory in the world-model's shapes (E-086)    #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _wyrd_tags(raw) -> list:
+        """A fact's tags as a list, whatever shape the
+        member stored them in (JSON text or a list)."""
+        if isinstance(raw, list):
+            return [str(t) for t in raw]
+        if isinstance(raw, str) and raw.strip():
+            try:
+                parsed = json.loads(raw)
+            except ValueError:
+                return [raw]
+            if isinstance(parsed, list):
+                return [str(t) for t in parsed]
+            return [raw]
+        return []
+
+    def export_wyrd(
+        self, *, persona_id: Optional[str] = None,
+        path: Optional[Path] = None,
+    ) -> dict:
+        """Your memory, shaped for the world-model work.
+
+        The same memory :meth:`export_memory` hands you in
+        Ember's plain bundle, re-shaped into the record
+        shapes the WYRD Protocol publishes — the shapes its
+        world-model work consumes:
+
+        * the persona and the companion as WYRD entities
+          (its Passive Oracle's ``EntitySummary`` shape);
+        * every fact still believed true as a canonical
+          fact (its ``CanonicalFactRecord``: the
+          ``MemoryRecord`` envelope over a
+          ``CanonicalFactPayload``), also grouped in its
+          ``FactSummary`` shape under the persona's
+          subject id, as its context packets group them;
+        * every old version as the same record shape,
+          marked superseded, with the current fact's
+          payload naming the record it supersedes;
+        * every remembered turn as an observation (its
+          ``ObservationRecord``, an utterance in the Hugin
+          store shape).
+
+        The boundary is ThoughtForge TF-145's, honoured:
+        cognition and memory are this side's; the
+        world-model is WYRD's. This export shapes an
+        offering — it builds no world model, writes
+        nothing into WYRD, and claims no WYRD-side
+        ingestion. Nothing is invented to fill the shapes:
+        a fact's key is its mimir-well category (the only
+        key the member keeps), its confidence is the
+        member's importance (kept 1–10) rescaled to
+        WYRD's 0–1, its support names a logger session
+        only where E-085's provenance recorded one, and a
+        turn whose time was not recorded is stamped with
+        the export time and counted under
+        ``counts.turns_time_stamped_at_export``. Another
+        persona's memory is never part of the export, and
+        documents (shared grounding) are never in it.
+        With ``path`` the bundle is also written there as
+        JSON, replaced atomically, like the plain export.
+        """
+        seen = self.inspect_memory(persona_id=persona_id)
+        persona = seen["persona"]
+        if persona is None:
+            return {"kind": WYRD_EXPORT_KIND, "version": 1,
+                    "wyrd_schema_version": WYRD_RECORD_SCHEMA_VERSION,
+                    "persona": None, "subject_id": None,
+                    "entities": [], "canonical_facts": {},
+                    "records": [], "counts": {},
+                    "note": seen["note"]}
+        subject = f"ember-persona:{persona}"
+        exported_at = datetime.now(timezone.utc).isoformat()
+        fed_by_fact = {row["fact_id"]: row
+                       for row in self.logger_provenance(
+                           persona_id=persona)}
+        superseded_by = {}
+        for old in seen["old_facts"]:
+            if old.get("superseded_by") is not None:
+                superseded_by[int(old["superseded_by"])] = int(old["id"])
+
+        def fact_record(fact: dict, *, current: bool) -> dict:
+            fid = int(fact["id"])
+            content = str(fact.get("content", ""))
+            category = str(fact.get("category") or "general")
+            fed = fed_by_fact.get(fid)
+            support = ([f"ember-log-session:{fed['session_id']}"]
+                       if fed and fed.get("session_id") else [])
+            return {
+                "record_id": f"ember-fact:{fid}",
+                "store": WYRD_STORE_MIMIR,
+                "record_type": "canonical_fact",
+                "schema_version": WYRD_RECORD_SCHEMA_VERSION,
+                "tenant_id": persona,
+                "system_id": WYRD_SYSTEM_ID,
+                "entity_scope": {
+                    "primary_subjects": [subject],
+                    "secondary_subjects": [WYRD_COMPANION_ENTITY_ID],
+                    "scene_id": None,
+                    "session_id": (fed.get("session_id")
+                                   if fed else None),
+                    "world_id": None,
+                    "project_id": None,
+                },
+                "content": {
+                    "title": f"{category} — ember fact {fid}",
+                    "summary": content,
+                    "body_ref": None,
+                    "structured_payload": {
+                        "fact_subject_id": subject,
+                        "fact_key": category,
+                        "fact_value": content,
+                        "value_type": "string",
+                        "domain": str(fact.get("memory_type")
+                                      or "general"),
+                        "support_record_ids": support,
+                        "supersedes_record_id": (
+                            f"ember-fact:{superseded_by[fid]}"
+                            if fid in superseded_by else None),
+                    },
+                },
+                "truth": {
+                    "support_class": "supported",
+                    "confidence": min(1.0, max(0.0, float(
+                        fact.get("importance") or 5) / 10.0)),
+                    "confidence_history": [],
+                    "contradiction_status": "none",
+                    "approval_state": "approved",
+                },
+                "provenance": {
+                    "source_type": "ember-memory-face",
+                    "source_ref": f"mimir-well memory {fid}",
+                    "source_hash": hashlib.sha256(
+                        content.encode("utf-8")).hexdigest()[:16],
+                    "extracted_at": exported_at,
+                    "extracted_by": "ember-memory-face/e-086",
+                },
+                "lifecycle": {
+                    "write_policy": ("promotable" if current
+                                     else "ephemeral"),
+                    "retention_class": "long",
+                    "decay_curve": "exp",
+                    "expires_at": fact.get("valid_until"),
+                    "last_accessed_at": None,
+                    "access_count": 0,
+                    "stale_after_days": None,
+                },
+                "retrieval": {
+                    "embedding_id": None,
+                    "lexical_terms": [],
+                    "facets": {
+                        "category": [category],
+                        "tags": self._wyrd_tags(fact.get("tags")),
+                        "current": ["true" if current else "false"],
+                    },
+                    "default_priority": 0.0,
+                },
+                "governance": {
+                    "sensitivity": "medium",
+                    "memory_poison_risk": "low",
+                    "allowed_for_runtime": True,
+                    "allowed_for_training": False,
+                    "requires_review_before_promotion": True,
+                },
+                "audit": {
+                    "created_at": fact.get("timestamp"),
+                    "updated_at": fact.get("timestamp"),
+                    "created_by_agent": WYRD_SYSTEM_ID,
+                    "updated_by_agent": WYRD_SYSTEM_ID,
+                },
+            }
+
+        records = [fact_record(f, current=True)
+                   for f in seen["facts"]]
+        records += [fact_record(f, current=False)
+                    for f in seen["old_facts"]]
+        canonical = [{
+            "record_id": f"ember-fact:{int(f['id'])}",
+            "subject_id": subject,
+            "fact_key": str(f.get("category") or "general"),
+            "fact_value": str(f.get("content", "")),
+            "confidence": min(1.0, max(0.0, float(
+                f.get("importance") or 5) / 10.0)),
+            "domain": str(f.get("memory_type") or "general"),
+            "uncertain": False,
+            "confidence_history": [],
+        } for f in seen["facts"]]
+        stamped = 0
+        for ep in seen["turns"]:
+            if ep.started_at is not None:
+                observed = ep.started_at.isoformat()
+            else:
+                observed = exported_at
+                stamped += 1
+            records.append({
+                "record_id": f"ember-turn:{ep.id}",
+                "store": WYRD_STORE_HUGIN,
+                "record_type": "observation",
+                "schema_version": WYRD_RECORD_SCHEMA_VERSION,
+                "tenant_id": persona,
+                "system_id": WYRD_SYSTEM_ID,
+                "entity_scope": {
+                    "primary_subjects": [subject],
+                    "secondary_subjects": [WYRD_COMPANION_ENTITY_ID],
+                    "scene_id": None,
+                    "session_id": None,
+                    "world_id": None,
+                    "project_id": None,
+                },
+                "content": {
+                    "title": f"conversation turn {ep.id}",
+                    "summary": ep.operator_input,
+                    "body_ref": None,
+                    "structured_payload": {
+                        "observation_kind": "utterance",
+                        "raw_excerpt": ep.operator_input,
+                        "normalized_claims": [],
+                        "participants": [subject,
+                                         WYRD_COMPANION_ENTITY_ID],
+                        "observed_at": observed,
+                        "place_id": None,
+                        "salience": 0.5,
+                        "candidate_memory_write": False,
+                    },
+                },
+                "truth": {
+                    "support_class": "supported",
+                    "confidence": 0.5,
+                    "confidence_history": [],
+                    "contradiction_status": "none",
+                    "approval_state": "approved",
+                },
+                "provenance": {
+                    "source_type": "ember-memory-face",
+                    "source_ref": f"brunnr episode {ep.id}",
+                    "source_hash": None,
+                    "extracted_at": exported_at,
+                    "extracted_by": "ember-memory-face/e-086",
+                },
+                "lifecycle": {
+                    "write_policy": "promotable",
+                    "retention_class": "long",
+                    "decay_curve": "none",
+                    "expires_at": None,
+                    "last_accessed_at": None,
+                    "access_count": 0,
+                    "stale_after_days": None,
+                },
+                "retrieval": {
+                    "embedding_id": None,
+                    "lexical_terms": [],
+                    "facets": {},
+                    "default_priority": 0.0,
+                },
+                "governance": {
+                    "sensitivity": "medium",
+                    "memory_poison_risk": "low",
+                    "allowed_for_runtime": True,
+                    "allowed_for_training": False,
+                    "requires_review_before_promotion": True,
+                },
+                "audit": {
+                    "created_at": observed,
+                    "updated_at": observed,
+                    "created_by_agent": WYRD_SYSTEM_ID,
+                    "updated_by_agent": WYRD_SYSTEM_ID,
+                },
+            })
+        bundle = {
+            "kind": WYRD_EXPORT_KIND,
+            "version": 1,
+            "wyrd_schema_version": WYRD_RECORD_SCHEMA_VERSION,
+            "persona": persona,
+            "subject_id": subject,
+            "exported_at": exported_at,
+            "boundary": {
+                "this_side_owns": "cognition and memory "
+                                  "(ThoughtForge TF-145)",
+                "wyrd_owns": "the world-model",
+                "this_export": "memory data in WYRD's published "
+                               "record shapes, offered one-way; "
+                               "Ember builds no world model and "
+                               "writes nothing into WYRD",
+            },
+            "entities": [
+                {"entity_id": subject, "name": persona,
+                 "description": "the person this companion "
+                                "remembers for",
+                 "status": "current", "tags": ["ember-persona"],
+                 "location_id": None},
+                {"entity_id": WYRD_COMPANION_ENTITY_ID,
+                 "name": "Ember",
+                 "description": "the companion itself",
+                 "status": "current", "tags": ["ember-companion"],
+                 "location_id": None},
+            ],
+            "canonical_facts": {subject: canonical},
+            "records": records,
+            "counts": {
+                "entities": 2,
+                "canonical_facts": len(canonical),
+                "superseded_facts": len(seen["old_facts"]),
+                "observations": len(seen["turns"]),
+                "records": len(records),
+                "turns_time_stamped_at_export": stamped,
+            },
+            "note": (
+                f"{persona}'s memory in the shapes the WYRD "
+                "Protocol's world-model work consumes: "
+                f"{len(canonical)} fact(s) still believed true, "
+                f"{len(seen['old_facts'])} old version(s) marked "
+                f"superseded, and {len(seen['turns'])} remembered "
+                "turn(s) as observations. Shaping the offering is "
+                "Ember's side of the TF-145 boundary; the "
+                "world-model itself is WYRD's, and nothing here "
+                "belongs to anyone else."),
+        }
+        if path is not None:
+            target = Path(path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            tmp = target.with_suffix(target.suffix + ".tmp")
+            tmp.write_text(json.dumps(bundle, indent=1, sort_keys=True,
+                                      default=str), encoding="utf-8")
+            os.replace(tmp, target)
+            bundle = {**bundle, "written_to": str(target)}
+        return bundle
+
     def delete_fact(
         self, fact_id: int, *, persona_id: Optional[str] = None
     ) -> dict:
@@ -957,12 +1329,42 @@ class MemoryFace:
             return {"deleted": False,
                     "note": "nothing deleted: that fact is not this "
                             "persona's to forget"}
+        # The fact's own old versions point at it
+        # (superseded_by is a foreign key in the member's
+        # store): deleting it first would be refused by
+        # that key and strand the chain. Forgetting a fact
+        # forgets its lineage — the old versions of this
+        # very fact go first, oldest first. (Found by
+        # E-086's gate duty: a delete that met the chain
+        # in the wrong order died on the key, mid-delete.)
+        lineage = sorted(
+            (f for f in self._all_facts(persona)
+             if f.get("superseded_by") is not None
+             and int(f["superseded_by"]) == int(fact_id)),
+            key=lambda f: int(f["id"]))
+        old_deleted = 0
+        for old in lineage:
+            if self._mimir.delete_memory(
+                    int(old["id"]),
+                    source="ember-memory-face/delete-lineage",
+                    user_id=persona):
+                old_deleted += 1
+                if str(old["id"]) in self._sidecar.fact_chunk:
+                    del self._sidecar.fact_chunk[str(old["id"])]
+                    self._sidecar.fact_persona.pop(str(old["id"]), None)
+        if old_deleted:
+            self._sidecar.save()
         ok = self._mimir.delete_memory(
             int(fact_id), source="ember-memory-face/delete",
             user_id=persona)
         if not ok:
-            return {"deleted": False, "note": "refused by mimir-well; "
-                                              "nothing was deleted"}
+            return {"deleted": False,
+                    "old_versions_deleted": old_deleted,
+                    "note": "refused by mimir-well; the fact itself "
+                            "was not deleted"
+                            + (f", but {old_deleted} old version(s) "
+                               "of it were forgotten first"
+                               if old_deleted else "")}
         changed = False
         if str(fact_id) in self._sidecar.fact_chunk:
             del self._sidecar.fact_chunk[str(fact_id)]
@@ -972,15 +1374,21 @@ class MemoryFace:
         # with it: a later feed of the same logged words is
         # a fresh crossing, not a duplicate of a fact that
         # no longer exists.
+        lineage_ids = {int(old["id"]) for old in lineage}
         for key in [k for k, v in self._sidecar.log_facts.items()
-                    if v.get("fact_id") == int(fact_id)]:
+                    if v.get("fact_id") == int(fact_id)
+                    or v.get("fact_id") in lineage_ids]:
             del self._sidecar.log_facts[key]
             changed = True
         if changed:
             self._sidecar.save()
         return {"deleted": True, "fact_id": int(fact_id),
+                "old_versions_deleted": old_deleted,
                 "note": "forgotten: the fact is gone from the memory "
-                        "store and from meaning search"}
+                        "store and from meaning search"
+                        + (f", with {old_deleted} old version(s) of "
+                           "it that pointed at it" if old_deleted
+                           else "")}
 
     def delete_all_memory(
         self, *, persona_id: Optional[str] = None, confirmation: str = "",
@@ -1009,7 +1417,18 @@ class MemoryFace:
                             f"say exactly {DELETE_ALL_CONFIRMATION!r}"}
         if self._mimir is None:
             return {"deleted": False, "note": f"mimir-well {self.mimir_state}"}
-        facts = self._all_facts(persona)
+        # Oldest first: an old version's superseded_by
+        # points at a later-created fact (a foreign key in
+        # the member's store), so deleting in the search
+        # order (importance/timestamp) can meet a fact
+        # while an old version still points at it — the
+        # member refuses on the key and the total delete
+        # dies half-done. Ascending id order always
+        # removes referrers before referents. (Found by
+        # E-086's gate duty, in E-084's own battery under
+        # load; fixed here, regression-pinned in E-086's.)
+        facts = sorted(self._all_facts(persona),
+                       key=lambda f: int(f["id"]))
         facts_deleted = 0
         for fact in facts:
             if self._mimir.delete_memory(
