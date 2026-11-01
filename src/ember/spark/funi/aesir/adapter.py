@@ -68,7 +68,9 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import os
 import re
+import stat
 import urllib.error
 import urllib.request
 from collections.abc import Iterator, Sequence
@@ -184,6 +186,26 @@ class AesirFuni:
                 detail=det_error,
             )
         key_path = Path(aesir_cfg.api_key_file).expanduser()
+        # Custody law (E-093): a file that holds a credential must
+        # be operator-only — exactly mode 0o600 on POSIX, the same
+        # standard the Well resolver (ADR 0010 §2.5) enforces. A
+        # more permissive mode is refused before the file is read,
+        # with a pointer at the permission bits, never the key.
+        if os.name == "posix":
+            try:
+                key_mode = stat.S_IMODE(key_path.stat().st_mode)
+            except OSError:
+                key_mode = None
+            if key_mode is not None and key_mode != 0o600:
+                return Unavailable(
+                    reason=UnavailableReason.CONFIG_INVALID,
+                    detail=(
+                        f"aesir key file {key_path} has mode "
+                        f"{key_mode:04o}; a credential file must be "
+                        "exactly 0600 (chmod 600 it) — refused "
+                        "under the E-093 custody law."
+                    ),
+                )
         try:
             raw_key = key_path.read_text(encoding="utf-8")
         except OSError as exc:

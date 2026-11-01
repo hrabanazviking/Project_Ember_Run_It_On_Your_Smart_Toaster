@@ -131,6 +131,12 @@ VOLMARR_ALLOWLIST = {
     # record, with its recorded absence on record.
     "tests/unit/test_part_v_gate_e092.py":
         "governance needle in a doc-pinning test (added E-092)",
+    # Added consciously at E-093 (the same act, at Part VI's
+    # opening): its doc-pinning test asserts the docket-48
+    # ledger's removal stays reserved to his word in the
+    # custody law.
+    "tests/unit/test_custody_law_e093.py":
+        "governance needle in a doc-pinning test (added E-093)",
 }
 
 #: The canon fixture personae. A new persona id in any

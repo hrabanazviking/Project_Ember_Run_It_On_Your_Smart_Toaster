@@ -69,6 +69,9 @@ _KEY = "testkey-" + "a" * 32
 def _write_key(tmp_path: Path, content: str = _KEY + "\n") -> Path:
     key_file = tmp_path / "service.key"
     key_file.write_text(content, encoding="utf-8")
+    # E-093 custody law: a credential file must be mode 0600 or
+    # the adapter refuses it before reading.
+    key_file.chmod(0o600)
     return key_file
 
 

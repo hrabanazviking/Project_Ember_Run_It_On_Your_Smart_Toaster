@@ -6,13 +6,13 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 11:42 EST
-Status: IN PROGRESS — E-093 (Part VI opening: custody law for the whole campaign) opened 2026-11-01 11:42 keeper tick: credentials live in a Kista (toaster's or ai-folder's, per machine) — never in configs, code, or chat; E-013's custody defects land here first.
+Last updated: 2026-11-01 12:17 EST
+Status: STOPPED — E-093 banked (Part VI opens: the custody law filed at docs/architecture/E-093_CUSTODY_LAW.md — credentials live in a Kista, per machine (ai-folder Kista for house credentials, never touched by this campaign; toaster-Kista for Ember's own, bound at E-100), never in configs, code, or chat; the interim standard is the Well resolver's chain (env → keyring → mode-600 file); fresh E-013-method scan at this HEAD re-proven: 3,443 tracked / 2,991 text scanned, GitHub tokens 0, JWTs 0, bearer 0, sk- 0, key blocks 7 and AWS shapes 2 all the E-013 fixture families, 20 credential-shaped assignments all classified fixtures, the battery now arms the scan with those allowlists; docket 46 DECIDED (toaster default vault home shall be ~/.ember/kista/, KISTA_DIR override stands, built at E-094; E-011 rule 3 binds until then); docket 48 RULED under law rule 9 (known-accounts.md is an identifier ledger — not a leak, no values ever, no new campaign entries, removal remains Volmarr's word, unmade on this record); docket 127 CLOSED in scope (Aesir key file now refused at any POSIX mode other than exactly 0600, before reading; E-023/E-036 key writers chmod 0600; E-057 re-measured src 922,893 B / total 131,546,922 B, miss unchanged 256,017 B, both copies re-pinned); docket 128 NEW → E-096 (credstore --password command-line value shape); docket 129 NEW → E-187 (mimir-well backup_repo credential-bearing URL shape); E-089 canon guard allowlist extended consciously to 15 files; gate fully clean: Run A 1 error / 20 skipped, Run B 1359 passed / 6 proven-env only, Run D 1567 passed, 0 failed)
 Status was: STOPPED — E-092 banked (Part V gate PASS: one memory face live and the memory contract FROZEN at v1 (MemoryFace, 31 public operations, name-for-name E-090's surface, probed + cross-checked); migration proven on fixtures (survivors stay native measured byte-identical; palace mapping lossless, execution ruling-gated); the verdict paper on record with Volmarr's word on mempalace retirement RECORDED AS ABSENT — no ruling on record, silence never read as a word, E-079 fallback in force, member untouched at 257 files / 59,049,715 B; docket 108 CLOSED in scope (mimir-well flask>=3.0,<4 + setuptools>=61.0,<82, battery-pinned both-ways; E-057 re-measured mimir-well 59 / 618,776 B, total 131,545,913 B, miss unchanged 256,017 B; E-077 size pin re-pinned with attribution after the combined run's first pass caught it stale — 225/1 → re-run 226 passed / 1 live-skip); docket 125 RULED (watermark semantics: a pass applies only age since last access/pass, passes never compound; current compounding stands as a named defect, implementation → E-204 presentation as a candidate slice beside docket 112/119's handle-delete slice); docket 123 weighed and bounded as the v1 boundary (→ E-204 re-weigh); docket 102's assigned E-085 review honestly recorded as never taken by any Part V slice — reviewed at this gate, typed subscriber still unbuilt, backstop E-204; E-089 canon guard allowlist extended consciously to 14 files; gate fully clean: Run A 1 error / 20 skipped, Run B 1352 passed / 6 proven-env only, Run D 1560 passed, 0 failed)
 Status was: STOPPED — E-091 banked (the verdict's residue: mempalace marked bounded wherever Ember's own living documents presented it otherwise, successor MemoryFace named — UNWIRED_INVENTORY row corrected in place (docket 52 EXECUTED), the Yggdrasil sibling doc bannered SUPERSEDED-IN-PART, BOUNDED, the corpus's two front doors carrying status notes; the member itself untouched, battery-pinned at 257 tracked files / 59,049,715 B; E-089 canon guard allowlist extended consciously to 13 files; gate fully clean after the Python-write EPERM stall cleared: combined extras-shape 218 passed / 1 live-skip, Run D 1552 passed, 0 failed)
 Status was: STOPPED — E-090 banked (docs: the memory model for users (plain) + builders — one document, two halves: Part A plain for users (the three kinds of memory, word-vs-meaning finding with the toaster's stated word mode, correct-vs-supersede, the four rights with docket 119/120 limits stated, persona separation, ageing without deletion, measured prices, the diary and WYRD neighbours, mempalace's proposed-not-decided status), Part B for builders (one face over two bounded engines, the sidecar, opening + graceful offline, the complete 31-operation contract surface, index-don't-merge, constants, the WYRD export boundary, open dockets 108/112/113/119/120/125, and the stated truth that chat is not yet rewired to the face); the pinning battery derives the operation list from MemoryFace itself; E-089's canon guard extended consciously — its allowlist gains this slice's battery as a twelfth file, governance-needle reason recorded; gate fully clean incl. Run D 1546 passed, 0 failed)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091, E-092
-Next slice: E-093 — Part VI opens: custody law for the whole campaign (credentials live in a Kista — toaster's or ai-folder's, per machine — never in configs, code, or chat; E-013's defects land there first). Part V is CLOSED by the E-092 gate. The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence is on record at the gate, fallback in force, executing migration slice exists only under that ruling. Carried from Part V with owners: docket 100 (→ E-136), 102 (→ E-204 backstop), 109 bifrost side (→ Part VIII), 112 + 119 (→ E-204 presentation, one candidate slice), 113 member half (→ E-194), 123 (→ E-204 re-weigh), 125 implementation (→ E-204 presentation).
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091, E-092, E-093
+Next slice: E-094 — toaster-Kista mapped (its storage, crypto shape, CLI/API surface, test state — from code), building docket 46's decided default home ~/.ember/kista/ (E-093's decision; KISTA_DIR remains the override; E-011 §5 rule 3 binds until the change lands). Part V is CLOSED by the E-092 gate; Part VI is OPEN. The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence is on record at the gate, fallback in force, executing migration slice exists only under that ruling. Carried with owners: docket 100 (→ E-136), 102 (→ E-204 backstop), 109 bifrost side (→ Part VIII), 112 + 119 (→ E-204 presentation, one candidate slice), 113 member half (→ E-194), 123 (→ E-204 re-weigh), 125 implementation (→ E-204 presentation), 128 (→ E-096), 129 (→ E-187).
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4900,3 +4900,85 @@ review, not this slice.
   verified via ls-remote (remote head =
   624f3ff02bf071457da2d337a6f224da83a60438 = local HEAD at push
   time).
+
+## E-093 — Custody law for the whole campaign (DONE, 2026-11-01)
+
+- **The law filed** at `docs/architecture/E-093_CUSTODY_LAW.md`:
+  ten binding rules — credentials live in a Kista (per
+  machine: ai-folder Kista for house credentials, which this
+  campaign never touches; toaster-Kista for Ember's own,
+  bound at E-100); never in configs (references only),
+  never in code, never in chat (a credential in chat is
+  exposed — rotation is the fix), never in logs/diary/
+  context; a credential file is mode 0600 or refused; a
+  passphrase is never a command-line value; fixtures are
+  synthetic and allowlisted; identifiers are not
+  credentials but are custody-sensitive; discovery creates
+  the duty (rule 10). The interim standard until E-100 is
+  the Well resolver's chain (env → keyring → mode-600
+  file, typed failure naming sources, never the value).
+- **Fresh scan, E-013's method at this HEAD** (raw output
+  in `~/workspace/.verify-tmp/ember-e093/`): 3,443 tracked
+  files, 2,991 text-shaped scanned (E-013: 3,242 / 2,754).
+  GitHub tokens 0 (independently re-verified by git grep),
+  JWTs 0, bearer literals 0, `sk-` shapes 0; private-key
+  blocks 7 and AWS shapes 2 — the same classified E-013
+  fixture families; password-bearing URLs 137, the
+  CloakBrowser vendored family plus six classified house
+  files; credential-shaped assignments in code/config 20,
+  all fixtures (the wider key-name net is the battery's
+  from here on); tracked credential-shaped filenames
+  exactly 1 (`.env.example`, documentation only). Verdict:
+  no leakage — E-013's starting fact re-proven.
+- **The scan is armed**: `tests/unit/test_custody_law_e093.py`
+  (7 passed) re-runs the classification on every suite —
+  any new high-confidence shape, unclassified assignment,
+  or house password-URL outside the allowlists fails it;
+  E-187 inherits it as its scanner seed (docket 57's
+  discipline, executed).
+- **Docket 46 DECIDED**: the toaster-Kista's default vault
+  home shall be `~/.ember/kista/` (Ember's own home;
+  `KISTA_DIR` override stands); E-094 builds it. Until
+  then E-011 §5 rule 3 binds (never run unconfigured).
+- **Docket 48 RULED** (the law's first case, rule 9):
+  `kista/references/known-accounts.md` is an identifier
+  ledger (re-verified: no credential value; one API-key
+  prefix — identifies, cannot authenticate). Not a leak;
+  no value may ever be added; the campaign adds no
+  entries; whether it belongs in the repo remains
+  Volmarr's word, unmade on this record; workers treat
+  it as custody-sensitive meanwhile.
+- **Docket 127 NEW + CLOSED in scope**: the Aesir key
+  file was read with no permission check, below the Well
+  standard in the same tree. `AesirFuni.open` now refuses
+  any POSIX mode other than exactly 0600 before reading,
+  naming the mode, never the key; the E-023/E-036 key
+  writers chmod 0600. The fix grew the core +1,009 B —
+  E-057 re-measured (src 131 files / 922,893 B; total
+  131,546,922 B; laptop miss unchanged 256,017 B) and
+  re-pinned in both published copies with attribution.
+- **Docket 128 NEW → E-096**: toaster credstore resolves
+  a vault password from a `--password` command-line value
+  (visible in process lists / shell history), against law
+  rule 7; no campaign work uses that flag meanwhile.
+- **Docket 129 NEW → E-187**: mimir-well's `backup_repo`
+  plain config string is consumed as a git remote URL —
+  a credential-bearing URL there would persist in config
+  and clone remote, against law rule 2; no such value
+  exists in the tree (E-013, re-verified this scan).
+- **One guard extended, consciously**: the E-093 battery
+  carries the governance needle "Volmarr's word" (the
+  docket-48 ruling), joining E-089's allowlist as its
+  fifteenth file, reason recorded there.
+- Gate (logs in `~/workspace/.verify-tmp/ember-e093/`):
+  focal battery **7 passed**; focal + canon guard
+  **15 passed**; E-057 re-pin set **14 passed**; Run A
+  **1 error, 20 skipped**, exit 2 (docket 1, identical);
+  Run B (re-run after the re-pin; the first attempt's 2
+  extra failures were the stale E-057 pins and nothing
+  else) **1359 passed, 6 failed, 34 skipped, 1 warning** —
+  the 6 proven environment failures ONLY (1352 at E-092
+  + 7 new, exact); Run D **1567 passed, 0 failed,
+  20 skipped**, exit 0 — fully clean (1560 at E-092 + 7
+  new, exact). No README touched; no vendored file
+  touched.
