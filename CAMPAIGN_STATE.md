@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 02:12 EST
-Status: IN PROGRESS — E-080 (one memory contract: the bounded face over Brunnr + mimir-well, index-don't-merge charged) started this keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079
-Next slice: E-080 — the chosen shape implemented: one memory contract (the bounded face of the E-079 verdict) for the companion
+Last updated: 2026-11-01 02:47 EST
+Status: STOPPED — E-080 banked this tick (one memory contract live; E-081 next)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080
+Next slice: E-081 — migration: survivors' stores stay native behind the face; the mempalace-store answer argued from fixtures (executed only under Volmarr's ruling)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3716,3 +3716,70 @@ review, not this slice.
   c404d41) — remote moved 662d1f2 → 2469aaa, verified via ls-remote
   (remote head = 2469aaa2879e4262412a736d61db08c34780c89c = local HEAD
   at push time).
+
+## E-080 — The chosen shape implemented: one memory contract (DONE, 2026-11-01)
+
+- Contract live at `src/ember/well/memory_face.py` (`MemoryFace`,
+  +25,444 B core), filed at
+  `docs/architecture/E-080_ONE_MEMORY_CONTRACT.md`: one face over
+  the E-079 bounded shape — living facts through mimir-well's
+  own `RunaMemory` (loaded lazily via importlib; the core's one
+  sanctioned library-path consumer, never raw SQL), documents
+  and turns through Brunnr. Stores not merged (pinned: after an
+  indexed fact, Brunnr holds exactly one document — the face's
+  synthetic index document).
+- **Docket 51 SETTLED for the companion:** the face's one
+  canonical mimir path is the library default, named once as
+  `CANONICAL_MIMIR_DB_PATH` (`~/.mimir_well/mimir_well.db`);
+  other paths only as explicit face configuration.
+  **Docket 109 reckoned (doc §6):** bifrost's two raw-SQL
+  consumers, the Eye, and Verdandi's check are NOT re-pointed
+  (Part VIII owns bifrost's side; E-085/E-092 inherit the stated
+  map); the face is not a fifth raw-SQL consumer.
+  **Docket 110 built at the face:** facts ride mimir's own
+  `user_id` persona namespace; episode persona tags live in
+  the face's sidecar above the adapter — untagged episodes
+  belong to the default persona only, fail-closed (proven).
+  Docket 108 rides to E-092 as the verdict assigned.
+- **Index-don't-merge PROVEN** (deterministic synonym-folding
+  stand-in embedder): a paraphrase question finds the ferry
+  fact (mode "meaning"); after supersession the same question
+  returns the new text and never the old — the stale index
+  chunk resolves away through mimir's current truth.
+  **Budgets bind the face, priced in the doc §5:** one indexed
+  fact = one embedded chunk = 72,239 B (E-078) → toaster
+  (~29/month against its 2 MiB growth ceiling) ships WORD
+  search over living facts and says so (`mode == "word"`,
+  profile named in the note); phone/pi/laptop index by
+  default (~145 / ~363 / ~1,452 facts/month priced). E-082
+  owns index pruning under growth pressure.
+- Two in-scope repairs landed with the slice: (1) E-044's
+  import↔extra diet stays exact — the member is loaded
+  dynamically, not statically imported, so no false PyPI
+  extra was declared for an in-tree member; (2) E-077's
+  zero-core-consumer pin was superseded by this slice and
+  now pins exactly the one sanctioned file under
+  attribution (campaign precedent: E-078's re-pin of E-057).
+  E-057 table re-measured for the core's growth (131 files /
+  857,356 B; total 131,475,741 B; laptop miss unchanged
+  254,866 B), both published copies updated.
+- Honest limits (doc §7): chat is NOT rewired to the face
+  yet (contract live and proven; E-085 first among the
+  wiring inheritors); no device truth; E-083 owns the full
+  persona fixture battery at this layer; mempalace
+  untouched, retirement still awaiting Volmarr's word.
+- Conformance: `tests/unit/test_memory_face_e080.py`
+  **11 passed**; combined Part V conformance (E-077 + E-078
+  + E-079 + E-080) **28 passed**. Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e080/gate/`): Run A
+  **1 error, 12 skipped**, exit 2 (docket 1, identical; the
+  +1 skip is this slice's own file importorskipping
+  sqlite_vec); Run B **1322 passed, 6 failed, 26 skipped,
+  1 warning** — the 6 are the proven environment failures,
+  identical list to E-079 (1321 + 1: the E-044 diet test
+  the slice's repair turned green); Run D **1390 passed,
+  0 failed, 6 skipped**, exit 0 (1379 + 11 new; the
+  pgvector integration module skipped whole this run —
+  its `pgvector` pip guard — where E-079's run collected
+  it and skipped its 13 tests individually; zero failures
+  either way). No README touched; no member code touched.

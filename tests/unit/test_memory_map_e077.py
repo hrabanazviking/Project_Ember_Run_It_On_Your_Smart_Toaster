@@ -25,6 +25,11 @@ against the tree it describes:
 * the consumer facts: the core imports neither member
   system, and bifrost carries two independent mimir
   consumers (bridge + core) beside Verdandi's check.
+  (E-080 supersedes the first of these from its banking
+  onward: the core gains exactly one sanctioned mimir
+  consumer, the memory face — the pin below carries the
+  E-080 figure under attribution, as the E-078 size pin
+  above does.)
 """
 
 from __future__ import annotations
@@ -151,7 +156,11 @@ def test_consumer_facts_are_as_mapped():
         if "mempalace" in src or "mimir_well" in src \
                 or "RunaMemory" in src:
             core_hits.append(str(path.relative_to(REPO)))
-    assert core_hits == [], core_hits
+    # E-077 as mapped: no core consumer. E-080 (attributed):
+    # the memory face is the core's one sanctioned library-
+    # path consumer of mimir-well — the pin is now exactly
+    # that one file, and any second hit fails here.
+    assert core_hits == ["src/ember/well/memory_face.py"], core_hits
     bridge = _text(REPO / "bifrost/src/bifrost/bridges/memory_bridge.py")
     core = _text(REPO / "bifrost/src/bifrost/core.py")
     bifrost_config = _text(REPO / "bifrost/src/bifrost/config.py")

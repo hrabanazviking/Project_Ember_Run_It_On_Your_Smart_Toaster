@@ -11,8 +11,8 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,450,297
-bytes (125.36 MiB) of tracked files** between them, and
+imported members of the E-002 census) weigh **131,475,741
+bytes (125.39 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
 and Verdandi (17,032,082 B) — and in each case the weight
@@ -103,6 +103,11 @@ FTS-sync fix (triggers in `schema.py`, executed at open
 in `core.py`, plus the member regression tests) is
 mimir-well's first change since its import: mimir-well
 now reads 59 files / 614,283 B, the total 131,450,297
+bytes, the laptop miss unchanged at 254,866 bytes.
+Re-measured again at E-080, which added the core's
+memory face `src/ember/well/memory_face.py` (the one
+memory contract over Brunnr + mimir-well): the core now
+reads 131 files / 857,356 B, the total 131,475,741
 bytes, the laptop miss unchanged at 254,866 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
@@ -143,7 +148,7 @@ table prices exactly that choice, per profile.
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 130 | 831,912 B | toaster | 12.0 MiB |
+| `src/` (ember core) | 131 | 857,356 B | toaster | 12.0 MiB |
 | `Verdandi/` | 193 | 17,032,082 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
