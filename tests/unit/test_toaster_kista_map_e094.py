@@ -46,12 +46,17 @@ ENTRY_TYPES = {
     "tarot-reading", "markdown",
 }
 
+# Re-pinned at E-096 (consciously, with attribution): the
+# unlock slice added set-passphrase and remove-passphrase,
+# so the mapped surface grows 32 -> 34 subcommands. E-094's
+# own record stands as written; this battery pins the
+# tree as it now is.
 CORE_COMMANDS = {
     "init", "repair", "add", "get", "list", "update",
     "remove", "check", "search", "generate-password",
     "status", "export", "import", "backup", "restore",
     "github-backup", "add-soul", "add-cron-backup",
-    "config",
+    "config", "set-passphrase", "remove-passphrase",
 }
 SHORTCUT_COMMANDS = {
     "add-apikey", "add-sshkey", "add-certificate",
@@ -95,7 +100,7 @@ def test_entry_types_are_the_mapped_fourteen():
     raise AssertionError("ENTRY_TYPE_SCHEMAS not found")
 
 
-def test_subcommands_are_the_mapped_thirty_two():
+def test_subcommands_are_the_mapped_thirty_four():
     src = _source()
     named = set(re.findall(r'add_parser\("([^"]+)"', src))
     named.discard("set")  # only a config child, never top level
@@ -107,7 +112,7 @@ def test_subcommands_are_the_mapped_thirty_two():
     assert shortcuts == SHORTCUT_COMMANDS
     assert CORE_COMMANDS | SHORTCUT_COMMANDS == (
         named | SHORTCUT_COMMANDS)
-    assert len(CORE_COMMANDS | SHORTCUT_COMMANDS) == 32
+    assert len(CORE_COMMANDS | SHORTCUT_COMMANDS) == 34
 
 
 def test_crypto_and_storage_shape():

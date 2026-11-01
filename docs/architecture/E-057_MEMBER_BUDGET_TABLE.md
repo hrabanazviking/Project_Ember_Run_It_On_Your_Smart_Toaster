@@ -11,7 +11,7 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,547,523
+imported members of the E-002 census) weigh **131,561,242
 bytes (125.45 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
@@ -172,7 +172,13 @@ Re-measured again at E-095, whose threat-model fixes
 (owner-only vault directory, mode-0600 metadata and
 plaintext-backup files) grew the credstore: kista now
 reads 25 files / 2,770,819 B, the total 131,547,523
-bytes, the laptop miss unchanged at 256,017 bytes.)*
+bytes, the laptop miss unchanged at 256,017 bytes.
+Re-measured again at E-096, whose unlock build
+(passphrase-wrapped key, the two passphrase commands,
+the docket-128 warning, and the re-pinned member
+test) grew the credstore again: kista now reads
+25 files / 2,784,538 B, the total 131,561,242 bytes,
+the laptop miss unchanged at 256,017 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -214,7 +220,7 @@ table prices exactly that choice, per profile.
 |---|---|---|---|---|
 | `src/` (ember core) | 131 | 922,893 B | toaster | 12.0 MiB |
 | `Verdandi/` | 193 | 17,033,233 B | none | 12.6 MiB |
-| `kista/` | 25 | 2,770,819 B | phone | 24.2 MiB |
+| `kista/` | 25 | 2,784,538 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
 | `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |

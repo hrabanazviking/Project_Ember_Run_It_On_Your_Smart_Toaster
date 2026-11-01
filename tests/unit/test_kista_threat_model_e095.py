@@ -81,9 +81,17 @@ def test_dir_and_meta_and_plain_backup_are_owner_only_in_code():
 
 def test_no_passphrase_no_lock_shapes_stand_as_modelled():
     src = _source()
-    # No key derivation or wrapping exists anywhere.
-    for absent in ("scrypt", "PBKDF2", "argon2", "derive"):
-        assert absent not in src, absent
+    # RE-PINNED AT E-096, consciously and with attribution:
+    # this test originally pinned the absence of any key
+    # derivation or wrapping — exactly the gap E-095's
+    # model handed to E-096 as its requirement, and
+    # E-096 built it (scrypt-wrapped key, set-passphrase).
+    # The model's historical record stands in its doc;
+    # the code's shape is now the wrapped one. The
+    # no-lock shape below is unchanged (docket 134,
+    # still E-100's).
+    assert "hashlib.scrypt" in src
+    assert "kista_key_wrap" in src
     # No inter-process lock exists anywhere.
     for absent in ("flock", "lockf", "FileLock"):
         assert absent not in src, absent
@@ -142,7 +150,11 @@ def test_probe_folder_copy_opens_and_blob_alone_refuses(tmp_path):
     stolen = tmp_path / "stolen"
     shutil.copytree(vault, stolen)
     out = _run(tmp_path, stolen, "get", "testsite")
-    # The central finding: the copied folder opens whole.
+    # The central finding, for a vault with NO passphrase
+    # set: the copied folder opens whole. Since E-096 a
+    # passphrase can be set (its battery proves the locked
+    # shape); init and status now state this default's
+    # consequence in words at the moment it applies.
     assert "synthetic-pass-one" in out.stdout
     alone = tmp_path / "alone"
     alone.mkdir()

@@ -43,6 +43,8 @@ Usage:
   kista export [--output FILE]
   kista import <file> [--merge|--overwrite]
   kista init
+  kista set-passphrase     # Protect the vault with a passphrase (E-096)
+  kista remove-passphrase  # Remove that protection (asks first, in words)
   kista status
   kista generate-password [--length N]
   kista repair
@@ -50,7 +52,10 @@ Usage:
 """
 
 import argparse
+import base64
 import copy
+import getpass
+import hashlib
 import json
 import os
 import platform
@@ -61,15 +66,26 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Fernet for symmetric encryption
+# Fernet for symmetric encryption.
+# E-096 (docket 14): a missing dependency is a plain, stated
+# error — never an installer run at import time. The old
+# shape executed an installer from the network on first
+# import; it died as a raw traceback on PEP 668 machines
+# and was a supply-chain exposure everywhere else.
 try:
     from cryptography.fernet import Fernet, InvalidToken
 except ImportError:
-    print("Installing cryptography package...")
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "cryptography"]
+    print(
+        "kista needs the 'cryptography' package, and it is not "
+        "installed.\n"
+        "Ask whoever looks after this machine to install it "
+        "(for example with the machine's package manager), "
+        "then try again.\n"
+        "Nothing was changed, and your vault — if you have "
+        "one — is untouched.",
+        file=sys.stderr,
     )
-    from cryptography.fernet import Fernet, InvalidToken
+    sys.exit(1)
 
 __version__ = "2.0.0"
 
@@ -272,6 +288,216 @@ def _validate_key(key_bytes: bytes) -> bytes:
     return stripped
 
 
+# ── Passphrase wrapping (E-096) ─────────────────────────
+# The vault key itself never changes when a passphrase is
+# set, changed, or removed — only its wrapping does, so
+# entries, backups, and exports are untouched by unlock
+# changes. A wrapped key file is a small JSON document:
+#
+#   {"kista_key_wrap": 1, "kdf": "scrypt",
+#    "n": 16384, "r": 8, "p": 1,
+#    "salt": "<base64, 16 random bytes>",
+#    "wrapped": "<Fernet token under the derived key>"}
+#
+# The wrapping key is scrypt(passphrase, salt) from the
+# standard library — no new dependency, and the one-time
+# derivation cost at unlock is a fraction of a second
+# even on toaster-class hardware (priced at E-103).
+WRAP_MARKER = "kista_key_wrap"
+_SCRYPT_N = 16384
+_SCRYPT_R = 8
+_SCRYPT_P = 1
+_MIN_PASSPHRASE_LEN = 8
+
+#: The unwrapped vault key, cached for this process only
+#: after a successful unlock, so one command run asks at
+#: most once. Never written anywhere.
+_unlocked_key_cache: bytes | None = None
+
+
+def _is_wrapped_key(raw: bytes) -> bool:
+    """True when the key file holds a passphrase-wrapped key."""
+    try:
+        doc = json.loads(raw.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return False
+    return isinstance(doc, dict) and doc.get(WRAP_MARKER) == 1
+
+
+def _derive_wrapping_key(passphrase: str, salt: bytes,
+                         n: int, r: int, p_: int) -> bytes:
+    """Derive a Fernet key from a passphrase via scrypt."""
+    derived = hashlib.scrypt(
+        passphrase.encode("utf-8"), salt=salt, n=n, r=r, p=p_,
+        dklen=32,
+    )
+    return base64.urlsafe_b64encode(derived)
+
+
+def _wrap_key(vault_key: bytes, passphrase: str) -> bytes:
+    """Wrap a vault key under a passphrase; returns file bytes."""
+    salt = os.urandom(16)
+    wrapping = _derive_wrapping_key(
+        passphrase, salt, _SCRYPT_N, _SCRYPT_R, _SCRYPT_P)
+    doc = {
+        WRAP_MARKER: 1,
+        "kdf": "scrypt",
+        "n": _SCRYPT_N,
+        "r": _SCRYPT_R,
+        "p": _SCRYPT_P,
+        "salt": base64.b64encode(salt).decode(),
+        "wrapped": Fernet(wrapping).encrypt(vault_key).decode(),
+    }
+    return (json.dumps(doc, indent=2) + "\n").encode()
+
+
+def _read_vault_passphrase() -> str:
+    """Read the vault passphrase without echo and without
+    any command-line shape: the KISTA_PASSPHRASE
+    environment variable (for scripts and the companion),
+    or a hidden prompt on a terminal. Anything else is a
+    plain refusal — a passphrase is never taken from a
+    command-line argument, where process listings and
+    shell history would keep it (the docket 128 rule,
+    applied to the vault's own secret too)."""
+    env = os.environ.get("KISTA_PASSPHRASE")
+    if env:
+        return env
+    if sys.stdin.isatty():
+        try:
+            return getpass.getpass("Vault passphrase (input hidden): ")
+        except (EOFError, KeyboardInterrupt):
+            print("", file=sys.stderr)
+            sys.exit(1)
+    print(
+        "✗ This vault is protected by a passphrase, and no "
+        "passphrase was given.\n"
+        "  Run this in a terminal to be asked for it, or set "
+        "the KISTA_PASSPHRASE environment variable.\n"
+        "  Nothing was changed.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def _unwrap_key(raw: bytes) -> bytes:
+    """Unlock a wrapped key file with the vault passphrase.
+
+    A wrong passphrase is a plain, stated refusal — never
+    a traceback, never a new key, never a repair attempt:
+    the wrapped file is left exactly as it was.
+    """
+    global _unlocked_key_cache
+    if _unlocked_key_cache is not None:
+        return _unlocked_key_cache
+    try:
+        doc = json.loads(raw.decode("utf-8"))
+        salt = base64.b64decode(doc["salt"])
+        n, r, p_ = int(doc["n"]), int(doc["r"]), int(doc["p"])
+        wrapped = doc["wrapped"].encode()
+    except (ValueError, KeyError, TypeError, UnicodeDecodeError):
+        print(
+            "✗ The vault key file is wrapped, but its wrapping "
+            "cannot be read — the file may be damaged.\n"
+            "  Your vault data is still intact. Do NOT delete "
+            "or regenerate anything; ask for help with the "
+            "key file as it stands.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    for _attempt in range(3):
+        passphrase = _read_vault_passphrase()
+        wrapping = _derive_wrapping_key(passphrase, salt, n, r, p_)
+        try:
+            vault_key = Fernet(wrapping).decrypt(wrapped)
+        except InvalidToken:
+            print(
+                "✗ That passphrase did not unlock the vault. "
+                "Check for typing mistakes — capital letters "
+                "and spaces count.",
+                file=sys.stderr,
+            )
+            # A scripted passphrase gets one honest answer,
+            # not a prompt loop it cannot answer.
+            if os.environ.get("KISTA_PASSPHRASE") or not sys.stdin.isatty():
+                sys.exit(1)
+            continue
+        key = _validate_key(vault_key)
+        _unlocked_key_cache = key
+        return key
+    print(
+        "✗ The vault stayed locked after three tries. "
+        "Nothing was changed.\n"
+        "  If the passphrase is forgotten, the vault cannot "
+        "be opened — there is no back door and no recovery "
+        "copy. That is the protection working as promised.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def _prompt_new_passphrase() -> str:
+    """Ask for a new passphrase twice, in plain words, with
+    the recovery truth stated BEFORE it is set (E-095 §6):
+    a forgotten passphrase means a lost vault."""
+    env = os.environ.get("KISTA_PASSPHRASE")
+    print(
+        "Before you choose: if you forget this passphrase, "
+        "nobody can open\n"
+        "your vault — not you, not Ember, not anyone. There "
+        "is no reset and no\n"
+        "recovery copy. Write it down somewhere safe, the "
+        "way you would a\n"
+        "house key's hiding place."
+    )
+    if env:
+        if len(env) < _MIN_PASSPHRASE_LEN:
+            print(
+                f"✗ The passphrase is too short — use at least "
+                f"{_MIN_PASSPHRASE_LEN} characters.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        return env
+    if not sys.stdin.isatty():
+        print(
+            "✗ Setting a passphrase needs a terminal to ask "
+            "for it, or the\n"
+            "  KISTA_PASSPHRASE environment variable. "
+            "Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    for _attempt in range(3):
+        first = getpass.getpass(
+            "Choose a vault passphrase (input hidden): ")
+        if len(first) < _MIN_PASSPHRASE_LEN:
+            print(
+                f"  Too short — use at least "
+                f"{_MIN_PASSPHRASE_LEN} characters. A short "
+                f"sentence you can remember works well.",
+                file=sys.stderr,
+            )
+            continue
+        second = getpass.getpass("Type it once more: ")
+        if first != second:
+            print(
+                "  The two tries did not match — let's go again.",
+                file=sys.stderr,
+            )
+            continue
+        return first
+    print("✗ No passphrase was set. Nothing was changed.",
+          file=sys.stderr)
+    sys.exit(1)
+
+
+def _write_key_file(data: bytes) -> None:
+    """Write the key file atomically, owner-only."""
+    _atomic_write(VAULT_KEY, data)
+    _chmod_600(VAULT_KEY)
+
+
 def _get_key() -> bytes:
     """Get the vault encryption key, creating if needed.
 
@@ -282,6 +508,8 @@ def _get_key() -> bytes:
     _ensure_dir()
     if VAULT_KEY.exists():
         raw = VAULT_KEY.read_bytes()
+        if _is_wrapped_key(raw):
+            return _unwrap_key(raw)
         return _validate_key(raw)
     # No key file exists — check if vault data exists
     if VAULT_FILE.exists():
@@ -560,6 +788,25 @@ def _resolve_password(args) -> str:
             sys.exit(1)
         return pw
     if hasattr(args, "password") and args.password:
+        # Docket 128, closed at E-096: a value typed after
+        # --password is visible in process listings and in
+        # shell history, so the program says so at the
+        # moment of use — loudly, in words — instead of
+        # letting the exposure ride in silence, and names
+        # the shapes that do not expose it. The value is
+        # still honoured (existing scripts keep working);
+        # the hiding is what ended.
+        print(
+            "⚠ Warning: a password given with --password can be "
+            "seen by other\n"
+            "  programs in the process list, and stays in your "
+            "shell history.\n"
+            "  Safer shapes: --password-file FILE, or "
+            "--password-env VARIABLE,\n"
+            "  or no flag at all — you will be asked with the "
+            "typing hidden.",
+            file=sys.stderr,
+        )
         return args.password
     # No password provided via any method — prompt for 'add' command only
     if getattr(args, "command", None) == "add" and sys.stdin.isatty():
@@ -597,6 +844,8 @@ def cmd_init(args) -> None:
         print(f"✓ Vault already exists at {VAULT_DIR}")
         print(f"  Key: {VAULT_KEY}")
         print(f"  Data: {VAULT_FILE}")
+        if _is_wrapped_key(VAULT_KEY.read_bytes()):
+            print("  Passphrase: SET — unlocking to count entries.")
         key = _get_key()
         vault = _load_vault(key)
         print(f"  Entries: {len(vault.get('entries', {}))}")
@@ -606,6 +855,87 @@ def cmd_init(args) -> None:
     _save_vault(vault, key)
     print(f"✓ Vault initialized at {VAULT_DIR}")
     print(f"  Key: {VAULT_KEY} (chmod 600, owned by you)")
+    if _is_wrapped_key(VAULT_KEY.read_bytes()):
+        print("  Passphrase: SET — a copy of this folder opens "
+              "nothing without it.")
+    else:
+        print("  Passphrase: NOT set. Anyone who copies this "
+              "folder can open the")
+        print("  vault — the key travels with it. To protect "
+              "it, run:")
+        print("      kista set-passphrase")
+        print("  and choose a passphrase you will not forget: "
+              "a forgotten one")
+        print("  means a lost vault, with no recovery. That "
+              "warning is honest,")
+        print("  not a scare tactic.")
+
+
+def cmd_set_passphrase(args) -> None:
+    """Set or change the vault passphrase (E-096).
+
+    The vault key itself never changes — only its wrapping
+    does — so every entry, backup, and export keeps
+    working exactly as before. Setting a passphrase is
+    what turns a copied vault folder from a total loss
+    (E-095's central finding) into a locked box.
+    """
+    if not VAULT_KEY.exists():
+        print(
+            "✗ There is no vault here yet. Run 'kista init' "
+            "first, then set a passphrase.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    raw = VAULT_KEY.read_bytes()
+    wrapped = _is_wrapped_key(raw)
+    if wrapped:
+        print("This vault already has a passphrase. To change "
+              "it, first unlock with the passphrase you use now.")
+        vault_key = _unwrap_key(raw)
+    else:
+        vault_key = _validate_key(raw)
+    passphrase = _prompt_new_passphrase()
+    _ensure_dir()
+    _write_key_file(_wrap_key(vault_key, passphrase))
+    global _unlocked_key_cache
+    _unlocked_key_cache = vault_key
+    print("✓ Passphrase set. From now on, a copy of this "
+          "folder opens nothing")
+    print("  without your passphrase — and neither does "
+          "this one. You will be")
+    print("  asked for it each time you open the vault in "
+          "a new terminal.")
+
+
+def cmd_remove_passphrase(args) -> None:
+    """Remove the vault passphrase, in plain words first.
+
+    Removal restores the E-095 shape exactly: the key
+    travels with the vault again, and a copied folder
+    opens whole. That consequence is stated before the
+    act, never after.
+    """
+    if not VAULT_KEY.exists():
+        print("✗ There is no vault here yet.", file=sys.stderr)
+        sys.exit(1)
+    raw = VAULT_KEY.read_bytes()
+    if not _is_wrapped_key(raw):
+        print("This vault has no passphrase to remove — it "
+              "already opens with its key file alone.")
+        return
+    print("Removing the passphrase means anyone who copies "
+          "this folder can open")
+    print("the vault — the protection E-096 added goes "
+          "away completely.")
+    vault_key = _unwrap_key(raw)
+    _write_key_file(vault_key)
+    global _unlocked_key_cache
+    _unlocked_key_cache = vault_key
+    print("✓ Passphrase removed. The vault now opens with "
+          "its key file alone.")
+    print("  You can set a new one any time with "
+          "'kista set-passphrase'.")
 
 
 def cmd_repair(args) -> None:
@@ -1345,6 +1675,9 @@ def cmd_status(args) -> None:
     _ensure_dir()
     print(f"Vault directory: {VAULT_DIR}")
     print(f"Key file: {VAULT_KEY} ({'exists' if VAULT_KEY.exists() else 'MISSING'})")
+    if VAULT_KEY.exists():
+        _wrapped = _is_wrapped_key(VAULT_KEY.read_bytes())
+        print(f"Passphrase: {'SET — this vault asks before it opens' if _wrapped else 'NOT set — a copy of this folder opens the vault; run set-passphrase to protect it'}")
     print(f"Data file: {VAULT_FILE} ({'exists' if VAULT_FILE.exists() else 'empty'})")
     print(f"Kista version: {__version__}")
     print(f"Platform: {platform.system()} {platform.machine()}")
@@ -2057,6 +2390,10 @@ def main():
     # repair
     sub.add_parser("repair", help="Repair corrupted vault from backup")
 
+    # passphrase (E-096)
+    sub.add_parser("set-passphrase", help="Set or change the vault passphrase — a copied folder then opens nothing without it")
+    sub.add_parser("remove-passphrase", help="Remove the vault passphrase (the consequence is stated before it happens)")
+
     # add (general, with --type)
     p_add = sub.add_parser("add", help="Add a new entry")
     p_add.add_argument("service", help="Service name (e.g., 'email-provider', 'streaming-service')")
@@ -2064,7 +2401,7 @@ def main():
                        choices=list(ENTRY_TYPE_SCHEMAS.keys()),
                        help="Entry type (default: credential)")
     p_add.add_argument("--username", "-u", help="Username")
-    p_add.add_argument("--password", "-p", help="Password (insecure: visible in process list)")
+    p_add.add_argument("--password", "-p", help="Password (discouraged: visible in process list and shell history — prefer --password-file or --password-env)")
     p_add.add_argument("--password-file", help="Read password from file (secure)")
     p_add.add_argument("--password-env", help="Read password from environment variable (secure)")
     p_add.add_argument("--email", "-e", help="Email address")
@@ -2165,7 +2502,7 @@ def main():
     p_upd.add_argument("service", help="Service name")
     # Common update fields
     p_upd.add_argument("--username", "-u", help="New username")
-    p_upd.add_argument("--password", "-p", help="New password (insecure)")
+    p_upd.add_argument("--password", "-p", help="New password (discouraged: visible in process list and shell history)")
     p_upd.add_argument("--password-file", help="Read password from file (secure)")
     p_upd.add_argument("--password-env", help="Read password from environment variable (secure)")
     p_upd.add_argument("--email", "-e", help="New email")
@@ -2362,6 +2699,8 @@ def main():
 
     commands = {
         "init": cmd_init,
+        "set-passphrase": cmd_set_passphrase,
+        "remove-passphrase": cmd_remove_passphrase,
         "add": cmd_add,
         "get": cmd_get,
         "list": cmd_list,
