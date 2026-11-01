@@ -3425,3 +3425,8 @@ review, not this slice.
   was lost; recorded so a recurrence is recognised.
 - E-076 next — Part IV gate (after the re-verification
   duty above).
+- E-075 push: banking commit 59f740b pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was d04fa5a, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 31993df)
+  — remote moved d04fa5a → 59f740b, verified via ls-remote (remote head =
+  59f740bce1373c2ee9bcfbf4a99901431fad891e = local HEAD at push time).
