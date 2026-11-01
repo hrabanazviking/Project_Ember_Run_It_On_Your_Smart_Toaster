@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 23:03 EDT
-Status: IN PROGRESS — E-075 (Load truth: hub throughput per profile, measured), started 23:03 EDT keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074
-Next slice: E-075 — Load truth: hub throughput per profile, measured
+Last updated: 2026-10-31 23:47 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-076 (with a standing E-075 Run D re-verification duty, see the E-075 entry)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075
+Next slice: E-076 — Part IV gate: VD-RM's remaining road closed or re-roaded with owners; event contract frozen; summary filed (after the E-075 Run D re-verification duty below)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3327,3 +3327,101 @@ review, not this slice.
   12de801) — remote moved 1cf41c4 → e8d0e17, verified via ls-remote
   (remote head = e8d0e17918e9300664bc581a196d9478999c8054 = local HEAD
   at push time).
+
+## E-075 — Load truth: hub throughput per profile (DONE, 2026-10-31)
+
+- Instrument filed in code at `Verdandi/load_truth.py`
+  (stdlib-only, standalone) and its reading copy at
+  `docs/architecture/E-075_LOAD_TRUTH.md`: the hub's
+  throughput measured live, per budget-book profile, the
+  profile taken as a benchmark shape (simulation
+  envelope, the E-048 method — hub pinned by taskset to
+  the profile's CPU count 1/2/4/4, driven by the
+  profile's publishers 1/2/4/8 over persistent
+  connections, 0/1/1/2 subscribers listening; timed
+  bursts 512/512/1024/1024 events plus 32 warmup and 60
+  producer-path events per run). Two faces measured:
+  persistent (one connection, ack per event) and the
+  producer face (a fresh connection per event — the
+  exact `publish_event_sync` shape). The whole harness
+  ran three times on the campaign VM (Python 3.12.3)
+  under sibling-campaign contention (load 5.2–6.3);
+  raw reports in `~/workspace/.verify-tmp/ember-e075/`
+  (`run1.json`–`run3.json`, solo `toaster.json`).
+- Measured truth (medians of three): persistent
+  throughput toaster **2735.7**, phone **1660.9**, pi
+  **1657.0**, laptop **1747.3** events/s — one publisher
+  is the hub's best shape; more publishers queue on the
+  one event loop and only latency grows (p95 0.45 →
+  14.10 ms toaster → laptop). Producer face flat at
+  **566.0 / 640.6 / 636.3 / 655.8** events/s (its cost
+  is the connection, not the hub). A solo toaster probe
+  in a quieter minute read 5172.8 / 2125.4 — the spread
+  is recorded, medians are the citable figures. Hub
+  peak RSS **22.6–22.9 MiB** in every shape (E-041's
+  21.9 MiB live figure confirmed under load); stamped
+  feed lines **~206 bytes/event** in every run.
+- Correctness measured with the speed, all twelve
+  profile runs error-free: ack `_seq` contiguous
+  1..604 (toaster/phone) and 1..1116 (pi/laptop); feed
+  lines == published, every run; `recent` answered the
+  ring's full 256 after every burst; every subscriber
+  received every event published while it listened
+  (604/604, 1116/1116, 1116/1116 per laptop
+  subscriber). Demand side stated in the doc: a
+  heartbeat pulse a minute + a few events per turn is
+  five orders of magnitude below the measured floor —
+  no profile needs a faster hub.
+- New **docket 107**: the per-profile load truth is a
+  contended VM simulation; hub throughput on real
+  tiny hardware is NOT PROVEN (a real Pi measurement
+  is the cheapest re-anchor). Owner: the E-076 gate
+  review. E-074's "load truth not in this document"
+  limit is discharged by this slice's doc.
+- E-057 table re-measured for the Verdandi change
+  (Verdandi 193 files / 17,030,199 B; core unchanged
+  130 / 831,912 B; total 131,441,806 B; laptop miss
+  252,983 B), both published copies updated.
+  Conformance: `tests/unit/test_load_truth_e075.py`
+  **8 passed** (incl. a live mini-run against the real
+  hub: contiguous seqs, feed == published, subscriber
+  window, RSS > 0). Combined Part IV conformance
+  (E-055 + E-057 pins + E-061–E-075) **259 passed**
+  (251 + 8); Verdandi focal conversation set **101
+  passed**; canonical heartbeat set **374 passed**.
+  Slice gate Run B **1298 passed, 6 failed, 25
+  skipped, 1 warning** (1290 + 8; the 6 are the proven
+  environment failures, FAILED list identical to
+  E-074). Logs in
+  `~/workspace/.verify-tmp/ember-e075/gate/`.
+- Run D is recorded **NOT GREEN under extreme
+  contention** (the E-072 pattern): attempt 1 ran with
+  a non-canonical PYTHONPATH (this tick added the
+  e005 member-test extras dir to the canonical
+  src + ember-extras shape) and scored **1351 passed,
+  4 failed** — all four the E-045 idle-window test's
+  thread count (4 vs 1), proven an artifact of that
+  extras dir by an A/B driver run (canonical shape:
+  Threads 1 throughout; with the e005 dir added:
+  Threads 4 from the first sample; CPU ticks passed
+  in both). Attempt 2, canonical shape: **1354
+  passed, 1 failed, 19 skipped, 1 warning** — the one
+  failure the E-046 cold-start median test, with the
+  1-minute load spiking to **33.15** during the run;
+  its isolated re-run at load 9.5–16.9 still starved
+  (median 13.43 s vs the 5.00 s cap; E-046's anchor
+  median was 2.87 s at load ~8, E-032's quiet run
+  0.93 s). E-075 touched no core or hub code, so no
+  regression is in scope: **standing re-verification
+  duty — the next keeper tick re-runs Run D
+  (canonical shape) and the cold-start test before
+  starting E-076 and records the results here; a
+  calm-load green Run D closes this note.**
+- Environment note: at this tick's start, git
+  loose-object writes failed with EPERM for ~2
+  minutes (plain file writes unaffected, a fresh repo
+  in /tmp unaffected by the end); the IN PROGRESS
+  marker commit landed on retry (31993df). No work
+  was lost; recorded so a recurrence is recognised.
+- E-076 next — Part IV gate (after the re-verification
+  duty above).
