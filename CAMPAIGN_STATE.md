@@ -6,11 +6,11 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 07:08 EST
-Status: IN PROGRESS — E-089 (07:02 keeper tick; first duty Run D re-verification running before new building)
-Status was: STOPPED — E-088 banked this tick (long-life soak: a simulated year of memory through the real face on the toaster profile — 7,300 turns + 377 fact rows + 365 diary files = 5,717,556 B in all, inside the toaster's 24 MiB year allowance; year-end decay floored 287 facts and deleted none; NEW docket 125 decay passes compound, owned by the E-092 gate; first duty Run D re-verified for E-085+E-086+E-087 at 1519 passed / 1 classified failure — clean-Run-D duty passes to E-089)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088
-Next slice: E-089 — Canon-shaped test data only (synthetic; no real companion history in fixtures). FIRST DUTY of E-089's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — a fully clean Run D is still not on record (see the E-088 entry).
+Last updated: 2026-11-01 08:24 EST
+Status: STOPPED — E-089 banked this tick (canon-shaped test data only: the root test tree audited — no real companion history in fixtures; the one real-history shape, fabricated facts filed under a real companion identity in E-080/E-081/E-082, renamed to the canon persona ember and pinned by a guard battery; first duty ANSWERED the clean-Run-D question at its root — docket 126: the recurring single failure was a 125-byte Unix socket path over the 108-byte AF_UNIX limit in the campaign's own gate method, not load — fixed in Verdandi/load_truth.py with a regression pin; closing Run D is the FIRST fully clean Run D on record: 1539 passed, 0 failed, 20 skipped)
+Status was: IN PROGRESS — E-089 (07:02 keeper tick; first duty Run D re-verification running before new building)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089
+Next slice: E-090 — Docs: the memory model for users (plain) + builders. No first-duty carry: the clean Run D is on record (E-089), the duty that headed E-085–E-089 is closed.
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4503,3 +4503,107 @@ review, not this slice.
   verified via ls-remote (remote head =
   70f434b1de1729fa24ca983a9ac1ab586dd7cd0f = local HEAD
   at push time).
+
+## E-089 — Canon-shaped test data only (DONE, 2026-11-01)
+
+- **First duty discharged — and the clean-Run-D question
+  ANSWERED at its root.** Run D (extras supplied, TMPDIR
+  on the workspace overlay, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e089/gate/runD_firstduty.log`):
+  **1529 passed, 1 failed, 20 skipped, 27 warnings** in
+  605.30s — the same single load-truth failure. But its
+  standalone re-runs then failed CONSISTENTLY at low load,
+  which contention cannot explain; hand-running the hub
+  stayed up. Proven mechanism (new **docket 126**): the
+  instrument boots the hub with its socket under the
+  caller's workdir; under the campaign's own gate method
+  (pytest tmp_path under the deep overlay TMPDIR) that
+  socket path is **125 bytes — over the 108-byte AF_UNIX
+  limit** — the bind fails, the hub exits rc=1, and
+  E-083–E-088's records misread it as a load artifact
+  (their classifications are corrected in the E-089 doc
+  §4: mechanism proven, contention unproven and no longer
+  needed). Short-TMPDIR re-run of the same test: 8 passed.
+  **Fixed in scope** in `Verdandi/load_truth.py`: when
+  the natural socket path would reach 108 bytes the state
+  dir relocates to a short `vd-lt-` scratch dir under the
+  temp root, removed in the finally after the hub stops;
+  regression-pinned by a new deep-workdir live test in
+  the E-075 battery.
+- **Closing Run D — the first fully clean Run D on
+  record.** The 07:02 tick's closing attempt ended with
+  its log still empty; the 08:02 keeper tick re-ran it
+  (same method; log
+  `~/workspace/.verify-tmp/ember-e089/gate/runD_closing.log`):
+  **1539 passed, 0 failed, 20 skipped, 27 warnings** in
+  836.82s, exit 0. The arithmetic closes exactly:
+  first-duty 1529 + the E-089 battery (8) + the E-075
+  pin (1) + the formerly failing load-truth test itself
+  (1) = 1539. The clean-Run-D duty that headed
+  E-085–E-089 is CLOSED; nothing carries forward.
+  (One crossed/phantom completion notice during this run
+  reported the session finished while the runner was in
+  fact at ~60% — disk truth, the live PID + the log,
+  was used throughout, per the E-076 lesson.)
+- **The audit** (`docs/architecture/E-089_CANON_SHAPED_TEST_DATA.md`;
+  battery `tests/unit/test_canon_test_data_e089.py`): the
+  root `tests/` tree scanned for real companion history.
+  The canon stood already — the ferry/beekeeper/harbour
+  world shared by E-080–E-088, fixture personae censused
+  exactly (ember, sage, ember-2, mabel, default, other,
+  p, p1, saga + the adversarial invalid slugs), the
+  tree's only email-shaped string a synthetic
+  `alice:hunter2@example.com`. **One real-history shape
+  found and fixed:** E-080/E-081/E-082 ran their
+  fabricated facts under a REAL companion identity as
+  fixture persona (35 references) — renamed to the canon
+  persona `ember` (36 lines incl. one comment), semantics
+  unchanged, batteries re-run green (focal set below).
+  The householder's name is CONTROLLED, not forbidden:
+  11 allowlisted files, each a non-fixture use with its
+  reason in the battery (pgvector username shapes incl.
+  the guarded live test, governance needles ×3,
+  volmarr-core system name, lawbook filename); any other
+  test file carrying it now fails the gate.
+  `tests/fixtures/` holds only its README — the promised
+  fixture library was never built; all fixtures live
+  inline where the scanner sees them; the battery pins
+  the directory's contents so additions enter the census
+  loudly (a shared-module refactor was judged churn
+  without a defect; the library question goes to
+  E-193/E-194). Member suites sampled, not swept:
+  mimir-well's own tests use the householder's name as
+  its product trust model does — classified the member's
+  elder house style, NOT rewritten; holding member
+  estates to the root rule is Volmarr's word via Part XI,
+  recorded as an open note.
+- In-scope re-measure (E-080–E-088 precedent): E-057
+  table re-measured — Verdandi 193 files / 17,033,233 B
+  (+1,151, the load_truth fix), core unchanged 131 /
+  921,884 B, twelve-member total 131,545,906 B, laptop
+  miss 256,017 B; both published copies updated (E-057
+  doc + BUDGET BOOK §7).
+- Conformance + gate (logs in
+  `~/workspace/.verify-tmp/ember-e089/gate/`): focal set
+  (E-075 battery incl. the new pin + the three renamed
+  batteries + the E-089 battery) **53 passed**; combined
+  conformance (E-057 table + E-072 feed + Part V
+  E-077–E-089 files, 15 files) **205 passed, 1 skipped**
+  (the live-WYRD skip, as E-086–E-088); Run A **1 error,
+  20 skipped**, exit 2 (docket 1, identical); Run B
+  **1331 passed, 6 failed, 34 skipped, 1 warning** — the
+  6 proven environment failures ONLY: the load-truth
+  artifact is absent from Run B for the first time, the
+  docket-126 fix holding in the default env too.
+- Environment note: a VM-wide write-denial window
+  (~07:23–07:3x EST, the E-052 tempfile-probe EPERM
+  class — python write() calls refused across /tmp and
+  the workspace while shell/file-tool writes worked)
+  interrupted this tick's middle; the two E-082 failures
+  in an early combined run carry that artifact's
+  traceback (tempfile "No usable temporary directory"),
+  not the rename — the rename batteries' clean focal
+  re-run above is the record. No README touched; no
+  vendored code touched; no member code touched (the
+  load_truth fix is the instrument's own file, in
+  Verdandi's tracked tree, re-measured above).

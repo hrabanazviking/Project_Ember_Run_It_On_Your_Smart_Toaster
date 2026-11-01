@@ -11,11 +11,11 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,544,755
+imported members of the E-002 census) weigh **131,545,906
 bytes (125.45 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
-and Verdandi (17,032,082 B) — and in each case the weight
+and Verdandi (17,033,233 B) — and in each case the weight
 is data, not code (benchmark corpora, a test snapshot,
 loose images; E-002/E-014).
 
@@ -25,7 +25,7 @@ mimir-well, seidr_engine, bifrost), kista fits the phone,
 four fit the pi (astrology-engine, Hamr, Open-VTT,
 CloakBrowser's tracked tree), and three fit **no profile
 at all** — mempalace, the dictionary, and Verdandi, which
-misses even the laptop's 16 MiB ceiling by 254,866 bytes.
+misses even the laptop's 16 MiB ceiling by 256,017 bytes.
 *(Re-measured at E-061, which changed Verdandi's tracked
 weight: at E-061's filing the totals above and the Verdandi
 row read 131,211,064 bytes and 16,817,105 B / 179 files,
@@ -148,7 +148,11 @@ long-life soak added the year's measured anchors to
 the budget book (the core's only change this slice):
 the core now reads 131 files / 921,884 B, the total
 131,544,755 bytes, the laptop miss unchanged at
-254,866 bytes.)*
+254,866 bytes. Re-measured again at E-089, whose
+docket-126 fix grew `Verdandi/load_truth.py` (the
+socket-path relocation): Verdandi now reads 193 files
+/ 17,033,233 B, the total 131,545,906 bytes, the
+laptop miss 256,017 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -189,7 +193,7 @@ table prices exactly that choice, per profile.
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
 | `src/` (ember core) | 131 | 921,884 B | toaster | 12.0 MiB |
-| `Verdandi/` | 193 | 17,032,082 B | none | 12.6 MiB |
+| `Verdandi/` | 193 | 17,033,233 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,769 B | toaster | 20.8 MiB |

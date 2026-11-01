@@ -63,9 +63,11 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from dataclasses import dataclass
@@ -195,6 +197,25 @@ def measure_profile(shape: ProfileShape, workdir: Path) -> dict:
     state.mkdir(parents=True, exist_ok=True)
     home.mkdir(parents=True, exist_ok=True)
     sock_path = state / "runa.sock"
+    # E-089 (docket 126): a Unix socket path is capped at
+    # 108 bytes (sun_path, NUL included). A deep workdir —
+    # a caller's pytest tmp_path under a long TMPDIR is
+    # the proven case, 125 bytes — makes the hub's bind
+    # fail and the hub exit rc=1 before it ever listens,
+    # which this instrument used to report as an unexplained
+    # "hub exited early" (and keeper gate runs misread as a
+    # load artifact across E-083–E-088). When the natural
+    # path would be too long, the state dir moves to a
+    # short scratch dir directly under the system temp
+    # root; the measurement is unchanged, only the address
+    # is short enough to exist. The scratch dir is removed
+    # in the finally below, after the hub is stopped.
+    relocated: Path | None = None
+    if len(str(sock_path).encode()) >= 108:
+        relocated = Path(tempfile.mkdtemp(prefix="vd-lt-"))
+        state = relocated / f"state-{shape.name}"
+        state.mkdir(parents=True, exist_ok=True)
+        sock_path = state / "runa.sock"
     feed_path = state / "nerve_feed.jsonl"
 
     env = dict(os.environ)
@@ -403,6 +424,8 @@ def measure_profile(shape: ProfileShape, workdir: Path) -> dict:
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait(timeout=5.0)
+        if relocated is not None:
+            shutil.rmtree(relocated, ignore_errors=True)
 
 
 def run_all(workdir: Path, names: list[str] | None = None) -> dict:

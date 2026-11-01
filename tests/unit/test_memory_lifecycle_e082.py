@@ -107,8 +107,8 @@ def test_anchors_are_the_measured_ones():
 
 
 def test_report_prices_facts_and_index_against_ceiling(laptop):
-    laptop.remember_fact(FERRY, importance=6, persona_id="yrsa")
-    laptop.remember_fact(BEES, importance=9, persona_id="yrsa")
+    laptop.remember_fact(FERRY, importance=6, persona_id="ember")
+    laptop.remember_fact(BEES, importance=9, persona_id="ember")
     report = laptop.lifecycle_report()
     assert report.profile == "laptop"
     assert report.ceiling_bytes_per_month == int(
@@ -136,12 +136,12 @@ def test_toaster_ceiling_in_indexed_facts_matches_e080_pricing(tmp_path):
 
 
 def test_decay_delegates_and_is_persona_scoped(laptop):
-    laptop.remember_fact(FERRY, importance=6, persona_id="yrsa")
+    laptop.remember_fact(FERRY, importance=6, persona_id="ember")
     laptop.remember_fact(BEES, importance=9, persona_id="other")
-    result = laptop.run_decay(persona_id="yrsa")
+    result = laptop.run_decay(persona_id="ember")
     assert set(result) >= {"decayed", "pruned", "reinforced"}
     # The other persona's fact keeps its importance: decay
-    # ran under yrsa's namespace only.
+    # ran under ember's namespace only.
     other = laptop.recall_by_importance(min_importance=9,
                                         persona_id="other")
     assert [r["content"] for r in other] == [BEES]
@@ -153,10 +153,10 @@ def test_decay_delegates_and_is_persona_scoped(laptop):
 
 
 def test_prune_drops_superseded_pointer_and_reports_zero_bytes(laptop):
-    old = laptop.remember_fact(FERRY, importance=6, persona_id="yrsa")
+    old = laptop.remember_fact(FERRY, importance=6, persona_id="ember")
     new_text = ("The harbour ferry leaves at dawn carrying letters "
                 "between the islands, weather permitting.")
-    laptop.supersede_fact(old.fact_id, new_text, persona_id="yrsa")
+    laptop.supersede_fact(old.fact_id, new_text, persona_id="ember")
     assert laptop.lifecycle_report().indexed_facts == 2
 
     result = laptop.prune_stale_index()
@@ -168,13 +168,13 @@ def test_prune_drops_superseded_pointer_and_reports_zero_bytes(laptop):
     assert laptop.lifecycle_report().indexed_facts == 1
 
     hits = laptop.search_facts_meaning(FERRY_PARAPHRASE,
-                                       persona_id="yrsa")
+                                       persona_id="ember")
     assert hits.mode == "meaning"
     assert [r["content"] for r in hits.facts] == [new_text]
 
 
 def test_prune_with_nothing_stale_is_a_no_op(laptop):
-    laptop.remember_fact(FERRY, importance=6, persona_id="yrsa")
+    laptop.remember_fact(FERRY, importance=6, persona_id="ember")
     result = laptop.prune_stale_index()
     assert result["pruned_index_entries"] == 0
     assert laptop.lifecycle_report().indexed_facts == 1
@@ -186,10 +186,10 @@ def test_prune_with_nothing_stale_is_a_no_op(laptop):
 
 
 def test_run_lifecycle_composes_decay_prune_report(laptop):
-    old = laptop.remember_fact(FERRY, importance=6, persona_id="yrsa")
+    old = laptop.remember_fact(FERRY, importance=6, persona_id="ember")
     laptop.supersede_fact(old.fact_id, FERRY + " Weather permitting.",
-                          persona_id="yrsa")
-    out = laptop.run_lifecycle(persona_id="yrsa")
+                          persona_id="ember")
+    out = laptop.run_lifecycle(persona_id="ember")
     assert out["prune"]["pruned_index_entries"] == 1
     assert out["report"].indexed_facts == 1
     assert set(out["decay"]) >= {"decayed", "pruned", "reinforced"}
@@ -205,7 +205,7 @@ def test_lifecycle_degrades_honestly_without_mimir(tmp_path):
                       sidecar_path=tmp_path / "sidecar.json")
     report = face.lifecycle_report()
     assert report.facts_stored == 0
-    decay = face.run_decay(persona_id="yrsa")
+    decay = face.run_decay(persona_id="ember")
     assert decay["decayed"] == 0 and "unavailable" in decay["note"]
     face.close()
 

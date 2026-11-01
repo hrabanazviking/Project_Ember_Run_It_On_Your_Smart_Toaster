@@ -143,10 +143,10 @@ def test_index_defaults_follow_the_budget_verdict():
 
 def test_fact_word_importance_mood_and_persona_isolation(laptop):
     bees = laptop.remember_fact(BEES, category="preference", importance=9,
-                                emotional_valence=0.8, persona_id="yrsa")
+                                emotional_valence=0.8, persona_id="ember")
     assert bees.fact_id and bees.fact_id > 0
 
-    word = laptop.recall_facts_word("beekeeper", persona_id="yrsa")
+    word = laptop.recall_facts_word("beekeeper", persona_id="ember")
     assert [r["content"] for r in word] == [BEES]
     # Another persona sees none of it — any face path.
     assert laptop.recall_facts_word("beekeeper", persona_id="other") == []
@@ -154,11 +154,11 @@ def test_fact_word_importance_mood_and_persona_isolation(laptop):
                                        persona_id="other") == []
     assert laptop.recall_by_mood(0.8, persona_id="other") == []
 
-    imp = laptop.recall_by_importance(min_importance=9, persona_id="yrsa")
+    imp = laptop.recall_by_importance(min_importance=9, persona_id="ember")
     assert [r["content"] for r in imp] == [BEES]
-    mood = laptop.recall_by_mood(0.8, tolerance=0.3, persona_id="yrsa")
+    mood = laptop.recall_by_mood(0.8, tolerance=0.3, persona_id="ember")
     assert [r["content"] for r in mood] == [BEES]
-    current = laptop.recall_current(persona_id="yrsa")
+    current = laptop.recall_current(persona_id="ember")
     assert BEES in [r["content"] for r in current]
 
 
@@ -169,9 +169,9 @@ def test_fact_word_importance_mood_and_persona_isolation(laptop):
 
 def test_meaning_search_finds_fact_by_paraphrase(laptop):
     res = laptop.remember_fact(FERRY, category="knowledge", importance=6,
-                               persona_id="yrsa")
+                               persona_id="ember")
     assert res.indexed is True, res.note
-    hits = laptop.search_facts_meaning(FERRY_PARAPHRASE, persona_id="yrsa")
+    hits = laptop.search_facts_meaning(FERRY_PARAPHRASE, persona_id="ember")
     assert hits.mode == "meaning"
     assert [r["content"] for r in hits.facts] == [FERRY]
     # The index is Brunnr-side bookkeeping: the fact itself
@@ -186,29 +186,29 @@ def test_meaning_search_finds_fact_by_paraphrase(laptop):
 
 def test_superseded_fact_never_served_as_current(laptop):
     old = laptop.remember_fact(FERRY, category="knowledge", importance=6,
-                               persona_id="yrsa")
+                               persona_id="ember")
     assert old.indexed is True
     new_text = ("The harbour ferry leaves at dawn carrying letters "
                 "between the islands, weather permitting.")
-    new = laptop.supersede_fact(old.fact_id, new_text, persona_id="yrsa")
+    new = laptop.supersede_fact(old.fact_id, new_text, persona_id="ember")
     assert new.fact_id and new.fact_id != old.fact_id
 
-    hits = laptop.search_facts_meaning(FERRY_PARAPHRASE, persona_id="yrsa")
+    hits = laptop.search_facts_meaning(FERRY_PARAPHRASE, persona_id="ember")
     contents = [r["content"] for r in hits.facts]
     assert new_text in contents
     assert FERRY not in contents  # the stale index chunk resolves away
-    current = laptop.recall_current(persona_id="yrsa")
+    current = laptop.recall_current(persona_id="ember")
     assert FERRY not in [r["content"] for r in current]
 
 
 def test_toaster_ships_word_search_and_says_so(toaster):
     res = toaster.remember_fact(FERRY, category="knowledge", importance=6,
-                                persona_id="yrsa")
+                                persona_id="ember")
     assert res.fact_id and res.fact_id > 0
     assert res.indexed is False
     assert "toaster" in res.note
 
-    hits = toaster.search_facts_meaning("ferry", persona_id="yrsa")
+    hits = toaster.search_facts_meaning("ferry", persona_id="ember")
     assert hits.mode == "word"
     assert [r["content"] for r in hits.facts] == [FERRY]
     state = toaster.state()
@@ -236,11 +236,11 @@ def test_documents_pass_through_to_brunnr(laptop, tmp_path):
 
 def test_turns_are_persona_separated_at_the_face(laptop):
     a = laptop.add_turn(Episode(operator_input="one", ember_reply="first",
-                                persona_id="yrsa"))
+                                persona_id="ember"))
     b = laptop.add_turn(Episode(operator_input="two", ember_reply="second",
                                 persona_id="other"))
     assert a and b and a != b
-    mine = laptop.recent_turns(persona_id="yrsa")
+    mine = laptop.recent_turns(persona_id="ember")
     assert [e.ember_reply for e in mine] == ["first"]
     theirs = laptop.recent_turns(persona_id="other")
     assert [e.ember_reply for e in theirs] == ["second"]
@@ -253,7 +253,7 @@ def test_untagged_turn_belongs_to_default_persona_only(laptop):
                                        ember_reply="legacy"))
     assert [e.ember_reply for e in
             laptop.recent_turns(persona_id="default")] == ["legacy"]
-    assert laptop.recent_turns(persona_id="yrsa") == []
+    assert laptop.recent_turns(persona_id="ember") == []
 
 
 # --------------------------------------------------------------------- #
@@ -269,10 +269,10 @@ def test_unavailable_mimir_degrades_honestly(tmp_path):
                       mimir_state="unavailable: test double",
                       profile=ConversationProfile.LAPTOP, embedder=embed,
                       sidecar_path=tmp_path / "sidecar.json")
-    res = face.remember_fact(FERRY, persona_id="yrsa")
+    res = face.remember_fact(FERRY, persona_id="ember")
     assert res.fact_id is None
     assert "unavailable" in res.note
-    assert face.recall_facts_word("ferry", persona_id="yrsa") == []
+    assert face.recall_facts_word("ferry", persona_id="ember") == []
     assert face.state()["mimir_well"] == "unavailable: test double"
     face.close()
 

@@ -143,6 +143,33 @@ def test_live_mini_run_is_correct(tmp_path):
     assert report["feed_bytes_per_event"] > 0
 
 
+def test_live_mini_run_survives_a_deep_workdir(tmp_path):
+    # Docket 126 (found at E-089): a Unix socket path is
+    # capped at 108 bytes. Under a deep workdir — a pytest
+    # tmp_path under the campaign's overlay TMPDIR was the
+    # proven case, 125 bytes — the hub's bind failed, the
+    # hub exited rc=1, and the mini-run above reported
+    # "hub exited early", which keeper gate runs misread
+    # as a load artifact across E-083–E-088. The instrument
+    # now relocates its state dir when the natural socket
+    # path would be too long; this run proves a workdir
+    # deep enough to need the relocation still measures
+    # correctly, with no scratch dir left behind.
+    deep = tmp_path / ("d" * 40) / ("e" * 40)
+    deep.mkdir(parents=True)
+    natural = deep / "state-mini" / "runa.sock"
+    assert len(str(natural).encode()) >= 108  # the trap is armed
+    shape = load_truth.ProfileShape(
+        "mini", cpus=1, publishers=1, subscribers=1,
+        events=40, producer_events=5)
+    report = load_truth.measure_profile(shape, deep)
+    assert report["errors"] == []
+    assert report["published_total"] == load_truth.WARMUP_EVENTS + 45
+    import tempfile
+    leftovers = [p for p in Path(tempfile.gettempdir()).glob("vd-lt-*")]
+    assert leftovers == [], leftovers
+
+
 # ── The reading copy ─────────────────────────────────────
 
 

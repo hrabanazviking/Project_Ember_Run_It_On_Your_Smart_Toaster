@@ -120,10 +120,10 @@ def _native_stores(tmp_path: Path):
     engine's own API, no face anywhere in the writing."""
     mimir = RunaMemory(db_path=str(tmp_path / "mimir_well.db"))
     old_id = mimir.add_memory(FERRY_OLD, category="knowledge",
-                              importance=6, user_id="yrsa")
-    mimir.supersede(old_id, FERRY, user_id="yrsa")
+                              importance=6, user_id="ember")
+    mimir.supersede(old_id, FERRY, user_id="ember")
     mimir.add_memory(BEES, category="preference", importance=9,
-                     emotional_valence=0.8, user_id="yrsa")
+                     emotional_valence=0.8, user_id="ember")
     mimir.close()
 
     handle = sv_open(BrunnrConfig(
@@ -158,9 +158,9 @@ def test_survivor_stores_stay_native_behind_the_face(tmp_path):
         sidecar_path=tmp_path / "sidecar.json")
 
     # Everything the native writers wrote is served whole.
-    word = face.recall_facts_word("beekeeper", persona_id="yrsa")
+    word = face.recall_facts_word("beekeeper", persona_id="ember")
     assert [r["content"] for r in word] == [BEES]
-    current = face.recall_current(persona_id="yrsa")
+    current = face.recall_current(persona_id="ember")
     contents = [r["content"] for r in current]
     assert FERRY in contents and BEES in contents
     assert FERRY_OLD not in contents  # superseded stays superseded
