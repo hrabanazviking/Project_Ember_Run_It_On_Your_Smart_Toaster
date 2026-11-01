@@ -3649,3 +3649,8 @@ review, not this slice.
   − 1 artifact vs E-077's Run D). No README touched.
 - **E-079 next** — the verdict paper, argued from these numbers +
   ORIGINS provenance, presented for Volmarr's word.
+- E-078 push: banking commit e2cddaf pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 220de89,
+  an ancestor) — remote moved 220de89 → e2cddaf, verified via ls-remote
+  (remote head = e2cddafe4be11c2c5091b10985066417b03c3c5c = local HEAD
+  at push time).
