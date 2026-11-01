@@ -289,3 +289,66 @@ recorded evidence, graded as such in §2.
 
 *Filed by the E-011 slice, 2026-10-31. Next: E-012 —
 the two-memories census (mempalace vs mimir-well).*
+
+## E-099 addendum (2026-11-01) — the technical reason no bridge stands
+
+*Appended by the E-099 slice (interop truth), under
+the roadmap's "if no" branch: "if no, the boundary
+doc (E-011) gains the technical reason". Everything
+above stands exactly as filed; this addendum extends
+it and rewrites nothing. The full study is
+`docs/architecture/E-099_INTEROP_TRUTH.md`.*
+
+**Verdict: the two Kistas cannot exchange entries.**
+No one-way export/import was built. The technical
+reasons, in their shortest form:
+
+1. **Same key or nothing.** Every encrypted movement
+   road in the toaster program (`export`/`import`,
+   encrypted `backup`/`restore`) requires the *same*
+   Fernet key on both sides: an export is a byte-copy
+   of the encrypted vault blob and carries no key,
+   and import refuses a different key in the
+   program's own words — "You must import into a
+   vault that shares the same encryption key"
+   (proven by probe at E-099, synthetic entries
+   only). Two separate Kistas hold two separate keys;
+   sharing the key file would hand over the whole
+   vault — every entry and every historical blob
+   under it — which is a surrender, not an exchange.
+2. **Whole-vault roads only.** No movement road
+   selects by entry kind or by program: a shared-key
+   crossing carries kept and other-road kinds right
+   along with the toaster set, unfiltered and
+   unannounced (proven by the same probes). E-098
+   ruled the toaster set the only set whose crossing
+   may even be proposed; no road that exists can
+   carry only that set.
+3. **The other side's format is unmeasured.** This
+   campaign has never accessed the ai-folder Kista
+   (§5 rule 2). The records establish ancestry — a
+   2026-05-21 snapshot here, a living line whose
+   GitHub head had moved a month past it by the time
+   §2 was recorded — and ancestry is not format
+   compatibility. A bridge aimed at an unmeasured
+   target would be invention, and §6's own warning
+   named records or Volmarr's word as the only
+   honest sources for that fact; neither establishes
+   compatibility.
+
+The one road that crosses between different keys is
+the *plaintext* backup/restore road, which moves
+secrets in clear text and is therefore forbidden for
+real entries under the custody law (E-093) — a
+backup shape, not interop (its transfer shape is
+docketed to E-101 as docket 138).
+
+**The bridge's preconditions** stand at E-099 §4:
+a measured target format, Volmarr's word granting a
+named crossing against §5 rule 5, a toaster-set-only
+transfer encrypted under its own passphrase or a
+recipient key (never a vault key, never plaintext),
+per-entry verification with a plain-words receipt,
+and program tags stripped or explicitly mapped.
+Until the first two stand, §5 rule 5 stands
+unexceptioned: **no entry ever crosses.**

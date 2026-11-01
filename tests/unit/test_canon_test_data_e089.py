@@ -137,6 +137,12 @@ VOLMARR_ALLOWLIST = {
     # custody law.
     "tests/unit/test_custody_law_e093.py":
         "governance needle in a doc-pinning test (added E-093)",
+    # Added consciously at E-099 (the same act, at the
+    # interop study): its doc-pinning test asserts a
+    # future Kista bridge stays reserved to his word
+    # against E-011 rule 5 in the interop record.
+    "tests/unit/test_kista_interop_e099.py":
+        "governance needle in a doc-pinning test (added E-099)",
 }
 
 #: The canon fixture personae. A new persona id in any
