@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 22:47 EDT
-Status: IN PROGRESS — E-074 (Docs: the nerve model for member-builders), started 22:47 EDT keeper tick
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073
-Next slice: E-074 — Docs: the nerve model for member-builders
+Last updated: 2026-10-31 22:59 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-075
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074
+Next slice: E-075 — Load truth: hub throughput per profile, measured
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3280,3 +3280,44 @@ review, not this slice.
   2b2ea81 and the E-072 re-verification correction) — remote moved
   7b13faf → 0733d2b, verified via ls-remote (remote head =
   0733d2bf7e4b17a812e6d798077ba842c293ea78 = local HEAD at push time).
+
+## E-074 — Docs: the nerve model for member-builders (DONE, 2026-10-31)
+
+- Builder's guide filed at `docs/architecture/E-074_NERVE_MODEL_FOR_MEMBER_BUILDERS.md`:
+  the one reading of the whole Part IV nerve model, adding no new law.
+  It states the model in one paragraph + a shape diagram (hub =
+  `Verdandi/nervous_system.py`, state dir `VERDANDI_HOME` else
+  `~/.hermes/state`, socket `runa.sock`, feed `nerve_feed.jsonl`),
+  a builder's entry-point table (15 files x their public entry
+  points, each row naming its law slice E-061-E-073), the five
+  rules (canonical envelope E-061; stimuli with provenance E-064;
+  context + backpressure budgets E-062/E-070; logger/privacy/memory
+  laws E-063/E-071/E-072; reflexes speechless below cognition
+  E-065, honest degradation E-066, Hermes translation E-068,
+  deterministic replay E-069), the holding disciplines
+  (file-by-file loading, stdlib-only, fail-closed, counts-only
+  reports), an 8-step new-member checklist, and honest limits
+  (no typed subscriber SDK — docket 102; open publish may omit
+  source — docket 101; dockets 100/103/105/106 open with owners;
+  throughput numbers are E-075's, none invented here; member
+  install-from-package NOT PROVEN per E-073).
+- Three worked examples in the doc (stimulus -> valid canonical
+  event; persona privacy filter; replay digest determinism) run
+  as written from the repo root. Conformance:
+  `tests/unit/test_nerve_model_docs_e074.py` **5 passed** — it
+  also verifies every Part IV slice E-059-E-074 is represented,
+  every backticked repo path in the doc exists (>=25 checked),
+  and every builder-table symbol is defined at its file's top
+  level.
+- No member code touched, so the E-057 member budget table is
+  unchanged — proven by its pinning tests inside the combined
+  run. Combined Part IV conformance (E-055 + E-057 pins +
+  E-061-E-074) **251 passed** (246 + 5); Verdandi focal
+  conversation set **101 passed**; canonical heartbeat set
+  **374 passed**. Slice gate: Run B **1290 passed, 6 failed,
+  25 skipped, 1 warning** (1285 + 5; the 6 are the proven
+  environment failures, FAILED list identical to E-073);
+  Run D **1347 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1342 + 5). Logs in
+  `~/workspace/.verify-tmp/ember-e074/gate/`. No README touched.
+- E-075 next — Load truth: hub throughput per profile, measured.
