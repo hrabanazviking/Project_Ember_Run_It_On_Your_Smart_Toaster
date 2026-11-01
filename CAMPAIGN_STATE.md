@@ -6,11 +6,11 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 08:32 EST
-Status: IN PROGRESS — E-090 (08:22 keeper tick; docs: the memory model for users (plain) + builders — no first-duty carry, the clean Run D is on record)
-Status was: STOPPED — E-089 banked (canon-shaped test data only: the root test tree audited — no real companion history in fixtures; the one real-history shape, fabricated facts filed under a real companion identity in E-080/E-081/E-082, renamed to the canon persona ember and pinned by a guard battery; first duty ANSWERED the clean-Run-D question at its root — docket 126: the recurring single failure was a 125-byte Unix socket path over the 108-byte AF_UNIX limit in the campaign's own gate method, not load — fixed in Verdandi/load_truth.py with a regression pin; closing Run D is the FIRST fully clean Run D on record: 1539 passed, 0 failed, 20 skipped)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089
-Next slice: E-090 — Docs: the memory model for users (plain) + builders. No first-duty carry: the clean Run D is on record (E-089), the duty that headed E-085–E-089 is closed.
+Last updated: 2026-11-01 09:13 EST
+Status: STOPPED — E-090 banked this tick (docs: the memory model for users (plain) + builders — one document, two halves: Part A plain for users (the three kinds of memory, word-vs-meaning finding with the toaster's stated word mode, correct-vs-supersede, the four rights with docket 119/120 limits stated, persona separation, ageing without deletion, measured prices, the diary and WYRD neighbours, mempalace's proposed-not-decided status), Part B for builders (one face over two bounded engines, the sidecar, opening + graceful offline, the complete 31-operation contract surface, index-don't-merge, constants, the WYRD export boundary, open dockets 108/112/113/119/120/125, and the stated truth that chat is not yet rewired to the face); the pinning battery derives the operation list from MemoryFace itself; E-089's canon guard extended consciously — its allowlist gains this slice's battery as a twelfth file, governance-needle reason recorded; gate fully clean incl. Run D 1546 passed, 0 failed)
+Status was: IN PROGRESS — E-090 (08:22 keeper tick; docs: the memory model for users (plain) + builders)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090
+Next slice: E-091 — The verdict's residue: the retired/bounded system's docs marked truthfully (superseded, with the successor named). The mempalace retirement still awaits Volmarr's word (E-079 §6): under the fallback, E-091 marks it bounded (non-default, never bundled, not part of the face) — the member itself is not removed or moved without his ruling. Docket 108 is owed at or before the E-092 gate.
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4614,3 +4614,92 @@ review, not this slice.
   verified via ls-remote (remote head =
   24fe70ea832ea1c7be7433a1c026cde3c0590fa7 = local HEAD
   at push time).
+
+## E-090 — Docs: the memory model for users (plain) + builders (DONE, 2026-11-01)
+
+- **The document** (`docs/architecture/E-090_MEMORY_MODEL.md`;
+  battery `tests/unit/test_memory_model_docs_e090.py`):
+  Part V's built model, documented in one place in two
+  halves. **Part A, plain, for users**: the three kinds
+  of memory (living facts, conversation turns, documents
+  as shared grounding — and no fourth kind); word vs
+  meaning finding with the toaster's stated `"word"`
+  mode; correct-vs-supersede; the four rights (inspect,
+  correct, export, delete — the exact confirmation words
+  `"delete everything"`), with the honest limits stated
+  in the user's own section (docket 119: a forgotten
+  turn is unreachable forever, its bytes not yet
+  physically reclaimed; docket 120: the audit keeps
+  hashes of numbers, never words); persona separation
+  absolute; ageing that floors importance and never
+  deletes (docket 125's compounding stated, owned by
+  the E-092 gate); measured prices (fact 745 B, turn
+  585 B, indexed fact 72,239 B; monthly ceilings
+  2/10/25/100 MiB; E-050's 0.39 MiB reference month;
+  E-088's year at 5,717,556 B); the two neighbours that
+  are not this memory (the session diary — two views,
+  one guarded crossing, retraction run explicitly; the
+  WYRD-shaped export — one-way, TF-145 boundary); and
+  mempalace's status stated as **proposed, not decided**
+  (Volmarr's word, not given; fallback restraints in
+  force; the member untouched). **Part B, for
+  builders**: one face over two bounded engines (the
+  face speaks to mimir-well only through `RunaMemory`;
+  the sidecar as bookkeeping, not a third store;
+  docket 51's one canonical path); opening a face and
+  graceful-offline degradation; the **complete contract
+  surface — 31 public operations** in six groups;
+  index-don't-merge resolved through current truth;
+  the relied-on constants table; the WYRD export's
+  no-invention rules; and the open dockets (108, 112,
+  113, 119, 120, 125). Stated plainly in Part B, not
+  hidden: **chat is not yet rewired to the face** — no
+  code outside `well/memory_face.py` references it; the
+  chat loop still opens Brunnr directly (E-080 §7's
+  record stands).
+- **The battery pins the document against the code**:
+  the operation list is *derived from `MemoryFace`
+  itself* (31 public operations) and every one must be
+  documented — an operation added without a doc row
+  fails this gate; constants, prices, profile index
+  defaults, and ceilings are asserted against the
+  module and `ember.budgets` values; the honest-limit
+  dockets and the proposed-not-decided mempalace status
+  are pinned as needles.
+- **One guard extended, consciously (found by this
+  slice's first combined run, fixed in scope)**: the
+  new battery carries the governance needle "Volmarr's
+  word" for §A9's status pin, and E-089's canon guard
+  refused it, exactly as designed — combined run 1
+  scored 211 passed / 1 failed on precisely that test.
+  The battery was added to the guard's allowlist in
+  `tests/unit/test_canon_test_data_e089.py` as its
+  **twelfth file**, governance-needle reason recorded
+  (the E-089 records' "11-file" figure stands as the
+  truth of E-089's banking; the extension is this
+  slice's act, noted in the E-090 doc). The guard pair
+  re-ran **15 passed**.
+- **E-057 re-measure**: unchanged — this slice touches
+  no member and no `src/` file (docs + tests only), and
+  the E-057 battery inside the combined run re-derived
+  the published table live and passed (core 131 files /
+  921,884 B, twelve-member total 131,545,906 B, laptop
+  miss 256,017 B, as at E-089).
+- Conformance + gate (logs in
+  `~/workspace/.verify-tmp/ember-e090/gate/`): focal
+  battery **7 passed**; combined conformance (E-057
+  table + E-072 feed + Part V E-077–E-090 files,
+  16 files) **212 passed, 1 skipped** (the live-WYRD
+  skip, as E-086–E-089; 205 at E-089 + 7 new, exact);
+  Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical to E-089); Run B **1338 passed, 6 failed,
+  34 skipped, 1 warning** — the 6 proven environment
+  failures ONLY (1331 + 7, exact); Run D (re-run after
+  a service restart killed the first attempt mid-run
+  at ~46% — the log's stall was verified from disk
+  before re-running, no result was claimed from it)
+  **1546 passed, 0 failed, 20 skipped, 27 warnings**,
+  exit 0 — fully clean, second in a row (1539 + 7,
+  exact). No README touched; no code touched (the
+  allowlist edit above is a test-file governance act,
+  recorded); no member or vendored code touched.

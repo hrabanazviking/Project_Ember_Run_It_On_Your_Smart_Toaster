@@ -114,6 +114,11 @@ VOLMARR_ALLOWLIST = {
         "governance needle in a doc-pinning test",
     "tests/unit/test_memory_migration_e081.py":
         "governance needle in a doc-pinning test",
+    # Added consciously at E-090 (the act this guard exists
+    # to force): its doc-pinning test asserts the retirement
+    # in the memory-model doc stays reserved to his word.
+    "tests/unit/test_memory_model_docs_e090.py":
+        "governance needle in a doc-pinning test (added E-090)",
 }
 
 #: The canon fixture personae. A new persona id in any
