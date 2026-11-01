@@ -3072,3 +3072,8 @@ Top-level members present (size / file count, working tree excl. .git):
   No README touched.
 - E-071 next — privacy of nerves: stimuli provenance never leaks
   across personae (fixtures).
+- E-070 push: banking commit eb3c1fd pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 1e0557d, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 81938a8)
+  — remote moved 1e0557d → eb3c1fd, verified via ls-remote (remote head =
+  eb3c1fd8a47f8446a2f34afd929501284d7bd54c = local HEAD at push time).
