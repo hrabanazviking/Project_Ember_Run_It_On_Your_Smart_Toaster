@@ -51,6 +51,11 @@ ENTRY_TYPES = {
 # so the mapped surface grows 32 -> 34 subcommands. E-094's
 # own record stands as written; this battery pins the
 # tree as it now is.
+# Re-pinned again at E-098 (consciously, with
+# attribution): docket 137 — the add-url shortcut the
+# program's own usage text had always advertised had
+# no parser behind it; E-098 built it, so the surface
+# grows 34 -> 35 subcommands.
 CORE_COMMANDS = {
     "init", "repair", "add", "get", "list", "update",
     "remove", "check", "search", "generate-password",
@@ -61,7 +66,7 @@ CORE_COMMANDS = {
 SHORTCUT_COMMANDS = {
     "add-apikey", "add-sshkey", "add-certificate",
     "add-note", "add-totp", "add-license",
-    "add-identity", "add-astrology",
+    "add-identity", "add-url", "add-astrology",
     "add-character-sheet", "add-rune-reading",
     "add-tarot-reading", "add-markdown", "add-person",
 }
@@ -100,19 +105,19 @@ def test_entry_types_are_the_mapped_fourteen():
     raise AssertionError("ENTRY_TYPE_SCHEMAS not found")
 
 
-def test_subcommands_are_the_mapped_thirty_four():
+def test_subcommands_are_the_mapped_thirty_five():
     src = _source()
     named = set(re.findall(r'add_parser\("([^"]+)"', src))
     named.discard("set")  # only a config child, never top level
     shortcuts = {"add-" + t for t in (
         "apikey", "sshkey", "certificate", "note", "totp",
-        "license", "identity", "astrology",
+        "license", "identity", "url", "astrology",
         "character-sheet", "rune-reading", "tarot-reading",
         "markdown")} | {"add-person"}
     assert shortcuts == SHORTCUT_COMMANDS
     assert CORE_COMMANDS | SHORTCUT_COMMANDS == (
         named | SHORTCUT_COMMANDS)
-    assert len(CORE_COMMANDS | SHORTCUT_COMMANDS) == 34
+    assert len(CORE_COMMANDS | SHORTCUT_COMMANDS) == 35
 
 
 def test_crypto_and_storage_shape():

@@ -48,6 +48,10 @@ Usage:
   kista add <service> --program NAME  # The entry belongs to that program (E-097)
   # A program names itself with the KISTA_PROGRAM environment
   # variable and then sees — and can touch — only its own entries.
+  # The toaster set of entry kinds is credential, apikey, url,
+  # note — passwords, tokens, URLs, notes (E-098). Wider kinds
+  # still in the program are named as the other Kista's road
+  # there, kept working, and never silently merged.
   kista status
   kista generate-password [--length N]
   kista repair
@@ -234,6 +238,65 @@ ENTRY_TYPE_SCHEMAS = {
 
 # Types that use --key-file for sensitive data (not a password file)
 SENSITIVE_FILE_TYPES = {"sshkey", "certificate"}
+
+# Entry kinds (E-098): the toaster set, the kept kinds,
+# and the other road's kinds. Together the three sets
+# partition ENTRY_TYPE_SCHEMAS exactly — every kind
+# stands in exactly one set, and the E-098 focal
+# battery derives that partition from this code.
+#
+# The toaster set is what this program exists to hold
+# on tiny hardware, in the roadmap's own plain words:
+# passwords, tokens, URLs, notes. E-100 binds the
+# companion against credential + apikey; E-104 writes
+# the user docs against these four kinds and no
+# others.
+TOASTER_ENTRY_TYPES = frozenset(
+    {"credential", "apikey", "url", "note"})
+
+# Kept kinds: credential-family kinds the imported
+# program already holds well (one-time-code secrets,
+# licence keys, machine keys and certificates, and a
+# person's identity record). They stay because
+# removing a kind would strand every entry of that
+# kind already in a vault, for no gain — kept, not
+# promised: Ember builds nothing on them, and they
+# are not the toaster set.
+KEPT_ENTRY_TYPES = frozenset(
+    {"totp", "license", "sshkey", "certificate",
+     "identity"})
+
+# The other road's kinds: an agent's life-records —
+# readings, character sheets, and documents. In the
+# ai-folder Kista's wider ambitions (states, prompts,
+# habits, and kin) these are live features of a live
+# agent; here they are recorded as that road's, not
+# silently merged into the toaster set (E-011, E-098).
+# Entries of these kinds already in a vault keep
+# working exactly as before; a NEW entry of one of
+# these kinds is announced in words at the moment it
+# is added (see _note_other_road_kind).
+OTHER_ROAD_ENTRY_TYPES = frozenset(
+    {"astrology", "character-sheet", "rune-reading",
+     "tarot-reading", "markdown"})
+
+
+def _note_other_road_kind(entry_type: str) -> None:
+    """Say, in plain words, that a kind just added is
+    not one of the toaster-Kista's own kinds (E-098).
+
+    The entry is kept exactly as given — this notice
+    refuses nothing and changes nothing. Its whole job
+    is that the wider set is never *silently* merged
+    into the toaster set: at the moment a kind from
+    the other road enters this vault, the program
+    names whose road it belongs to, in words."""
+    print(
+        f"  Note: '{entry_type}' is not one of the "
+        "toaster-Kista's own kinds (passwords, tokens, "
+        "URLs, notes). It belongs to the other Kista's "
+        "wider road and is kept here exactly as given "
+        "— nothing was merged or changed.")
 
 
 def _ensure_dir() -> None:
@@ -650,6 +713,28 @@ def _load_vault(key: bytes) -> dict:
     for service, entry in entries.items():
         if isinstance(entry, dict) and "entry_type" not in entry:
             entry["entry_type"] = "credential"
+
+    # Backward compatibility (E-098, docket 137):
+    # every add road keys an entry by its lowercased
+    # service name, and every lookup lowercases too —
+    # except add-soul, which stored its backups under
+    # a mixed-case key (soul-backup-SOUL) that get,
+    # update, and remove could never reach. Normalise
+    # any such legacy key here, on load, so those
+    # entries are reachable again; the healed key is
+    # persisted on the next save. No add road can
+    # mint two names that differ only by case, so
+    # the normalisation cannot merge distinct
+    # entries.
+    if any(name != name.lower() for name in entries):
+        healed = {}
+        for name, entry in entries.items():
+            lowered = name.lower()
+            if isinstance(entry, dict) and \
+                    entry.get("service") == name:
+                entry["service"] = lowered
+            healed[lowered] = entry
+        vault["entries"] = healed
 
     # Upgrade vault version
     if vault.get("version", 1) < 2:
@@ -1138,6 +1223,7 @@ def cmd_add(args) -> None:
             "add-totp": "totp",
             "add-license": "license",
             "add-identity": "identity",
+            "add-url": "url",
             "add-astrology": "astrology",
             "add-character-sheet": "character-sheet",
             "add-rune-reading": "rune-reading",
@@ -1300,8 +1386,15 @@ def cmd_add(args) -> None:
         entry["notes"] = common_notes or getattr(args, "notes", None) or ""
 
     elif entry_type == "markdown":
-        entry["title"] = getattr(args, "md_title", None) or getattr(args, "title_arg", None) or ""
-        entry["content"] = getattr(args, "md_content", None) or ""
+        # E-098 (docket 137): the general add road's
+        # --title / --content flags land on `title` /
+        # `content`, and the shortcut's on `md_title` /
+        # `md_content` — read both, as cmd_update's
+        # markdown branch already did for title. Before
+        # this fix neither add road could satisfy the
+        # type's two required fields at all.
+        entry["title"] = getattr(args, "md_title", None) or getattr(args, "title_arg", None) or getattr(args, "title", None) or ""
+        entry["content"] = getattr(args, "md_content", None) or getattr(args, "content", None) or ""
         entry["category"] = getattr(args, "md_category", None) or getattr(args, "category", None) or ""
         # For markdown entry type, tags override common tags
         entry["tags"] = _parse_json_field(getattr(args, "md_tags", None) or "") if getattr(args, "md_tags", None) else (entry.get("tags", []) if entry.get("tags") else "")
@@ -1323,6 +1416,13 @@ def cmd_add(args) -> None:
     if owner_program:
         print(f"  Belongs to program: {owner_program} — only "
               f"that program (and you, the owner) can reach it.")
+    if entry_type in OTHER_ROAD_ENTRY_TYPES:
+        # E-098: a kind from the other road is never
+        # silently merged into the toaster set — the
+        # add succeeds exactly as given, and the
+        # program says whose road the kind is, in
+        # words, at the moment it enters.
+        _note_other_road_kind(entry_type)
 
 
 def cmd_get(args) -> None:
@@ -2384,7 +2484,11 @@ def cmd_add_soul(args) -> None:
     added = 0
     for soul_path in soul_paths:
         if soul_path.exists():
-            service_name = f"soul-backup-{soul_path.stem}"
+            # E-098 (docket 137): the key is lowercased
+            # like every other entry's — the mixed-case
+            # shape this line used to build made the
+            # backup unreachable by get/update/remove.
+            service_name = f"soul-backup-{soul_path.stem.lower()}"
             if service_name in entries and not getattr(args, "force", False):
                 print(f"  Skipped {service_name} (already exists, use --force to overwrite)")
                 continue
@@ -2413,6 +2517,17 @@ def cmd_add_soul(args) -> None:
     if added > 0:
         _save_vault(vault, key)
         print(f"✓ SOUL backup complete: {added} file(s) backed up")
+        # E-098 (docket 50): backing up another
+        # program's own soul files is not one of the
+        # toaster-Kista's own acts — it is the other
+        # Kista's road, kept working here exactly as
+        # it was, and the program says so in words.
+        print("  Note: a soul backup is not one of the "
+              "toaster-Kista's own kinds (passwords, "
+              "tokens, URLs, notes). It belongs to the "
+              "other Kista's wider road and is kept "
+              "here exactly as given — nothing was "
+              "merged or changed.")
     else:
         print("✗ No SOUL files found to backup.")
 
@@ -2460,6 +2575,17 @@ def cmd_add_cron_backup(args) -> None:
 
     _save_vault(vault, key)
     print(f"✓ Crontab backed up to '{service_name}' ({len(cron_content.splitlines())} lines)")
+    # E-098 (docket 50): a crontab is a machine's
+    # state, not a credential kind — this backup is
+    # the other road's shape (its "states" ambition),
+    # kept working here exactly as it was, and the
+    # program says so in words.
+    print("  Note: a crontab backup is not one of the "
+          "toaster-Kista's own kinds (passwords, "
+          "tokens, URLs, notes). It belongs to the "
+          "other Kista's wider road and is kept "
+          "here exactly as given — nothing was "
+          "merged or changed.")
 
 
 def cmd_config(args) -> None:
@@ -2550,6 +2676,16 @@ def _add_type_args(parser, entry_type) -> None:
         parser.add_argument("--phone", dest="phone_arg", help="Phone number")
         parser.add_argument("--national-id", dest="national_id", help="National ID number")
 
+    elif entry_type == "url":
+        # E-098 (docket 137): this branch did not
+        # exist — the add-url shortcut the program's
+        # own usage text advertises had no parser at
+        # all, so the branch is built here with the
+        # shortcut loop and the inference map below.
+        parser.add_argument("--url", required=True, help="URL (required)")
+        parser.add_argument("--title", dest="title_arg", help="Page/site title")
+        parser.add_argument("--description", help="Description")
+
     elif entry_type == "astrology":
         parser.add_argument("--sign", required=True, help="Zodiac sign (required)")
         parser.add_argument("--date", dest="astro_date", help="Date for the reading")
@@ -2605,6 +2741,13 @@ def _add_type_args(parser, entry_type) -> None:
 
     elif entry_type == "markdown":
         parser.add_argument("--title", dest="md_title", required=True, help="Document title (required)")
+        # E-098 (docket 137): the shortcut had no flag
+        # that could carry the document's content at
+        # all (--md-source never reached the entry), so
+        # add-markdown could never satisfy the type's
+        # required content field. --content now lands
+        # on md_content, which cmd_add reads.
+        parser.add_argument("--content", dest="md_content", help="Document content (required)")
         parser.add_argument("--md-source", help="Source content (markdown)")
         parser.add_argument("--source-url", dest="source_url", help="Source URL")
 
@@ -2660,7 +2803,7 @@ def main():
     p_add.add_argument("--domain", help="Domain (certificate)")
     p_add.add_argument("--issuer", help="Issuer (certificate/totp)")
     p_add.add_argument("--chain", help="Certificate chain (certificate)")
-    p_add.add_argument("--content", help="Note content (note)")
+    p_add.add_argument("--content", help="Content (note/markdown)")
     p_add.add_argument("--category", help="Category (note)")
     p_add.add_argument("--secret", help="Secret (totp)")
     p_add.add_argument("--digits", type=int, default=None, help="Digits (totp, default: 6)")
@@ -2680,6 +2823,54 @@ def main():
     p_add.add_argument("--sign", help="Zodiac sign (astrology)")
     p_add.add_argument("--title", help="Title (url/markdown)")
     p_add.add_argument("--description", help="Description (url)")
+    # v2.0 type fields on the general add road (E-098,
+    # docket 137): before this fix the general parser
+    # defined none of these, so `add --type
+    # character-sheet / rune-reading / tarot-reading`
+    # could never satisfy those types' required fields
+    # (name / spread type), and an astrology entry
+    # could carry nothing beyond its sign. The flags
+    # mirror the shortcuts' _add_type_args dests
+    # exactly, so both roads build the same entry.
+    p_add.add_argument("--date", dest="astro_date", help="Date for the reading (astrology)")
+    p_add.add_argument("--sun-position", dest="sun_position", help="Sun position (astrology)")
+    p_add.add_argument("--moon-position", dest="moon_position", help="Moon position (astrology)")
+    p_add.add_argument("--mercury-position", dest="mercury_position", help="Mercury position (astrology)")
+    p_add.add_argument("--venus-position", dest="venus_position", help="Venus position (astrology)")
+    p_add.add_argument("--mars-position", dest="mars_position", help="Mars position (astrology)")
+    p_add.add_argument("--jupiter-position", dest="jupiter_position", help="Jupiter position (astrology)")
+    p_add.add_argument("--saturn-position", dest="saturn_position", help="Saturn position (astrology)")
+    p_add.add_argument("--ascendant", help="Ascendant sign (astrology)")
+    p_add.add_argument("--mc", help="Midheaven (MC) sign (astrology)")
+    p_add.add_argument("--aspects", help="Aspects as JSON array or comma-separated (astrology)")
+    p_add.add_argument("--name", dest="char_name", help="Character name (character-sheet)")
+    p_add.add_argument("--race", help="Character race (character-sheet)")
+    p_add.add_argument("--class", dest="char_class", help="Character class (character-sheet)")
+    p_add.add_argument("--level", type=int, default=None, help="Character level (character-sheet)")
+    p_add.add_argument("--background", help="Character background (character-sheet)")
+    p_add.add_argument("--alignment", help="Character alignment (character-sheet)")
+    p_add.add_argument("--str", dest="str_score", type=int, default=None, help="Strength score (character-sheet)")
+    p_add.add_argument("--dex", dest="dex_score", type=int, default=None, help="Dexterity score (character-sheet)")
+    p_add.add_argument("--con", dest="con_score", type=int, default=None, help="Constitution score (character-sheet)")
+    p_add.add_argument("--int", dest="int_score", type=int, default=None, help="Intelligence score (character-sheet)")
+    p_add.add_argument("--wis", dest="wis_score", type=int, default=None, help="Wisdom score (character-sheet)")
+    p_add.add_argument("--cha", dest="cha_score", type=int, default=None, help="Charisma score (character-sheet)")
+    p_add.add_argument("--ac", type=int, default=None, help="Armor Class (character-sheet)")
+    p_add.add_argument("--hp", type=int, default=None, help="Hit Points (character-sheet)")
+    p_add.add_argument("--speed", type=int, default=None, help="Speed (character-sheet)")
+    p_add.add_argument("--prof-bonus", dest="prof_bonus", type=int, default=None, help="Proficiency bonus (character-sheet)")
+    p_add.add_argument("--skills", help="Skills (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--features", help="Features (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--equipment", help="Equipment (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--spells", help="Spells (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--backstory", help="Character backstory (character-sheet)")
+    p_add.add_argument("--spread-type", dest="spread_type", help="Spread type (rune-reading/tarot-reading)")
+    p_add.add_argument("--runes-drawn", dest="runes_drawn", help="Runes drawn (rune-reading, JSON or comma-separated)")
+    p_add.add_argument("--cards-drawn", dest="cards_drawn", help="Cards drawn (tarot-reading, JSON or comma-separated)")
+    p_add.add_argument("--positions", help="Positions (rune-reading/tarot-reading, JSON or comma-separated)")
+    p_add.add_argument("--interpretation", help="Interpretation (rune-reading/tarot-reading)")
+    p_add.add_argument("--question", help="Question asked before the reading (rune-reading/tarot-reading)")
+    p_add.add_argument("--date-drawn", dest="date_drawn", help="Date the reading was done (rune-reading/tarot-reading)")
 
     # === Convenience shortcuts for add (each auto-sets --type) ===
     for et, help_text in [
@@ -2690,6 +2881,10 @@ def main():
         ("totp", "Add a TOTP entry"),
         ("license", "Add a license entry"),
         ("identity", "Add an identity entry"),
+        # E-098 (docket 137): add-url restored — the
+        # usage text advertised it since the import,
+        # but no parser ever stood behind it.
+        ("url", "Add a URL entry"),
         ("astrology", "Add an astrology entry"),
         ("character-sheet", "Add a D&D character sheet entry"),
         ("rune-reading", "Add a rune reading entry"),
@@ -2908,6 +3103,7 @@ def main():
         "add-totp": "add",
         "add-license": "add",
         "add-identity": "add",
+        "add-url": "add",
         "add-astrology": "add",
         "add-character-sheet": "add",
         "add-rune-reading": "add",
@@ -2923,6 +3119,7 @@ def main():
         "add-totp": "totp",
         "add-license": "license",
         "add-identity": "identity",
+        "add-url": "url",
         "add-astrology": "astrology",
         "add-character-sheet": "character-sheet",
         "add-rune-reading": "rune-reading",
