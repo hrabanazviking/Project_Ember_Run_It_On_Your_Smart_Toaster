@@ -5250,3 +5250,9 @@ review, not this slice.
   + pyyaml at current versions — so its skip shape differs
   from E-095's older target while failures are zero in
   both). No README touched; no vendored file touched.
+- E-096 push: banking commit d929b32 (carrying the IN PROGRESS
+  commit 9bdb92c ahead of it) pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check — remote moved
+  b41d8b2 → d929b32, verified via ls-remote (remote head =
+  d929b3273dcd8bac4f1b9c8db56722242c23a2bb = local HEAD at push
+  time).
