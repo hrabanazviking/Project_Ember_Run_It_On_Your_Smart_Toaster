@@ -6,8 +6,9 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 07:05 EST
-Status: STOPPED — E-088 banked this tick (long-life soak: a simulated year of memory through the real face on the toaster profile — 7,300 turns + 377 fact rows + 365 diary files = 5,717,556 B in all, inside the toaster's 24 MiB year allowance; year-end decay floored 287 facts and deleted none; NEW docket 125 decay passes compound, owned by the E-092 gate; first duty Run D re-verified for E-085+E-086+E-087 at 1519 passed / 1 classified failure — clean-Run-D duty passes to E-089)
+Last updated: 2026-11-01 07:08 EST
+Status: IN PROGRESS — E-089 (07:02 keeper tick; first duty Run D re-verification running before new building)
+Status was: STOPPED — E-088 banked this tick (long-life soak: a simulated year of memory through the real face on the toaster profile — 7,300 turns + 377 fact rows + 365 diary files = 5,717,556 B in all, inside the toaster's 24 MiB year allowance; year-end decay floored 287 facts and deleted none; NEW docket 125 decay passes compound, owned by the E-092 gate; first duty Run D re-verified for E-085+E-086+E-087 at 1519 passed / 1 classified failure — clean-Run-D duty passes to E-089)
 Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088
 Next slice: E-089 — Canon-shaped test data only (synthetic; no real companion history in fixtures). FIRST DUTY of E-089's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — a fully clean Run D is still not on record (see the E-088 entry).
 
