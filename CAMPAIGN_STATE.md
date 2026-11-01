@@ -6,15 +6,15 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 13:02 EST
-Status: IN PROGRESS — E-095 (toaster-Kista threat model sized for tiny machines: what it defends, what it cannot — judging the mapped shape: key-file custody, no vault passphrase, plaintext service-name meta, github-backup and movement shapes) opened 2026-11-01 13:02 keeper tick.
+Last updated: 2026-11-01 13:21 EST
+Status: STOPPED — E-095 banked (toaster-Kista threat model filed at docs/architecture/E-095_TOASTER_KISTA_THREAT_MODEL.md — sized for tiny machines, attackers A1–A7; DEFENDED proven: a lone encrypted blob gives nothing (blob-alone probe refused, no key minted over data), tampering detected (HMAC) and healed from auto-backup, values closed to other accounts (0600 files), CSPRNG password generation, corrupt-key refusal; NOT defended, stated never implied: the folder copy — key file beside the vault, NO passphrase, a copied vault directory opened whole in probe (device/SD/sync theft is the central gap), the same OS account (no unlock gate, per-program access is E-097), key loss = total loss, rollback (an older valid blob silently resurrects rotated-away passwords, proven; freshness nowhere), github-backup harvest-later (every pushed blob decrypts under one future key leak; repo privacy never checked), plaintext backup/restore shapes, stdout as a plaintext channel; REQUIREMENT handed to E-096: a passphrase wrapping the key, with docket 14 + 128 and the honest recovery story; interim claim wording binding on all Ember docs until E-096 lands; dockets 131 + 132 CLOSED in scope — built here: the vault directory is now owner-only 0700 (was umask 770 in probe), vault_meta.json now chmod 0600 on every save (was 660, service names group-readable), the plaintext backup output now chmod 0600 (was 660); battery caught the second-resolution auto-backup-name wrinkle (recorded at docket 133); dockets 133 NEW → E-102 (rollback/freshness), 134 NEW → E-100 (no inter-process lock; drill E-102), 135 NEW → E-101 (github-backup history + privacy), 136 NEW → E-187 (chmod no-op platforms unstated); E-057 re-measured kista 25 / 2,770,819 B, total 131,547,523 B, miss unchanged 256,017 B, both copies re-pinned; gate fully clean: focal 6 passed, focal set 36 passed, member suite 149 passed / 0 failed, Run A 1 error / 20 skipped, Run B 1373 passed / 6 proven-env only, Run D 1581 passed, 0 failed)
 Status was: STOPPED — E-094 banked (toaster-Kista mapped at docs/architecture/E-094_TOASTER_KISTA_MAPPED.md — one program, one Fernet-encrypted whole-vault file (vault.json.enc, AES-128-CBC + HMAC-SHA256), key a separate mode-0600 file, NO vault passphrase (E-095 judges that shape); plaintext meta holds service names only; 14 entry types and 32 subcommands derived from the code; zero consumers in src/, binding is E-100; docket 46 CLOSED — built here: KISTA_DIR unset now defaults to ~/.ember/kista/, the override wins when set, proven by sandboxed probes + a scratch init/status run; docket 5 CLOSED in scope — the member suite judged another installation's copy for its 3 failures since E-005: CREDSTORE_SCRIPT now resolves the in-tree script, its hidden stale version expectation corrected 1.3.0 → the true 2.0.0, the isolated-vault fixture's VAULT_CONFIG/BACKUP_DIR leak patched; member suite 146 passed / 3 failed → 149 passed / 0 failed; docket 14 live-reproduced (import-time pip install dies as CalledProcessError under PEP 668) → proposed owner E-096; docket 130 NEW → E-104 (member docs still state the old default; the kista README states it too and stands under the README law → E-195); E-057 re-measured kista 25 / 2,770,316 B, total 131,547,020 B, miss unchanged 256,017 B, both copies re-pinned; gate fully clean: Run A 1 error / 20 skipped, Run B 1367 passed / 6 proven-env only, Run D 1575 passed, 0 failed)
 Status was: STOPPED — E-093 banked (Part VI opens: the custody law filed at docs/architecture/E-093_CUSTODY_LAW.md — credentials live in a Kista, per machine (ai-folder Kista for house credentials, never touched by this campaign; toaster-Kista for Ember's own, bound at E-100), never in configs, code, or chat; the interim standard is the Well resolver's chain (env → keyring → mode-600 file); fresh E-013-method scan at this HEAD re-proven: 3,443 tracked / 2,991 text scanned, GitHub tokens 0, JWTs 0, bearer 0, sk- 0, key blocks 7 and AWS shapes 2 all the E-013 fixture families, 20 credential-shaped assignments all classified fixtures, the battery now arms the scan with those allowlists; docket 46 DECIDED (toaster default vault home shall be ~/.ember/kista/, KISTA_DIR override stands, built at E-094; E-011 rule 3 binds until then); docket 48 RULED under law rule 9 (known-accounts.md is an identifier ledger — not a leak, no values ever, no new campaign entries, removal remains Volmarr's word, unmade on this record); docket 127 CLOSED in scope (Aesir key file now refused at any POSIX mode other than exactly 0600, before reading; E-023/E-036 key writers chmod 0600; E-057 re-measured src 922,893 B / total 131,546,922 B, miss unchanged 256,017 B, both copies re-pinned); docket 128 NEW → E-096 (credstore --password command-line value shape); docket 129 NEW → E-187 (mimir-well backup_repo credential-bearing URL shape); E-089 canon guard allowlist extended consciously to 15 files; gate fully clean: Run A 1 error / 20 skipped, Run B 1359 passed / 6 proven-env only, Run D 1567 passed, 0 failed)
 Status was: STOPPED — E-092 banked (Part V gate PASS: one memory face live and the memory contract FROZEN at v1 (MemoryFace, 31 public operations, name-for-name E-090's surface, probed + cross-checked); migration proven on fixtures (survivors stay native measured byte-identical; palace mapping lossless, execution ruling-gated); the verdict paper on record with Volmarr's word on mempalace retirement RECORDED AS ABSENT — no ruling on record, silence never read as a word, E-079 fallback in force, member untouched at 257 files / 59,049,715 B; docket 108 CLOSED in scope (mimir-well flask>=3.0,<4 + setuptools>=61.0,<82, battery-pinned both-ways; E-057 re-measured mimir-well 59 / 618,776 B, total 131,545,913 B, miss unchanged 256,017 B; E-077 size pin re-pinned with attribution after the combined run's first pass caught it stale — 225/1 → re-run 226 passed / 1 live-skip); docket 125 RULED (watermark semantics: a pass applies only age since last access/pass, passes never compound; current compounding stands as a named defect, implementation → E-204 presentation as a candidate slice beside docket 112/119's handle-delete slice); docket 123 weighed and bounded as the v1 boundary (→ E-204 re-weigh); docket 102's assigned E-085 review honestly recorded as never taken by any Part V slice — reviewed at this gate, typed subscriber still unbuilt, backstop E-204; E-089 canon guard allowlist extended consciously to 14 files; gate fully clean: Run A 1 error / 20 skipped, Run B 1352 passed / 6 proven-env only, Run D 1560 passed, 0 failed)
 Status was: STOPPED — E-091 banked (the verdict's residue: mempalace marked bounded wherever Ember's own living documents presented it otherwise, successor MemoryFace named — UNWIRED_INVENTORY row corrected in place (docket 52 EXECUTED), the Yggdrasil sibling doc bannered SUPERSEDED-IN-PART, BOUNDED, the corpus's two front doors carrying status notes; the member itself untouched, battery-pinned at 257 tracked files / 59,049,715 B; E-089 canon guard allowlist extended consciously to 13 files; gate fully clean after the Python-write EPERM stall cleared: combined extras-shape 218 passed / 1 live-skip, Run D 1552 passed, 0 failed)
 Status was: STOPPED — E-090 banked (docs: the memory model for users (plain) + builders — one document, two halves: Part A plain for users (the three kinds of memory, word-vs-meaning finding with the toaster's stated word mode, correct-vs-supersede, the four rights with docket 119/120 limits stated, persona separation, ageing without deletion, measured prices, the diary and WYRD neighbours, mempalace's proposed-not-decided status), Part B for builders (one face over two bounded engines, the sidecar, opening + graceful offline, the complete 31-operation contract surface, index-don't-merge, constants, the WYRD export boundary, open dockets 108/112/113/119/120/125, and the stated truth that chat is not yet rewired to the face); the pinning battery derives the operation list from MemoryFace itself; E-089's canon guard extended consciously — its allowlist gains this slice's battery as a twelfth file, governance-needle reason recorded; gate fully clean incl. Run D 1546 passed, 0 failed)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091, E-092, E-093, E-094
-Next slice: E-095 — toaster-Kista threat model sized for tiny machines (what it defends, what it cannot — stated, never implied otherwise), judging the mapped shape: key-file custody, no vault passphrase, plaintext service-name meta, the github-backup and movement shapes. Part VI is OPEN (E-093, E-094 banked). The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence is on record at the gate, fallback in force, executing migration slice exists only under that ruling. Carried with owners: docket 100 (→ E-136), 102 (→ E-204 backstop), 109 bifrost side (→ Part VIII), 112 + 119 (→ E-204 presentation, one candidate slice), 113 member half (→ E-194), 123 (→ E-204 re-weigh), 125 implementation (→ E-204 presentation), 128 (→ E-096), 129 (→ E-187), 130 (→ E-104; its README line → E-195), 14 (→ E-096, proposed at E-094).
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091, E-092, E-093, E-094, E-095
+Next slice: E-096 — the unlock experience for normal folks: passphrase flow a non-technical user survives; recovery story stated honestly (carrying E-095's judged requirement — a passphrase wrapping the key — plus docket 128, the --password command-line value shape, and docket 14, the import-time pip install whose remedy must re-pin TestSubprocessInstall consciously). Part VI is OPEN (E-093, E-094, E-095 banked). The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence is on record at the gate, fallback in force, executing migration slice exists only under that ruling. Carried with owners: docket 100 (→ E-136), 102 (→ E-204 backstop), 109 bifrost side (→ Part VIII), 112 + 119 (→ E-204 presentation, one candidate slice), 113 member half (→ E-194), 123 (→ E-204 re-weigh), 125 implementation (→ E-204 presentation), 128 (→ E-096), 129 (→ E-187), 130 (→ E-104; its README line → E-195), 14 (→ E-096), 133 (→ E-102), 134 (→ E-100; drill E-102), 135 (→ E-101), 136 (→ E-187).
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -5074,3 +5074,77 @@ review, not this slice.
   048c45273cbf331cf4499cb8d794cf26b6e83e33 = local HEAD at push
   time).
 
+
+## E-095 — Toaster-Kista threat model (DONE, 2026-11-01)
+
+- Threat model filed at `docs/architecture/E-095_TOASTER_KISTA_THREAT_MODEL.md`:
+  attackers A1–A7 sized for tiny machines (no TPM, removable
+  storage, shared household accounts, non-admin owner), every
+  load-bearing claim proven by sandboxed probes against a
+  scratch vault holding one synthetic entry (raw log
+  `~/workspace/.verify-tmp/ember-e095/probes.log`).
+- **Defended, proven**: a lone encrypted blob yields nothing
+  (copied `vault.json.enc` alone → stated refusal, exit 1, no
+  key minted over data); tampering is detected (Fernet HMAC)
+  and healed from the newest valid auto-backup; key/vault/
+  config/auto-backup files stand mode 0600; generated
+  passwords use the OS CSPRNG (`secrets.choice`); a corrupt
+  key file is refused with "data intact — do not regenerate".
+- **Not defended, stated never implied**: the folder copy is
+  total loss (key beside vault, no passphrase — a copied
+  vault directory read back in full in probe, the central
+  finding for stolen-device / pulled-SD / synced-home
+  losses); the same OS account (no unlock gate at all; `get`
+  prints whole entries to stdout); key loss = permanent
+  loss; **rollback** — an older valid blob replaced over
+  the vault silently resurrected a rotated-away password,
+  no warning (freshness is checked nowhere); github-backup
+  accumulates timestamped blobs in git history forever,
+  all decryptable under one future key leak, repo privacy
+  never checked or warned; plaintext `backup` / silent
+  plaintext `restore` shapes; docket 128's command-line
+  value exposure (already E-096's).
+- **Requirement → E-096 (judged here)**: a passphrase must
+  wrap the key so a copied folder yields nothing; priced
+  as affordable (one-time KDF at unlock; E-103 prices what
+  E-096 builds). E-096 also carries dockets 14 + 128 and
+  the honest recovery story. **Interim claim** filed word
+  for word and binding on Ember docs until E-096 lands:
+  encrypted vault file, protected from other accounts and
+  from a lone vault file — NOT against device/folder loss,
+  and no doc may imply otherwise.
+- **Dockets 131 + 132 CLOSED in scope (built here)**:
+  measured at opening under this VM's umask 0007 — vault
+  directory 770 (program never chose a mode), plaintext
+  `vault_meta.json` 660, plaintext backup output 660.
+  `_ensure_dir` now sets the vault directory 0700
+  (failure swallowed like `_chmod_600`, no platform
+  regresses); every save chmods the meta 0600; the plain
+  backup branch chmods its output 0600. Probe-verified
+  after: 700 / 600 / 600.
+- **Dockets NEW**: 133 → E-102 (rollback/freshness; plus
+  the battery-caught wrinkle that auto-backup filenames
+  are second-resolution, so same-second saves share one
+  backup name and "last five states" can be fewer than
+  five distinct states); 134 → E-100 (no inter-process
+  lock, one shared predictable temp name; E-102 drills);
+  135 → E-101 (github-backup history + repo privacy);
+  136 → E-187 (chmod-no-op platforms: the 0600 promise
+  silently rests on profile ACLs, unstated by the program).
+- **Budget**: credstore +503 B — E-057 re-measured (kista
+  25 files / 2,770,819 B; total 131,547,523 B; laptop miss
+  unchanged 256,017 B), re-pinned in both published copies
+  with an appended attribution line (the E-094 historical
+  line restored byte-true after the replace touched it).
+- Gate (logs in `~/workspace/.verify-tmp/ember-e095/`):
+  focal battery **6 passed** (doc pins + code shapes +
+  mode / folder-copy / blob-alone / rollback probes);
+  focal set (E-095 + E-094 + E-057 + E-093 + E-089)
+  **36 passed**; member suite **149 passed, 0 failed**;
+  Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical); Run B **1373 passed, 6 failed, 20 skipped**
+  — the 6 proven environment failures ONLY (1367 at
+  E-094 + 6 new, exact); Run D **1581 passed, 0 failed,
+  20 skipped**, exit 0 — fully clean (1575 at E-094 + 6
+  new, exact). No README touched; no vendored file
+  touched; the ai-folder Kista was not accessed.

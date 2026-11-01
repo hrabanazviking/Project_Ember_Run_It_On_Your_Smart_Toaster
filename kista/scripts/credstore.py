@@ -217,8 +217,16 @@ SENSITIVE_FILE_TYPES = {"sshkey", "certificate"}
 
 
 def _ensure_dir() -> None:
-    """Ensure the vault directory exists."""
+    """Ensure the vault directory exists, owner-only where the
+    platform supports it (E-095: the directory must not be
+    traversable by other local accounts — the files' 0600
+    modes do not help if the directory itself is group- or
+    world-open under a permissive umask)."""
     VAULT_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        VAULT_DIR.chmod(0o700)
+    except (OSError, NotImplementedError):
+        pass
 
 
 def _chmod_600(path: Path) -> None:
@@ -460,6 +468,7 @@ def _save_vault(vault: dict, key: bytes) -> None:
         "kista_version": __version__,
     }
     _atomic_write(VAULT_META, json.dumps(meta, indent=2).encode())
+    _chmod_600(VAULT_META)
 
 
 def _auto_backup(encrypted_data: bytes) -> None:
@@ -1607,8 +1616,10 @@ def cmd_backup(args) -> None:
         _atomic_write(output_path, encrypted)
         _chmod_600(output_path)
     else:
-        # Plain JSON export
+        # Plain JSON export — plaintext by the caller's explicit
+        # choice, but never looser than owner-only on disk (E-095).
         output_path.write_text(json.dumps(export_data, indent=2, ensure_ascii=False))
+        _chmod_600(output_path)
 
     print(f"✓ Backup exported to {output_path}")
     print(f"  Entries: {len(vault.get('entries', {}))}")
