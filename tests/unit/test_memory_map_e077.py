@@ -81,7 +81,10 @@ def test_member_tracked_sizes_match_e057_repinned_at_e076():
     # E-087 attribution: dockets 121 (supersede atomicity)
     # and 124 (restore closes connections first) grew
     # core.py, and 124's WAL-sibling removal grew backup.py.
-    assert _tracked_size("mimir-well") == (59, 618_769)
+    # E-092 attribution: docket 108's closure bounded the
+    # member's dependency declarations both ways
+    # (flask <4, setuptools <82) in pyproject.toml, +7 B.
+    assert _tracked_size("mimir-well") == (59, 618_776)
 
 
 def test_mimir_schema_shape_is_as_mapped():

@@ -6,12 +6,12 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 10:52 EST
-Status: IN PROGRESS — E-092 (Part V gate) opened 2026-11-01 10:42 keeper tick: one memory face live; migration proven; verdict paper + Volmarr's word (or its recorded absence) on record; docket 108 closure + docket 125 semantics rule owned by this gate.
+Last updated: 2026-11-01 11:39 EST
+Status: STOPPED — E-092 banked (Part V gate PASS: one memory face live and the memory contract FROZEN at v1 (MemoryFace, 31 public operations, name-for-name E-090's surface, probed + cross-checked); migration proven on fixtures (survivors stay native measured byte-identical; palace mapping lossless, execution ruling-gated); the verdict paper on record with Volmarr's word on mempalace retirement RECORDED AS ABSENT — no ruling on record, silence never read as a word, E-079 fallback in force, member untouched at 257 files / 59,049,715 B; docket 108 CLOSED in scope (mimir-well flask>=3.0,<4 + setuptools>=61.0,<82, battery-pinned both-ways; E-057 re-measured mimir-well 59 / 618,776 B, total 131,545,913 B, miss unchanged 256,017 B; E-077 size pin re-pinned with attribution after the combined run's first pass caught it stale — 225/1 → re-run 226 passed / 1 live-skip); docket 125 RULED (watermark semantics: a pass applies only age since last access/pass, passes never compound; current compounding stands as a named defect, implementation → E-204 presentation as a candidate slice beside docket 112/119's handle-delete slice); docket 123 weighed and bounded as the v1 boundary (→ E-204 re-weigh); docket 102's assigned E-085 review honestly recorded as never taken by any Part V slice — reviewed at this gate, typed subscriber still unbuilt, backstop E-204; E-089 canon guard allowlist extended consciously to 14 files; gate fully clean: Run A 1 error / 20 skipped, Run B 1352 passed / 6 proven-env only, Run D 1560 passed, 0 failed)
 Status was: STOPPED — E-091 banked (the verdict's residue: mempalace marked bounded wherever Ember's own living documents presented it otherwise, successor MemoryFace named — UNWIRED_INVENTORY row corrected in place (docket 52 EXECUTED), the Yggdrasil sibling doc bannered SUPERSEDED-IN-PART, BOUNDED, the corpus's two front doors carrying status notes; the member itself untouched, battery-pinned at 257 tracked files / 59,049,715 B; E-089 canon guard allowlist extended consciously to 13 files; gate fully clean after the Python-write EPERM stall cleared: combined extras-shape 218 passed / 1 live-skip, Run D 1552 passed, 0 failed)
 Status was: STOPPED — E-090 banked (docs: the memory model for users (plain) + builders — one document, two halves: Part A plain for users (the three kinds of memory, word-vs-meaning finding with the toaster's stated word mode, correct-vs-supersede, the four rights with docket 119/120 limits stated, persona separation, ageing without deletion, measured prices, the diary and WYRD neighbours, mempalace's proposed-not-decided status), Part B for builders (one face over two bounded engines, the sidecar, opening + graceful offline, the complete 31-operation contract surface, index-don't-merge, constants, the WYRD export boundary, open dockets 108/112/113/119/120/125, and the stated truth that chat is not yet rewired to the face); the pinning battery derives the operation list from MemoryFace itself; E-089's canon guard extended consciously — its allowlist gains this slice's battery as a twelfth file, governance-needle reason recorded; gate fully clean incl. Run D 1546 passed, 0 failed)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091
-Next slice: E-092 — Part V gate: one memory face live; migration proven; the verdict paper + Volmarr's word (where required) on record. The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence, not a ruling, is what the gate files. Docket 108 is owed at the E-092 gate, and docket 125's decay-compounding semantics rule.
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091, E-092
+Next slice: E-093 — Part VI opens: custody law for the whole campaign (credentials live in a Kista — toaster's or ai-folder's, per machine — never in configs, code, or chat; E-013's defects land there first). Part V is CLOSED by the E-092 gate. The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence is on record at the gate, fallback in force, executing migration slice exists only under that ruling. Carried from Part V with owners: docket 100 (→ E-136), 102 (→ E-204 backstop), 109 bifrost side (→ Part VIII), 112 + 119 (→ E-204 presentation, one candidate slice), 113 member half (→ E-194), 123 (→ E-204 re-weigh), 125 implementation (→ E-204 presentation).
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4793,3 +4793,102 @@ review, not this slice.
   verified via ls-remote (remote head =
   5875b658804f932773c1e86bc4e08d4b2fbfc749 = local HEAD
   at push time).
+
+## E-092 — Part V gate (DONE, 2026-11-01)
+
+- **Part V gate PASS** — gate filed at
+  `docs/architecture/E-092_PART_V_GATE.md` on the roadmap's own
+  criteria: one memory face live; migration proven; the verdict
+  paper + Volmarr's word (where required) on record. All seven
+  gate criteria (G1–G7) checked in the gate doc §1.
+- **One face live, contract FROZEN at v1**: `MemoryFace`
+  (31 public operations, probed directly this slice and
+  cross-checked name-for-name against E-090's documented
+  surface by an independent read) is declared frozen on
+  E-076's terms — breaking changes are a version bump, never
+  an edit under the v1 name; additions must be documented in
+  E-090's surface in the same change (its battery derives the
+  list from the class). Stated plainly at the gate, not
+  hidden: chat is NOT yet rewired to the face (the chat loop
+  still opens Brunnr directly) — follow-on work, with E-204
+  bound to present it as a named gap if still unbuilt there.
+- **Migration proven** (E-081's proofs re-run inside this
+  gate's combined conformance): survivors stay native —
+  pre-face stores served whole, schemas byte-identical, every
+  content row unchanged; the palace mapping is lossless on
+  fixtures (drawers round-trip through a real Brunnr store,
+  triples field-for-field; closets/embeddings rebuilt as the
+  derived layers they are). No real palace opened; the
+  executing tool is ruling-gated.
+- **The verdict + the word, on record**: E-079's BOUND
+  verdict stands; mempalace retirement is proposed, not
+  decided, and **no ruling is on record** at this gate —
+  the absence itself is filed as the G4 record, with the
+  E-079 fallback in force (optional, non-default,
+  never-bundled, laptop-class only). Silence is never read
+  as a retirement word. E-091's residue markings confirmed
+  as the gate's "docs marked truthfully" line (docket 52
+  executed there); the member stands present and unmodified,
+  battery-pinned at 257 tracked files / 59,049,715 B.
+- **Docket 108 CLOSED in scope**: mimir-well's declarations
+  bounded both ways — `flask>=3.0,<4`,
+  `setuptools>=61.0,<82` — pinned by the gate battery
+  (any mimir-well requirement losing either bound fails it).
+  In-scope re-measure: mimir-well 59 files / 618,776 B
+  (+7 B), twelve-member total 131,545,913 B, laptop miss
+  unchanged 256,017 B; both published copies updated
+  (E-057 doc + BUDGET BOOK §7). E-077's member-size pin
+  re-pinned 618,769 → 618,776 with attribution recorded in
+  that battery (E-078/E-087 precedent): the combined
+  conformance's first run caught the stale pin
+  (225 passed / 1 failed) and the re-run is the gate record.
+- **Docket 125 RULED**: the watermark semantics are the
+  project's law — a decay pass applies only the age accrued
+  since the later of last access / last pass; passes never
+  compound. The member's current full-age-every-pass
+  behaviour (E-088's probe: importance 10 at 60 days ends
+  1 under two passes vs 2 under one) stands as a named
+  defect against the ruled law; implementation (per-fact
+  watermark + the cadence probe as regression fixture)
+  assigned to E-204's presentation as a candidate slice
+  beside docket 112/119's.
+- **Docket 123 weighed and bounded**: add_turn's
+  episode/tag pair is not crash-atomic; a death between
+  them leaves one turn untagged, served to the default
+  persona only — accepted as the v1 boundary, re-weighed
+  at E-204 beside the chat rewiring.
+- **Docket 102 honestly corrected**: E-076 assigned its
+  first review to E-085, but no Part V slice took it up
+  (an independent cross-check of E-077–E-091 found zero
+  mentions). Reviewed at this gate instead: Part V's nerve
+  consumer is pull-shaped (the logger crossing), a typed
+  subscriber remains unbuilt; backstop owner E-204 stands.
+  The same cross-check confirmed docket 111 (FTS sync
+  triggers, fixed E-078) belongs in the closed list — it
+  is recorded in the gate doc §6.
+- **Part V docket accounted whole** (gate doc §6): closed —
+  51, 52, 104, 110, 111, 114–118, 120 (as documented truth),
+  121, 122, 124, 126; fixed here — 108; ruled here — 125,
+  123; carried with owners — 100 (→ E-136), 102 (→ E-204),
+  109 bifrost side (→ Part VIII), 112 + 119 (→ E-204
+  presentation, one candidate slice), 113 member half
+  (→ E-194; face layer closed).
+- **One guard extended, consciously**: the gate battery
+  carries the governance needle "Volmarr's word", so it
+  joins E-089's canon-guard allowlist as its fourteenth
+  file, reason recorded.
+- Conformance + gate (logs in
+  `~/workspace/.verify-tmp/ember-e092/gate/`): focal battery
+  **8 passed**; battery + canon guard **16 passed**;
+  post-re-pin focal set (E-057 + E-077 + E-089 + E-092)
+  **31 passed**; combined Part V conformance (18 files,
+  extras shape) **226 passed, 1 skipped** (the live-WYRD
+  skip, as E-086–E-091); Run A **1 error, 20 skipped**,
+  exit 2 (docket 1, identical); Run B **1352 passed,
+  6 failed, 34 skipped, 1 warning** — the 6 proven
+  environment failures ONLY (1344 at E-091 + 8 new, exact);
+  Run D **1560 passed, 0 failed, 20 skipped, 27 warnings**,
+  exit 0 — fully clean (1552 at E-091 + 8 new, exact).
+  Method note: this tick's first Run B attempt was cut at
+  ~10% by a service restart and re-run whole; the counts
+  above are the re-run's. No README touched.

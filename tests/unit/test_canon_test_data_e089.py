@@ -125,6 +125,12 @@ VOLMARR_ALLOWLIST = {
     # in the markings that record executes.
     "tests/unit/test_memory_residue_e091.py":
         "governance needle in a doc-pinning test (added E-091)",
+    # Added consciously at E-092 (the same act, at the gate):
+    # the Part V gate battery pins that the mempalace
+    # retirement stays reserved to his word in the gate
+    # record, with its recorded absence on record.
+    "tests/unit/test_part_v_gate_e092.py":
+        "governance needle in a doc-pinning test (added E-092)",
 }
 
 #: The canon fixture personae. A new persona id in any
