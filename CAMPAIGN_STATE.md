@@ -3921,3 +3921,11 @@ review, not this slice.
   the sole failure is the same load-truth artifact
   (1399 + 9 new − 1 artifact vs E-081's Run D). No
   README touched; no member code touched.
+- E-082 push: banking commit 27ee0e8 pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was 5c2cb53, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  69954bc) — remote moved 5c2cb53 → 27ee0e8, verified
+  via ls-remote (remote head =
+  27ee0e81166acd2839e065744f6d9e12178eea4e = local HEAD
+  at push time).
