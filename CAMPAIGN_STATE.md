@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 04:08 EST
-Status: IN PROGRESS — E-085 (04:02 keeper tick)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084
-Next slice: E-085 — Memory ↔ Verdandi: conversation_logger's records and memory's facts reconciled (one truth, two views or a stated boundary)
+Last updated: 2026-11-01 04:40 EST
+Status: STOPPED — E-085 banked this tick (logger ↔ memory reconciled as two views with a provenance-tracked crossing; docket 104 closed; Run D NOT GREEN under VM contention — re-verification duty heads E-086's tick)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085
+Next slice: E-086 — Memory ↔ WYRD-shaped export: the companion's memory exportable in the shapes the constellation's world-model work consumes (ThoughtForge TF-145's boundary, honoured). FIRST DUTY of E-086's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — E-085's Run D was NOT GREEN under contention (see its entry).
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4086,3 +4086,92 @@ review, not this slice.
   fd8fbe2da7a0598ba8317fa8f57dbe5d83edf019 = local HEAD
   at push time).
 
+## E-085 — Memory ↔ Verdandi reconciliation (DONE, 2026-11-01)
+
+- Reconciliation filed at
+  `docs/architecture/E-085_MEMORY_VERDANDI_RECONCILIATION.md`
+  and built on the face (`src/ember/well/memory_face.py`):
+  **two views, one lawful crossing, stated boundary** —
+  the conversation logger is the truth for what was
+  logged (E-063), the face is the truth for what the
+  companion currently remembers (E-080); neither store
+  is a copy of the other and nothing was merged.
+  `ingest_log_candidates()` completes E-072's feed road
+  on the receiving side: lawful candidates only (source
+  `conversation_logger`, E-072's four categories,
+  non-empty words, named session, provenance dict), each
+  remembered through the face's own guarded
+  `remember_fact`, with provenance recorded in the
+  sidecar's new `log_facts` map (fact id, session,
+  persona, category, rule id — keyed by a hash of
+  session+category+words, so the sidecar holds no second
+  copy of the words). A persona is never guessed
+  (untagged/invalid-tag candidates counted
+  `withheld_unattributable`), a foreign-tagged candidate
+  under a named persona is `withheld_persona_mismatch`,
+  never re-homed, and a repeat feed is a counted
+  duplicate for as long as the fed fact lives (proven
+  across a face reopen); forgotten facts drop their
+  provenance through the face's delete paths, so a later
+  feed is a fresh crossing. The ingest report is counts
+  + new fact ids only (sentinel-pinned: no words, no
+  session ids). `logger_provenance()` lists fed facts
+  per persona, words never included.
+- **Docket 104 CLOSED:** a logger deletion now reaches
+  already-fed memory. `audit_logger_reconciliation
+  (live_session_ids)` finds fed facts whose session has
+  left the caller's authoritative live list (counts +
+  orphaned fact ids; deletes nothing; every report
+  warns never to audit against a size-pruned log —
+  Bifröst pruning, docket 100, is hygiene, not a user
+  deletion). `retract_deleted_session(session_id)`
+  forgets exactly that session's fed facts through
+  `delete_fact` (index entry + provenance go with each),
+  counts a user-forgotten fact as `already_gone` and
+  drops its stale provenance; direct facts, other
+  sessions, and (under a named fence) other personae are
+  untouched. Propagation is **explicit, not automatic**
+  — the logger is a standalone member with no hook into
+  the core — stated in the doc, in every retraction
+  report, and pinned by the end-to-end battery (real
+  logger → real E-072 feed → ingest → logger
+  `delete_session` → memory unchanged on its own →
+  audit finds the orphan → retraction forgets it).
+  No Verdandi code touched; no member code touched.
+- In-scope re-measure (E-080–E-084 precedent): E-057
+  table re-measured for the core's growth — core
+  131 files / 899,122 B, twelve-member total
+  131,517,507 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_logger_
+  reconciliation_e085.py` **29 passed** (repeated full
+  runs; one early run under contention showed a single
+  failure in the provenance-fence test that did not
+  reproduce in isolation or in three subsequent full
+  runs — recorded here as a contention artifact, not
+  hidden). Combined conformance (E-057 table + E-072
+  feed + Part V E-077–E-085 files, 11 files) **152
+  passed**. Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e085/gate/`): Run A
+  **1 error, 17 skipped**, exit 2 (docket 1, identical;
+  +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 31
+  skipped, 1 warning** — the 6 proven environment
+  failures, identical list to E-084, plus the
+  load-truth live-hub artifact (hub exited early;
+  the hub boots clean standalone and under a taskset
+  replication this tick, and this slice touches no
+  hub code — same artifact class as E-083's Run B).
+- **Run D NOT GREEN under contention — re-verification
+  duty heads the next tick (E-072 precedent).** Two
+  attempts: the first collapsed from ~52% with mass
+  environment errors and a cacheprovider
+  PermissionError at teardown while VM load peaked at
+  18.7 and MemAvailable fell to ~0.69 GB (fourteen
+  keeper campaigns sharing the VM); the second exited
+  120 immediately with an empty log. No failing test
+  in any credible run touches this slice's code, but
+  a green Run D is NOT claimed: the next keeper tick
+  re-runs Run D first and records the result here.
+  No README touched.

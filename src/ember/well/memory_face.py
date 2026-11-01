@@ -119,6 +119,33 @@ no delete), and :meth:`MemoryFace.run_lifecycle` composing
 them under Part III's storage budget (E-050 consumed:
 a reference month is 0.39 MiB, inside every ceiling).
 
+Logger reconciliation (E-085): Verdandi's conversation
+logger and this face are two views, not one store. The
+logger is the truth for *what was logged* in a session
+(verbatim entries, its own delete right, E-063); this face
+is the truth for *what the companion currently remembers*
+(living facts here, conversation turns in Brunnr). Neither
+copies the other wholesale. The only crossing is the
+E-072 feed: candidates the logger law offers under the
+user's rule arrive here through
+:meth:`MemoryFace.ingest_log_candidates`, which remembers
+each one as a living fact and records its provenance
+(session, category, rule) in the sidecar — so any fed fact
+can be traced to the session that fed it, a repeat feed is
+a counted duplicate rather than a second fact, and a
+logger deletion can be carried into memory:
+:meth:`MemoryFace.audit_logger_reconciliation` finds fed
+facts whose session is no longer in the log (it deletes
+nothing), and :meth:`MemoryFace.retract_deleted_session`
+forgets exactly the facts one deleted session fed
+(docket 104, settled here). Propagation is *not*
+automatic — the logger is a standalone member with no
+hook into this core — so the caller who deletes a session
+in the logger runs the retraction, or audits for orphans;
+that stated boundary is the reconciliation, not a silent
+gap. Facts remembered directly (never fed) carry no log
+provenance and are never retracted by either operation.
+
 Loading mimir-well: the core does not import member code at
 module scope anywhere (the E-067 discipline). The face
 loads ``mimir_well`` lazily, only when a face is opened
@@ -184,6 +211,21 @@ EPISODE_BYTES_PER_TURN = 585
 #: persona's memory (E-084). Anything else — a typo, an
 #: empty string, a near-miss — refuses and deletes nothing.
 DELETE_ALL_CONFIRMATION = "delete everything"
+
+#: The one lawful source of logger-fed candidates (E-072):
+#: candidates claiming any other source are not logger
+#: records and are refused by the E-085 ingest.
+LOG_FEED_SOURCE = "conversation_logger"
+
+#: The categories a logger candidate may become (E-072's
+#: feedable vocabulary, mapped): a learned event becomes a
+#: ``lesson``, a decision a ``decision``, a milestone a
+#: ``milestone``, and an opted-in session summary a
+#: ``session_summary``. Anything else is working state,
+#: not a memory, and never crosses.
+LOG_FEED_CATEGORIES = frozenset({
+    "lesson", "decision", "milestone", "session_summary",
+})
 
 #: Profiles whose storage story pays the index price by
 #: default. The toaster is absent on purpose (verdict
@@ -289,6 +331,7 @@ class _Sidecar:
         self.fact_chunk: dict[str, int] = {}
         self.fact_persona: dict[str, str] = {}
         self.deleted_episodes: set[int] = set()
+        self.log_facts: dict[str, dict] = {}
         self.index_document_id: Optional[int] = None
         if self.path.exists():
             try:
@@ -300,6 +343,11 @@ class _Sidecar:
                 self.fact_persona = dict(data.get("fact_persona", {}))
                 self.deleted_episodes = {
                     int(x) for x in data.get("deleted_episodes", [])
+                }
+                self.log_facts = {
+                    str(k): dict(v)
+                    for k, v in data.get("log_facts", {}).items()
+                    if isinstance(v, dict)
                 }
                 doc_id = data.get("index_document_id")
                 self.index_document_id = int(doc_id) if doc_id is not None else None
@@ -316,6 +364,7 @@ class _Sidecar:
             "fact_chunk": self.fact_chunk,
             "fact_persona": self.fact_persona,
             "deleted_episodes": sorted(self.deleted_episodes),
+            "log_facts": self.log_facts,
             "index_document_id": self.index_document_id,
         }
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
@@ -914,9 +963,20 @@ class MemoryFace:
         if not ok:
             return {"deleted": False, "note": "refused by mimir-well; "
                                               "nothing was deleted"}
+        changed = False
         if str(fact_id) in self._sidecar.fact_chunk:
             del self._sidecar.fact_chunk[str(fact_id)]
             self._sidecar.fact_persona.pop(str(fact_id), None)
+            changed = True
+        # A forgotten fact's logger provenance (E-085) goes
+        # with it: a later feed of the same logged words is
+        # a fresh crossing, not a duplicate of a fact that
+        # no longer exists.
+        for key in [k for k, v in self._sidecar.log_facts.items()
+                    if v.get("fact_id") == int(fact_id)]:
+            del self._sidecar.log_facts[key]
+            changed = True
+        if changed:
             self._sidecar.save()
         return {"deleted": True, "fact_id": int(fact_id),
                 "note": "forgotten: the fact is gone from the memory "
@@ -967,6 +1027,11 @@ class MemoryFace:
                 self._sidecar.fact_chunk.pop(fact_id_s, None)
                 del self._sidecar.fact_persona[fact_id_s]
                 dropped += 1
+        # The persona's logger provenance (E-085) is its
+        # memory too: total deletion drops it whole.
+        for key in [k for k, v in self._sidecar.log_facts.items()
+                    if v.get("persona") == persona]:
+            del self._sidecar.log_facts[key]
         self._sidecar.save()
         return {
             "deleted": True,
@@ -983,6 +1048,247 @@ class MemoryFace:
                 "yet — the document store's handle has no delete "
                 "(docket 119) — but no turn can be seen, searched, "
                 "or exported from here ever again."),
+        }
+
+    # ------------------------------------------------------------------ #
+    # Logger reconciliation — two views, one crossing (E-085)             #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _log_key(session_id: str, category: str, content: str) -> str:
+        """The provenance key of one fed candidate: a hash
+        of (session, category, words) — the same identity
+        E-072's feed dedupes on, kept as a hash so the
+        sidecar holds no second copy of the words."""
+        return hashlib.sha256(
+            f"{session_id}\0{category}\0{content}".encode("utf-8")
+        ).hexdigest()
+
+    def ingest_log_candidates(
+        self, candidates, *, persona_id: Optional[str] = None
+    ) -> dict:
+        """Receive the logger's feed (E-072) into memory.
+
+        Each candidate that is in the lawful shape — source
+        ``conversation_logger``, a feedable category,
+        non-empty words, a named session, a provenance dict,
+        and a *named* persona (a persona is never guessed,
+        E-072 §5) — is remembered as a living fact for that
+        persona through the face's own guarded path, and
+        its provenance is recorded in the sidecar. A repeat
+        of an already-fed (session, category, words) is a
+        counted duplicate, never a second fact. When
+        ``persona_id`` is named by the caller, a candidate
+        tagged for anyone else is withheld, not re-homed.
+        The report is counts and new fact ids only — no
+        candidate words, no session ids — in E-072's
+        counts-only discipline.
+        """
+        report = {
+            "total": 0, "ingested": 0, "fact_ids": [],
+            "withheld_duplicate": 0, "withheld_unattributable": 0,
+            "withheld_invalid": 0, "withheld_persona_mismatch": 0,
+            "withheld_blocked": 0,
+            "note": "",
+        }
+        explicit = None
+        if persona_id is not None:
+            explicit = self._persona(persona_id)
+            if explicit is None:
+                report["note"] = self._invalid_persona_note(persona_id)
+                report["total"] = len(list(candidates))
+                report["withheld_invalid"] = report["total"]
+                return report
+        changed = False
+        for cand in candidates:
+            report["total"] += 1
+            if not isinstance(cand, dict):
+                report["withheld_invalid"] += 1
+                continue
+            content = cand.get("content")
+            category = cand.get("category")
+            session_id = cand.get("session_id")
+            if (cand.get("source") != LOG_FEED_SOURCE
+                    or category not in LOG_FEED_CATEGORIES
+                    or not isinstance(content, str) or not content.strip()
+                    or not isinstance(cand.get("provenance"), dict)):
+                report["withheld_invalid"] += 1
+                continue
+            if not isinstance(session_id, str) or not session_id:
+                report["withheld_unattributable"] += 1
+                continue
+            cand_persona = cand.get("persona_id")
+            if (not isinstance(cand_persona, str)
+                    or not is_valid_persona_id(cand_persona)):
+                report["withheld_unattributable"] += 1
+                continue
+            if explicit is not None and cand_persona != explicit:
+                report["withheld_persona_mismatch"] += 1
+                continue
+            key = self._log_key(session_id, category, content)
+            prior = self._sidecar.log_facts.get(key)
+            if prior is not None:
+                still = (
+                    self.inspect_fact(int(prior.get("fact_id", -1)),
+                                      persona_id=cand_persona)
+                    if prior.get("fact_id") is not None else None)
+                if still is not None:
+                    report["withheld_duplicate"] += 1
+                    continue
+                # The fed fact is gone (forgotten outside the
+                # face's delete paths): its provenance is
+                # stale, so the crossing may happen afresh.
+                del self._sidecar.log_facts[key]
+                changed = True
+            result = self.remember_fact(
+                content, category=category, persona_id=cand_persona)
+            if result.fact_id is None:
+                report["withheld_blocked"] += 1
+                continue
+            provenance = cand["provenance"]
+            self._sidecar.log_facts[key] = {
+                "fact_id": int(result.fact_id),
+                "session_id": session_id,
+                "persona": cand_persona,
+                "category": category,
+                "rule_id": provenance.get("rule_id"),
+            }
+            changed = True
+            report["ingested"] += 1
+            report["fact_ids"].append(int(result.fact_id))
+        if changed:
+            self._sidecar.save()
+        report["note"] = (
+            f"{report['ingested']} logged entr"
+            f"{'y' if report['ingested'] == 1 else 'ies'} became "
+            "living fact(s); every other candidate is counted "
+            "under the reason it was withheld")
+        return report
+
+    def logger_provenance(
+        self, *, persona_id: Optional[str] = None
+    ) -> list[dict]:
+        """Which living facts came from the logger, and from
+        which session — provenance only, never the words.
+
+        One row per fed fact the persona owns: its fact id,
+        the session that fed it, its category, and the rule
+        that let it cross. Another persona's fed facts are
+        never listed; an invalid persona id lists nothing.
+        """
+        if persona_id is not None:
+            persona = self._persona(persona_id)
+            if persona is None:
+                return []
+            rows = [v for v in self._sidecar.log_facts.values()
+                    if v.get("persona") == persona]
+        else:
+            rows = list(self._sidecar.log_facts.values())
+        return sorted(
+            ({
+                "fact_id": int(v["fact_id"]),
+                "session_id": v.get("session_id"),
+                "persona": v.get("persona"),
+                "category": v.get("category"),
+                "rule_id": v.get("rule_id"),
+            } for v in rows if v.get("fact_id") is not None),
+            key=lambda r: r["fact_id"])
+
+    def audit_logger_reconciliation(
+        self, live_session_ids, *, persona_id: Optional[str] = None
+    ) -> dict:
+        """Find fed facts whose session has left the log.
+
+        ``live_session_ids`` is the caller's authoritative
+        list of the sessions still in the logger. A fed
+        fact whose session is not among them is *orphaned*:
+        its words came from a session the diary no longer
+        holds. The audit deletes nothing — it reports
+        counts and the orphaned fact ids so the caller can
+        decide, and :meth:`retract_deleted_session` can
+        act. One warning, stated in every report: the live
+        list must come from a deletion the user made
+        (E-063's right), never from a size-pruned log —
+        Bifröst's line pruning (docket 100) is machine
+        hygiene, not a deletion, and auditing against a
+        pruned log would mistake hygiene for intent.
+        """
+        rows = self.logger_provenance(persona_id=persona_id)
+        if persona_id is not None and self._persona(persona_id) is None:
+            return {"tracked": 0, "still_logged": 0, "orphaned": 0,
+                    "orphaned_fact_ids": [],
+                    "note": self._invalid_persona_note(persona_id)}
+        live = {str(s) for s in live_session_ids}
+        orphaned = [r for r in rows if r["session_id"] not in live]
+        return {
+            "tracked": len(rows),
+            "still_logged": len(rows) - len(orphaned),
+            "orphaned": len(orphaned),
+            "orphaned_fact_ids": [r["fact_id"] for r in orphaned],
+            "note": (
+                "audit only — nothing was deleted. An orphan is "
+                "a fact fed from a session no longer in the "
+                "caller's live list; retract it with "
+                "retract_deleted_session. Never audit against a "
+                "size-pruned log: pruning is hygiene, not a "
+                "user deletion (docket 100)."),
+        }
+
+    def retract_deleted_session(
+        self, session_id: str, *, persona_id: Optional[str] = None
+    ) -> dict:
+        """Carry one logger deletion into memory (docket 104).
+
+        Forgets exactly the living facts that the named
+        session fed — each through the face's own
+        :meth:`delete_fact`, so its index entry and its
+        provenance go with it — and nothing else: facts the
+        session's persona remembered directly, and every
+        other session's fed facts, are untouched. A fed
+        fact already forgotten by the user is counted as
+        already gone, and its stale provenance is dropped
+        either way. This operation *is* docket 104's
+        propagation: the logger has no hook into this core
+        (it is a standalone member), so deletion reaches
+        already-fed memory when the caller who deleted the
+        session runs this — never silently, never
+        automatically, and provably once run.
+        """
+        if persona_id is not None and self._persona(persona_id) is None:
+            return {"retracted": 0, "already_gone": 0, "fact_ids": [],
+                    "note": self._invalid_persona_note(persona_id)}
+        targets = [
+            v for v in list(self._sidecar.log_facts.values())
+            if v.get("session_id") == session_id
+            and (persona_id is None or v.get("persona") == persona_id)
+        ]
+        retracted: list[int] = []
+        already_gone = 0
+        for entry in targets:
+            fact_id = int(entry["fact_id"])
+            out = self.delete_fact(
+                fact_id, persona_id=str(entry.get("persona")))
+            if out.get("deleted"):
+                retracted.append(fact_id)
+            else:
+                already_gone += 1
+                for key in [k for k, v in self._sidecar.log_facts.items()
+                            if v.get("fact_id") == fact_id]:
+                    del self._sidecar.log_facts[key]
+                self._sidecar.save()
+        return {
+            "retracted": len(retracted),
+            "already_gone": already_gone,
+            "fact_ids": retracted,
+            "session_id": session_id,
+            "note": (
+                f"session {session_id}'s fed facts are forgotten "
+                "from memory; facts remembered directly and other "
+                "sessions' fed facts were not touched. This "
+                "retraction is how a logger deletion reaches "
+                "already-fed memory (docket 104): it runs when "
+                "called, not automatically — the logger is a "
+                "standalone member with no hook into the core."),
         }
 
     # ------------------------------------------------------------------ #
@@ -1242,6 +1548,8 @@ __all__ = [
     "FACT_INDEX_SOURCE",
     "INDEX_BYTES_PER_FACT",
     "INDEX_DEFAULT_PROFILES",
+    "LOG_FEED_CATEGORIES",
+    "LOG_FEED_SOURCE",
     "FactResult",
     "LifecycleReport",
     "MeaningHits",
