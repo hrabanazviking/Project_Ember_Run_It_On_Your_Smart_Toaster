@@ -4496,3 +4496,9 @@ review, not this slice.
   re-run — that re-run is the one on record). No README touched; no
   vendored code touched; no member code touched (the
   cadence probe only read mimir-well's behaviour).
+- E-088 push: banking commit 70f434b pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check — remote moved 1cb0677 → 70f434b,
+  verified via ls-remote (remote head =
+  70f434b1de1729fa24ca983a9ac1ab586dd7cd0f = local HEAD
+  at push time).
