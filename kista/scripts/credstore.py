@@ -45,6 +45,9 @@ Usage:
   kista init
   kista set-passphrase     # Protect the vault with a passphrase (E-096)
   kista remove-passphrase  # Remove that protection (asks first, in words)
+  kista add <service> --program NAME  # The entry belongs to that program (E-097)
+  # A program names itself with the KISTA_PROGRAM environment
+  # variable and then sees — and can touch — only its own entries.
   kista status
   kista generate-password [--length N]
   kista repair
@@ -59,6 +62,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import secrets
 import string
 import subprocess
@@ -837,8 +841,125 @@ def _save_config(config: dict) -> None:
     _chmod_600(VAULT_CONFIG)
 
 
+# ── Per-program access (E-097) ──────────────────────────
+# Every entry carries a "program" field: the name of the
+# program the entry belongs to, or "" when it belongs to
+# the vault owner personally. A program names itself
+# with the KISTA_PROGRAM environment variable — a name
+# is an identifier, never a credential (E-093 law rule
+# 9), so it travels in the open and is stored in the
+# open. A caller that names a program may add, read,
+# list, search, check, change, and remove ONLY entries
+# whose program field equals that name; whole-vault and
+# vault-life operations (init, repair, passphrase,
+# export/import, backup/restore, github-backup, the
+# soul/cron backups, config) are the owner's acts and
+# are refused to a program caller. A caller that names
+# no program is the owner at their own vault, with the
+# full access the program has always given them.
+#
+# Honesty (E-095 §3.2, restated for this shape): the
+# name is claimed, not proven. This is the discipline
+# that keeps well-behaved programs — the companion
+# first, at E-100 — inside their own entries, and it
+# stops accidents and casual browsing cold. It is NOT
+# a wall against malicious code running as the same OS
+# account: such code could claim any name, or read the
+# vault files directly, and E-095's A2 verdict stands
+# exactly as written. No Ember document may claim more
+# for per-program access than this paragraph claims.
+_PROGRAM_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+
+
+def _normalize_program_name(raw) -> str:
+    """Validate and normalize a program name, or refuse
+    plainly: lowercase letters, digits, '.', '_' and '-',
+    starting with a letter or digit, at most 64 chars."""
+    name = str(raw or "").strip().lower()
+    if not _PROGRAM_RE.match(name):
+        print(
+            "✗ That is not a usable program name. Use "
+            "lowercase letters,\n"
+            "  digits, '.', '_' or '-' (at most 64 "
+            "characters, starting with\n"
+            "  a letter or digit) — for example "
+            "'ember-core'. Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return name
+
+
+def _caller_program() -> str:
+    """The program the caller claims to be, from the
+    KISTA_PROGRAM environment variable. '' means no
+    program is claimed — the caller is the vault owner
+    personally, and the owner sees everything."""
+    raw = os.environ.get("KISTA_PROGRAM")
+    if raw is None or not raw.strip():
+        return ""
+    return _normalize_program_name(raw)
+
+
+def _entry_program(entry) -> str:
+    """The program an entry belongs to ('' = the owner's
+    own entry; entries written before E-097 have no
+    field and read as the owner's)."""
+    if isinstance(entry, dict):
+        return str(entry.get("program") or "").strip().lower()
+    return ""
+
+
+def _program_sees(caller: str, entry) -> bool:
+    """May this caller see/touch this entry? The owner
+    (no program claimed) sees all; a program sees
+    exactly its own."""
+    return not caller or _entry_program(entry) == caller
+
+
+def _visible_entries(entries: dict, caller: str) -> dict:
+    """The caller's view of the vault: every entry for
+    the owner, exactly the program's own for a program."""
+    if not caller:
+        return entries
+    return {name: entry for name, entry in entries.items()
+            if _program_sees(caller, entry)}
+
+
+def _refuse_program_whole_vault(command_label: str) -> None:
+    """Whole-vault and vault-life operations belong to
+    the owner. A program caller is refused, plainly,
+    before anything is touched."""
+    caller = _caller_program()
+    if caller:
+        print(
+            f"✗ '{command_label}' belongs to the vault "
+            f"owner, not to a program.\n"
+            f"  Program '{caller}' can only add, read, "
+            "change, and remove its own\n"
+            "  entries. Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+def _not_found_for(service: str, caller: str) -> None:
+    """The program-scoped 'not found': another program's
+    entry and a missing entry get the same answer, so a
+    program learns nothing about what else the vault
+    holds — not even whether the name exists."""
+    print(f"✗ No entry found for '{service}'")
+    if caller:
+        print(
+            f"  Program '{caller}' can only see its own "
+            "entries — this one is not\n"
+            "  among them, or does not exist."
+        )
+
+
 def cmd_init(args) -> None:
     """Initialize the vault."""
+    _refuse_program_whole_vault("init")
     _ensure_dir()
     if VAULT_KEY.exists() and VAULT_FILE.exists():
         print(f"✓ Vault already exists at {VAULT_DIR}")
@@ -880,6 +1001,7 @@ def cmd_set_passphrase(args) -> None:
     what turns a copied vault folder from a total loss
     (E-095's central finding) into a locked box.
     """
+    _refuse_program_whole_vault("set-passphrase")
     if not VAULT_KEY.exists():
         print(
             "✗ There is no vault here yet. Run 'kista init' "
@@ -916,6 +1038,7 @@ def cmd_remove_passphrase(args) -> None:
     opens whole. That consequence is stated before the
     act, never after.
     """
+    _refuse_program_whole_vault("remove-passphrase")
     if not VAULT_KEY.exists():
         print("✗ There is no vault here yet.", file=sys.stderr)
         sys.exit(1)
@@ -940,6 +1063,7 @@ def cmd_remove_passphrase(args) -> None:
 
 def cmd_repair(args) -> None:
     """Attempt to repair a corrupted vault from backups."""
+    _refuse_program_whole_vault("repair")
     key = _get_key()
     is_corrupt, error_msg = _is_vault_corrupt(key)
     if not is_corrupt:
@@ -961,11 +1085,44 @@ def cmd_repair(args) -> None:
 
 def cmd_add(args) -> None:
     """Add a new entry (of any type)."""
+    # Per-program access (E-097): a program caller adds
+    # only for itself; the owner may assign an entry to
+    # a program with --program. An entry a program adds
+    # is stamped with that program's name, and no caller
+    # may stamp an entry with another program's name.
+    caller = _caller_program()
+    requested_raw = getattr(args, "program", None)
+    if requested_raw:
+        requested = _normalize_program_name(requested_raw)
+        if caller and requested != caller:
+            print(
+                f"✗ Program '{caller}' can only add "
+                f"entries for itself, not for "
+                f"'{requested}'.\n"
+                "  Nothing was changed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        owner_program = requested
+    else:
+        owner_program = caller
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.setdefault("entries", {})
 
     service = args.service.lower()
+    if caller and service in entries and not _program_sees(caller, entries[service]):
+        # A program may not overwrite — or learn the
+        # shape of — another program's entry, even with
+        # --force (E-097).
+        print(
+            f"✗ The name '{service}' cannot be used by "
+            f"program '{caller}'.\n"
+            "  It is taken, or it belongs to another "
+            "program. Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if service in entries and not getattr(args, "force", False):
         print(f"✗ Entry for '{service}' already exists. Use --force to overwrite or 'update' to modify.")
         sys.exit(1)
@@ -998,6 +1155,7 @@ def cmd_add(args) -> None:
     entry = {
         "service": service,
         "entry_type": entry_type,
+        "program": owner_program,
         "created": datetime.now(timezone.utc).isoformat(),
         "updated": datetime.now(timezone.utc).isoformat(),
     }
@@ -1162,18 +1320,30 @@ def cmd_add(args) -> None:
     entries[service] = entry
     _save_vault(vault, key)
     print(f"✓ Added {entry_type} for '{service}'")
+    if owner_program:
+        print(f"  Belongs to program: {owner_program} — only "
+              f"that program (and you, the owner) can reach it.")
 
 
 def cmd_get(args) -> None:
     """Get an entry (full details)."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
-    if service not in entries:
-        print(f"✗ No entry found for '{service}'")
-        print(f"  Available: {', '.join(sorted(entries.keys())) or '(empty)'}")
+    if service not in entries or not _program_sees(caller, entries[service]):
+        if caller:
+            # Program-scoped: another program's entry and
+            # a missing entry answer identically, and the
+            # available-services list is never shown to a
+            # program (it would name other programs'
+            # entries).
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
+            print(f"  Available: {', '.join(sorted(entries.keys())) or '(empty)'}")
         sys.exit(1)
 
     entry = entries[service]
@@ -1182,12 +1352,16 @@ def cmd_get(args) -> None:
 
 def cmd_list(args) -> None:
     """List all entries (passwords and sensitive fields masked)."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
-    entries = vault.get("entries", {})
+    entries = _visible_entries(vault.get("entries", {}), caller)
 
     if not entries:
-        print("No entries stored yet. Use 'add' to create one.")
+        if caller:
+            print(f"No entries for program '{caller}' yet.")
+        else:
+            print("No entries stored yet. Use 'add' to create one.")
         return
 
     tag_filter = args.tags.lower() if args.tags else None
@@ -1242,13 +1416,17 @@ def _get_identity_display(entry_type: str, entry: dict) -> str:
 
 def cmd_update(args) -> None:
     """Update specific fields of an entry."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
-    if service not in entries:
-        print(f"✗ No entry found for '{service}'")
+    if service not in entries or not _program_sees(caller, entries[service]):
+        if caller:
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
         sys.exit(1)
 
     entry = entries[service]
@@ -1571,6 +1749,28 @@ def cmd_update(args) -> None:
             entry["source_url"] = args.source_url
             updated = True
 
+    # Ownership changes (E-097): only the vault owner
+    # may say who an entry belongs to. A program cannot
+    # give its entries away, take another program's, or
+    # un-own one — that act is the owner's, in person.
+    new_program = getattr(args, "program", None)
+    unassign = getattr(args, "unassign_program", False)
+    if new_program or unassign:
+        if caller:
+            print(
+                f"✗ Program '{caller}' cannot change who "
+                "an entry belongs to.\n"
+                "  Only the vault owner can do that. "
+                "Nothing was changed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if unassign:
+            entry["program"] = ""
+        else:
+            entry["program"] = _normalize_program_name(new_program)
+        updated = True
+
     if updated:
         entry["updated"] = datetime.now(timezone.utc).isoformat()
         _save_vault(vault, key)
@@ -1581,13 +1781,17 @@ def cmd_update(args) -> None:
 
 def cmd_remove(args) -> None:
     """Remove an entry."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
-    if service not in entries:
-        print(f"✗ No entry found for '{service}'")
+    if service not in entries or not _program_sees(caller, entries[service]):
+        if caller:
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
         sys.exit(1)
 
     del entries[service]
@@ -1597,11 +1801,18 @@ def cmd_remove(args) -> None:
 
 def cmd_check(args) -> None:
     """Check if an entry exists and show status."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
+    if service in entries and not _program_sees(caller, entries[service]):
+        # Another program's entry checks as absent: a
+        # program does not even learn that the name
+        # exists (E-097).
+        _not_found_for(service, caller)
+        return
     if service in entries:
         entry = entries[service]
         entry_type = entry.get("entry_type", "credential")
@@ -1667,7 +1878,10 @@ def cmd_check(args) -> None:
         print(f"  Created: {entry.get('created', '?')[:10]}")
         print(f"  Updated: {entry.get('updated', '?')[:10]}")
     else:
-        print(f"✗ No entry found for '{service}'")
+        if caller:
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
 
 
 def cmd_status(args) -> None:
@@ -1691,8 +1905,15 @@ def cmd_status(args) -> None:
             print("  Run 'kista repair' to attempt auto-repair from backup.")
         else:
             vault = _load_vault(key)
-            entries = vault.get("entries", {})
+            # A program caller sees only its own entries
+            # counted and named here (E-097); the owner
+            # sees the whole vault, as always.
+            caller = _caller_program()
+            entries = _visible_entries(vault.get("entries", {}), caller)
             print(f"Vault version: {vault.get('version', '?')}")
+            if caller:
+                print(f"Program: {caller} — status covers "
+                      "only that program's entries")
             print(f"Entries: {len(entries)}")
             # Count by type
             type_counts = {}
@@ -1705,25 +1926,30 @@ def cmd_status(args) -> None:
             print(f"Created: {vault.get('created', '?')}")
             print(f"Updated: {vault.get('updated', '?')}")
 
-        # Show backup info
-        backup_dir = VAULT_DIR / "backups"
-        if backup_dir.exists():
-            backups = list(backup_dir.glob("vault_backup_*.enc"))
-            print(f"Backups: {len(backups)} available")
+        # Backup and config counts are whole-vault facts:
+        # they are shown to the owner, never to a program
+        # caller (E-097).
+        if not _caller_program():
+            # Show backup info
+            backup_dir = VAULT_DIR / "backups"
+            if backup_dir.exists():
+                backups = list(backup_dir.glob("vault_backup_*.enc"))
+                print(f"Backups: {len(backups)} available")
 
-        # Show config
-        config = _load_config()
-        if config:
-            print(f"Config: {len(config)} settings")
+            # Show config
+            config = _load_config()
+            if config:
+                print(f"Config: {len(config)} settings")
     else:
         print("Vault not initialized. Run 'init' to create.")
 
 
 def cmd_search(args) -> None:
     """Fuzzy search across services and all fields, with optional date filtering."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
-    entries = vault.get("entries", {})
+    entries = _visible_entries(vault.get("entries", {}), caller)
 
     query = (args.query or "").lower()
     date_filter = getattr(args, "date", None)
@@ -1834,6 +2060,7 @@ def cmd_generate_password(args) -> None:
 
 def cmd_export(args) -> None:
     """Export all credentials as encrypted backup."""
+    _refuse_program_whole_vault("export")
     if not VAULT_FILE.exists():
         print("✗ No vault to export.")
         sys.exit(1)
@@ -1853,6 +2080,7 @@ def cmd_export(args) -> None:
 
 def cmd_import(args) -> None:
     """Import credentials from encrypted backup."""
+    _refuse_program_whole_vault("import")
     src = Path(args.file)
     if not src.exists():
         print(f"✗ File not found: {src}")
@@ -1929,6 +2157,7 @@ def cmd_import(args) -> None:
 
 def cmd_backup(args) -> None:
     """Export all kista data to a JSON backup file (optionally encrypted)."""
+    _refuse_program_whole_vault("backup")
     key = _get_key()
     vault = _load_vault(key)
 
@@ -1964,6 +2193,7 @@ def cmd_backup(args) -> None:
 
 def cmd_restore(args) -> None:
     """Restore kista data from a backup JSON file."""
+    _refuse_program_whole_vault("restore")
     src = Path(args.file)
     if not src.exists():
         print(f"✗ File not found: {src}")
@@ -2051,6 +2281,7 @@ def cmd_restore(args) -> None:
 
 def cmd_github_backup(args) -> None:
     """Push encrypted backup to a configured GitHub repo."""
+    _refuse_program_whole_vault("github-backup")
     config = _load_config()
     repo = getattr(args, "repo", None) or config.get("backup", {}).get("repo")
 
@@ -2140,6 +2371,7 @@ def cmd_github_backup(args) -> None:
 
 def cmd_add_soul(args) -> None:
     """Backup SOUL.md and runa-identity.md to the vault."""
+    _refuse_program_whole_vault("add-soul")
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.setdefault("entries", {})
@@ -2187,6 +2419,7 @@ def cmd_add_soul(args) -> None:
 
 def cmd_add_cron_backup(args) -> None:
     """Backup current crontab to the vault."""
+    _refuse_program_whole_vault("add-cron-backup")
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.setdefault("entries", {})
@@ -2231,6 +2464,7 @@ def cmd_add_cron_backup(args) -> None:
 
 def cmd_config(args) -> None:
     """Manage kista configuration settings."""
+    _refuse_program_whole_vault("config")
     config = _load_config()
 
     action = getattr(args, "config_action", None)
@@ -2408,6 +2642,7 @@ def main():
     p_add.add_argument("--url", help="Service URL")
     p_add.add_argument("--notes", "-n", help="Additional notes")
     p_add.add_argument("--tags", "-t", help="Comma-separated tags")
+    p_add.add_argument("--program", help="The program this entry belongs to (E-097): only that program — and you, the owner — can reach it afterwards")
     p_add.add_argument("--force", "-f", action="store_true", help="Overwrite if exists")
     # Type-specific args for 'add' (merged from all types)
     p_add.add_argument("--key", dest="key_arg", help="API key / License key")
@@ -2468,6 +2703,7 @@ def main():
         # Common args for shortcuts
         p.add_argument("--tags", "-t", help="Comma-separated tags")
         p.add_argument("--notes", "-n", help="Additional notes")
+        p.add_argument("--program", help="The program this entry belongs to (E-097)")
         p.add_argument("--force", "-f", action="store_true", help="Overwrite if exists")
 
     # add-person (enhanced identity)
@@ -2476,6 +2712,7 @@ def main():
     _add_type_args(p_person, "identity")
     p_person.add_argument("--tags", "-t", help="Comma-separated tags")
     p_person.add_argument("--notes", "-n", help="Additional notes")
+    p_person.add_argument("--program", help="The program this entry belongs to (E-097)")
     p_person.add_argument("--force", "-f", action="store_true", help="Overwrite if exists")
     # Enhanced person fields
     p_person.add_argument("--email", "-e", help="Email address")
@@ -2509,6 +2746,8 @@ def main():
     p_upd.add_argument("--url", help="New URL")
     p_upd.add_argument("--notes", "-n", help="New notes")
     p_upd.add_argument("--tags", "-t", help="New comma-separated tags")
+    p_upd.add_argument("--program", help="Give this entry to a program (owner only, E-097)")
+    p_upd.add_argument("--unassign-program", action="store_true", help="Make this entry the owner's own again (owner only, E-097)")
     # Type-specific update fields
     p_upd.add_argument("--key", dest="key_arg", help="API/License key")
     p_upd.add_argument("--key-file", help="Path to private key file (sshkey/certificate)")
