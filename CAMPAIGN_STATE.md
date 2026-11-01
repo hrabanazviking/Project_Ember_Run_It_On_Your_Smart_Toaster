@@ -4304,3 +4304,11 @@ review, not this slice.
   byte-identical from the HEAD blob (sha256
   5dafe3c2…) before this entry was appended — no state
   was lost.
+- E-086 push: banking commit 38b420b pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was 60f0258, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  c82b6fe) — remote moved 60f0258 → 38b420b, verified
+  via ls-remote (remote head =
+  38b420b98565ac9b387516345a84dbc9f506e964 = local HEAD
+  at push time).
