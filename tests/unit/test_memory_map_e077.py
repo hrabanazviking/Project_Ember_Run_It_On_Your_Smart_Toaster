@@ -9,7 +9,11 @@ against the tree it describes:
 * tracked sizes of both member directories are exactly
   the E-057 figures re-pinned at E-076 (257 files /
   59,049,715 B mempalace; 58 files / 607,675 B
-  mimir-well) — neither member has changed since import;
+  mimir-well) — neither member has changed since import
+  (mempalace's pin stands; mimir-well's moved at E-078,
+  whose docket-111 FTS-sync fix is the member's first
+  change since import: 59 files / 614,283 B — the pin
+  below carries the E-078 figure under attribution);
 * the storage shapes the doc states are real: mimir-well's
   schema tables + FTS5 virtuals, Brunnr's two schema.sql
   shapes (vec0 + FTS5; pgvector HNSW + tsvector), and
@@ -66,7 +70,10 @@ def _tracked_size(rel: str) -> tuple[int, int]:
 
 def test_member_tracked_sizes_match_e057_repinned_at_e076():
     assert _tracked_size("mempalace") == (257, 59_049_715)
-    assert _tracked_size("mimir-well") == (58, 607_675)
+    # E-078 attribution: docket 111's FTS-sync triggers
+    # (schema.py + core.py) and the member regression test
+    # are mimir-well's first post-import change.
+    assert _tracked_size("mimir-well") == (59, 614_283)
 
 
 def test_mimir_schema_shape_is_as_mapped():

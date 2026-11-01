@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 01:42 EDT
-Status: IN PROGRESS — E-078 (comparison harness), started 2026-11-01 01:42 EDT by the 01:22 keeper tick (state at tick open: STOPPED, E-077 banked + pushed, remote verified fdb3197)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077
-Next slice: E-078 — the comparison harness: identical workloads through all three systems (recall, latency, size, budget per profile)
+Last updated: 2026-11-01 01:42 EST
+Status: STOPPED — E-078 banked this tick (01:42 EST keeper tick continued the stopped E-078 work staged by the 01:22 EDT tick: no live worker, state 65 min old in epoch time at tick open, staged tree unbanked)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078
+Next slice: E-079 — the verdict paper: unify / bound / retire, argued from E-078's numbers + ORIGINS provenance, presented for Volmarr's word
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3605,3 +3605,47 @@ review, not this slice.
   c1de031) — remote moved ee01b1e → fdb3197, verified via ls-remote
   (remote head = fdb31972f1c136aa9c05e8c5684eeac47d4498a0 = local HEAD
   at push time).
+
+## E-078 — The comparison harness (DONE, 2026-11-01)
+
+- Harness + record filed at `scripts/dev/compare_memory_systems.py` and
+  `docs/architecture/E-078_MEMORY_COMPARISON_HARNESS.md`: identical
+  synthetic workloads (20 facts + paraphrases + supersession + episodes)
+  through all three systems — mempalace, mimir-well, Brunnr — one corpus,
+  one query set, embedder held constant (ONNX all-MiniLM-L6-v2; no Ollama
+  reachable on the VM). Canonical run 2 numbers (raw reports in
+  `~/workspace/.verify-tmp/ember-e078/`): verbatim/term recall **20/20 all
+  three**; paraphrase mempalace **9/9**, Brunnr vector **9/9** / hybrid
+  **8/9**, mimir-well **0/9** (no semantic search — a measured absence);
+  only mimir-well answered importance/mood/current-truth exactly; only
+  Brunnr holds episodes as turns. Weight: mimir-well fits every profile;
+  mempalace fits none (~403 MiB peak RAM, ~185 MB deps + ~88 MB model).
+- **Bug found and fixed in scope — new docket 111:** mimir-well's FTS5
+  external-content tables had no sync triggers (schema.py's comment
+  claimed the opposite), so `fts_search` was blind to everything written
+  in the running session (as found: 0/20 verbatim, 0/20 term; LIKE 20/20).
+  Fix: `FTS_TRIGGERS` (insert/delete/update ×3 tables) in schema.py +
+  executed at open in core.py before the rebuild; regression suite
+  `mimir-well/tests/test_fts_sync.py` **6 passed** (re-verified this
+  tick). Post-fix FTS **20/20 / 20/20**. Consequences pinned: E-077 size
+  pin moved (59 files / 614,283 B), E-057 budget table + BUDGET_BOOK §7
+  re-measured (twelve-member total 131,450,297 B).
+- Test state: harness canonical run 2 all three children `ok`;
+  mimir-well full suite post-fix **353 passed, 9 failed** (6 = docket
+  10's Eye family, identical to baseline; 3 = hard wall-clock latency
+  tests proven environment — overlay fsync under synchronous=FULL,
+  same file 21 passed on /tmp; see E-078 doc §7). Root conformance
+  `test_memory_comparison_e078.py` 4 tests pass in every gate shape.
+- Slice gate (this tick's continuation, fresh runs on the staged tree;
+  logs in `~/workspace/.verify-tmp/ember-e078/gate-final/`): Run A
+  **1 error, 11 skipped**, exit 2 (docket 1, identical); Run B **1316
+  passed, 7 failed, 25 skipped, 1 warning** — the 6 proven environment
+  failures (CDE ×3, G ×2, J ×1, identical list) plus
+  `test_load_truth_e075`'s mini-run "hub exited early rc=1", E-076's
+  proven deep-TMPDIR socket-cap artifact (isolated default-TMPDIR
+  re-run this tick **8 passed**; E-078 touches no hub code); Run D
+  **1373 passed, 1 failed, 19 skipped, 1 warning** — the sole failure
+  is the same load-truth TMPDIR artifact (1370 + 4 new conformance
+  − 1 artifact vs E-077's Run D). No README touched.
+- **E-079 next** — the verdict paper, argued from these numbers +
+  ORIGINS provenance, presented for Volmarr's word.

@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from mimir_well.schema import (
-    ALL_TABLES, FTS_TABLES, INDEXES, PRAGMAS, SCHEMA_VERSION
+    ALL_TABLES, FTS_TABLES, FTS_TRIGGERS, INDEXES, PRAGMAS, SCHEMA_VERSION
 )
 from mimir_well.config import MimirConfig
 from mimir_well.guard import MemoryGuard, GuardResult, GuardSeverity
@@ -174,6 +174,13 @@ class RunaMemory:
                 cursor.execute(fts_sql)
             except sqlite3.OperationalError:
                 pass  # FTS table already exists
+
+        # E-078 (docket 111): keep the external-content FTS5
+        # indexes in sync with their content tables. Without
+        # these triggers the indexes only ever held what the
+        # rebuild below indexed at open time.
+        for trigger_sql in FTS_TRIGGERS:
+            cursor.execute(trigger_sql)
 
         # With content= mode, rebuild FTS indexes from existing data
         for fts_name in ["memories_fts", "knowledge_fts", "saga_events_fts"]:

@@ -11,8 +11,8 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,443,689
-bytes (125.35 MiB) of tracked files** between them, and
+imported members of the E-002 census) weigh **131,450,297
+bytes (125.36 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
 and Verdandi (17,032,082 B) — and in each case the weight
@@ -98,7 +98,12 @@ Verdandi's dependency declarations (docket 92, Verdandi
 half), and fixed its CLI integration tests (docket 6
 family): Verdandi now reads 193 files / 17,032,082 B,
 the total 131,443,689 bytes, the laptop miss 254,866
-bytes.)*
+bytes. Re-measured again at E-078, whose docket-111
+FTS-sync fix (triggers in `schema.py`, executed at open
+in `core.py`, plus the member regression tests) is
+mimir-well's first change since its import: mimir-well
+now reads 59 files / 614,283 B, the total 131,450,297
+bytes, the laptop miss unchanged at 254,866 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -142,7 +147,7 @@ table prices exactly that choice, per profile.
 | `Verdandi/` | 193 | 17,032,082 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
-| `mimir-well/` | 58 | 607,675 B | toaster | 20.8 MiB |
+| `mimir-well/` | 59 | 614,283 B | toaster | 20.8 MiB |
 | `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
 | `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
