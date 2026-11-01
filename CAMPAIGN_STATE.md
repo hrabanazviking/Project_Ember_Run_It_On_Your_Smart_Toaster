@@ -3710,3 +3710,9 @@ review, not this slice.
   test inside it); Run D **1379 passed, 0 failed, 19 skipped,
   1 warning**, exit 0 (1373 + 5 new + the load-truth test passing
   in this shape). No README touched; no member code touched.
+- E-079 push: banking commit 2469aaa pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 662d1f2,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  c404d41) — remote moved 662d1f2 → 2469aaa, verified via ls-remote
+  (remote head = 2469aaa2879e4262412a736d61db08c34780c89c = local HEAD
+  at push time).
