@@ -6,11 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 06:15 EST
-Status: IN PROGRESS — E-088 (06:12 keeper tick; first duty Run D re-verification running before new building)
-Status was: STOPPED — E-087 banked this tick (corruption & recovery drills: SIGKILL kill-mid-write rounds, fault-injection atomicity, sidecar/store corruption; THREE bugs found by the drills and fixed in scope — dockets 121 supersede atomicity + guard-block TypeError, 122 face save-raise across a committed write, 124 restore-over-live-WAL corruption; boundary 123 docketed for the E-092 gate; first duty Run D re-verified for E-085+E-086 at 1500 passed / 2 classified failures — clean-Run-D duty passes to E-088)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087
-Next slice: E-088 — Long-life soak: a simulated year of memory within budgets (accelerated fixtures). FIRST DUTY of E-088's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — a fully clean Run D is still not on record (see the E-087 entry).
+Last updated: 2026-11-01 07:05 EST
+Status: STOPPED — E-088 banked this tick (long-life soak: a simulated year of memory through the real face on the toaster profile — 7,300 turns + 377 fact rows + 365 diary files = 5,717,556 B in all, inside the toaster's 24 MiB year allowance; year-end decay floored 287 facts and deleted none; NEW docket 125 decay passes compound, owned by the E-092 gate; first duty Run D re-verified for E-085+E-086+E-087 at 1519 passed / 1 classified failure — clean-Run-D duty passes to E-089)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088
+Next slice: E-089 — Canon-shaped test data only (synthetic; no real companion history in fixtures). FIRST DUTY of E-089's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — a fully clean Run D is still not on record (see the E-088 entry).
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4421,3 +4420,79 @@ review, not this slice.
   verified via ls-remote (remote head =
   74e93f9bfbbaf3cf4278d44f1eabbe3577c5a8d3 = local HEAD
   at push time).
+
+## E-088 — Long-life soak (DONE, 2026-11-01)
+
+- **First duty discharged — Run D re-verified for E-085 +
+  E-086 + E-087, near-green, the single failure classified,
+  no defect against banked code.** Run D (extras supplied,
+  TMPDIR on the workspace overlay, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e088/gate/runD_firstduty.log`):
+  **1519 passed, 1 failed, 20 skipped, 27 warnings** in
+  565.47s — the closest to clean yet. The one failure is
+  named in the log: the load-truth live-hub artifact
+  (`test_load_truth_e075.py::test_live_mini_run_is_correct`),
+  the known contention class (E-083/E-085/E-086/E-087
+  precedent; load ~6–9; the same test failed standalone
+  under load minutes later, 1 failed / 7 passed). The
+  E-057 size pin PASSED (no mid-run tree edits this time).
+  A fully clean Run D is still not on record, so the
+  clean-Run-D duty passes forward once more — it heads
+  E-089's tick, now covering E-088's code as well.
+- **The soak** (`docs/architecture/E-088_LONG_LIFE_SOAK.md`;
+  battery `tests/unit/test_memory_soak_e088.py`; script +
+  results in `~/workspace/.verify-tmp/ember-e088/`): a
+  simulated year through the real memory face on the
+  TOASTER profile — 365 days × 20 turns = **7,300 turns**,
+  one fact a day (**365**, +12 monthly supersessions =
+  377 rows), 12 restarts, the real diary in chat's shape,
+  acceleration by timestamp placement only. Year total,
+  every store weighed closed: **5,717,556 B (5.45 MiB)**
+  — Brunnr 4,366,336 (591 B/episode) + mimir-well
+  528,384 + sidecar 137,731 (now priced, ~19 B/turn) +
+  diary 685,105 / 365 files. Steady monthly growth
+  446,445 B — under the toaster's 2 MiB monthly ceiling
+  in every month; the year fits the toaster's 24 MiB
+  twelve-month allowance with ~4.4× headroom. **No
+  ceiling moves; no lifecycle rule tightens.** Diary
+  judgement (E-082's open question): 365 files / 0.65
+  MiB — the one-file-per-day shape stands, no action.
+- **Year-end lifecycle**: one pass — decay decayed 78 /
+  "pruned" 287 / reinforced 0, and after it inspect
+  still showed **365 current facts, 12 old, 7,300
+  turns**: floored at importance 1, never deleted
+  (docket 113's honesty at year scale). Word search
+  still served the year (ferry: 47 current at limit 50).
+- **New docket 125 — decay passes compound.** Cadence
+  probe (script + live in the battery): importance 10
+  aged 60 days ends at **1 under two monthly passes vs
+  2 under one pass** — each pass re-applies the fact's
+  full age factor to its already-decayed importance,
+  so a monthly lifecycle cadence floors facts ~twice
+  as fast as the stated 30-day half-life. A semantics
+  choice (watermark vs stated cadence), not fixed in
+  scope; owner: the E-092 Part V gate, beside 112/113.
+- In-scope re-measure (E-080–E-087 precedent): E-057
+  table re-measured — core 131 files / 921,884 B
+  (budgets anchors only), mimir-well unchanged 59 /
+  618,769 B, twelve-member total 131,544,755 B, laptop
+  miss unchanged 254,866 B; both published copies
+  updated (E-057 doc + BUDGET BOOK §7).
+- Conformance: battery focal (extras supplied) **10
+  passed** (+ E-057 file 7 passed in the same run);
+  combined conformance (E-057 table + E-072 feed +
+  Part V E-077–E-088 files, 14 files) **197
+  passed, 1 skipped** (the live-WYRD skip, as E-086/
+  E-087). Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e088/gate/`): Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's battery
+  importorskipping sqlite_vec in the default env);
+  Run B **1321 passed, 7 failed, 34 skipped, 1 warning**
+  — the 6 proven environment failures plus the
+  load-truth artifact, the FAILED families identical to
+  E-087's Run B (first Run B also caught the new year
+  anchors unpublished under E-055's rule; published in
+  the BUDGET BOOK appendix in scope and the gate
+  re-run — that re-run is the one on record). No README touched; no
+  vendored code touched; no member code touched (the
+  cadence probe only read mimir-well's behaviour).
