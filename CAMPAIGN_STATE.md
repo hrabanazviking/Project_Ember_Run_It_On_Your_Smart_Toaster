@@ -4175,3 +4175,11 @@ review, not this slice.
   a green Run D is NOT claimed: the next keeper tick
   re-runs Run D first and records the result here.
   No README touched.
+- E-085 push: banking commit bebee70 pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was efbd054, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  93732f8) — remote moved efbd054 → bebee70, verified
+  via ls-remote (remote head =
+  bebee70d881a4a726981ff907788a0939956d36a = local HEAD
+  at push time).
