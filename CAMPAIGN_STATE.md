@@ -5148,3 +5148,9 @@ review, not this slice.
   20 skipped**, exit 0 — fully clean (1575 at E-094 + 6
   new, exact). No README touched; no vendored file
   touched; the ai-folder Kista was not accessed.
+- E-095 push: banking commit 2ef9385 (carrying the IN PROGRESS
+  commit 47e162f ahead of it) pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check — remote moved
+  18ef49b → 2ef9385, verified via ls-remote (remote head =
+  2ef9385978e38af637af077df828f57c4e7d3514 = local HEAD at push
+  time).
