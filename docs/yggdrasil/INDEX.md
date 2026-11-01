@@ -16,6 +16,17 @@ glue lives in `src/ember/yggdrasil/` (Phase-2+ scope). Nothing in
 this design tree commits the project; it commits us to the *next*
 conversation about what to build.
 
+> **Status note — MemPalace (E-091, 2026-11-01):** where this
+> tree presents MemPalace as an alternative or complement to
+> Mímir, that presentation is superseded by the Part V verdict
+> (E-079): MemPalace is **bounded** in Ember — optional,
+> non-default, never bundled, not part of the companion's
+> memory face (successor: `MemoryFace`, E-080, over Brunnr +
+> mimir-well) — and its honourable retirement is proposed,
+> awaiting Volmarr's word. See the banner on
+> `siblings/19_SIBLING_MEMPALACE.md` and the residue record,
+> `docs/architecture/E-091_VERDICT_RESIDUE.md`.
+
 ---
 
 ## What Yggdrasil is

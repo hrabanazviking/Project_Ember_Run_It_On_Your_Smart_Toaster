@@ -6,11 +6,11 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 09:22 EST
-Status: IN PROGRESS — E-091 (09:12 keeper tick; the verdict's residue: the bounded system's docs marked truthfully, successor named — under the E-079 fallback, no ruling received; the member itself is not removed, moved, or edited)
+Last updated: 2026-11-01 10:46 EST
+Status: STOPPED — E-091 banked (the verdict's residue: mempalace marked bounded wherever Ember's own living documents presented it otherwise, successor MemoryFace named — UNWIRED_INVENTORY row corrected in place (docket 52 EXECUTED), the Yggdrasil sibling doc bannered SUPERSEDED-IN-PART, BOUNDED, the corpus's two front doors carrying status notes; the member itself untouched, battery-pinned at 257 tracked files / 59,049,715 B; E-089 canon guard allowlist extended consciously to 13 files; gate fully clean after the Python-write EPERM stall cleared: combined extras-shape 218 passed / 1 live-skip, Run D 1552 passed, 0 failed)
 Status was: STOPPED — E-090 banked (docs: the memory model for users (plain) + builders — one document, two halves: Part A plain for users (the three kinds of memory, word-vs-meaning finding with the toaster's stated word mode, correct-vs-supersede, the four rights with docket 119/120 limits stated, persona separation, ageing without deletion, measured prices, the diary and WYRD neighbours, mempalace's proposed-not-decided status), Part B for builders (one face over two bounded engines, the sidecar, opening + graceful offline, the complete 31-operation contract surface, index-don't-merge, constants, the WYRD export boundary, open dockets 108/112/113/119/120/125, and the stated truth that chat is not yet rewired to the face); the pinning battery derives the operation list from MemoryFace itself; E-089's canon guard extended consciously — its allowlist gains this slice's battery as a twelfth file, governance-needle reason recorded; gate fully clean incl. Run D 1546 passed, 0 failed)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090
-Next slice: E-091 — The verdict's residue: the retired/bounded system's docs marked truthfully (superseded, with the successor named). The mempalace retirement still awaits Volmarr's word (E-079 §6): under the fallback, E-091 marks it bounded (non-default, never bundled, not part of the face) — the member itself is not removed or moved without his ruling. Docket 108 is owed at or before the E-092 gate.
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091
+Next slice: E-092 — Part V gate: one memory face live; migration proven; the verdict paper + Volmarr's word (where required) on record. The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence, not a ruling, is what the gate files. Docket 108 is owed at the E-092 gate, and docket 125's decay-compounding semantics rule.
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4710,3 +4710,78 @@ review, not this slice.
   verified via ls-remote (remote head =
   b567644aed710debc8ee254a9456561bbf5f0f12 = local HEAD
   at push time).
+
+## E-091 — The verdict's residue: docs marked truthfully (DONE, 2026-11-01)
+
+- **The markings** (record filed at `docs/architecture/E-091_VERDICT_RESIDUE.md`;
+  battery `tests/unit/test_memory_residue_e091.py`): under the E-079
+  fallback (no retirement ruling on record — silence never read as a
+  word), mempalace is marked **bounded** wherever Ember's own living
+  documents presented it otherwise, with the successor named
+  (`MemoryFace`, E-080, over Brunnr + mimir-well):
+  (1) `docs/UNWIRED_INVENTORY.md`'s mempalace row corrected in place —
+  **docket 52 EXECUTED** (the "likely abandoned or archival / content
+  unclear" characterisation, proven stale at E-012 — v3.3.5, 1,712
+  passing — replaced with the bounded truth; the wired=no fact stands;
+  the correction is dated on the file's face, not silent);
+  (2) `docs/yggdrasil/siblings/19_SIBLING_MEMPALACE.md` opens with a
+  SUPERSEDED-IN-PART, BOUNDED banner — the Brunnr-adapter / Bifrǫst
+  sub-backend integration it designs was never built (proven: `src/`
+  carries zero mempalace references; `src/ember/well/brunnr/` holds
+  only sqlite_vec + pgvector) and is superseded by E-079; its open
+  licence question answered (MIT, E-007); body unrewritten as the
+  pre-verdict design record;
+  (3) the corpus's two front doors (`10_SIBLING_MATRIX_OVERVIEW.md`,
+  `docs/yggdrasil/INDEX.md`) carry a MemPalace status note at their
+  heads; their tables stand unrewritten.
+- **The census** (case-insensitive, whole tree, raw list in
+  `~/workspace/.verify-tmp/ember-e091/census-files.txt`): **65 files**
+  outside the member carry the name; the residue doc dispositions
+  every class — dated campaign records stand as evidence (30), the
+  budget book's rows are the measured truth already (E-057 battery
+  re-derives them), the Yggdrasil interior's 18 further files are
+  marked **by reference** through the corpus's front doors (stated
+  openly as this slice's limit, not dressed as a rewrite), the elder
+  codex meta's bare enumeration rides to Part X, pyproject's mentions
+  are E-043's never-bundled exclusion already executed, and the
+  member's own documents are **not** marked — no README is ever
+  touched, and upstream's tree speaks in upstream's voice (the member
+  stands present and unmodified, battery-pinned at 257 tracked files
+  / 59,049,715 B).
+- **One guard extended, consciously**: the new battery carries the
+  governance needle "Volmarr's word", so it joins E-089's canon-guard
+  allowlist as its **thirteenth file**, reason recorded (the E-089 /
+  E-090 figures stand as the truth of their bankings; the extension
+  is this slice's act, noted in the E-091 doc). The guard pair re-ran
+  green inside the combined run. One battery defect found and fixed
+  in scope during focal runs: the first draft asserted "content
+  unclear" absent from the whole inventory — that phrase is also the
+  Hamr row's own business; the assert was scoped to the mempalace row.
+- Conformance + gate (logs in `~/workspace/.verify-tmp/ember-e091/gate/`):
+  focal battery **6 passed**; combined conformance — CORRECTION:
+  the first combined run was launched without the extras on
+  PYTHONPATH, so nine Part V battery files skipped at module
+  level on sqlite_vec: **67 passed, 9 skipped** in that shape;
+  the E-090-shape combined (extras first, 17 files) re-run at the
+  stall's discharge: **218 passed, 1 skipped** (the live-WYRD skip,
+  as E-086–E-090; 212 at E-090 + 6 new, exact);
+  Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical to E-090); Run B **1344 passed, 6 failed, 34 skipped,
+  1 warning** — the 6 proven environment failures ONLY (1338 + 6,
+  exact); Run D **1552 passed, 0 failed, 20 skipped, 27 warnings**,
+  exit 0 — fully clean (1546 at E-090 + 6 new, exact). E-057 re-measure unchanged
+  (docs + tests only; no member, no `src/` file touched). No README
+  touched; no member file touched; no code touched (the allowlist
+  edit is a test-file governance act, recorded).
+- **The stall, discharged (10:22 keeper tick)**: E-091 was built at
+  the 09:12 tick but could not bank — from ~09:42 EST the VM refused
+  every Python-process file-content write with EPERM (Run D attempt 1
+  reached 100% but its tail was corrupted by the block and pytest
+  crashed in its cache writer; no result was claimed), and the 10:12
+  tick's probe found the block still in force. This tick's probe
+  proves it has cleared: a real Python file-content write (write +
+  flush + fsync) reads its bytes back in /tmp, the workspace overlay,
+  and ~, and `os.write` lands 100 bytes in /tmp. Both owed runs were
+  then re-run in their extras shapes with `-p no:cacheprovider`
+  (combined-extras.log, runD-clean.log on disk) and are the counts
+  above. The banking follows in this commit.

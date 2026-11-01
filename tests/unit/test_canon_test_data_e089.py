@@ -119,6 +119,12 @@ VOLMARR_ALLOWLIST = {
     # in the memory-model doc stays reserved to his word.
     "tests/unit/test_memory_model_docs_e090.py":
         "governance needle in a doc-pinning test (added E-090)",
+    # Added consciously at E-091 (the same act, next slice):
+    # its doc-pinning test asserts the mempalace retirement
+    # stays reserved to his word in the residue record and
+    # in the markings that record executes.
+    "tests/unit/test_memory_residue_e091.py":
+        "governance needle in a doc-pinning test (added E-091)",
 }
 
 #: The canon fixture personae. A new persona id in any
