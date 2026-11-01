@@ -84,6 +84,31 @@ episode persona tags + the fact-index map. It is face
 bookkeeping, not a third store: every fact and turn it
 points at lives in its bounded engine.
 
+The user's rights (E-084): what the companion remembers
+about you is yours to see and to change. The face offers
+:meth:`MemoryFace.inspect_memory` and
+:meth:`MemoryFace.inspect_fact` (see everything, in plain
+words), :meth:`MemoryFace.correct_fact` (fix a fact that
+is wrong — same fact, corrected, not a new one hiding the
+old), :meth:`MemoryFace.export_memory` (take your memory
+out as one plain JSON-shaped bundle, optionally written
+to a file you carry), :meth:`MemoryFace.delete_fact`
+(forget one thing), and
+:meth:`MemoryFace.delete_all_memory` (forget *everything*
+for one persona — total, and guarded by an exact
+confirmation phrase so no slip or stray call can trigger
+it). Honest limits, stated in every result they touch:
+deleting a living fact removes its row in mimir-well for
+real (the member's audit keeps only a hash of the id,
+never the words); deleting a conversation turn is
+*logical* — Brunnr's handle has no episode delete
+(docket 119), so the turn is tombstoned in the face's
+sidecar, never served, inspected, or exported again, but
+its physical bytes await a handle-level delete; and
+documents added as documents are shared grounding
+(E-025/E-035), not one persona's memory, so they are
+never part of a persona export or a persona deletion.
+
 Lifecycle (E-082): growth, decay, and pruning live on the
 face as :meth:`MemoryFace.lifecycle_report`,
 :meth:`MemoryFace.run_decay` (mimir-well's own Ebbinghaus
@@ -154,6 +179,11 @@ FACT_BYTES_PER_FACT = 745
 #: 585 B per episode (E-050's steady-state marginal
 #: 585.4 B/episode; E-078 measured 585 B/episode).
 EPISODE_BYTES_PER_TURN = 585
+
+#: The exact words a caller must say to delete *all* of a
+#: persona's memory (E-084). Anything else — a typo, an
+#: empty string, a near-miss — refuses and deletes nothing.
+DELETE_ALL_CONFIRMATION = "delete everything"
 
 #: Profiles whose storage story pays the index price by
 #: default. The toaster is absent on purpose (verdict
@@ -258,6 +288,7 @@ class _Sidecar:
         self.episode_persona: dict[str, str] = {}
         self.fact_chunk: dict[str, int] = {}
         self.fact_persona: dict[str, str] = {}
+        self.deleted_episodes: set[int] = set()
         self.index_document_id: Optional[int] = None
         if self.path.exists():
             try:
@@ -267,6 +298,9 @@ class _Sidecar:
                     str(k): int(v) for k, v in data.get("fact_chunk", {}).items()
                 }
                 self.fact_persona = dict(data.get("fact_persona", {}))
+                self.deleted_episodes = {
+                    int(x) for x in data.get("deleted_episodes", [])
+                }
                 doc_id = data.get("index_document_id")
                 self.index_document_id = int(doc_id) if doc_id is not None else None
             except (OSError, ValueError, TypeError):
@@ -281,6 +315,7 @@ class _Sidecar:
             "episode_persona": self.episode_persona,
             "fact_chunk": self.fact_chunk,
             "fact_persona": self.fact_persona,
+            "deleted_episodes": sorted(self.deleted_episodes),
             "index_document_id": self.index_document_id,
         }
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
@@ -670,6 +705,287 @@ class MemoryFace:
         return row
 
     # ------------------------------------------------------------------ #
+    # The user's rights — inspect, correct, export, delete (E-084)        #
+    # ------------------------------------------------------------------ #
+
+    def _all_facts(self, persona: str) -> list[dict]:
+        """Every living-fact row a persona owns, current and
+        superseded alike, through the member's own search
+        (an empty word matches every row it owns)."""
+        if self._mimir is None:
+            return []
+        return list(self._mimir.search_memories(
+            "", limit=100_000, user_id=persona))
+
+    def _all_turns(self, persona: str) -> list[Episode]:
+        """Every turn a persona owns, oldest first, with
+        deleted turns (docket 119 tombstones) never served."""
+        if self._brunnr is None:
+            return []
+        width = 16
+        while True:
+            window = self._brunnr.recent_episodes(width)
+            if len(window) < width:
+                break
+            width *= 2
+        return [
+            ep for ep in window
+            if ep.id not in self._sidecar.deleted_episodes
+            and (self._sidecar.episode_persona.get(str(ep.id))
+                 or self.default_persona_id) == persona
+        ]
+
+    def inspect_fact(
+        self, fact_id: int, *, persona_id: Optional[str] = None
+    ) -> Optional[dict]:
+        """See one remembered fact, exactly as stored.
+
+        Only its owner's persona can see it; anyone else —
+        and any invalid persona id — is shown nothing.
+        """
+        if self._mimir is None:
+            return None
+        persona = self._persona(persona_id)
+        if persona is None:
+            return None
+        return self._mimir.get_memory(int(fact_id), user_id=persona)
+
+    def inspect_memory(
+        self, *, persona_id: Optional[str] = None
+    ) -> dict:
+        """See everything the companion remembers for you.
+
+        Plain words first: how many facts are still believed
+        true, how many are old versions kept as history, and
+        how many conversation turns are remembered — then
+        the facts and turns themselves. Another persona's
+        memory is never part of the answer.
+        """
+        persona = self._persona(persona_id)
+        if persona is None:
+            return {"persona": None, "facts": [], "old_facts": [],
+                    "turns": [], "note": self._invalid_persona_note(persona_id)}
+        if self._mimir is None:
+            return {"persona": persona, "facts": [], "old_facts": [],
+                    "turns": [], "note": f"mimir-well {self.mimir_state}"}
+        facts = self._all_facts(persona)
+        current = [f for f in facts if f.get("is_current", 1)]
+        old = [f for f in facts if not f.get("is_current", 1)]
+        turns = self._all_turns(persona)
+        return {
+            "persona": persona,
+            "facts": current,
+            "old_facts": old,
+            "turns": turns,
+            "note": (
+                f"{persona} has {len(current)} fact(s) still believed "
+                f"true, {len(old)} old version(s) kept as history, and "
+                f"{len(turns)} remembered conversation turn(s). Old "
+                "versions are shown so you can see what changed; only "
+                "the facts still believed true shape what the companion "
+                "says."),
+        }
+
+    def correct_fact(
+        self, fact_id: int, new_content: str, *,
+        persona_id: Optional[str] = None,
+    ) -> FactResult:
+        """Fix a fact that is wrong — in place, honestly.
+
+        The same fact keeps its id and its history in the
+        member's audit; its words are replaced with yours.
+        A fact you do not own cannot be corrected from here,
+        and the refusal changes nothing. If the fact was
+        indexed for meaning search, its old index entry is
+        dropped and the corrected words are indexed afresh
+        under the profile's usual rule, so meaning search
+        never serves the wrong words under a corrected fact.
+        """
+        if self._mimir is None:
+            return FactResult(None, False, f"mimir-well {self.mimir_state}")
+        persona = self._persona(persona_id)
+        if persona is None:
+            return FactResult(None, False,
+                              self._invalid_persona_note(persona_id))
+        if not new_content or not new_content.strip():
+            return FactResult(None, False,
+                              "refused: the corrected words are empty; "
+                              "nothing was changed")
+        if self._mimir.get_memory(int(fact_id), user_id=persona) is None:
+            return FactResult(None, False,
+                              "refused: that fact is not this persona's "
+                              "to correct; nothing was changed")
+        ok = self._mimir.update_memory(
+            int(fact_id), content=new_content,
+            source="ember-memory-face/correct", user_id=persona)
+        if not ok:
+            return FactResult(None, False,
+                              "refused by mimir-well; nothing was changed")
+        was_indexed = str(fact_id) in self._sidecar.fact_chunk
+        if was_indexed:
+            del self._sidecar.fact_chunk[str(fact_id)]
+            self._sidecar.fact_persona.pop(str(fact_id), None)
+            self._sidecar.save()
+            indexed, note = self._maybe_index(int(fact_id), new_content, persona)
+            return FactResult(int(fact_id), indexed,
+                              "corrected; " + note)
+        return FactResult(int(fact_id), False,
+                          "corrected; the fact was not indexed, and "
+                          "still is not")
+
+    def export_memory(
+        self, *, persona_id: Optional[str] = None,
+        path: Optional[Path] = None,
+    ) -> dict:
+        """Take your memory out — one plain bundle, yours only.
+
+        The bundle holds the persona's facts (still-true and
+        old versions, marked which is which) and remembered
+        turns, and nothing of anyone else's. With ``path``
+        it is also written there as JSON, replaced
+        atomically, for you to carry away. Documents added
+        as documents are shared grounding, not one
+        persona's memory, and are never in the bundle.
+        """
+        seen = self.inspect_memory(persona_id=persona_id)
+        persona = seen["persona"]
+        if persona is None:
+            return {"kind": "ember memory export", "version": 1,
+                    "persona": None, "facts": [], "old_facts": [],
+                    "turns": [], "note": seen["note"]}
+        turns = [{
+            "id": ep.id,
+            "you_said": ep.operator_input,
+            "ember_replied": ep.ember_reply,
+            "when": (ep.started_at.isoformat()
+                     if ep.started_at is not None else None),
+        } for ep in seen["turns"]]
+        bundle = {
+            "kind": "ember memory export",
+            "version": 1,
+            "persona": persona,
+            "facts": seen["facts"],
+            "old_facts": seen["old_facts"],
+            "turns": turns,
+            "counts": {
+                "facts": len(seen["facts"]),
+                "old_facts": len(seen["old_facts"]),
+                "turns": len(turns),
+            },
+            "note": (
+                "This is everything the companion remembers for "
+                f"{persona}: the facts it still believes true, the "
+                "old versions it replaced, and the conversation "
+                "turns it kept. Nothing here belongs to anyone else."),
+        }
+        if path is not None:
+            target = Path(path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            tmp = target.with_suffix(target.suffix + ".tmp")
+            tmp.write_text(json.dumps(bundle, indent=1, sort_keys=True,
+                                      default=str), encoding="utf-8")
+            os.replace(tmp, target)
+            bundle = {**bundle, "written_to": str(target)}
+        return bundle
+
+    def delete_fact(
+        self, fact_id: int, *, persona_id: Optional[str] = None
+    ) -> dict:
+        """Forget one fact, for real.
+
+        Its row is removed from the memory store (the
+        member's audit keeps only a hash of its number,
+        never its words) and its meaning-search entry is
+        dropped. A fact you do not own cannot be forgotten
+        from here, and the refusal changes nothing.
+        """
+        persona = self._persona(persona_id)
+        if persona is None:
+            return {"deleted": False, "note": self._invalid_persona_note(persona_id)}
+        if self._mimir is None:
+            return {"deleted": False, "note": f"mimir-well {self.mimir_state}"}
+        if self._mimir.get_memory(int(fact_id), user_id=persona) is None:
+            return {"deleted": False,
+                    "note": "nothing deleted: that fact is not this "
+                            "persona's to forget"}
+        ok = self._mimir.delete_memory(
+            int(fact_id), source="ember-memory-face/delete",
+            user_id=persona)
+        if not ok:
+            return {"deleted": False, "note": "refused by mimir-well; "
+                                              "nothing was deleted"}
+        if str(fact_id) in self._sidecar.fact_chunk:
+            del self._sidecar.fact_chunk[str(fact_id)]
+            self._sidecar.fact_persona.pop(str(fact_id), None)
+            self._sidecar.save()
+        return {"deleted": True, "fact_id": int(fact_id),
+                "note": "forgotten: the fact is gone from the memory "
+                        "store and from meaning search"}
+
+    def delete_all_memory(
+        self, *, persona_id: Optional[str] = None, confirmation: str = "",
+    ) -> dict:
+        """Forget *everything* for one persona. Total.
+
+        Guarded by the exact confirmation words
+        (:data:`DELETE_ALL_CONFIRMATION`): anything else
+        refuses and deletes nothing. When it runs: every
+        living fact the persona owns — still-true and old
+        versions alike — is removed from the store, every
+        index entry is dropped, and every remembered turn
+        is tombstoned so it is never served, inspected, or
+        exported again. One honest limit: a turn's physical
+        bytes stay in the document store because its handle
+        has no delete (docket 119) — forgotten here means
+        unreachable and uncounted, and the report says so.
+        No other persona's memory is touched.
+        """
+        persona = self._persona(persona_id)
+        if persona is None:
+            return {"deleted": False, "note": self._invalid_persona_note(persona_id)}
+        if confirmation != DELETE_ALL_CONFIRMATION:
+            return {"deleted": False,
+                    "note": "nothing deleted: to forget everything, "
+                            f"say exactly {DELETE_ALL_CONFIRMATION!r}"}
+        if self._mimir is None:
+            return {"deleted": False, "note": f"mimir-well {self.mimir_state}"}
+        facts = self._all_facts(persona)
+        facts_deleted = 0
+        for fact in facts:
+            if self._mimir.delete_memory(
+                    int(fact["id"]), source="ember-memory-face/delete-all",
+                    user_id=persona):
+                facts_deleted += 1
+        turns = self._all_turns(persona)
+        for ep in turns:
+            if ep.id is not None:
+                self._sidecar.deleted_episodes.add(int(ep.id))
+                self._sidecar.episode_persona.pop(str(ep.id), None)
+        dropped = 0
+        for fact_id_s, owner in list(self._sidecar.fact_persona.items()):
+            if owner == persona:
+                self._sidecar.fact_chunk.pop(fact_id_s, None)
+                del self._sidecar.fact_persona[fact_id_s]
+                dropped += 1
+        self._sidecar.save()
+        return {
+            "deleted": True,
+            "persona": persona,
+            "facts_deleted": facts_deleted,
+            "turns_forgotten": len(turns),
+            "index_entries_dropped": dropped,
+            "turn_physical_bytes_reclaimed": 0,
+            "note": (
+                f"everything forgotten for {persona}: "
+                f"{facts_deleted} fact(s) removed from the memory "
+                f"store and {len(turns)} turn(s) forgotten. The "
+                "turns' stored bytes are not physically reclaimed "
+                "yet — the document store's handle has no delete "
+                "(docket 119) — but no turn can be seen, searched, "
+                "or exported from here ever again."),
+        }
+
+    # ------------------------------------------------------------------ #
     # Lifecycle — growth, decay, pruning (E-082)                          #
     # ------------------------------------------------------------------ #
 
@@ -905,8 +1221,9 @@ class MemoryFace:
             window = self._brunnr.recent_episodes(width)
             mine = [
                 ep for ep in window
-                if (self._sidecar.episode_persona.get(str(ep.id))
-                    or self.default_persona_id) == persona
+                if ep.id not in self._sidecar.deleted_episodes
+                and (self._sidecar.episode_persona.get(str(ep.id))
+                     or self.default_persona_id) == persona
             ]
             # A wider window only ever adds *older* episodes
             # at the front, so once `limit` of the persona's
@@ -919,6 +1236,7 @@ class MemoryFace:
 
 __all__ = [
     "CANONICAL_MIMIR_DB_PATH",
+    "DELETE_ALL_CONFIRMATION",
     "EPISODE_BYTES_PER_TURN",
     "FACT_BYTES_PER_FACT",
     "FACT_INDEX_SOURCE",

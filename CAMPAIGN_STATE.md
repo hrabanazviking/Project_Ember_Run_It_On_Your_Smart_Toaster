@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 03:52 EST
-Status: IN PROGRESS — E-084 (the user's memory rights: inspect, correct, export, delete-total)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083
-Next slice: E-084 — the user's memory rights: inspect, correct, export, delete-total (plain-worded working operations)
+Last updated: 2026-11-01 04:05 EST
+Status: STOPPED — E-084 banked this tick (the user's memory rights live on the face; E-085 next)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084
+Next slice: E-085 — Memory ↔ Verdandi: conversation_logger's records and memory's facts reconciled (one truth, two views or a stated boundary)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4010,3 +4010,70 @@ review, not this slice.
   via ls-remote (remote head =
   910a6b2c1fac74d5ca7b4aea2ccdb70fa456e305 = local HEAD
   at push time).
+
+## E-084 — The user's memory rights (DONE, 2026-11-01)
+
+- Rights live on the face (`src/ember/well/memory_face.py`,
+  +14,425 B core), filed at
+  `docs/architecture/E-084_USER_MEMORY_RIGHTS.md`:
+  `inspect_memory()` / `inspect_fact()` (everything a
+  persona owns — facts still true, old versions shown as
+  history, remembered turns — in plain counts first),
+  `correct_fact()` (in place through the member's audited
+  update: same id, new words; an indexed fact's old entry
+  is dropped and the corrected words re-indexed, so
+  meaning search never serves the wrong words),
+  `export_memory()` (one plain bundle, the persona's own
+  memory only, optionally written as JSON to a file the
+  user carries), `delete_fact()` (row removed, index
+  entry dropped), and `delete_all_memory()` (total for
+  one persona, guarded by the exact confirmation words
+  `"delete everything"` — empty, near-miss, and
+  different-casing attempts all refuse and delete
+  nothing). Every operation is fenced by the E-083
+  persona wall: another persona's fact cannot be seen,
+  corrected, exported, or deleted from here, and the
+  refusals change nothing.
+- **Probe first:** all six operations were MISSING on
+  the arriving face (probe in
+  `~/workspace/.verify-tmp/ember-e084/`); the same probe
+  proved the member paths the face builds on —
+  `search_memories("")` enumerates exactly a persona's
+  rows (current + history, no raw SQL, docket 109 kept),
+  `update_memory` corrects with ownership enforced, and
+  `delete_memory` refuses a wrong persona and deletes
+  for the right one.
+- **Two honest limits, new dockets 119 + 120:** (119)
+  Brunnr's handle has no episode delete — delete-total
+  tombstones the persona's turns in the face's sidecar
+  (never served, inspected, or exported again; tombstones
+  survive a face reopen, including the resurrection trap
+  where an untagged tombstoned turn would otherwise
+  reappear as a default-persona turn); every delete-all
+  report states `turn_physical_bytes_reclaimed: 0` —
+  physical reclamation waits on a handle-level delete,
+  owed at or before the E-092 gate beside docket 112.
+  (120) mimir-well's audit keeps only content-free
+  hashes after a delete/update, never the words —
+  stated so deletion is neither over- nor under-claimed.
+- In-scope re-measure (E-080/E-082/E-083 precedent):
+  the E-057 table re-measured for the core's growth —
+  core 131 files / 884,982 B, twelve-member total
+  131,503,367 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_rights_e084.py`
+  **17 passed**; combined Part V conformance (E-080 +
+  E-081 + E-082 + E-083 + E-084 files) **77 passed**.
+  Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e084/gate/`): Run A
+  **1 error, 16 skipped**, exit 2 (docket 1, identical;
+  +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1322 passed, 6 failed, 30
+  skipped, 1 warning** — the 6 are the proven
+  environment failures, identical list to E-083 (the
+  load-truth artifact did not trigger this tick; its
+  tests passed inside the run); Run D **1456 passed,
+  0 failed, 19 skipped**, exit 0 (1438 + 17 new + the
+  E-083 artifact test green this run, vs E-083's Run D).
+  No README touched; no member code touched.
