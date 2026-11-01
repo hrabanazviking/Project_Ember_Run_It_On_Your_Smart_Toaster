@@ -3321,3 +3321,9 @@ review, not this slice.
   exit 0 (1342 + 5). Logs in
   `~/workspace/.verify-tmp/ember-e074/gate/`. No README touched.
 - E-075 next — Load truth: hub throughput per profile, measured.
+- E-074 push: banking commit e8d0e17 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 1cf41c4,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  12de801) — remote moved 1cf41c4 → e8d0e17, verified via ls-remote
+  (remote head = e8d0e17918e9300664bc581a196d9478999c8054 = local HEAD
+  at push time).
