@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 00:47 EDT
-Status: IN PROGRESS — E-077 (Part V opens: both memory systems mapped in depth)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076
-Next slice: E-077 — Part V opens: both memory systems mapped (mempalace + mimir-well, storage shapes, retrieval, consumers, test state)
+Last updated: 2026-11-01 01:35 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III + Part IV CLOSED, Part V open at E-078
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077
+Next slice: E-078 — the comparison harness: identical workloads through all three systems (recall, latency, size, budget per profile)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3528,3 +3528,74 @@ review, not this slice.
   this tick's IN PROGRESS marker f27683e) — remote moved 59f740b →
   cdf4e04, verified via ls-remote (remote head =
   cdf4e04777a74b95da9719f2f9545ca51b054e37 = local HEAD at push time).
+
+## E-077 — Both memory systems mapped, in depth (DONE, 2026-11-01)
+
+- Map filed at `docs/architecture/E-077_BOTH_MEMORY_SYSTEMS_MAPPED.md`:
+  E-012 executed in depth for **three** systems — mempalace,
+  mimir-well, and the core's own Brunnr, the incumbent Part V
+  must judge alongside the two members. Headline proven facts:
+  neither member has changed by one byte since its import
+  (git log: one commit each, f7ef473 / 911eeba, 2026-05-21;
+  tracked sizes byte-identical to E-057 as re-pinned at E-076 —
+  mempalace 257 files / 59,049,715 B, mimir-well 58 /
+  607,675 B, pinned by this slice's conformance); the core
+  still uses neither member (zero references in `src/ember/`);
+  storage shapes stated exactly (mempalace: palace directory,
+  Chroma drawers+closets over chroma.sqlite3 + HNSW, separate
+  KG SQLite, 384-dim ONNX MiniLM; mimir-well: one SQLite file,
+  schema v9, 10 tables + 3 FTS5, the living `memories` row;
+  Brunnr: sqlite_vec / pgvector schema.sql shapes, documents /
+  chunks / episodes, 768-dim Ollama embed via Smidja);
+  retrieval stated exactly (mempalace hybrid 0.6 vector /
+  0.4 BM25 + closet boost + BM25-only fallback + Layers 0-3,
+  MCP exactly 30 tool_* functions; mimir-well FTS5 + structured
+  recall, no vector code anywhere; BrunnrHandle exactly 12
+  protocol methods, RRF hybrid with E-036's tie-break).
+- New consumer evidence beyond E-012: bifrost carries **two**
+  independent raw-SQL consumers of mimir-well's shape (bridge
+  `memory_bridge.py` + core `core.py:_ensure_mimir` via
+  `config.mimir_db_path`), neither through `RunaMemory` —
+  docket 51's three-path disagreement stands exactly (library
+  `~/.mimir_well/mimir_well.db` vs Eye/bifrost
+  `~/.hermes/memory/runa_memory.db`; Verdandi's check alone
+  follows the library). New dockets: 108 (mimir-well's flask
+  dep bounded below only — E-044 law unapplied; Part V hygiene),
+  109 (four readers/writers of the mimir shape, zero via its
+  own class; E-080 owner, Part VIII consulted), 110 (Brunnr
+  episodes carry no conversation/persona column at the adapter
+  layer; E-080/E-083 owner).
+- Test state fresh this slice: mimir-well full suite
+  **350 passed, 6 failed** — identical to E-005/E-012, the 6
+  being docket 10's Eye family; its recall-quality file ran
+  **21 passed** at calm load, proving this tick's earlier
+  apparent latency failures (two <50 ms wall-clock tests,
+  starved at load 6-11 by sibling suites) the contention
+  class. mempalace focal five files (searcher / hybrid /
+  KG / layers / closets) **170 passed** with the proxy env
+  cleaned; the dirty-proxy shape (134 / 20F / 16E) is
+  E-005's httpx `Invalid port: ':1]'` signature throughout.
+  mempalace's full suite NOT re-run (member byte-identical;
+  E-012's corrected 1712 / 14 / 1 / 106 stand; E-078 owns
+  the next full measurement under docket 54). Brunnr focal
+  + conformance 25 tests: 24 passed + this slice's own
+  conformance assertion error (bifrost path literal lives
+  in `bifrost/config.py`, not `core.py` — §6 already said
+  so), fixed in scope; conformance then **8 passed**.
+- Environment note: the E-075 write transient recurred
+  (~01:12, minutes of EPERM/ENOENT on scattered writes +
+  Python tempfile creation, /tmp carrying 7,258 sibling
+  entries); it cleared on its own, no work lost — doc and
+  test verified on disk via git status before banking.
+- Slice gate: Run A **1 error, 11 skipped**, exit 2
+  (docket 1, identical to E-076); Run B **1312 passed,
+  7 failed, 25 skipped, 1 warning** (1305 + 8 new − 1:
+  the 6 proven environment failures, identical list,
+  plus `test_load_truth_e075`'s mini-run failing
+  "hub exited early rc=1" — E-076's proven deep-TMPDIR
+  socket-cap artifact, isolated short-TMPDIR re-run
+  **8 passed**, no hub code touched); Run D **1370
+  passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (1362 + 8). Logs in `~/workspace/.verify-tmp/ember-e077/`.
+  No README touched.
+- **Part V OPEN.** E-078 next — the comparison harness.
