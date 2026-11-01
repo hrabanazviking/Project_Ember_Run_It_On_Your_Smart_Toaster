@@ -4607,3 +4607,10 @@ review, not this slice.
   vendored code touched; no member code touched (the
   load_truth fix is the instrument's own file, in
   Verdandi's tracked tree, re-measured above).
+- E-089 push: banking commit 24fe70e (carrying the
+  IN PROGRESS commit 15c87ff ahead of it) pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check — remote moved 63e7043 → 24fe70e,
+  verified via ls-remote (remote head =
+  24fe70ea832ea1c7be7433a1c026cde3c0590fa7 = local HEAD
+  at push time).
