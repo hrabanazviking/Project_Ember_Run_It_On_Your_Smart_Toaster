@@ -4077,3 +4077,12 @@ review, not this slice.
   0 failed, 19 skipped**, exit 0 (1438 + 17 new + the
   E-083 artifact test green this run, vs E-083's Run D).
   No README touched; no member code touched.
+- E-084 push: banking commit fd8fbe2 pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was 706b724, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  b2d954f) — remote moved 706b724 → fd8fbe2, verified
+  via ls-remote (remote head =
+  fd8fbe2da7a0598ba8317fa8f57dbe5d83edf019 = local HEAD
+  at push time).
+
