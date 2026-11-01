@@ -3858,3 +3858,9 @@ review, not this slice.
   is E-080's noted pgvector whole-module guard shape, 13
   tests skipping as one module — zero failures either way).
   No README touched; no member code touched.
+- E-081 push: banking commit fb24043 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 2f66c54,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  a42b722) — remote moved 2f66c54 → fb24043, verified via ls-remote
+  (remote head = fb240430df319dabc1e1acd479805f84c1bf23cc = local HEAD
+  at push time).
