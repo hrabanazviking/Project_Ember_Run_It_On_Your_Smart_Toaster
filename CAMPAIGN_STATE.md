@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 00:02 EDT
-Status: IN PROGRESS — E-076 (Part IV gate), started 23:52 EDT keeper tick (2026-10-31); the standing E-075 Run D re-verification duty runs first, before the gate work proper
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075
-Next slice: E-076 — Part IV gate: VD-RM's remaining road closed or re-roaded with owners; event contract frozen; summary filed (after the E-075 Run D re-verification duty below)
+Last updated: 2026-11-01 00:39 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III + Part IV CLOSED, Part V open at E-077
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076
+Next slice: E-077 — Part V opens: both memory systems mapped (mempalace + mimir-well, storage shapes, retrieval, consumers, test state)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3430,3 +3430,95 @@ review, not this slice.
   ancestor; the push also carried this tick's IN PROGRESS marker 31993df)
   — remote moved d04fa5a → 59f740b, verified via ls-remote (remote head =
   59f740bce1373c2ee9bcfbf4a99901431fad891e = local HEAD at push time).
+
+## E-076 — Part IV gate (DONE, 2026-11-01)
+
+- Gate filed at `docs/architecture/E-076_PART_IV_GATE.md`:
+  **Part IV gate PASS** — all seven criteria checked (G1–G7).
+  VD-RM's remaining road is fully accounted: the E-060
+  retirements (distributed heartbeat, REST API) and
+  double-count strikes (Prometheus, emotional architecture)
+  stand; v0.4.0 "Valhalla" stands closed; `pulse_metrics`
+  verified CLOSED live at this gate (a real
+  `heartbeat.cli pulse` reported prediction + anomalies with
+  `score_source: 'pulse_metrics'`); VD-RM v1.0.0 "Yggdrasil —
+  Production-ready" re-roaded with five stated criteria to
+  its judging owner **E-204** (rows a/b/d true today; the
+  real-device load truth and the E-199 showcase rows are
+  future evidence). Event contract v1 declared **FROZEN**
+  at this gate on E-061's own versioning terms (breaking
+  change = version bump, never an edit; new types register
+  with their producer; the E-067/E-068 addenda are part of
+  the frozen registry; docket 103's absence is the v1
+  verdict).
+- Three repairs landed in scope — the gate review owned all
+  three, and a gate that owns a bug does not merely describe
+  it. **Docket 106 CLOSED:** the hub's `cmd_stop` aliveness
+  probe was zombie-blind (`os.kill(pid, 0)` answers True for
+  a zombie), so a SIGTERM-killed hub was reported "could not
+  be killed"; `nervous_system.py` gains `_pid_alive` (reads
+  the /proc state, zombie = dead, kill-probe fallback where
+  /proc is absent), proven against a real forked zombie, a
+  zombie pid file through `cmd_stop` itself, and a live
+  sleeper. **Docket 92, Verdandi half CLOSED:**
+  `Verdandi/pyproject.toml`'s two unbounded requirements
+  (`pytest-asyncio>=0.23`, `setuptools>=68.0`) are bounded
+  both ways (`<2`, `<82`), pinned by conformance. **Docket 6
+  family CLOSED for the CLI file:**
+  `Verdandi/tests/test_heartbeat_integration.py`'s five CLI
+  tests no longer run in `Path.home() / "Verdandi"` (exists
+  only on the Pi deployment — the 5 failures of the E-072
+  correction) but in the member's own dir derived from
+  `__file__`; the pulse/react pair additionally runs against
+  an isolated HOME + VERDANDI_HOME, because a pulse judges
+  its host (Huginn scanned this VM's 175 home git repos in
+  1m52s wall and `pulse` exits 1 on a critical pulse state).
+  All five pass in ~5 s.
+- Carried with owners, not lost: docket 100 → E-136 (with
+  the gate's stated verdict: Bifröst pruning is hygiene,
+  never privacy; E-063's delete right is the privacy
+  instrument), 101 → E-187 (stimulus-only publish is a v2
+  question), 102 → E-085 first review / E-204 backstop,
+  103's v2 candidacy → E-204, 104 → E-085 (as E-072
+  assigned), 105 → E-182 (native deploy recipes rewrite the
+  systemd units), 107 → E-191 (load truth on a real device,
+  criteria in the gate doc). NOT PROVEN at this gate: hub
+  throughput on real tiny hardware, a typed nerve
+  subscriber, the v1.0.0 claim.
+- The E-075 re-verification duty is DISCHARGED (gate §5):
+  re-run at this tick's opening under 1-minute load
+  25.4–27.2 — Run D attempt **1354 passed, 1 failed**, the
+  one failure (load-truth mini-run, "hub exited early
+  rc=1") proven a method artifact of that attempt's deep
+  workspace TMPDIR (socket path over the AF_UNIX cap;
+  isolated short-TMPDIR re-run of the file **8 passed**);
+  isolated cold-start at that load failed honestly (median
+  8.66 s vs 5.00 s cap, the E-075 contention shape). The
+  gate's own canonical Run D (short TMPDIR) is the closing
+  run — green, both duty tests inside it. No
+  re-verification duty carries past this gate. Logs in
+  `~/workspace/.verify-tmp/ember-e076/reverify/` +
+  `gate/`. (One crossed background notification during
+  this tick reported a phantom "422 passed, 1 failed" for
+  the heartbeat set; disk truth was used throughout — the
+  intermediate run's own log reads 421 passed / 2 failed,
+  the final 423 / 0.)
+- E-057 table re-measured for this slice's Verdandi
+  changes (Verdandi 193 files / 17,032,082 B; core
+  unchanged 130 / 831,912 B; total 131,443,689 B; laptop
+  miss 254,866 B), both published copies updated.
+  Conformance: `tests/unit/test_part_iv_gate_e076.py`
+  **7 passed**; combined Part IV conformance (E-055 +
+  E-057 pins + E-061–E-076) **266 passed** (259 + 7);
+  Verdandi heartbeat + Skuld + integration set
+  **423 passed**, exit 0 (canonical 374 + integration 49,
+  one run, final tree); Verdandi conversation focal set
+  **101 passed**. Slice gate: Run A **1 error, 11
+  skipped**, exit 2 (docket 1, unchanged); Run B **1305
+  passed, 6 failed, 25 skipped, 1 warning** (1298 + 7;
+  the 6 are the proven environment failures, FAILED list
+  identical to E-075); Run D **1362 passed, 0 failed, 19
+  skipped, 1 warning**, exit 0 (1355 + 7). No README
+  touched.
+- **Part IV CLOSED.** E-077 next — Part V opens: both
+  memory systems mapped.

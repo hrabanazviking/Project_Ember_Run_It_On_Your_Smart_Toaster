@@ -1026,6 +1026,31 @@ def cmd_status():
         print(f"   Nerve health: {status['nerve_health']}")
 
 
+def _pid_alive(pid):
+    """True only if *pid* names a live, non-zombie process.
+
+    os.kill(pid, 0) alone answers True for a zombie — a hub
+    killed by SIGTERM whose parent has not reaped it yet —
+    which made `stop` report "could not be killed" for a hub
+    that was in fact dead (docket 106, closed at E-076). A
+    zombie is dead: its /proc state says so. Where /proc is
+    absent, the kill probe's answer stands.
+    """
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    try:
+        with open(f"/proc/{pid}/stat", "rb") as fh:
+            # state is the first field after the (parenthesised) comm
+            state = fh.read().rsplit(b")", 1)[1].split()[0]
+        return state != b"Z"
+    except (OSError, IndexError):
+        return True
+
+
 def cmd_stop():
     """CLI: stop the nerve hub with graceful shutdown."""
     if not PID_PATH.exists():
@@ -1042,9 +1067,7 @@ def cmd_stop():
         # Wait up to 5 seconds for process to exit
         for i in range(5):
             time.sleep(1)
-            try:
-                os.kill(pid, 0)
-            except ProcessLookupError:
+            if not _pid_alive(pid):
                 print("✅ Hub stopped gracefully")
                 PID_PATH.unlink(missing_ok=True)
                 return
@@ -1053,10 +1076,9 @@ def cmd_stop():
         print("⚠️  Process still running after 5s, sending SIGKILL...")
         os.kill(pid, signal.SIGKILL)
         time.sleep(1)
-        try:
-            os.kill(pid, 0)
+        if _pid_alive(pid):
             print("❌ Process could not be killed")
-        except ProcessLookupError:
+        else:
             print("✅ Hub killed (SIGKILL)")
             PID_PATH.unlink(missing_ok=True)
     except ProcessLookupError:
