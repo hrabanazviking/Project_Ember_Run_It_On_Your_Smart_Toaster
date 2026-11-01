@@ -4982,3 +4982,10 @@ review, not this slice.
   20 skipped**, exit 0 — fully clean (1560 at E-092 + 7
   new, exact). No README touched; no vendored file
   touched.
+- E-093 push: banking commit 87e34de (carrying the IN PROGRESS
+  commit 2e7dffb and the E-092 push-record commit 2320348 ahead
+  of it) pushed under Volmarr's 2026-10-31 standing go-ahead
+  after fetch + ancestry check — remote moved 624f3ff → 87e34de,
+  verified via ls-remote (remote head =
+  87e34de672e33d61d0b7ccd018910841c82bde0f = local HEAD at push
+  time).
