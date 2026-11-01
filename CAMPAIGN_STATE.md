@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 01:56 EST
-Status: IN PROGRESS — E-079 (01:52 EST keeper tick: no live worker, state STOPPED with E-078 banked and pushed, tree clean at 662d1f2)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078
-Next slice: E-079 — the verdict paper: unify / bound / retire, argued from E-078's numbers + ORIGINS provenance, presented for Volmarr's word
+Last updated: 2026-11-01 02:04 EST
+Status: STOPPED — E-079 banked this tick (verdict paper filed; the mempalace retirement PROPOSAL inside it awaits Volmarr's word — see Reporting note below; E-080 is NOT blocked by that question)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079
+Next slice: E-080 — the chosen shape implemented: one memory contract (the bounded face of the E-079 verdict) for the companion
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3654,3 +3654,59 @@ review, not this slice.
   an ancestor) — remote moved 220de89 → e2cddaf, verified via ls-remote
   (remote head = e2cddafe4be11c2c5091b10985066417b03c3c5c = local HEAD
   at push time).
+
+## E-079 — The verdict paper (DONE, 2026-11-01)
+
+- Verdict filed at `docs/architecture/E-079_MEMORY_VERDICT_PAPER.md`:
+  **BOUND** — one memory face (contract at E-080) over two bounded
+  house engines, argued from E-078's canonical numbers + E-012/E-003
+  provenance (neither member has an ORIGINS row, docket 72 — provenance
+  stated from packaging + git: mempalace upstream OSS milla-jovovich,
+  one import commit f7ef473; mimir-well house line Eldrä Járnsdóttir,
+  911eeba; Brunnr house core, real development history).
+- Territories: Brunnr keeps documents/chunks/episodes (verbatim 20/20,
+  paraphrase 9/9 vector, only exact episode recall, 585 B/episode);
+  mimir-well keeps living facts (importance/mood exact, only
+  current-truth view, only lifecycle + guard + audit; fits every
+  profile — 614,283 B, 24.2 MiB peak, 745 B/item). All three
+  single-system crowns argued and refused on measured evidence
+  (mempalace: fits no profile — 402.8 MiB RAM, ~185 MB deps + ~88 MB
+  model; mimir-well: paraphrase 0/9, no semantic search; Brunnr: no
+  importance/mood/current-truth/lifecycle/guard/audit faces).
+- **Retirement PROPOSED, not decided:** mempalace's honourable
+  retirement from Ember is proposed for **Volmarr's word** (no
+  in-tree consumer; upstream lives at its own home; nothing removed,
+  moved, or marked by this slice — member verified present and
+  unmodified at banking, pinned by conformance). Fallback if he
+  declines: bounded as an optional, non-default, never-bundled
+  laptop-class archive adapter with true costs stated. Until he
+  rules, the fallback's restraints apply and silence is never read
+  as a retirement word. **REPORTING NOTE for the main agent:** the
+  roadmap orders this proposal "presented for Volmarr's word" — the
+  exact plain question is in the paper §6 (retire honourably, or
+  keep bounded as the optional adapter?). E-080 does not wait on
+  the answer; E-092's gate records the word or its absence.
+- E-080 charged with five binding conditions: one canonical
+  mimir-well path (docket 51 settled there; docket 109's four raw-SQL
+  readers/writers reckoned with, Part VIII consulted); stores not
+  merged (E-081: survivors stay native; mempalace-store answer waits
+  on the ruling); persona separation as a face property (docket 110);
+  budgets bind the face (toaster first); docket 108 hygiene at or
+  before E-092. The paraphrase gap is charged to the face as an
+  *index-don't-merge* proposal (index living facts into Brunnr for
+  meaning search, resolve hits through mimir-well's current-truth
+  view) — a proposal for E-080 to implement and prove, NOT claimed
+  here; if its vector growth breaks the toaster, the toaster ships
+  word-search over living facts and says so plainly.
+- Conformance: `tests/unit/test_memory_verdict_e079.py` **5 passed**;
+  combined Part V conformance (E-077 + E-078 + E-079) **17 passed**.
+  Slice gate (logs in `~/workspace/.verify-tmp/ember-e079/gate/`):
+  Run A **1 error, 11 skipped**, exit 2 (docket 1, identical);
+  Run B **1321 passed, 7 failed, 25 skipped, 1 warning** (1316 + 5
+  new; the 6 proven environment failures identical list, plus
+  `test_load_truth_e075` under this run's deep workspace TMPDIR —
+  E-076's proven socket-cap artifact class; isolated default-TMPDIR
+  re-run this tick **8 passed**, and Run D below is green with that
+  test inside it); Run D **1379 passed, 0 failed, 19 skipped,
+  1 warning**, exit 0 (1373 + 5 new + the load-truth test passing
+  in this shape). No README touched; no member code touched.
