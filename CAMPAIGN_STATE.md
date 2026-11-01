@@ -4703,3 +4703,10 @@ review, not this slice.
   exact). No README touched; no code touched (the
   allowlist edit above is a test-file governance act,
   recorded); no member or vendored code touched.
+- E-090 push: banking commit b567644 (carrying the
+  IN PROGRESS commit 77c9637 ahead of it) pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check — remote moved 5472a85 → b567644,
+  verified via ls-remote (remote head =
+  b567644aed710debc8ee254a9456561bbf5f0f12 = local HEAD
+  at push time).
