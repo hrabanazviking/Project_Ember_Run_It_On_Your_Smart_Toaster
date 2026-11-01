@@ -3126,3 +3126,8 @@ Top-level members present (size / file count, working tree excl. .git):
   `~/workspace/.verify-tmp/ember-e071/gate/`. No README touched.
 - E-072 next — the logger as memory source: logged conversations can
   feed memory (Part V) under the user's rule, never silently.
+- E-071 push: banking commit ef30a73 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was f111dae, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 08893bd)
+  — remote moved f111dae → ef30a73, verified via ls-remote (remote head =
+  ef30a73abdef9028d5eeded089dad4941c9946ae = local HEAD at push time).
