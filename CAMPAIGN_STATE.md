@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 02:36 EST
-Status: IN PROGRESS — E-081 (migration answer: survivors native behind the face proven on fixtures; mempalace-store answer argued from fixtures, execution waits on Volmarr's retirement ruling)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080
-Next slice: E-081 — migration: survivors' stores stay native behind the face; the mempalace-store answer argued from fixtures (executed only under Volmarr's ruling)
+Last updated: 2026-11-01 03:02 EST
+Status: STOPPED — E-081 banked this tick (migration answer filed; E-082 next)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081
+Next slice: E-082 — memory lifecycle: growth, decay, pruning under Part III's storage budget (E-050 consumed)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3789,3 +3789,72 @@ review, not this slice.
   95ae76e) — remote moved 8743847 → c33143f, verified via ls-remote
   (remote head = c33143f9d9e506982a4e8328df4148fcdaa9b54a = local HEAD
   at push time).
+
+## E-081 — Migration answer: survivors native; palace migrates (DONE, 2026-11-01)
+
+- Answer filed at `docs/architecture/E-081_MIGRATION_ANSWER.md`:
+  E-079 §5.2/§8's narrowed question answered in both halves.
+  **Survivors: NO migration — proven.** Stores written the
+  pre-face way (RunaMemory direct incl. a supersession;
+  Brunnr handle direct: document+chunk+episode) served
+  whole through the E-080 face (toaster profile), with
+  both stores' schemas byte-identical afterwards, every
+  content table's row count identical, and Brunnr zero
+  deltas of any kind. Only deltas: mimir-well's own read
+  audit log (+2, its audit recording the test's recalls)
+  and FTS5 shadow segment compaction on member reopen —
+  FTS content unchanged, no fact row moved.
+- **Palace: migrate, don't read-compat forever —
+  argued from fixtures, NOT executed.** Synthetic palace
+  built in the exact shape of mempalace's own stdlib
+  reader (`mempalace/mempalace/migrate.py`
+  extract_drawers_from_sqlite, sqlite3 only, ChromaDB
+  never installed) and extracted with that function:
+  drawers map losslessly to Brunnr document+chunk
+  (text byte-identical; ALL metadata + drawer id in the
+  document's persisted metadata mapping; original record
+  reconstructs exactly — proven mapper-level AND through
+  a real Brunnr store via the face); diary drawers map
+  as documents, honestly not episodes; KG triples map to
+  living-fact records field-for-field (validity,
+  confidence, provenance). Closets + stored embeddings
+  are DERIVED (closet pointer audit: every pointer
+  resolves to an extracted drawer; payload is only
+  topics/entities extracted from drawer text) — rebuilt
+  at destination, never carried. Priced: 585 B/drawer
+  word-only or 72,239 B embedded (E-078 price);
+  745 B/triple as a mimir fact (10k drawers ≈ 5.9 MB
+  word-only / ≈722 MB embedded → executing migration
+  follows the face's per-profile index rule).
+- Two findings for the executing slice: (1) the member
+  extractor is COLLECTION-BLIND (returns closets among
+  drawers — executing reader must classify by id);
+  upstream migrate() shares the blindness and skips
+  closets/KG entirely. (2) A palace can be READ with
+  stdlib alone — read-compat forever refused (forever
+  tax + the disqualified ~185 MB stack for search);
+  the stdlib reader is what the one-time migration
+  uses. Honest gap named: face's remember_fact carries
+  no confidence/validity fields — executing migration
+  writes triples through RunaMemory directly or the
+  face grows them first (E-083 in view).
+- Status discipline kept: retirement still awaiting
+  Volmarr's word (E-079 §6 question stands, presented
+  at E-079); migration executes only under that ruling;
+  if declined, the mapping stands as a user-chosen
+  one-way export under the bounded fallback. Member
+  untouched; core gained NO mempalace reader (pinned).
+- Conformance: `tests/unit/test_memory_migration_e081.py`
+  **9 passed**; combined Part V conformance (E-077 +
+  E-078 + E-079 + E-080 + E-081) **37 passed**. Slice
+  gate (logs in `~/workspace/.verify-tmp/ember-e081/gate/`):
+  Run A **1 error, 13 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1322 passed, 6 failed, 27 skipped,
+  1 warning** — the 6 are the proven environment failures,
+  identical list to E-080 (this slice's file skips whole
+  in the default env); Run D **1399 passed, 0 failed,
+  19 skipped**, exit 0 (1390 + 9 new; the skip variance
+  is E-080's noted pgvector whole-module guard shape, 13
+  tests skipping as one module — zero failures either way).
+  No README touched; no member code touched.
