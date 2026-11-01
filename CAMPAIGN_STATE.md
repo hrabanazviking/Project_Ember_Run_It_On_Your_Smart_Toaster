@@ -6,8 +6,9 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 06:10 EST
-Status: STOPPED — E-087 banked this tick (corruption & recovery drills: SIGKILL kill-mid-write rounds, fault-injection atomicity, sidecar/store corruption; THREE bugs found by the drills and fixed in scope — dockets 121 supersede atomicity + guard-block TypeError, 122 face save-raise across a committed write, 124 restore-over-live-WAL corruption; boundary 123 docketed for the E-092 gate; first duty Run D re-verified for E-085+E-086 at 1500 passed / 2 classified failures — clean-Run-D duty passes to E-088)
+Last updated: 2026-11-01 06:15 EST
+Status: IN PROGRESS — E-088 (06:12 keeper tick; first duty Run D re-verification running before new building)
+Status was: STOPPED — E-087 banked this tick (corruption & recovery drills: SIGKILL kill-mid-write rounds, fault-injection atomicity, sidecar/store corruption; THREE bugs found by the drills and fixed in scope — dockets 121 supersede atomicity + guard-block TypeError, 122 face save-raise across a committed write, 124 restore-over-live-WAL corruption; boundary 123 docketed for the E-092 gate; first duty Run D re-verified for E-085+E-086 at 1500 passed / 2 classified failures — clean-Run-D duty passes to E-088)
 Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087
 Next slice: E-088 — Long-life soak: a simulated year of memory within budgets (accelerated fixtures). FIRST DUTY of E-088's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — a fully clean Run D is still not on record (see the E-087 entry).
 
