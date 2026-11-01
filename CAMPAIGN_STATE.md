@@ -6,8 +6,8 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 05:25 EST
-Status: STOPPED — E-086 banked this tick (WYRD-shaped memory export on the face, TF-145 boundary honoured, live WYRD model validation 8/8; PLUS a real delete-order bug found by E-085's owed Run D re-verification and fixed in scope — see the E-086 entry; Run D NOT GREEN under VM contention in both its duties this tick — re-verification duty heads E-087's tick)
+Last updated: 2026-11-01 05:27 EST
+Status: IN PROGRESS — E-087 (corruption & recovery drills) started this tick; first duty = Run D re-verification (E-085 + E-086 duties) in flight under heavy VM contention (load ~12, MemAvailable ~0.8 GB at tick start)
 Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086
 Next slice: E-087 — Corruption & recovery drills (atomicity, kill-mid-write). FIRST DUTY of E-087's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — both Run D duties of E-086's tick ended NOT GREEN under contention (see the E-086 entry).
 
