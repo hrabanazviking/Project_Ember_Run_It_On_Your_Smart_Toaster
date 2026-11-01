@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 03:18 EST
-Status: IN PROGRESS — E-083 (persona separation enforced at the memory face)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082
-Next slice: E-083 — persona separation enforced at the memory face (E-025's fixtures at this layer)
+Last updated: 2026-11-01 03:46 EST
+Status: STOPPED — E-083 banked this tick (persona separation enforced at the face; E-084 next)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083
+Next slice: E-084 — the user's memory rights: inspect, correct, export, delete-total (plain-worded working operations)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3929,3 +3929,76 @@ review, not this slice.
   via ls-remote (remote head =
   27ee0e81166acd2839e065744f6d9e12178eea4e = local HEAD
   at push time).
+
+## E-083 — Persona separation enforced at the memory face (DONE, 2026-11-01)
+
+- Enforcement live on the face (`src/ember/well/memory_face.py`,
+  +6,019 B core), filed at
+  `docs/architecture/E-083_PERSONA_SEPARATION_AT_THE_FACE.md`:
+  E-025's fixture battery executed at the Part V layer —
+  the two fixture personae (ember / sage) plus the
+  near-miss namesake (ember-2) and adversarial content
+  (a fact and a turn whose text is itself an instruction
+  carrying a secret) across every face path (word /
+  current / importance / mood / meaning recall, turns,
+  supersession, decay, prune, document searches). The
+  E-080 wall held where it had been pinned — facts
+  separated on all recall paths, cross-persona supersede
+  refused by the member and surfaced by the face,
+  outside-namespace writes invisible, separation
+  surviving a face reopen (named personae DO have
+  cross-restart history at this layer, via the sidecar),
+  corrupt sidecar failing closed.
+- **Five gaps found by the battery, all fixed in scope,
+  new dockets 114–118** (each probe-demonstrated on the
+  pre-fix code first; probes in
+  `~/workspace/.verify-tmp/ember-e083/`): (114) the
+  fact-index document's chunks were served by the plain
+  document searches — any persona's indexed fact text
+  readable with no persona check at all; the index is
+  now filtered out of document search, with the scan
+  widened so filtering never starves real documents
+  (documents added as documents remain shared grounding
+  by design, E-025/E-035). (115) `recent_turns` read a
+  fixed limit×4 window AND took its first (oldest)
+  matches — foreign runs starved a persona's turns, and
+  a single-persona history returned its oldest turns
+  under a "recent" name; the scan now widens to
+  exhaustion and answers the persona's newest `limit`
+  turns, oldest-first. (116) meaning search's fixed
+  k×4 candidate page let nearer foreign chunks starve
+  the asker's own facts; the scan widens likewise,
+  making results a per-persona ranking. (117) untagged
+  episodes answered to the hard-coded `default` id
+  instead of the face's configured default persona.
+  (118) persona ids were never validated at the face —
+  the empty string silently became the default persona
+  (reading/writing its memory) and arbitrary strings
+  were accepted as namespaces; every operation now
+  resolves through the E-025 slug rules, fail-closed
+  (reads empty, writes refused with the reason stated,
+  `add_turn` refuses an invalid tag storing nothing,
+  the constructor refuses an invalid configured
+  default).
+- In-scope re-measure (E-080/E-082 precedent): the
+  E-057 table re-measured for the core's growth —
+  core 131 files / 870,557 B, twelve-member total
+  131,488,942 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_persona_e083.py`
+  **31 passed**; combined Part V conformance (E-080 +
+  E-081 + E-082 + E-083 files) **60 passed**. Slice gate
+  (logs in `~/workspace/.verify-tmp/ember-e083/gate/`):
+  Run A **1 error, 15 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 29
+  skipped, 1 warning** — the 6 proven environment
+  failures identical list, plus `test_load_truth_e075`
+  under this run's deep workspace TMPDIR (E-076's
+  proven socket-cap artifact; isolated default-TMPDIR
+  re-run this tick **8 passed**; E-083 touches no hub
+  code); Run D **1438 passed, 1 failed, 19 skipped** —
+  the sole failure is the same load-truth artifact
+  (1407 + 31 new vs E-082's Run D). No README touched;
+  no member code touched.

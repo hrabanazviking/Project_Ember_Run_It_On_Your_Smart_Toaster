@@ -23,15 +23,32 @@ Binding conditions from the verdict, and where each lands:
 2. **Stores are not merged.** Facts live in mimir-well's
    store, documents/episodes in Brunnr's. Nothing in this
    module copies a store into the other shape.
-3. **Persona separation is a face property (docket 110).**
-   Brunnr's adapters do not persist persona tags, so the
-   face tags *above* the adapter: facts are written under
-   the persona's own mimir-well ``user_id`` namespace (the
-   member's own isolation), and episode tags are kept in
-   the face's tag sidecar (§ below). An untagged episode
-   belongs to the default persona only — every other
-   persona is refused it, fail-closed. E-083 enforces this
-   layer's fixtures in full; the guarantee is built here.
+3. **Persona separation is a face property (docket 110),
+   enforced in full at E-083.** Brunnr's adapters do not
+   persist persona tags, so the face tags *above* the
+   adapter: facts are written under the persona's own
+   mimir-well ``user_id`` namespace (the member's own
+   isolation), and episode tags are kept in the face's tag
+   sidecar (§ below). An untagged episode belongs to the
+   face's default persona only — every other persona is
+   refused it, fail-closed. E-083's fixture battery (the
+   E-025 fixtures at this layer) holds the face to it on
+   every path, and closed four gaps the battery exposed:
+   the fact-index document is never a document-search
+   result (its chunks are fact text; serving them there
+   bypassed persona resolution entirely — docket 114);
+   persona-filtered reads scan past foreign entries
+   instead of starving behind a fixed window (dockets
+   115/116); an untagged episode's owner is the face's
+   *configured* default persona, not a hard-coded one
+   (docket 117); and a persona id is validated against
+   the E-025 slug rules on every operation — an invalid
+   id (including the empty string, which used to fall
+   back to the default persona and read its memory)
+   fails closed everywhere (docket 118). Documents added
+   as documents remain shared grounding by design (the
+   E-025/E-035 rule); only the fact index is persona
+   territory, and it is never served as a document.
 4. **Budgets bind the face.** Meaning search over living
    facts is *index, don't merge* (§ below) and it is priced:
    one indexed fact costs one embedded Brunnr chunk
@@ -108,7 +125,7 @@ from ember.budgets import budget_for
 from ember.schemas.chunks import Chunk, Document, RetrievalHit
 from ember.schemas.config import ConversationProfile
 from ember.schemas.episode import Episode
-from ember.schemas.persona import DEFAULT_PERSONA_ID
+from ember.schemas.persona import DEFAULT_PERSONA_ID, is_valid_persona_id
 from ember.well.brunnr.handle import BrunnrHandle
 
 #: The face's one canonical mimir-well store (docket 51):
@@ -302,6 +319,11 @@ class MemoryFace:
         self.index_facts = (
             index_default_for(profile) if index_facts is None else index_facts
         )
+        if not is_valid_persona_id(default_persona_id):
+            raise ValueError(
+                "default_persona_id must be a valid persona slug "
+                f"(E-025 rules), got {default_persona_id!r}"
+            )
         self.default_persona_id = default_persona_id
         if sidecar_path is None:
             base = (
@@ -393,8 +415,29 @@ class MemoryFace:
     # Living facts — mimir-well's territory                               #
     # ------------------------------------------------------------------ #
 
-    def _persona(self, persona_id: Optional[str]) -> str:
-        return persona_id or self.default_persona_id
+    def _persona(self, persona_id: Optional[str]) -> Optional[str]:
+        """Resolve and validate a persona id (E-083).
+
+        ``None`` means the face's own default persona. Any
+        explicit id must satisfy the E-025 slug rules — the
+        same rules that keep a persona id from ever being a
+        path. An invalid id (the empty string included: it
+        used to fall back to the default persona and so
+        read and wrote *its* memory) resolves to ``None``
+        here, and every operation fails closed on ``None``:
+        reads return nothing, writes are refused with the
+        reason stated. There is no silent substitution of
+        one persona for another at this layer, ever.
+        """
+        pid = self.default_persona_id if persona_id is None else persona_id
+        return pid if is_valid_persona_id(pid) else None
+
+    @staticmethod
+    def _invalid_persona_note(persona_id: Optional[str]) -> str:
+        return (
+            f"refused: invalid persona id {persona_id!r} "
+            "(must be an E-025 slug; nothing was read or written)"
+        )
 
     def remember_fact(
         self,
@@ -415,6 +458,9 @@ class MemoryFace:
         if self._mimir is None:
             return FactResult(None, False, f"mimir-well {self.mimir_state}")
         persona = self._persona(persona_id)
+        if persona is None:
+            return FactResult(None, False,
+                              self._invalid_persona_note(persona_id))
         fact_id = self._mimir.add_memory(
             content,
             category=category,
@@ -478,6 +524,8 @@ class MemoryFace:
         if self._mimir is None:
             return []
         persona = self._persona(persona_id)
+        if persona is None:
+            return []
         rows = self._mimir.fts_search("memories", query, limit=limit,
                                       user_id=persona)
         return [r for r in rows if r.get("is_current", 1)]
@@ -489,9 +537,12 @@ class MemoryFace:
         """The current-truth view of living facts."""
         if self._mimir is None:
             return []
+        persona = self._persona(persona_id)
+        if persona is None:
+            return []
         return self._mimir.recall_current(
             limit=limit, min_importance=min_importance,
-            user_id=self._persona(persona_id),
+            user_id=persona,
         )
 
     def recall_by_importance(
@@ -501,6 +552,8 @@ class MemoryFace:
         if self._mimir is None:
             return []
         persona = self._persona(persona_id)
+        if persona is None:
+            return []
         rows = self._mimir.recall_by_importance(
             min_importance=min_importance, limit=limit, user_id=persona)
         return [r for r in rows if r.get("is_current", 1)]
@@ -512,6 +565,8 @@ class MemoryFace:
         if self._mimir is None:
             return []
         persona = self._persona(persona_id)
+        if persona is None:
+            return []
         rows = self._mimir.recall_by_mood(
             target_valence=target_valence, tolerance=tolerance,
             limit=limit, user_id=persona)
@@ -531,6 +586,9 @@ class MemoryFace:
         if self._mimir is None:
             return FactResult(None, False, f"mimir-well {self.mimir_state}")
         persona = self._persona(persona_id)
+        if persona is None:
+            return FactResult(None, False,
+                              self._invalid_persona_note(persona_id))
         new_id = self._mimir.supersede(
             old_fact_id, new_content, user_id=persona)
         if not new_id or new_id < 0:
@@ -552,6 +610,10 @@ class MemoryFace:
         other-persona, and vanished facts are dropped.
         """
         persona = self._persona(persona_id)
+        if persona is None:
+            return MeaningHits(
+                mode="word", facts=(),
+                note=self._invalid_persona_note(persona_id))
         if not self.index_facts or self._embedder is None or self._brunnr is None:
             note = (
                 "word search: the fact index is off on this profile"
@@ -561,24 +623,35 @@ class MemoryFace:
             rows = self.recall_facts_word(query, limit=k, persona_id=persona)
             return MeaningHits(mode="word", facts=tuple(rows), note=note)
         qvec = tuple(float(x) for x in self._embedder(query))
-        hits = self._brunnr.vector_search(qvec, k=max(k * 4, k))
+        # The candidate scan widens until the asking persona's
+        # facts are found or the index is exhausted (docket
+        # 116): a fixed window let nearer *foreign* chunks
+        # starve the asker's own facts out of the results —
+        # filter-then-take over the whole scan is what makes
+        # this a per-persona ranking, not a global one.
         facts: list[dict] = []
         seen: set[int] = set()
-        for hit in hits:
-            fact_id = self._fact_for_chunk(hit.chunk_id)
-            if fact_id is None or fact_id in seen:
-                continue
-            seen.add(fact_id)
-            if self._sidecar.fact_persona.get(str(fact_id)) != persona:
-                continue
-            resolved = self._resolve_current_fact(fact_id, persona)
-            if resolved is not None:
-                facts.append(resolved)
-            if len(facts) >= k:
+        width = max(k * 4, k)
+        while True:
+            hits = self._brunnr.vector_search(qvec, k=width)
+            for hit in hits:
+                fact_id = self._fact_for_chunk(hit.chunk_id)
+                if fact_id is None or fact_id in seen:
+                    continue
+                seen.add(fact_id)
+                if self._sidecar.fact_persona.get(str(fact_id)) != persona:
+                    continue
+                resolved = self._resolve_current_fact(fact_id, persona)
+                if resolved is not None:
+                    facts.append(resolved)
+                if len(facts) >= k:
+                    break
+            if len(facts) >= k or len(hits) < width:
                 break
+            width *= 2
         return MeaningHits(
             mode="meaning",
-            facts=tuple(facts),
+            facts=tuple(facts[:k]),
             note="index hits resolved through mimir-well's current truth",
         )
 
@@ -702,9 +775,13 @@ class MemoryFace:
         if self._mimir is None:
             return {"decayed": 0, "pruned": 0, "reinforced": 0,
                     "note": f"mimir-well {self.mimir_state}"}
+        persona = self._persona(persona_id)
+        if persona is None:
+            return {"decayed": 0, "pruned": 0, "reinforced": 0,
+                    "note": self._invalid_persona_note(persona_id)}
         result = self._mimir.decay(
             half_life_days=half_life_days,
-            user_id=self._persona(persona_id))
+            user_id=persona)
         return dict(result)
 
     def run_lifecycle(self, *, persona_id: Optional[str] = None,
@@ -736,17 +813,47 @@ class MemoryFace:
             return []
         return self._brunnr.add_chunks(chunks)
 
+    def _document_hits(self, hits: list[RetrievalHit]) -> list[RetrievalHit]:
+        """Document-search results with the fact index removed.
+
+        The fact index is a synthetic Brunnr document whose
+        chunks are living-fact *text*. Serving one through a
+        document search would hand a persona's facts to any
+        caller with no persona check at all — the E-083
+        battery caught exactly that leak (docket 114). The
+        index is served only through the persona-resolved
+        fact paths; as a *document* it does not exist.
+        """
+        index_id = self._sidecar.index_document_id
+        if index_id is None:
+            return hits
+        return [h for h in hits if h.document_id != index_id]
+
     def search_documents_word(self, query: str, *, k: int = 5) -> list[RetrievalHit]:
         if self._brunnr is None:
             return []
-        return self._brunnr.text_search(query, k)
+        # Widen past the index chunks the filter drops, so
+        # filtering never starves real documents (docket 114).
+        width = max(k, 1)
+        while True:
+            raw = self._brunnr.text_search(query, width)
+            hits = self._document_hits(raw)
+            if len(hits) >= k or len(raw) < width:
+                return hits[:k]
+            width *= 2
 
     def search_documents_meaning(
         self, qvec: Sequence[float], *, k: int = 5
     ) -> list[RetrievalHit]:
         if self._brunnr is None:
             return []
-        return self._brunnr.vector_search(qvec, k)
+        width = max(k, 1)
+        while True:
+            raw = self._brunnr.vector_search(qvec, k=width)
+            hits = self._document_hits(raw)
+            if len(hits) >= k or len(raw) < width:
+                return hits[:k]
+            width *= 2
 
     def add_turn(self, episode: Episode) -> Optional[int]:
         """Remember one conversation turn (Brunnr episode).
@@ -754,8 +861,14 @@ class MemoryFace:
         The face records the episode's persona tag in its
         sidecar, above the adapter (docket 110) — the tag
         the adapter cannot persist is the face's to keep.
+        An episode whose tag is not a valid persona slug is
+        refused (returns ``None``, nothing stored): a tag
+        the read side would fail closed on must never be
+        written in the first place (docket 118).
         """
         if self._brunnr is None:
+            return None
+        if not is_valid_persona_id(episode.persona_id):
             return None
         episode_id = self._brunnr.add_episode(episode)
         self._sidecar.episode_persona[str(int(episode_id))] = episode.persona_id
@@ -770,21 +883,38 @@ class MemoryFace:
         An episode is served to a persona when the face's
         tag says it is theirs; an untagged episode (written
         before the face, or outside it) belongs to the
-        default persona only.
+        face's default persona only (docket 117 — the
+        *configured* default, not a hard-coded id). The
+        scan widens until the persona's turns are found or
+        the store is exhausted, and the answer is the
+        persona's *newest* ``limit`` turns in the store's
+        oldest-first order (docket 115): the fixed window
+        this replaces both starved a persona behind a run
+        of another persona's newer turns and, within its
+        window, handed back the *oldest* matches instead
+        of the newest — stale history wearing a recent
+        name.
         """
-        if self._brunnr is None:
+        if self._brunnr is None or limit <= 0:
             return []
         persona = self._persona(persona_id)
-        window = self._brunnr.recent_episodes(max(limit * 4, limit))
-        out: list[Episode] = []
-        for ep in window:
-            tag = self._sidecar.episode_persona.get(str(ep.id))
-            owner = tag if tag is not None else DEFAULT_PERSONA_ID
-            if owner == persona:
-                out.append(ep)
-            if len(out) >= limit:
-                break
-        return out
+        if persona is None:
+            return []
+        width = max(limit * 4, limit)
+        while True:
+            window = self._brunnr.recent_episodes(width)
+            mine = [
+                ep for ep in window
+                if (self._sidecar.episode_persona.get(str(ep.id))
+                    or self.default_persona_id) == persona
+            ]
+            # A wider window only ever adds *older* episodes
+            # at the front, so once `limit` of the persona's
+            # turns are in hand their newest tail cannot
+            # change; an exhausted window is complete either way.
+            if len(mine) >= limit or len(window) < width:
+                return mine[-limit:]
+            width *= 2
 
 
 __all__ = [
