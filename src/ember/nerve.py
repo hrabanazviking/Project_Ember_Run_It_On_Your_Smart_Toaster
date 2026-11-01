@@ -34,9 +34,11 @@ Discipline, mirroring the conversation logger's standing rule:
   Verdandi, exactly as the hub's own deployed modules carry
   their contract literals inline (E-061's pattern).
 
-The hub's home is its own (``~/.hermes/state`` — the hub's
-state dir, not Ember's config root): the socket is
-``runa.sock`` there and the feed is ``nerve_feed.jsonl``.
+The hub's home is its own (``~/.hermes/state`` by default,
+or ``VERDANDI_HOME`` when the hub's standalone law, E-073,
+relocates it — the hub's state dir, not Ember's config
+root): the socket is ``runa.sock`` there and the feed is
+``nerve_feed.jsonl``.
 ``state_dir`` parameters exist for tests and for the hub's own
 relocated deployments; chat passes none.
 
@@ -61,6 +63,7 @@ the E-071 conformance tests.
 from __future__ import annotations
 
 import json
+import os
 import socket as sock_mod
 import time
 from datetime import UTC, datetime
@@ -90,7 +93,17 @@ _FEED_NAME = "nerve_feed.jsonl"
 
 
 def hub_state_dir() -> Path:
-    """The nerve hub's state dir (its own home, not Ember's)."""
+    """The nerve hub's state dir (its own home, not Ember's).
+
+    The hub's standalone law (E-073, Verdandi/standalone.py),
+    carried inline under this module's no-member-imports
+    discipline and pinned equal by the E-073 tests:
+    ``VERDANDI_HOME``, when set, names the hub's state dir
+    directly; otherwise it is ``~/.hermes/state``.
+    """
+    override = os.environ.get("VERDANDI_HOME")
+    if override:
+        return Path(override)
     return Path.home() / ".hermes" / "state"
 
 

@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 22:02 EDT
-Status: IN PROGRESS — E-073 (21:42 keeper tick, started 22:02 EDT)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072
-Next slice: E-073 — Verdandi standalone: the hub usable without the full companion (its own consumers exist in the constellation)
+Last updated: 2026-10-31 22:41 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-074
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073
+Next slice: E-074 — Docs: the nerve model for member-builders
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3202,3 +3202,75 @@ Top-level members present (size / file count, working tree excl. .git):
   `run_d.log`). No code touched by this re-verification.
 - E-073 next — Verdandi standalone: the hub usable without the full
   companion (its own consumers exist in the constellation).
+
+CORRECTION to the E-072 re-verification entry above (same tick,
+later): the counts first recorded there for the heartbeat focal
+run came from a mismatched background-run report, not from the
+run's own log. Read from the log on disk
+(`~/workspace/.verify-tmp/ember-e072/reverify/heartbeat_focal.log`),
+that run — the four test_heartbeat*.py files, 388 tests — actually
+scored 383 passed, 5 failed in 644.88s. The 5 failures are all
+TestCLIIntegration tests whose subprocesses cd to ~/Verdandi,
+which does not exist on this VM (FileNotFoundError) — the
+pre-existing machine-coupled family of docket item 6 (E-005),
+not contention and not a regression. The canonical heartbeat
+focal set of E-060–E-071 is heartbeat + actions + checks +
+SKULD (374 tests; the E-072 duty text's "test_heartbeat*.py,
+four files" parenthetical misdescribed it). Run D's
+re-verification stands exactly as recorded (1330 passed,
+0 failed — its log agrees). The duty is closed on this
+corrected basis by E-073 below: canonical heartbeat set
+re-run green post-change, Run D green; the integration
+file's 5 CLI failures stay with docket item 6's family,
+whose fixing home is Part IV's remaining road / E-076
+review, not this slice.
+
+## E-073 — Verdandi standalone (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-073_VERDANDI_STANDALONE.md` and in
+  code at `Verdandi/standalone.py` (stdlib-only): the hub usable without
+  the full companion. One file is the hub (`nervous_system.py`,
+  stdlib-only, Unix-socket transport, eight CLI commands); the wire is
+  the E-061 contract, not the companion; consumers named (hub CLI,
+  heartbeat reward producers + conversation logger via
+  publish_event_sync, the core nerve bridge when present, external
+  Hermes publishers per E-068).
+- The slice's one repair: the hub's state dir was hard-coded to
+  `~/.hermes/state`, so standalone still silently required a
+  Hermes-shaped home. Now `VERDANDI_HOME`, when set, IS the hub's
+  state dir; otherwise the default is unchanged. The resolution is
+  stated in standalone.py and carried inline by the hub module
+  (`_resolve_state_dir`, lone-file deployed form) and by the core
+  bridge's `hub_state_dir()` (no-member-imports discipline), all
+  three pinned equal by the conformance tests incl. subprocess
+  imports of the real hub under both env shapes.
+- Live proof (this tick, logs in `~/workspace/.verify-tmp/ember-e073/`):
+  hub booted by file path alone, HOME=/tmp/e73home (empty),
+  VERDANDI_HOME=/tmp/e73state, no PYTHONPATH — socket at the relocated
+  home, healthcheck ALL CHECKS PASSED exit 0, publish acked #1,
+  recent/status correct, feed held exactly that event, and the
+  isolated HOME stayed completely empty (no .hermes, no .ember).
+- New docket items: 105 (shipped systemd units hard-code /home/pi +
+  ~/.hermes/state paths — Pi deployment shape, not standalone;
+  owner E-076) and 106 (hub `stop` reported "could not be killed"
+  for a hub in fact killed by its SIGTERM — cmd_stop's
+  os.kill(pid, 0) probe is zombie-blind; found by the live proof,
+  owner E-076). Honest limits in the doc: the heartbeat's
+  VERDANDI_HOME is its own distinct home (not unified — the live
+  Hermes deployment's heartbeat would break); pip-install of the
+  member NOT PROVEN (standalone proven at file level, as every
+  in-tree consumer loads it).
+- E-057 table re-measured for both changed members (Verdandi 192
+  files / 17,014,457 B; core 130 files / 831,912 B; total
+  131,426,064 B; laptop miss 237,241 B), both published copies
+  updated. Conformance: `tests/unit/test_standalone_e073.py`
+  **12 passed**; combined Part IV conformance (E-055 + E-057 pins +
+  E-061–E-073) **246 passed**; Verdandi focal conversation set
+  **101 passed**; canonical heartbeat set **374 passed** (6.02s,
+  disk-verified from the gate log). Slice gate: Run B **1285
+  passed, 6 failed, 25 skipped, 1 warning** (1273 + 12; the 6 are
+  the proven environment failures, identical set); Run D **1342
+  passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1330 + 12).
+  Logs in `~/workspace/.verify-tmp/ember-e073/gate/`. No README
+  touched.
+- E-074 next — Docs: the nerve model for member-builders.

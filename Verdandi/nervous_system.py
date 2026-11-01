@@ -47,7 +47,20 @@ from collections import deque
 from pathlib import Path
 from datetime import datetime, timezone
 
-STATE_DIR = Path.home() / '.hermes' / 'state'
+def _resolve_state_dir() -> Path:
+    """Standalone state-dir law (E-073, stated in
+    Verdandi/standalone.py and carried inline here because
+    this module's deployed form is a lone file):
+    VERDANDI_HOME, when set, names the hub's state dir
+    directly; otherwise the hub lives at ~/.hermes/state,
+    exactly as every existing consumer already expects."""
+    override = os.environ.get("VERDANDI_HOME")
+    if override:
+        return Path(override)
+    return Path.home() / '.hermes' / 'state'
+
+
+STATE_DIR = _resolve_state_dir()
 SOCKET_PATH = STATE_DIR / 'runa.sock'
 FEED_PATH = STATE_DIR / 'nerve_feed.jsonl'
 PID_PATH = STATE_DIR / 'nervous_system.pid'
