@@ -3783,3 +3783,9 @@ review, not this slice.
   its `pgvector` pip guard — where E-079's run collected
   it and skipped its 13 tests individually; zero failures
   either way). No README touched; no member code touched.
+- E-080 push: banking commit c33143f pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 8743847,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  95ae76e) — remote moved 8743847 → c33143f, verified via ls-remote
+  (remote head = c33143f9d9e506982a4e8328df4148fcdaa9b54a = local HEAD
+  at push time).
