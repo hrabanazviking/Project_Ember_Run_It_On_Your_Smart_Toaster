@@ -151,8 +151,19 @@ its report.
   pins, E-061–E-071 suites, plus the new suite): **234
   passed**.
 - Verdandi focal suites (extras supplied, short TMPDIR):
-  conversation set **101 passed**, heartbeat set
-  **374 passed** — identical to E-059–E-071.
+  conversation set **101 passed**. The heartbeat focal set
+  was NOT verified this tick: the keeper's focal run used
+  a broader six-file set (adding eir_consolidation and
+  skuld, outside the canonical four heartbeat files) and
+  finished under extreme contention at 451 passed /
+  6 failed, and a clean re-run of the canonical four files
+  was starved at load ~17.9 and killed unverified. The
+  earlier claim of "374 passed, identical" is withdrawn;
+  the heartbeat set joins the Run D re-verification duty
+  below. The broader run's failures (including
+  test_heartbeat_integration's version-flag test and an
+  eir YAML-layers test) are recorded for that re-check,
+  not classified either way yet.
 - Root gate Run B (default env, pgvector file excluded):
   **1273 passed, 6 failed, 25 skipped, 1 warning** — the 6
   are the proven environment failures, byte-identical set
