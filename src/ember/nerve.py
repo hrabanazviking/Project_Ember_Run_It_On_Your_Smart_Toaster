@@ -46,6 +46,16 @@ with the feed-file tail as its offline shape — and is proven
 against a live hub by the E-067 tests. Chat's prompt assembly
 does not consume nerves yet (a context-budget decision no
 slice has claimed; see the E-067 doc §5).
+
+E-071 adds the privacy law to this bridge's read path:
+:func:`read_recent_for_persona` / :func:`filter_for_persona`
+give a persona only its own bound events plus system events
+— another persona's events, and above all their stimuli
+provenance, are withheld entirely, and session-bound events
+with no known owner are withheld fail-closed. The rule is
+Verdandi/nerve_privacy.py's, carried inline here under this
+module's no-member-imports discipline and pinned equal by
+the E-071 conformance tests.
 """
 
 from __future__ import annotations
@@ -249,6 +259,105 @@ def publish_turn(
     except ValueError as exc:
         return {"nerve_type": "error", "error": str(exc)}
     return publish_event(event, state_dir=state_dir)
+
+
+#: Conversation shapes that are session-bound for privacy
+#: (Verdandi/nerve_privacy.py SESSION_BOUND_TYPES, E-071 —
+#: literals pinned equal by the E-071 conformance tests).
+_PRIVACY_SESSION_BOUND_TYPES = ("conv_start", "conv_event", "conv_update", "conv_end")
+_PRIVACY_SESSION_BOUND_STIMULI = ("message.conversation",)
+
+
+def _privacy_classify(event: object, persona_id: str, session_owners: dict | None) -> str:
+    """The E-071 classification of one event for ``persona_id``.
+
+    Mirrors Verdandi/nerve_privacy.classify_event for the
+    shapes this bridge can meet: ``own`` / ``cross`` /
+    ``unknown_session`` / ``system``. Bindings are explicit
+    only — data.persona_id, a stimulus's payload/provenance
+    persona_id, or a session binding resolved through
+    ``session_owners``; everything else is system.
+    """
+    if not isinstance(event, dict):
+        return "system"
+    data = event.get("data") if isinstance(event.get("data"), dict) else {}
+    typ = event.get("type")
+    direct = data.get("persona_id")
+    stim = data if isinstance(typ, str) and typ.startswith("stimulus:") and isinstance(data.get("payload"), dict) else None
+    if stim is not None:
+        payload = stim.get("payload") or {}
+        prov = stim.get("provenance") if isinstance(stim.get("provenance"), dict) else {}
+        if not (isinstance(direct, str) and direct):
+            direct = payload.get("persona_id") or prov.get("persona_id")
+    if isinstance(direct, str) and direct:
+        return "own" if direct == persona_id else "cross"
+    session_id = data.get("session_id")
+    session_bound = typ in _PRIVACY_SESSION_BOUND_TYPES
+    if stim is not None:
+        payload = stim.get("payload") or {}
+        if session_id is None:
+            session_id = payload.get("session_id")
+        if stim.get("name") in _PRIVACY_SESSION_BOUND_STIMULI:
+            session_bound = True
+    if session_bound:
+        owners = session_owners or {}
+        if isinstance(session_id, str) and session_id in owners:
+            return "own" if owners[session_id] == persona_id else "cross"
+        return "unknown_session"
+    return "system"
+
+
+def filter_for_persona(
+    events: list, persona_id: str, *, session_owners: dict | None = None
+) -> tuple[list, dict]:
+    """The E-071 persona-scoped view of ``events``; never raises by design of its inputs.
+
+    Visible events are returned unmodified, in order:
+    events bound to ``persona_id`` and system events.
+    Events bound to another persona are withheld entirely
+    (their provenance never enters the view or the report),
+    and session-bound events with no known owner are
+    withheld fail-closed. The report is counts only.
+    """
+    visible = []
+    withheld_cross = 0
+    withheld_unknown = 0
+    for event in events:
+        cls = _privacy_classify(event, persona_id, session_owners)
+        if cls in ("own", "system"):
+            visible.append(event)
+        elif cls == "cross":
+            withheld_cross += 1
+        else:
+            withheld_unknown += 1
+    report = {
+        "privacy_version": 1,
+        "persona_id": persona_id,
+        "total": len(events),
+        "visible": len(visible),
+        "withheld_cross_persona": withheld_cross,
+        "withheld_unknown_session": withheld_unknown,
+    }
+    return visible, report
+
+
+def read_recent_for_persona(
+    persona_id: str,
+    count: int = 20,
+    *,
+    session_owners: dict | None = None,
+    state_dir: Path | None = None,
+) -> tuple[list, dict]:
+    """``read_recent`` filtered by the E-071 privacy law for one persona.
+
+    Fetches a wider tail (4x, mirroring read_recent's own
+    offline over-fetch) so withholding does not silently
+    shrink the view below what the persona may see, then
+    returns at most ``count`` visible events + the report.
+    """
+    events = read_recent(max(count * 4, count), state_dir=state_dir)
+    visible, report = filter_for_persona(events, persona_id, session_owners=session_owners)
+    return visible[-count:] if count >= 0 else visible, report
 
 
 def read_recent(count: int = 20, *, state_dir: Path | None = None) -> list:

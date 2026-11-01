@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 20:43 EDT
-Status: IN PROGRESS — E-071 (20:43 keeper tick)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070
-Next slice: E-071 — Privacy of nerves: stimuli provenance never leaks across personae (fixtures)
+Last updated: 2026-10-31 20:55 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-072
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071
+Next slice: E-072 — The logger as memory source: logged conversations can feed memory (Part V) under the user's rule, never silently
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3077,3 +3077,52 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried this tick's IN PROGRESS marker 81938a8)
   — remote moved 1e0557d → eb3c1fd, verified via ls-remote (remote head =
   eb3c1fd8a47f8446a2f34afd929501284d7bd54c = local HEAD at push time).
+
+## E-071 — Privacy of nerves (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-071_NERVE_PRIVACY.md` and in code at
+  `Verdandi/nerve_privacy.py` (stdlib-only, standalone like event_contract.py):
+  stimuli provenance never leaks across personae. **Bindings are explicit
+  only** — `data.persona_id` (the core's ember_session/ember_turn), a
+  stimulus's `payload.persona_id` then `provenance.persona_id`, or a session
+  binding (`conv_*` types / a `message.conversation` stimulus's
+  `payload.session_id`) resolved through a caller-supplied `session_owners`
+  mapping; the law invents no mapping. Everything else is SYSTEM (heartbeat,
+  Hermes lifecycle — no persona at all, E-068 — time/sensor stimuli) and is
+  visible to every persona, provenance intact.
+- **The rule:** own-bound → visible whole; cross-persona → withheld
+  ENTIRELY (not redacted — even the fact of a touch is private; sentinel
+  provenance proven absent from both the serialised view and the report);
+  session-bound with no known owner → withheld fail-closed; a `session_id`
+  on a non-conversation shape is a correlation id, not a binding (this
+  slice's own first test run caught that bug in the first draft of the
+  classifier — fixed in both copies before banking, per the
+  never-leave-a-bug rule). `filter_events_for_persona` returns visible
+  events unmodified in order + a counts-only report (total / visible /
+  withheld_cross_persona / withheld_unknown_session — no withheld content,
+  provenance, persona or session values). `redact_provenance` serves
+  unscoped aggregate views: origin + top-level source → "redacted",
+  channel kept, persona binding inside provenance dropped, input unmutated.
+  Honest limits stated in the doc: the feed itself is not encrypted or
+  rewritten (operator custody, E-020 — this law governs persona-scoped
+  VIEWS), and pre-E-071 stimuli with no binding are system-shaped because
+  a binding cannot be invented retroactively.
+- **Live enforcement:** the core's nerve bridge `src/ember/nerve.py` gains
+  `filter_for_persona` (the same classification inline, per that module's
+  no-member-imports discipline, pinned equal to nerve_privacy on every
+  fixture shape) and `read_recent_for_persona`, which over-fetches the hub
+  tail 4× so withholding does not silently shrink a persona's view.
+  Dockets 100–103 keep their E-076 owner; no new docket items.
+- E-057 table re-measured for both changed members (Verdandi 190 files /
+  16,996,351 B; core 130 files / 831,437 B; total 131,407,483 B; laptop
+  miss 219,135 B), both published copies updated. Conformance:
+  `tests/unit/test_nerve_privacy_e071.py` **18 passed**; prior Part IV
+  conformance (E-057 pins + E-061–E-070) **186 passed**; Verdandi focal
+  conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-070). Slice gate: Run B **1251 passed, 6 failed,
+  25 skipped, 1 warning** (1233 + 18; the 6 are the proven environment
+  failures, identical set); Run D **1308 passed, 0 failed, 19 skipped,
+  1 warning**, exit 0 (1290 + 18). Logs in
+  `~/workspace/.verify-tmp/ember-e071/gate/`. No README touched.
+- E-072 next — the logger as memory source: logged conversations can
+  feed memory (Part V) under the user's rule, never silently.
