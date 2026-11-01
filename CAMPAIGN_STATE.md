@@ -6,7 +6,7 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 21:48 EDT
+Last updated: 2026-10-31 22:00 EDT
 Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-073
 Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072
 Next slice: E-073 — Verdandi standalone: the hub usable without the full companion (its own consumers exist in the constellation)
@@ -3186,3 +3186,19 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried this tick's IN PROGRESS marker 5204c6f)
   — remote moved ee4af13 → 0482b22, verified via ls-remote (remote head =
   0482b2290d922502391627f83734306abc7f2797 = local HEAD at push time).
+
+## E-072 re-verification (DONE, 2026-10-31, 21:42 keeper tick)
+
+- The standing re-verification duty from E-072 is CLOSED, green on a
+  calming load (1-minute load fell 3.88 -> 1.10 across the two runs,
+  run sequentially, one at a time): the canonical heartbeat focal set
+  (`test_heartbeat*.py`, four files, Verdandi dir, pytest-asyncio from
+  the e005-extras dir, short TMPDIR) **374 passed** in 331.46s, exit 0
+  — the withdrawn claim is re-proven exactly; and root gate Run D
+  (whole suite, extras supplied) **1330 passed, 0 failed, 19 skipped,
+  1 warning** in 204.83s, exit 0 — the contention-sensitive timing
+  tests that failed under load in E-072 all passed. Logs in
+  `~/workspace/.verify-tmp/ember-e072/reverify/` (`heartbeat_focal.log`,
+  `run_d.log`). No code touched by this re-verification.
+- E-073 next — Verdandi standalone: the hub usable without the full
+  companion (its own consumers exist in the constellation).
