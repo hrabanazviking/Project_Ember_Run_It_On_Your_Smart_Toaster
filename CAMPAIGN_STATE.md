@@ -3599,3 +3599,9 @@ review, not this slice.
   (1362 + 8). Logs in `~/workspace/.verify-tmp/ember-e077/`.
   No README touched.
 - **Part V OPEN.** E-078 next — the comparison harness.
+- E-077 push: banking commit fdb3197 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was ee01b1e,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  c1de031) — remote moved ee01b1e → fdb3197, verified via ls-remote
+  (remote head = fdb31972f1c136aa9c05e8c5684eeac47d4498a0 = local HEAD
+  at push time).
