@@ -3274,3 +3274,9 @@ review, not this slice.
   Logs in `~/workspace/.verify-tmp/ember-e073/gate/`. No README
   touched.
 - E-074 next — Docs: the nerve model for member-builders.
+- E-073 push: banking commit 0733d2b pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 7b13faf,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  2b2ea81 and the E-072 re-verification correction) — remote moved
+  7b13faf → 0733d2b, verified via ls-remote (remote head =
+  0733d2bf7e4b17a812e6d798077ba842c293ea78 = local HEAD at push time).
