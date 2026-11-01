@@ -73,7 +73,7 @@ except ImportError:
 
 __version__ = "2.0.0"
 
-VAULT_DIR = Path(os.environ.get("KISTA_DIR", str(Path.home() / ".hermes" / "credentials")))
+VAULT_DIR = Path(os.environ.get("KISTA_DIR", str(Path.home() / ".ember" / "kista")))
 VAULT_KEY = VAULT_DIR / ".vault_key"
 VAULT_FILE = VAULT_DIR / "vault.json.enc"
 VAULT_META = VAULT_DIR / "vault_meta.json"

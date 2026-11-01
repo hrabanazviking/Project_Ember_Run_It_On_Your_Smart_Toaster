@@ -273,7 +273,7 @@ running hub is 21.9 MiB live, E-041).
 |---|---|---|---|---|
 | `src/` (ember core) | 131 | 922,893 B | toaster | 12.0 MiB |
 | `Verdandi/` | 193 | 17,033,233 B | none | 12.6 MiB |
-| `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
+| `kista/` | 25 | 2,770,316 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
 | `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
@@ -285,7 +285,7 @@ running hub is 21.9 MiB live, E-041).
 | `cleasby-vigfusson-old-norse-dict/` | 170 | 24,221,782 B | none | NOT MEASURED |
 
 In plain words: the twelve running members weigh
-131,546,922 bytes together, and three of them —
+131,547,020 bytes together, and three of them —
 mempalace, the dictionary, and Verdandi (which misses
 even the laptop's ceiling by 256,017 bytes) — fit no
 profile's install ceiling at all. Their weight is data,

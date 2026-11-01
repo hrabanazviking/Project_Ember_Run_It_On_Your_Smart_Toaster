@@ -29,7 +29,7 @@ import pytest
 
 # ---- Fixtures & Helpers ----
 
-CREDSTORE_SCRIPT = Path.home() / ".hermes" / "skills" / "devops" / "runa-credentials" / "scripts" / "credstore.py"
+CREDSTORE_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "credstore.py"
 
 
 @pytest.fixture(autouse=True)
@@ -48,6 +48,8 @@ def isolated_vault(tmp_path, monkeypatch):
     monkeypatch.setattr(cs, "VAULT_KEY", key_file)
     monkeypatch.setattr(cs, "VAULT_FILE", vault_file)
     monkeypatch.setattr(cs, "VAULT_META", meta_file)
+    monkeypatch.setattr(cs, "VAULT_CONFIG", vault_dir / "config.json")
+    monkeypatch.setattr(cs, "BACKUP_DIR", vault_dir / "backups")
 
     # Also patch _ensure_dir references within the functions since they
     # reference the module-level constants indirectly
@@ -1379,7 +1381,7 @@ class TestVersionFlag:
             capture_output=True, text=True
         )
         assert result.returncode == 0
-        assert "1.3.0" in result.stdout
+        assert "2.0.0" in result.stdout
 
 
 class TestSubprocessInstall:
