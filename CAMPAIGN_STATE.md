@@ -6,7 +6,7 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 21:31 EDT
+Last updated: 2026-10-31 21:33 EDT
 Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-073
 Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072
 Next slice: E-073 — Verdandi standalone: the hub usable without the full companion (its own consumers exist in the constellation)
@@ -3159,7 +3159,8 @@ Top-level members present (size / file count, working tree excl. .git):
 - E-057 table re-measured for Verdandi (191 files / 17,009,560 B; total
   131,420,692 B; laptop miss 232,344 B), both published copies updated.
   Conformance: `tests/unit/test_memory_feed_e072.py` **22 passed**;
-  Part IV conformance + E-057 pins **208 passed**; Verdandi focal
+  the combined conformance run (E-055 + E-057 pins + E-061–E-071 +
+  E-072) **234 passed**; Verdandi focal
   conversation **101 passed** and heartbeat **374 passed** (identical to
   E-059–E-071). Slice gate: Run B **1273 passed, 6 failed, 25 skipped,
   1 warning** (1251 + 22; the 6 are the proven environment failures,

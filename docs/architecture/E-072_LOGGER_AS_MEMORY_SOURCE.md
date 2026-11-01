@@ -147,8 +147,9 @@ its report.
 
 - New conformance suite: `tests/unit/test_memory_feed_e072.py`
   — **22 passed**.
-- Prior Part IV conformance (E-057 pins + E-061–E-071) plus
-  the new suite: **208 passed** (186 + 22).
+- The combined conformance run (E-055 budget book, E-057
+  pins, E-061–E-071 suites, plus the new suite): **234
+  passed**.
 - Verdandi focal suites (extras supplied, short TMPDIR):
   conversation set **101 passed**, heartbeat set
   **374 passed** — identical to E-059–E-071.
