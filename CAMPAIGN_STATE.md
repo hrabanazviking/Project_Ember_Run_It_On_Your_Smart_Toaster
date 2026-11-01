@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 21:01 EDT
-Status: IN PROGRESS — E-072 (21:01 keeper tick)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071
-Next slice: E-072 — The logger as memory source: logged conversations can feed memory (Part V) under the user's rule, never silently
+Last updated: 2026-10-31 21:29 EDT
+Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-073
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072
+Next slice: E-073 — Verdandi standalone: the hub usable without the full companion (its own consumers exist in the constellation)
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -3131,3 +3131,46 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried this tick's IN PROGRESS marker 08893bd)
   — remote moved f111dae → ef30a73, verified via ls-remote (remote head =
   ef30a73abdef9028d5eeded089dad4941c9946ae = local HEAD at push time).
+
+## E-072 — The logger as memory source (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-072_LOGGER_AS_MEMORY_SOURCE.md` and in
+  code at `Verdandi/memory_feed.py` (stdlib-only, standalone): logged
+  conversations can feed memory ONLY under the user's explicit rule, never
+  silently. A rule must be user-granted (`granted_by == "user"`), enabled,
+  scoped (`named_sessions` with a non-empty session list, or
+  `all_sessions` — no default scope), and must name the feedable event
+  types it allows; unknown keys or a non-user grant fail closed and feed
+  nothing. Feedable: `learned`→lesson, `decision`→decision,
+  `milestone`→milestone, plus an `end` summary only when the rule opts in
+  (`include_end_summary`). Working-state event types, start/update
+  entries, empty content and unattributable entries never feed; exact
+  duplicates feed once. Every run returns candidates AND a counts-only
+  report (status no_rule / rule_disabled / invalid_rule / fed, plus one
+  count per withholding reason — no content, session or persona values),
+  so a feed is never silent even when it feeds nothing. Candidates carry
+  provenance (log file, entry kind, event type, rule_id) and a persona
+  tag only from a caller-supplied session_owners mapping (never guessed).
+- Honest limits stated in the doc: this law governs the crossing, not the
+  destination — no memory store is written (Part V's E-080 chooses the
+  receiving face on top of this law); a session deleted under E-063 feeds
+  nothing afterwards (proven live), but already-fed candidates are NOT
+  retracted by this law — new **docket 104**, owned by E-085.
+- E-057 table re-measured for Verdandi (191 files / 17,009,560 B; total
+  131,420,692 B; laptop miss 232,344 B), both published copies updated.
+  Conformance: `tests/unit/test_memory_feed_e072.py` **22 passed**;
+  Part IV conformance + E-057 pins **208 passed**; Verdandi focal
+  conversation **101 passed** and heartbeat **374 passed** (identical to
+  E-059–E-071). Slice gate: Run B **1273 passed, 6 failed, 25 skipped,
+  1 warning** (1251 + 22; the 6 are the proven environment failures,
+  FAILED-list diff-identical to E-071). Run D: three attempts under heavy
+  cross-campaign contention (load 3.0–9.3) — **1325–1326 passed,
+  19 skipped**, the only failures the contention-sensitive timing tests
+  (idle CPU-tick window ×4 in every attempt; the live-socket bridge test
+  in two attempts — it passed isolated and in attempt 2). Run D is
+  recorded NOT GREEN under contention: **standing re-verification duty —
+  the next keeper tick re-runs Run D before starting E-073 and records
+  the result here; a calm-load green Run D closes this note.** Logs in
+  `~/workspace/.verify-tmp/ember-e072/gate/`. No README touched.
+- E-073 next — Verdandi standalone: the hub usable without the full
+  companion (its own consumers exist in the constellation).
