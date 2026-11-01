@@ -832,7 +832,13 @@ class RunaMemory:
             source: Source label for audit trail.
 
         Returns:
-            The ID of the new (superseding) memory.
+            The ID of the new (superseding) memory, or None when
+            the old memory is not found / not owned, or the new
+            content is guard-blocked. The insert and the mark are
+            a single transaction (E-087, docket 121): a crash at
+            any point leaves either the old fact current alone or
+            the new fact current with the old marked — never both
+            current, never neither.
         """
         old = self.get_memory(old_memory_id, user_id=user_id)
         if old is None:
@@ -848,27 +854,81 @@ class RunaMemory:
         _tags = tags if tags is not None else old.get("tags")
         _valence = emotional_valence if emotional_valence is not None else old.get("emotional_valence", 0.0)
 
-        new_id = self.add_memory(
+        # E-087 (docket 121): the insert and the mark are ONE
+        # transaction. Before this fix they were two commits —
+        # add_memory's, then the mark's — so a kill or crash
+        # between them left BOTH versions current: two current
+        # truths for one fact, with nothing pointing either at
+        # the other. The guard runs first, exactly as
+        # add_memory runs it; the audit row is written after
+        # the commit, as add_memory writes it. (The old shape
+        # also crashed with TypeError on guard-blocked content:
+        # add_memory returns None there and the old code
+        # compared it with <. A blocked supersede now refuses
+        # cleanly — None, nothing written, the old fact still
+        # current.)
+        _importance = max(1, min(10, _importance))
+        _valence = max(-1.0, min(1.0, _valence))
+        _tags_json = json.dumps(_tags) if isinstance(_tags, list) else _tags
+        guard_result = self.guard.validate_write(
             content=new_content,
-            category=_category,
-            tags=_tags,
-            importance=_importance,
-            emotional_valence=_valence,
-            user_id=user_id,
             source=source,
+            category=_category,
+            importance=_importance,
+            tags=json.loads(_tags_json) if isinstance(_tags_json, str) else _tags_json,
         )
+        if not guard_result.is_valid:
+            logger.warning(
+                "Supersede BLOCKED by Guard: %s (content: %.50s...)",
+                guard_result.reason, new_content[:50],
+            )
+            return None
+        if guard_result.sanitized_content:
+            new_content = guard_result.sanitized_content
+        _memory_type = infer_memory_type(_category)
 
-        if new_id < 0:
-            return new_id  # Store blocked
-
-        # Mark old memory as superseded (only if owned by this user)
-        def _mark_superseded(conn):
-            cursor = conn.execute(
+        def _insert_and_mark(conn):
+            cursor = conn.cursor()
+            # Re-check ownership inside the transaction: if the
+            # old fact vanished after the read above, refuse
+            # whole — write nothing at all.
+            owned = cursor.execute(
+                "SELECT 1 FROM memories WHERE id=? AND user_id=?",
+                (old_memory_id, user_id),
+            ).fetchone()
+            if owned is None:
+                return None
+            cursor.execute("""
+                INSERT INTO memories (content, category, tags, importance, emotional_valence, memory_type, user_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (new_content, _category, _tags_json, _importance,
+                  _valence, _memory_type, user_id))
+            new_id = cursor.lastrowid
+            cursor.execute(
                 "UPDATE memories SET is_current=0, superseded_by=? WHERE id=? AND user_id=?",
                 (new_id, old_memory_id, user_id),
             )
-            return cursor.rowcount > 0
-        result = self._write(_mark_superseded)
+            return new_id
+
+        new_id = self._write(_insert_and_mark)
+        if new_id is None:
+            return None
+
+        # Audit trail — after the commit, as add_memory does.
+        self.audit.log(
+            memory_id=new_id,
+            action=AuditAction.STORE,
+            source=source,
+            content_hash=guard_result.content_hash or hashlib.sha256(new_content.encode()).hexdigest()[:16],
+            user_id=user_id,
+            metadata={
+                "category": _category,
+                "importance": _importance,
+                "trust_level": guard_result.trust_level.name if guard_result.trust_level else "UNKNOWN",
+                "guard_severity": guard_result.severity.value,
+                "supersedes": old_memory_id,
+            },
+        )
 
         logger.info(
             "Memory %d superseded by %d: '%s' → '%s'",
@@ -1429,11 +1489,18 @@ class RunaMemory:
     def restore_from(self, backup_path: str) -> bool:
         """Restore the database from a backup file.
 
-        After restoration, the thread-local connection is reset so that
-        _get_conn() creates a fresh connection to the restored database.
+        Every connection this instance holds on the live file
+        is closed FIRST — this one's and the audit trail's.
+        Closing the last connection checkpoints and removes
+        the WAL. E-087 (docket 124): restoring over a live
+        WAL let the pre-restore write-ahead log replay into
+        the restored file, so the "restored" store came back
+        mixed — post-backup writes resurrected, backup-time
+        rows overwritten by stale frames — while the restore
+        reported success. After restoration, _get_conn()
+        lazily creates a fresh connection to the restored
+        database.
         """
-        result = restore_from_backup(self.db_path, backup_path)
-        # Reset thread-local connection to avoid stale references
         conn = getattr(self._local, 'conn', None)
         if conn is not None:
             try:
@@ -1441,7 +1508,11 @@ class RunaMemory:
             except Exception:
                 pass
             self._local.conn = None
-        return result
+        try:
+            self.audit.close()
+        except Exception:
+            pass
+        return restore_from_backup(self.db_path, backup_path)
 
     def github_backup(self, repo_url: Optional[str] = None, branch: str = "main",
                        commit_msg: str = "auto: Mímir's Well backup",

@@ -6,10 +6,10 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-11-01 05:27 EST
-Status: IN PROGRESS — E-087 (corruption & recovery drills) started this tick; first duty = Run D re-verification (E-085 + E-086 duties) in flight under heavy VM contention (load ~12, MemAvailable ~0.8 GB at tick start)
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086
-Next slice: E-087 — Corruption & recovery drills (atomicity, kill-mid-write). FIRST DUTY of E-087's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — both Run D duties of E-086's tick ended NOT GREEN under contention (see the E-086 entry).
+Last updated: 2026-11-01 06:10 EST
+Status: STOPPED — E-087 banked this tick (corruption & recovery drills: SIGKILL kill-mid-write rounds, fault-injection atomicity, sidecar/store corruption; THREE bugs found by the drills and fixed in scope — dockets 121 supersede atomicity + guard-block TypeError, 122 face save-raise across a committed write, 124 restore-over-live-WAL corruption; boundary 123 docketed for the E-092 gate; first duty Run D re-verified for E-085+E-086 at 1500 passed / 2 classified failures — clean-Run-D duty passes to E-088)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087
+Next slice: E-088 — Long-life soak: a simulated year of memory within budgets (accelerated fixtures). FIRST DUTY of E-088's tick, before new building: re-run gate Run D (extras supplied) in a calmer window and record the result here — a fully clean Run D is still not on record (see the E-087 entry).
 
 ## Laws (from the roadmap §3, binding every slice)
 
@@ -4312,3 +4312,104 @@ review, not this slice.
   via ls-remote (remote head =
   38b420b98565ac9b387516345a84dbc9f506e964 = local HEAD
   at push time).
+
+## E-087 — Corruption & recovery drills (DONE, 2026-11-01)
+
+- **First duty discharged — Run D re-verified for E-085 +
+  E-086, near-green, both failures classified, no defect
+  against banked code.** Run D (extras supplied, TMPDIR on
+  the workspace overlay, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e087/gate/runD_reverify_e085_e086.log`):
+  **1500 passed, 2 failed, 20 skipped** in 622.88s. The 2
+  classified from the log: (1) the load-truth live-hub
+  artifact, the known contention class (E-083/E-085/E-086
+  precedent; load ~12 at tick start, ~21 mid-run); (2) the
+  E-057 size-pin test — contamination by THIS tick's own
+  mid-run edits (the docket-122 fix grew the face while
+  the run was in flight; the test re-measures the tree
+  from disk live; re-pinned by this slice's re-measure,
+  below). E-085's and E-086's banked code stands
+  verified as far as this run can say it; a fully clean
+  Run D is still not on record, so the clean-Run-D duty
+  passes forward once more — it heads E-088's tick, now
+  covering E-087's code as well.
+- **The drills** (`docs/architecture/E-087_CORRUPTION_RECOVERY_DRILLS.md`;
+  battery `tests/unit/test_memory_recovery_e087.py`):
+  real injuries, reopened stores, honest answers. A child
+  process SIGKILLed mid-write in two rounds each of fact
+  writes and supersede chains: every committed fact came
+  back whole (integrity `ok`, at most one in-flight row
+  and it complete), and every supersede chain kept
+  exactly one current version with an intact
+  `superseded_by` chain. Fault injection inside write
+  transactions proved all-or-nothing for both
+  `add_memory` and `supersede`. A garbled sidecar degrades
+  fail-closed (facts untouched — word search reads
+  mimir-well's own per-persona truth; meaning search
+  resolves nothing; turns pool to the default persona
+  only); an orphan sidecar `.tmp` is ignored; a garbled
+  mimir file opens the face with that half `unavailable`,
+  reported, never raised, the Brunnr half still serving;
+  a zeroed file re-inits as a NEW empty store (named as
+  such, not a recovery); a dropped FTS index rebuilds at
+  open; a backup restores the backup-time truth exactly
+  and a garbled backup is refused untouched.
+- **THREE BUGS found by the drills and fixed in scope.**
+  (121) mimir-well's `supersede` was TWO commits — a kill
+  between them left both versions current — and a
+  guard-blocked supersede crashed with `TypeError`
+  (`None < 0`; probe-proven before the fix). Now: guard
+  first, then insert + mark in ONE transaction with
+  ownership re-checked inside it; blocked refuses
+  cleanly (None, nothing written, old fact current); the
+  audit row follows the commit and names the superseded
+  id. (122) the face's `_maybe_index` let a sidecar save
+  `OSError` raise AFTER the fact had committed — the
+  caller was told failure about a succeeded write; it
+  now returns the honest note (fact stored, index record
+  unsaved, word search still finds it). (124) **the
+  restore road itself corrupted**: `restore_from` swapped
+  the DB file under two open connections and a live WAL,
+  so the stale log replayed into the restored file —
+  post-backup writes resurrected, backup rows lost,
+  success reported. Now `restore_from` closes every held
+  connection (its own + the audit trail's) before the
+  swap, and `restore_from_backup` removes the replaced
+  file's `-wal`/`-shm` siblings after any copy. The
+  backup drill failed as first written and passes only
+  with the fix in. **Boundary docketed, not fixed —
+  (123)** `add_turn`'s Brunnr commit + sidecar tag save
+  are not one transaction: a death between them leaves
+  the turn untagged, where docket 117 serves it to the
+  default persona only (never a named other persona,
+  never off the machine); the drill pins the exact
+  behaviour and the doc hands it to the E-092 gate.
+- Member verification: mimir-well's backup / repair /
+  core / supersede-isolation / recall files re-run with
+  the fixes — **64 passed, 3 failed**; all 3 failures are
+  wall-clock latency budgets in `TestRecallLatency`
+  (<50 ms / <20 ms recalls) under VM load ~10–21, the
+  contention timing class (an earlier same-tick batch
+  showed the same family: 59 passed, 2 failed). Every
+  backup, repair, supersede and core test passed,
+  including the member's own restore tests with the
+  docket-124 fix in.
+- In-scope re-measure (E-080–E-086 precedent): E-057
+  table re-measured — core 131 files / 918,847 B,
+  mimir-well 59 files / 618,769 B, twelve-member total
+  131,541,718 B, laptop miss unchanged 254,866 B; both
+  published copies updated (E-057 doc + BUDGET BOOK §7)
+  and the E-077 pin re-pinned with attribution.
+- Conformance: battery focal (extras supplied) **18
+  passed**; combined conformance (E-057 table + E-072
+  feed + Part V E-077–E-087 files, 13 files) **187
+  passed, 1 skipped** (the live-WYRD skip, as E-086).
+  Slice gate (logs in `~/workspace/.verify-tmp/ember-e087/gate/`):
+  Run A **1 error, 19 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's battery
+  importorskipping sqlite_vec in the default env);
+  Run B **1321 passed, 7 failed, 33 skipped, 1 warning**
+  — the 6 proven environment failures plus the
+  load-truth artifact, the FAILED families identical to
+  E-086's Run B. No README touched; no vendored code
+  touched; no WYRD or ThoughtForge tree touched.

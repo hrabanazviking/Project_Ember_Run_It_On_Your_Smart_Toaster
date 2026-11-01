@@ -78,7 +78,10 @@ def test_member_tracked_sizes_match_e057_repinned_at_e076():
     # E-078 attribution: docket 111's FTS-sync triggers
     # (schema.py + core.py) and the member regression test
     # are mimir-well's first post-import change.
-    assert _tracked_size("mimir-well") == (59, 614_283)
+    # E-087 attribution: dockets 121 (supersede atomicity)
+    # and 124 (restore closes connections first) grew
+    # core.py, and 124's WAL-sibling removal grew backup.py.
+    assert _tracked_size("mimir-well") == (59, 618_769)
 
 
 def test_mimir_schema_shape_is_as_mapped():

@@ -635,7 +635,22 @@ class MemoryFace:
         if chunk_ids:
             self._sidecar.fact_chunk[str(fact_id)] = int(chunk_ids[0])
             self._sidecar.fact_persona[str(fact_id)] = persona
-            self._sidecar.save()
+            try:
+                self._sidecar.save()
+            except OSError as exc:
+                # E-087 (docket 122): the fact is already durable
+                # in mimir-well and the chunk is already in Brunnr;
+                # only the index *record* failed to persist. Never
+                # raise across a committed write and never claim
+                # the index — say so plainly. The chunk stays
+                # resolvable in this process; after a restart it is
+                # an unmapped orphan, which prune_stale_index
+                # (E-082) exists to collect.
+                return False, (
+                    f"not indexed: the fact is stored, but its "
+                    f"index record could not be saved ({exc}); "
+                    f"word search still finds it"
+                )
             return True, "indexed for meaning search (index, don't merge)"
         return False, "not indexed: Brunnr accepted no chunk"
 
