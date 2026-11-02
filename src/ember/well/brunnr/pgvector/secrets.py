@@ -16,6 +16,13 @@ Per ADR 0010 §2.5 — resolves the Well password in this order:
 4. **Final** → ``None``. The caller folds this into
    :class:`Disconnected(AUTH_FAILED)`.
 
+**E-100 exception:** when ``PgVectorConfig.kista_entry`` names a
+toaster-Kista entry, the vault is tried *before* step 1 and is
+the only source — naming a vault entry retires this interim
+chain for that secret (E-093 §3/§6), and a vault refusal is the
+resolution's reason, never a silent fall-back to a plainer
+source. With no entry named, the order above is untouched.
+
 The secret is **never** logged or echoed back through any return value —
 even on error. Reasons describe *why* a path was skipped or refused;
 they never name the resolved value.
@@ -67,6 +74,7 @@ def resolve(  # noqa: PLR0912 — secret resolution is naturally branchy; each b
     *,
     env: dict[str, str] | None = None,
     keyring_module: object | None = None,
+    kista_runner: object | None = None,
 ) -> SecretResolution:
     """Resolve the Well secret per ADR 0010 §2.5.
 
@@ -77,6 +85,25 @@ def resolve(  # noqa: PLR0912 — secret resolution is naturally branchy; each b
     """
     notes: list[str] = []
     env_map = os.environ if env is None else env
+
+    # --- 0. Toaster-Kista (E-100), when an entry is named ------- #
+    if config.kista_entry:
+        from ember.kista_binding import fetch_credential
+        from ember.schemas.config import KistaConfig
+
+        resolution = fetch_credential(
+            config.kista_entry,
+            config=KistaConfig(enabled=True),
+            env=dict(env_map),
+            runner=kista_runner,
+        )
+        if resolution.secret is not None:
+            return SecretResolution.found(resolution.secret)
+        return SecretResolution.missing(
+            f"kista entry {config.kista_entry!r} named for the Well "
+            f"secret, and the vault is the only source tried: "
+            f"{resolution.reason}"
+        )
 
     # --- 1. Env var ---------------------------------------------------- #
     env_name = config.secret_env or DEFAULT_SECRET_ENV

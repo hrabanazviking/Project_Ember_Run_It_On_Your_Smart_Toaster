@@ -92,9 +92,18 @@ def test_no_passphrase_no_lock_shapes_stand_as_modelled():
     # still E-100's).
     assert "hashlib.scrypt" in src
     assert "kista_key_wrap" in src
-    # No inter-process lock exists anywhere.
-    for absent in ("flock", "lockf", "FileLock"):
-        assert absent not in src, absent
+    # RE-PINNED AT E-100, consciously and with attribution:
+    # the no-lock pin below originally asserted the absence
+    # of any inter-process lock — exactly the gap E-095's
+    # model handed on as docket 134, whose lock shape it
+    # assigned to E-100. E-100 built it (an flock on
+    # .vault.lock held by every write command for its
+    # whole run, plus per-process temp names), so the pin
+    # now asserts the lock's presence in its built shape.
+    # The model's historical record stands in its doc.
+    assert "flock" in src
+    assert ".vault.lock" in src
+    assert "_acquire_write_lock" in src
     # The key file lives beside the vault file.
     assert 'VAULT_DIR / ".vault_key"' in src.replace("'", '"') \
         or ".vault_key" in src

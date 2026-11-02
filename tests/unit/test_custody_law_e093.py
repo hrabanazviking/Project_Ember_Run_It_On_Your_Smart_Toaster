@@ -136,6 +136,12 @@ def test_credential_assignments_are_the_classified_fixtures():
         "tests/integration/test_pgvector_real_backend.py": 1,
         "tests/unit/test_brunnr_pgvector_secrets.py": 1,
         "tests/unit/test_dependency_diet_e044.py": 1,
+        # Classified at E-100, consciously (the act this
+        # battery exists to force): the core-binding
+        # battery's one credential-shaped assignment is
+        # its synthetic Aesir-shaped vault key, used only
+        # against isolated scratch vaults.
+        "tests/unit/test_kista_core_binding_e100.py": 1,
     }, counts
 
 

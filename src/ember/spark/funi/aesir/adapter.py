@@ -77,6 +77,7 @@ from collections.abc import Iterator, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+from ember.kista_binding import fetch_credential
 from ember.schemas.config import FuniConfig, FuniRuntime
 from ember.schemas.funi import (
     BackendCapabilities,
@@ -172,7 +173,13 @@ class AesirFuni:
     # ------------------------------------------------------------- open
 
     @classmethod
-    def open(cls, config: FuniConfig) -> AesirFuni | Unavailable:
+    def open(
+        cls,
+        config: FuniConfig,
+        *,
+        kista_config: object | None = None,
+        env: dict[str, str] | None = None,
+    ) -> AesirFuni | Unavailable:
         if config.runtime is not FuniRuntime.AESIR:
             return Unavailable(
                 reason=UnavailableReason.CONFIG_INVALID,
@@ -184,6 +191,40 @@ class AesirFuni:
             return Unavailable(
                 reason=UnavailableReason.CONFIG_INVALID,
                 detail=det_error,
+            )
+        if aesir_cfg.api_key_entry:
+            # E-100: the key comes from the toaster-Kista under
+            # the core's binding (program ember-core, E-097).
+            # The key file is not read at all on this road, and
+            # a vault refusal is CONFIG_INVALID with the binding's
+            # reason — which never names any part of a value.
+            from ember.schemas.config import KistaConfig
+
+            kista_cfg = (
+                kista_config
+                if isinstance(kista_config, KistaConfig)
+                else KistaConfig(enabled=True)
+            )
+            resolution = fetch_credential(
+                aesir_cfg.api_key_entry,
+                config=kista_cfg,
+                env=env,
+            )
+            if resolution.secret is None:
+                return Unavailable(
+                    reason=UnavailableReason.CONFIG_INVALID,
+                    detail=(
+                        "aesir key could not be fetched from the "
+                        f"toaster-Kista: {resolution.reason}"
+                    ),
+                )
+            return cls._open_with_key(
+                config,
+                api_key=resolution.secret,
+                source=(
+                    f"toaster-Kista entry {aesir_cfg.api_key_entry!r} "
+                    f"(program {kista_cfg.program or 'ember-core'})"
+                ),
             )
         key_path = Path(aesir_cfg.api_key_file).expanduser()
         # Custody law (E-093): a file that holds a credential must
@@ -217,13 +258,29 @@ class AesirFuni:
                 ),
             )
         api_key = raw_key[:-1] if raw_key.endswith("\n") else raw_key
+        return cls._open_with_key(
+            config, api_key=api_key, source=f"key file {key_path}"
+        )
+
+    @classmethod
+    def _open_with_key(
+        cls, config: FuniConfig, *, api_key: str, source: str
+    ) -> AesirFuni | Unavailable:
+        """Open with a key already in hand, from either custody road.
+
+        The grammar check and everything after it are shared: a
+        malformed key is refused with the *source* named (a file
+        path or a vault entry name — identifiers, never values,
+        per the E-093 custody law).
+        """
+        aesir_cfg = config.aesir
         if not _KEY_RE.fullmatch(api_key):
-            # Malformed key material: say the file is bad, never show
-            # any part of what was read.
+            # Malformed key material: say the source is bad, never
+            # show any part of what was fetched or read.
             return Unavailable(
                 reason=UnavailableReason.CONFIG_INVALID,
                 detail=(
-                    f"aesir key file {key_path} does not hold a valid "
+                    f"aesir key from {source} does not hold a valid "
                     "Aesir service key (32..256 letters, digits, "
                     "hyphens or underscores)."
                 ),

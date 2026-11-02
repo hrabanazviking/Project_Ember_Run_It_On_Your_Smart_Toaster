@@ -97,6 +97,11 @@ except ImportError:
 
 __version__ = "2.0.0"
 
+try:
+    import fcntl
+except ImportError:  # non-POSIX — the lock is a no-op there, stated in E-100
+    fcntl = None  # type: ignore[assignment]
+
 VAULT_DIR = Path(os.environ.get("KISTA_DIR", str(Path.home() / ".ember" / "kista")))
 VAULT_KEY = VAULT_DIR / ".vault_key"
 VAULT_FILE = VAULT_DIR / "vault.json.enc"
@@ -310,6 +315,42 @@ def _ensure_dir() -> None:
         VAULT_DIR.chmod(0o700)
     except (OSError, NotImplementedError):
         pass
+
+
+#: Commands that change the vault (or its key, config, or
+#: backups). A run of one of these holds the vault write lock
+#: (E-100, docket 134) from dispatch to exit, so two writers —
+#: the owner at the CLI and any program that writes — can never
+#: interleave a load/modify/save over each other's work. Read
+#: commands (get/list/search/check/status) never lock: vault
+#: writes land by atomic replace, so a reader always sees one
+#: whole state or the other.
+_WRITE_COMMANDS = frozenset({
+    "init", "set-passphrase", "remove-passphrase", "add",
+    "update", "remove", "import", "repair", "restore",
+    "github-backup", "add-soul", "add-cron-backup", "config",
+})
+
+_LOCK_FD = None  # held for the process's life once taken
+
+
+def _acquire_write_lock() -> None:
+    """Take the vault's inter-process write lock (blocking).
+
+    The lock is an ``flock`` on ``.vault.lock`` inside the vault
+    directory — no new file format, no daemon, no dependency,
+    and a crashed holder releases it when its process dies, so
+    a lock can never go stale. On a platform without ``flock``
+    the lock is a stated no-op (E-100 §4): the vault keeps its
+    pre-E-100 behaviour there, and no claim is made for it.
+    """
+    global _LOCK_FD
+    if fcntl is None or _LOCK_FD is not None:
+        return
+    _ensure_dir()
+    fd = os.open(VAULT_DIR / ".vault.lock", os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    _LOCK_FD = fd
 
 
 def _chmod_600(path: Path) -> None:
@@ -750,7 +791,11 @@ def _atomic_write(path: Path, data: bytes) -> None:
     TOCTOU race condition (BUG-RACE-02).
     """
     _ensure_dir()
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    # E-100 (docket 134): the temp name is per-process, never the
+    # one shared predictable name every writer used before — two
+    # writers can no longer write into each other's temp file,
+    # even on a platform where the write lock is a no-op.
+    tmp_path = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
     try:
         tmp_path.write_bytes(data)
         os.replace(str(tmp_path), str(path))
@@ -3159,6 +3204,8 @@ def main():
 
     # Handle special commands
     if command in commands:
+        if command in _WRITE_COMMANDS:
+            _acquire_write_lock()
         commands[command](args)
     else:
         parser.print_help()

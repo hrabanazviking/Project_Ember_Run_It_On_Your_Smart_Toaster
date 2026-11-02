@@ -136,6 +136,14 @@ class FuniAesirConfig:
     base_url: str = "http://127.0.0.1:18434"
     model: str = ""
     api_key_file: Path = Path("~/.config/aesir/service.key")
+    api_key_entry: str = ""
+    """Name of the toaster-Kista entry holding this service's key
+    (E-100). Empty (the default) keeps the ``api_key_file`` road
+    exactly as E-023/E-093 left it. When set, the key is fetched
+    from the vault under the core's Kista binding
+    (:mod:`ember.kista_binding`, program ``ember-core``) and the
+    key file is not read at all — a config carries an entry
+    *name*, never a value (E-093 custody law rule 2)."""
     temperature: float = 0.7
     top_p: float = 0.9
     max_tokens: int = 256
@@ -222,6 +230,14 @@ class PgVectorConfig:
     url: str
     secret_ref: Path = Path("~/.ember/secrets/well.password")
     secret_env: str = "EMBER_WELL_PASSWORD"
+    kista_entry: str = ""
+    """Name of the toaster-Kista entry holding the Well password
+    (E-100). Empty (the default) keeps the ADR 0010 §2.5 resolver
+    order exactly as it was. When set, the vault is the first and
+    only source tried — naming a vault entry retires the interim
+    env/keyring/file chain for this secret (E-093 §3/§6), and a
+    vault refusal is a typed failure, never a silent fall-back to
+    a plainer source."""
     use_keyring: bool = True
     keyring_service: str = "ember-well"
     username: str | None = None  # None → parsed from URL
@@ -549,6 +565,48 @@ class PersonasConfig:
 
 
 # --------------------------------------------------------------------- #
+# Kista (E-100 — the core's binding to the toaster-Kista)               #
+# --------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True, slots=True)
+class KistaConfig:
+    """How the Ember core reaches its own machine's toaster-Kista.
+
+    The binding built at E-100 (:mod:`ember.kista_binding`): the
+    companion is one *program* calling the vault under E-097's
+    per-program access, with the name ``ember-core``. It can fetch
+    only entries the owner has given to that program, and only
+    the toaster set's credential kinds (``credential`` →
+    its password, ``apikey`` → its key — E-098).
+
+    ``enabled`` is False by default: no vault is touched until the
+    operator turns the binding on (or names a Kista entry in a
+    consumer's config, which is the same act for that consumer).
+    ``vault_dir`` names the vault's home — the E-094 default
+    ``~/.ember/kista/`` — as a *reference*; ``credstore_path``
+    names the toaster-Kista program itself, empty meaning the
+    in-tree member of this monorepo. ``passphrase_env`` names the
+    environment variable the vault passphrase travels in when the
+    vault is locked (E-096's road: ``KISTA_PASSPHRASE``); the
+    config holds the variable's *name*, never a value, and when
+    the variable is absent the binding does not prompt — a
+    programmatic fetch never blocks on a hidden prompt, it fails
+    with the typed reason the vault itself states.
+
+    The binding is fetch-only: the core never writes to the
+    vault. Entry custody — adding, giving, taking back — stays
+    the owner's act at the Kista's own command line (E-097).
+    """
+
+    enabled: bool = False
+    program: str = "ember-core"
+    vault_dir: Path = Path("~/.ember/kista")
+    credstore_path: Path | None = None
+    passphrase_env: str = "KISTA_PASSPHRASE"
+
+
+# --------------------------------------------------------------------- #
 # Top-level                                                             #
 # --------------------------------------------------------------------- #
 
@@ -565,6 +623,7 @@ class EmberConfig:
     smidja: SmidjaConfig = field(default_factory=SmidjaConfig)
     tools: ToolsConfig = field(default_factory=ToolsConfig)
     mcp: MCPConfig = field(default_factory=MCPConfig)
+    kista: KistaConfig = field(default_factory=KistaConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
 
@@ -585,6 +644,7 @@ __all__ = [
     "FuniRuntime",
     "IdentityConfig",
     "JournalConfig",
+    "KistaConfig",
     "LogDestinationKind",
     "LogFormat",
     "LogLevel",
