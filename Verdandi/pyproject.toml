@@ -28,7 +28,10 @@ keywords = ["nervous-system", "event-bus", "unix-socket", "ai-awareness", "self-
 asyncio_mode = "auto"
 
 [project.optional-dependencies]
-dev = ["pytest-asyncio>=0.23"]
+# Bounded both ways, like the root package (E-044's law;
+# Verdandi's half of docket 92, closed at E-076): an unbounded
+# floor lets a future breaking major resolve silently.
+dev = ["pytest-asyncio>=0.23,<2"]
 
 [project.scripts]
 verdandi = "nervous_system:main"
@@ -36,7 +39,7 @@ verdandi-nerve = "nervous_system:main"
 verdandi-heartbeat = "heartbeat.cli:main"
 
 [build-system]
-requires = ["setuptools>=68.0"]
+requires = ["setuptools>=68,<82"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]

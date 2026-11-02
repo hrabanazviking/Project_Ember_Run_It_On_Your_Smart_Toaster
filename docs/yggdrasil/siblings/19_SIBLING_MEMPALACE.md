@@ -1,5 +1,28 @@
 # 19 — Sibling: MemPalace
 
+> **STATUS — SUPERSEDED IN PART, BOUNDED (marked at E-091,
+> 2026-11-01).** The integration this document designs — a
+> MemPalace Brunnr backend adapter
+> (`src/ember/well/brunnr/mempalace/adapter.py`), a Bifrǫst
+> sub-backend, and composed dual-memory operation — **was
+> never built and is superseded** by the Part V verdict
+> (E-079, `docs/architecture/E-079_MEMORY_VERDICT_PAPER.md`).
+> **Successor, named:** the companion's one memory face,
+> `MemoryFace` (E-080, `src/ember/well/memory_face.py`),
+> over Brunnr + mimir-well. MemPalace's standing in Ember
+> is **bounded**: optional, non-default, never bundled,
+> laptop-class only, not part of the memory face, its true
+> costs (~403 MiB peak RAM; ~185 MB deps + ~88 MB model —
+> E-078's measurements) stated wherever it is offered.
+> Its honourable retirement from Ember is **proposed, not
+> decided** — it awaits Volmarr's word (E-079 §6); until he
+> rules, the member stands in the tree untouched and this
+> document's restraints apply. This document's open
+> licence question is answered: MemPalace is MIT (E-007).
+> The text below stands unrewritten as the pre-verdict
+> design record; read it through this banner. The residue
+> record is `docs/architecture/E-091_VERDICT_RESIDUE.md`.
+
 > *"Local-first AI memory. Verbatim storage, pluggable backend,
 > 96.6% R@5 raw on LongMemEval — zero API calls."*
 

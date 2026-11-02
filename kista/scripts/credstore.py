@@ -43,6 +43,15 @@ Usage:
   kista export [--output FILE]
   kista import <file> [--merge|--overwrite]
   kista init
+  kista set-passphrase     # Protect the vault with a passphrase (E-096)
+  kista remove-passphrase  # Remove that protection (asks first, in words)
+  kista add <service> --program NAME  # The entry belongs to that program (E-097)
+  # A program names itself with the KISTA_PROGRAM environment
+  # variable and then sees — and can touch — only its own entries.
+  # The toaster set of entry kinds is credential, apikey, url,
+  # note — passwords, tokens, URLs, notes (E-098). Wider kinds
+  # still in the program are named as the other Kista's road
+  # there, kept working, and never silently merged.
   kista status
   kista generate-password [--length N]
   kista repair
@@ -50,10 +59,14 @@ Usage:
 """
 
 import argparse
+import base64
 import copy
+import getpass
+import hashlib
 import json
 import os
 import platform
+import re
 import secrets
 import string
 import subprocess
@@ -61,19 +74,35 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Fernet for symmetric encryption
+# Fernet for symmetric encryption.
+# E-096 (docket 14): a missing dependency is a plain, stated
+# error — never an installer run at import time. The old
+# shape executed an installer from the network on first
+# import; it died as a raw traceback on PEP 668 machines
+# and was a supply-chain exposure everywhere else.
 try:
     from cryptography.fernet import Fernet, InvalidToken
 except ImportError:
-    print("Installing cryptography package...")
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "cryptography"]
+    print(
+        "kista needs the 'cryptography' package, and it is not "
+        "installed.\n"
+        "Ask whoever looks after this machine to install it "
+        "(for example with the machine's package manager), "
+        "then try again.\n"
+        "Nothing was changed, and your vault — if you have "
+        "one — is untouched.",
+        file=sys.stderr,
     )
-    from cryptography.fernet import Fernet, InvalidToken
+    sys.exit(1)
 
 __version__ = "2.0.0"
 
-VAULT_DIR = Path(os.environ.get("KISTA_DIR", str(Path.home() / ".hermes" / "credentials")))
+try:
+    import fcntl
+except ImportError:  # non-POSIX — the lock is a no-op there, stated in E-100
+    fcntl = None  # type: ignore[assignment]
+
+VAULT_DIR = Path(os.environ.get("KISTA_DIR", str(Path.home() / ".ember" / "kista")))
 VAULT_KEY = VAULT_DIR / ".vault_key"
 VAULT_FILE = VAULT_DIR / "vault.json.enc"
 VAULT_META = VAULT_DIR / "vault_meta.json"
@@ -215,10 +244,113 @@ ENTRY_TYPE_SCHEMAS = {
 # Types that use --key-file for sensitive data (not a password file)
 SENSITIVE_FILE_TYPES = {"sshkey", "certificate"}
 
+# Entry kinds (E-098): the toaster set, the kept kinds,
+# and the other road's kinds. Together the three sets
+# partition ENTRY_TYPE_SCHEMAS exactly — every kind
+# stands in exactly one set, and the E-098 focal
+# battery derives that partition from this code.
+#
+# The toaster set is what this program exists to hold
+# on tiny hardware, in the roadmap's own plain words:
+# passwords, tokens, URLs, notes. E-100 binds the
+# companion against credential + apikey; E-104 writes
+# the user docs against these four kinds and no
+# others.
+TOASTER_ENTRY_TYPES = frozenset(
+    {"credential", "apikey", "url", "note"})
+
+# Kept kinds: credential-family kinds the imported
+# program already holds well (one-time-code secrets,
+# licence keys, machine keys and certificates, and a
+# person's identity record). They stay because
+# removing a kind would strand every entry of that
+# kind already in a vault, for no gain — kept, not
+# promised: Ember builds nothing on them, and they
+# are not the toaster set.
+KEPT_ENTRY_TYPES = frozenset(
+    {"totp", "license", "sshkey", "certificate",
+     "identity"})
+
+# The other road's kinds: an agent's life-records —
+# readings, character sheets, and documents. In the
+# ai-folder Kista's wider ambitions (states, prompts,
+# habits, and kin) these are live features of a live
+# agent; here they are recorded as that road's, not
+# silently merged into the toaster set (E-011, E-098).
+# Entries of these kinds already in a vault keep
+# working exactly as before; a NEW entry of one of
+# these kinds is announced in words at the moment it
+# is added (see _note_other_road_kind).
+OTHER_ROAD_ENTRY_TYPES = frozenset(
+    {"astrology", "character-sheet", "rune-reading",
+     "tarot-reading", "markdown"})
+
+
+def _note_other_road_kind(entry_type: str) -> None:
+    """Say, in plain words, that a kind just added is
+    not one of the toaster-Kista's own kinds (E-098).
+
+    The entry is kept exactly as given — this notice
+    refuses nothing and changes nothing. Its whole job
+    is that the wider set is never *silently* merged
+    into the toaster set: at the moment a kind from
+    the other road enters this vault, the program
+    names whose road it belongs to, in words."""
+    print(
+        f"  Note: '{entry_type}' is not one of the "
+        "toaster-Kista's own kinds (passwords, tokens, "
+        "URLs, notes). It belongs to the other Kista's "
+        "wider road and is kept here exactly as given "
+        "— nothing was merged or changed.")
+
 
 def _ensure_dir() -> None:
-    """Ensure the vault directory exists."""
+    """Ensure the vault directory exists, owner-only where the
+    platform supports it (E-095: the directory must not be
+    traversable by other local accounts — the files' 0600
+    modes do not help if the directory itself is group- or
+    world-open under a permissive umask)."""
     VAULT_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        VAULT_DIR.chmod(0o700)
+    except (OSError, NotImplementedError):
+        pass
+
+
+#: Commands that change the vault (or its key, config, or
+#: backups). A run of one of these holds the vault write lock
+#: (E-100, docket 134) from dispatch to exit, so two writers —
+#: the owner at the CLI and any program that writes — can never
+#: interleave a load/modify/save over each other's work. Read
+#: commands (get/list/search/check/status) never lock: vault
+#: writes land by atomic replace, so a reader always sees one
+#: whole state or the other.
+_WRITE_COMMANDS = frozenset({
+    "init", "set-passphrase", "remove-passphrase", "add",
+    "update", "remove", "import", "repair", "restore",
+    "github-backup", "add-soul", "add-cron-backup", "config",
+})
+
+_LOCK_FD = None  # held for the process's life once taken
+
+
+def _acquire_write_lock() -> None:
+    """Take the vault's inter-process write lock (blocking).
+
+    The lock is an ``flock`` on ``.vault.lock`` inside the vault
+    directory — no new file format, no daemon, no dependency,
+    and a crashed holder releases it when its process dies, so
+    a lock can never go stale. On a platform without ``flock``
+    the lock is a stated no-op (E-100 §4): the vault keeps its
+    pre-E-100 behaviour there, and no claim is made for it.
+    """
+    global _LOCK_FD
+    if fcntl is None or _LOCK_FD is not None:
+        return
+    _ensure_dir()
+    fd = os.open(VAULT_DIR / ".vault.lock", os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    _LOCK_FD = fd
 
 
 def _chmod_600(path: Path) -> None:
@@ -264,6 +396,216 @@ def _validate_key(key_bytes: bytes) -> bytes:
     return stripped
 
 
+# ── Passphrase wrapping (E-096) ─────────────────────────
+# The vault key itself never changes when a passphrase is
+# set, changed, or removed — only its wrapping does, so
+# entries, backups, and exports are untouched by unlock
+# changes. A wrapped key file is a small JSON document:
+#
+#   {"kista_key_wrap": 1, "kdf": "scrypt",
+#    "n": 16384, "r": 8, "p": 1,
+#    "salt": "<base64, 16 random bytes>",
+#    "wrapped": "<Fernet token under the derived key>"}
+#
+# The wrapping key is scrypt(passphrase, salt) from the
+# standard library — no new dependency, and the one-time
+# derivation cost at unlock is a fraction of a second
+# even on toaster-class hardware (priced at E-103).
+WRAP_MARKER = "kista_key_wrap"
+_SCRYPT_N = 16384
+_SCRYPT_R = 8
+_SCRYPT_P = 1
+_MIN_PASSPHRASE_LEN = 8
+
+#: The unwrapped vault key, cached for this process only
+#: after a successful unlock, so one command run asks at
+#: most once. Never written anywhere.
+_unlocked_key_cache: bytes | None = None
+
+
+def _is_wrapped_key(raw: bytes) -> bool:
+    """True when the key file holds a passphrase-wrapped key."""
+    try:
+        doc = json.loads(raw.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return False
+    return isinstance(doc, dict) and doc.get(WRAP_MARKER) == 1
+
+
+def _derive_wrapping_key(passphrase: str, salt: bytes,
+                         n: int, r: int, p_: int) -> bytes:
+    """Derive a Fernet key from a passphrase via scrypt."""
+    derived = hashlib.scrypt(
+        passphrase.encode("utf-8"), salt=salt, n=n, r=r, p=p_,
+        dklen=32,
+    )
+    return base64.urlsafe_b64encode(derived)
+
+
+def _wrap_key(vault_key: bytes, passphrase: str) -> bytes:
+    """Wrap a vault key under a passphrase; returns file bytes."""
+    salt = os.urandom(16)
+    wrapping = _derive_wrapping_key(
+        passphrase, salt, _SCRYPT_N, _SCRYPT_R, _SCRYPT_P)
+    doc = {
+        WRAP_MARKER: 1,
+        "kdf": "scrypt",
+        "n": _SCRYPT_N,
+        "r": _SCRYPT_R,
+        "p": _SCRYPT_P,
+        "salt": base64.b64encode(salt).decode(),
+        "wrapped": Fernet(wrapping).encrypt(vault_key).decode(),
+    }
+    return (json.dumps(doc, indent=2) + "\n").encode()
+
+
+def _read_vault_passphrase() -> str:
+    """Read the vault passphrase without echo and without
+    any command-line shape: the KISTA_PASSPHRASE
+    environment variable (for scripts and the companion),
+    or a hidden prompt on a terminal. Anything else is a
+    plain refusal — a passphrase is never taken from a
+    command-line argument, where process listings and
+    shell history would keep it (the docket 128 rule,
+    applied to the vault's own secret too)."""
+    env = os.environ.get("KISTA_PASSPHRASE")
+    if env:
+        return env
+    if sys.stdin.isatty():
+        try:
+            return getpass.getpass("Vault passphrase (input hidden): ")
+        except (EOFError, KeyboardInterrupt):
+            print("", file=sys.stderr)
+            sys.exit(1)
+    print(
+        "✗ This vault is protected by a passphrase, and no "
+        "passphrase was given.\n"
+        "  Run this in a terminal to be asked for it, or set "
+        "the KISTA_PASSPHRASE environment variable.\n"
+        "  Nothing was changed.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def _unwrap_key(raw: bytes) -> bytes:
+    """Unlock a wrapped key file with the vault passphrase.
+
+    A wrong passphrase is a plain, stated refusal — never
+    a traceback, never a new key, never a repair attempt:
+    the wrapped file is left exactly as it was.
+    """
+    global _unlocked_key_cache
+    if _unlocked_key_cache is not None:
+        return _unlocked_key_cache
+    try:
+        doc = json.loads(raw.decode("utf-8"))
+        salt = base64.b64decode(doc["salt"])
+        n, r, p_ = int(doc["n"]), int(doc["r"]), int(doc["p"])
+        wrapped = doc["wrapped"].encode()
+    except (ValueError, KeyError, TypeError, UnicodeDecodeError):
+        print(
+            "✗ The vault key file is wrapped, but its wrapping "
+            "cannot be read — the file may be damaged.\n"
+            "  Your vault data is still intact. Do NOT delete "
+            "or regenerate anything; ask for help with the "
+            "key file as it stands.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    for _attempt in range(3):
+        passphrase = _read_vault_passphrase()
+        wrapping = _derive_wrapping_key(passphrase, salt, n, r, p_)
+        try:
+            vault_key = Fernet(wrapping).decrypt(wrapped)
+        except InvalidToken:
+            print(
+                "✗ That passphrase did not unlock the vault. "
+                "Check for typing mistakes — capital letters "
+                "and spaces count.",
+                file=sys.stderr,
+            )
+            # A scripted passphrase gets one honest answer,
+            # not a prompt loop it cannot answer.
+            if os.environ.get("KISTA_PASSPHRASE") or not sys.stdin.isatty():
+                sys.exit(1)
+            continue
+        key = _validate_key(vault_key)
+        _unlocked_key_cache = key
+        return key
+    print(
+        "✗ The vault stayed locked after three tries. "
+        "Nothing was changed.\n"
+        "  If the passphrase is forgotten, the vault cannot "
+        "be opened — there is no back door and no recovery "
+        "copy. That is the protection working as promised.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def _prompt_new_passphrase() -> str:
+    """Ask for a new passphrase twice, in plain words, with
+    the recovery truth stated BEFORE it is set (E-095 §6):
+    a forgotten passphrase means a lost vault."""
+    env = os.environ.get("KISTA_PASSPHRASE")
+    print(
+        "Before you choose: if you forget this passphrase, "
+        "nobody can open\n"
+        "your vault — not you, not Ember, not anyone. There "
+        "is no reset and no\n"
+        "recovery copy. Write it down somewhere safe, the "
+        "way you would a\n"
+        "house key's hiding place."
+    )
+    if env:
+        if len(env) < _MIN_PASSPHRASE_LEN:
+            print(
+                f"✗ The passphrase is too short — use at least "
+                f"{_MIN_PASSPHRASE_LEN} characters.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        return env
+    if not sys.stdin.isatty():
+        print(
+            "✗ Setting a passphrase needs a terminal to ask "
+            "for it, or the\n"
+            "  KISTA_PASSPHRASE environment variable. "
+            "Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    for _attempt in range(3):
+        first = getpass.getpass(
+            "Choose a vault passphrase (input hidden): ")
+        if len(first) < _MIN_PASSPHRASE_LEN:
+            print(
+                f"  Too short — use at least "
+                f"{_MIN_PASSPHRASE_LEN} characters. A short "
+                f"sentence you can remember works well.",
+                file=sys.stderr,
+            )
+            continue
+        second = getpass.getpass("Type it once more: ")
+        if first != second:
+            print(
+                "  The two tries did not match — let's go again.",
+                file=sys.stderr,
+            )
+            continue
+        return first
+    print("✗ No passphrase was set. Nothing was changed.",
+          file=sys.stderr)
+    sys.exit(1)
+
+
+def _write_key_file(data: bytes) -> None:
+    """Write the key file atomically, owner-only."""
+    _atomic_write(VAULT_KEY, data)
+    _chmod_600(VAULT_KEY)
+
+
 def _get_key() -> bytes:
     """Get the vault encryption key, creating if needed.
 
@@ -274,6 +616,8 @@ def _get_key() -> bytes:
     _ensure_dir()
     if VAULT_KEY.exists():
         raw = VAULT_KEY.read_bytes()
+        if _is_wrapped_key(raw):
+            return _unwrap_key(raw)
         return _validate_key(raw)
     # No key file exists — check if vault data exists
     if VAULT_FILE.exists():
@@ -411,6 +755,28 @@ def _load_vault(key: bytes) -> dict:
         if isinstance(entry, dict) and "entry_type" not in entry:
             entry["entry_type"] = "credential"
 
+    # Backward compatibility (E-098, docket 137):
+    # every add road keys an entry by its lowercased
+    # service name, and every lookup lowercases too —
+    # except add-soul, which stored its backups under
+    # a mixed-case key (soul-backup-SOUL) that get,
+    # update, and remove could never reach. Normalise
+    # any such legacy key here, on load, so those
+    # entries are reachable again; the healed key is
+    # persisted on the next save. No add road can
+    # mint two names that differ only by case, so
+    # the normalisation cannot merge distinct
+    # entries.
+    if any(name != name.lower() for name in entries):
+        healed = {}
+        for name, entry in entries.items():
+            lowered = name.lower()
+            if isinstance(entry, dict) and \
+                    entry.get("service") == name:
+                entry["service"] = lowered
+            healed[lowered] = entry
+        vault["entries"] = healed
+
     # Upgrade vault version
     if vault.get("version", 1) < 2:
         vault["version"] = 2
@@ -425,7 +791,11 @@ def _atomic_write(path: Path, data: bytes) -> None:
     TOCTOU race condition (BUG-RACE-02).
     """
     _ensure_dir()
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    # E-100 (docket 134): the temp name is per-process, never the
+    # one shared predictable name every writer used before — two
+    # writers can no longer write into each other's temp file,
+    # even on a platform where the write lock is a no-op.
+    tmp_path = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
     try:
         tmp_path.write_bytes(data)
         os.replace(str(tmp_path), str(path))
@@ -460,6 +830,7 @@ def _save_vault(vault: dict, key: bytes) -> None:
         "kista_version": __version__,
     }
     _atomic_write(VAULT_META, json.dumps(meta, indent=2).encode())
+    _chmod_600(VAULT_META)
 
 
 def _auto_backup(encrypted_data: bytes) -> None:
@@ -551,6 +922,25 @@ def _resolve_password(args) -> str:
             sys.exit(1)
         return pw
     if hasattr(args, "password") and args.password:
+        # Docket 128, closed at E-096: a value typed after
+        # --password is visible in process listings and in
+        # shell history, so the program says so at the
+        # moment of use — loudly, in words — instead of
+        # letting the exposure ride in silence, and names
+        # the shapes that do not expose it. The value is
+        # still honoured (existing scripts keep working);
+        # the hiding is what ended.
+        print(
+            "⚠ Warning: a password given with --password can be "
+            "seen by other\n"
+            "  programs in the process list, and stays in your "
+            "shell history.\n"
+            "  Safer shapes: --password-file FILE, or "
+            "--password-env VARIABLE,\n"
+            "  or no flag at all — you will be asked with the "
+            "typing hidden.",
+            file=sys.stderr,
+        )
         return args.password
     # No password provided via any method — prompt for 'add' command only
     if getattr(args, "command", None) == "add" and sys.stdin.isatty():
@@ -581,13 +971,132 @@ def _save_config(config: dict) -> None:
     _chmod_600(VAULT_CONFIG)
 
 
+# ── Per-program access (E-097) ──────────────────────────
+# Every entry carries a "program" field: the name of the
+# program the entry belongs to, or "" when it belongs to
+# the vault owner personally. A program names itself
+# with the KISTA_PROGRAM environment variable — a name
+# is an identifier, never a credential (E-093 law rule
+# 9), so it travels in the open and is stored in the
+# open. A caller that names a program may add, read,
+# list, search, check, change, and remove ONLY entries
+# whose program field equals that name; whole-vault and
+# vault-life operations (init, repair, passphrase,
+# export/import, backup/restore, github-backup, the
+# soul/cron backups, config) are the owner's acts and
+# are refused to a program caller. A caller that names
+# no program is the owner at their own vault, with the
+# full access the program has always given them.
+#
+# Honesty (E-095 §3.2, restated for this shape): the
+# name is claimed, not proven. This is the discipline
+# that keeps well-behaved programs — the companion
+# first, at E-100 — inside their own entries, and it
+# stops accidents and casual browsing cold. It is NOT
+# a wall against malicious code running as the same OS
+# account: such code could claim any name, or read the
+# vault files directly, and E-095's A2 verdict stands
+# exactly as written. No Ember document may claim more
+# for per-program access than this paragraph claims.
+_PROGRAM_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+
+
+def _normalize_program_name(raw) -> str:
+    """Validate and normalize a program name, or refuse
+    plainly: lowercase letters, digits, '.', '_' and '-',
+    starting with a letter or digit, at most 64 chars."""
+    name = str(raw or "").strip().lower()
+    if not _PROGRAM_RE.match(name):
+        print(
+            "✗ That is not a usable program name. Use "
+            "lowercase letters,\n"
+            "  digits, '.', '_' or '-' (at most 64 "
+            "characters, starting with\n"
+            "  a letter or digit) — for example "
+            "'ember-core'. Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return name
+
+
+def _caller_program() -> str:
+    """The program the caller claims to be, from the
+    KISTA_PROGRAM environment variable. '' means no
+    program is claimed — the caller is the vault owner
+    personally, and the owner sees everything."""
+    raw = os.environ.get("KISTA_PROGRAM")
+    if raw is None or not raw.strip():
+        return ""
+    return _normalize_program_name(raw)
+
+
+def _entry_program(entry) -> str:
+    """The program an entry belongs to ('' = the owner's
+    own entry; entries written before E-097 have no
+    field and read as the owner's)."""
+    if isinstance(entry, dict):
+        return str(entry.get("program") or "").strip().lower()
+    return ""
+
+
+def _program_sees(caller: str, entry) -> bool:
+    """May this caller see/touch this entry? The owner
+    (no program claimed) sees all; a program sees
+    exactly its own."""
+    return not caller or _entry_program(entry) == caller
+
+
+def _visible_entries(entries: dict, caller: str) -> dict:
+    """The caller's view of the vault: every entry for
+    the owner, exactly the program's own for a program."""
+    if not caller:
+        return entries
+    return {name: entry for name, entry in entries.items()
+            if _program_sees(caller, entry)}
+
+
+def _refuse_program_whole_vault(command_label: str) -> None:
+    """Whole-vault and vault-life operations belong to
+    the owner. A program caller is refused, plainly,
+    before anything is touched."""
+    caller = _caller_program()
+    if caller:
+        print(
+            f"✗ '{command_label}' belongs to the vault "
+            f"owner, not to a program.\n"
+            f"  Program '{caller}' can only add, read, "
+            "change, and remove its own\n"
+            "  entries. Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+def _not_found_for(service: str, caller: str) -> None:
+    """The program-scoped 'not found': another program's
+    entry and a missing entry get the same answer, so a
+    program learns nothing about what else the vault
+    holds — not even whether the name exists."""
+    print(f"✗ No entry found for '{service}'")
+    if caller:
+        print(
+            f"  Program '{caller}' can only see its own "
+            "entries — this one is not\n"
+            "  among them, or does not exist."
+        )
+
+
 def cmd_init(args) -> None:
     """Initialize the vault."""
+    _refuse_program_whole_vault("init")
     _ensure_dir()
     if VAULT_KEY.exists() and VAULT_FILE.exists():
         print(f"✓ Vault already exists at {VAULT_DIR}")
         print(f"  Key: {VAULT_KEY}")
         print(f"  Data: {VAULT_FILE}")
+        if _is_wrapped_key(VAULT_KEY.read_bytes()):
+            print("  Passphrase: SET — unlocking to count entries.")
         key = _get_key()
         vault = _load_vault(key)
         print(f"  Entries: {len(vault.get('entries', {}))}")
@@ -597,10 +1106,94 @@ def cmd_init(args) -> None:
     _save_vault(vault, key)
     print(f"✓ Vault initialized at {VAULT_DIR}")
     print(f"  Key: {VAULT_KEY} (chmod 600, owned by you)")
+    if _is_wrapped_key(VAULT_KEY.read_bytes()):
+        print("  Passphrase: SET — a copy of this folder opens "
+              "nothing without it.")
+    else:
+        print("  Passphrase: NOT set. Anyone who copies this "
+              "folder can open the")
+        print("  vault — the key travels with it. To protect "
+              "it, run:")
+        print("      kista set-passphrase")
+        print("  and choose a passphrase you will not forget: "
+              "a forgotten one")
+        print("  means a lost vault, with no recovery. That "
+              "warning is honest,")
+        print("  not a scare tactic.")
+
+
+def cmd_set_passphrase(args) -> None:
+    """Set or change the vault passphrase (E-096).
+
+    The vault key itself never changes — only its wrapping
+    does — so every entry, backup, and export keeps
+    working exactly as before. Setting a passphrase is
+    what turns a copied vault folder from a total loss
+    (E-095's central finding) into a locked box.
+    """
+    _refuse_program_whole_vault("set-passphrase")
+    if not VAULT_KEY.exists():
+        print(
+            "✗ There is no vault here yet. Run 'kista init' "
+            "first, then set a passphrase.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    raw = VAULT_KEY.read_bytes()
+    wrapped = _is_wrapped_key(raw)
+    if wrapped:
+        print("This vault already has a passphrase. To change "
+              "it, first unlock with the passphrase you use now.")
+        vault_key = _unwrap_key(raw)
+    else:
+        vault_key = _validate_key(raw)
+    passphrase = _prompt_new_passphrase()
+    _ensure_dir()
+    _write_key_file(_wrap_key(vault_key, passphrase))
+    global _unlocked_key_cache
+    _unlocked_key_cache = vault_key
+    print("✓ Passphrase set. From now on, a copy of this "
+          "folder opens nothing")
+    print("  without your passphrase — and neither does "
+          "this one. You will be")
+    print("  asked for it each time you open the vault in "
+          "a new terminal.")
+
+
+def cmd_remove_passphrase(args) -> None:
+    """Remove the vault passphrase, in plain words first.
+
+    Removal restores the E-095 shape exactly: the key
+    travels with the vault again, and a copied folder
+    opens whole. That consequence is stated before the
+    act, never after.
+    """
+    _refuse_program_whole_vault("remove-passphrase")
+    if not VAULT_KEY.exists():
+        print("✗ There is no vault here yet.", file=sys.stderr)
+        sys.exit(1)
+    raw = VAULT_KEY.read_bytes()
+    if not _is_wrapped_key(raw):
+        print("This vault has no passphrase to remove — it "
+              "already opens with its key file alone.")
+        return
+    print("Removing the passphrase means anyone who copies "
+          "this folder can open")
+    print("the vault — the protection E-096 added goes "
+          "away completely.")
+    vault_key = _unwrap_key(raw)
+    _write_key_file(vault_key)
+    global _unlocked_key_cache
+    _unlocked_key_cache = vault_key
+    print("✓ Passphrase removed. The vault now opens with "
+          "its key file alone.")
+    print("  You can set a new one any time with "
+          "'kista set-passphrase'.")
 
 
 def cmd_repair(args) -> None:
     """Attempt to repair a corrupted vault from backups."""
+    _refuse_program_whole_vault("repair")
     key = _get_key()
     is_corrupt, error_msg = _is_vault_corrupt(key)
     if not is_corrupt:
@@ -622,11 +1215,44 @@ def cmd_repair(args) -> None:
 
 def cmd_add(args) -> None:
     """Add a new entry (of any type)."""
+    # Per-program access (E-097): a program caller adds
+    # only for itself; the owner may assign an entry to
+    # a program with --program. An entry a program adds
+    # is stamped with that program's name, and no caller
+    # may stamp an entry with another program's name.
+    caller = _caller_program()
+    requested_raw = getattr(args, "program", None)
+    if requested_raw:
+        requested = _normalize_program_name(requested_raw)
+        if caller and requested != caller:
+            print(
+                f"✗ Program '{caller}' can only add "
+                f"entries for itself, not for "
+                f"'{requested}'.\n"
+                "  Nothing was changed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        owner_program = requested
+    else:
+        owner_program = caller
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.setdefault("entries", {})
 
     service = args.service.lower()
+    if caller and service in entries and not _program_sees(caller, entries[service]):
+        # A program may not overwrite — or learn the
+        # shape of — another program's entry, even with
+        # --force (E-097).
+        print(
+            f"✗ The name '{service}' cannot be used by "
+            f"program '{caller}'.\n"
+            "  It is taken, or it belongs to another "
+            "program. Nothing was changed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if service in entries and not getattr(args, "force", False):
         print(f"✗ Entry for '{service}' already exists. Use --force to overwrite or 'update' to modify.")
         sys.exit(1)
@@ -642,6 +1268,7 @@ def cmd_add(args) -> None:
             "add-totp": "totp",
             "add-license": "license",
             "add-identity": "identity",
+            "add-url": "url",
             "add-astrology": "astrology",
             "add-character-sheet": "character-sheet",
             "add-rune-reading": "rune-reading",
@@ -659,6 +1286,7 @@ def cmd_add(args) -> None:
     entry = {
         "service": service,
         "entry_type": entry_type,
+        "program": owner_program,
         "created": datetime.now(timezone.utc).isoformat(),
         "updated": datetime.now(timezone.utc).isoformat(),
     }
@@ -803,8 +1431,15 @@ def cmd_add(args) -> None:
         entry["notes"] = common_notes or getattr(args, "notes", None) or ""
 
     elif entry_type == "markdown":
-        entry["title"] = getattr(args, "md_title", None) or getattr(args, "title_arg", None) or ""
-        entry["content"] = getattr(args, "md_content", None) or ""
+        # E-098 (docket 137): the general add road's
+        # --title / --content flags land on `title` /
+        # `content`, and the shortcut's on `md_title` /
+        # `md_content` — read both, as cmd_update's
+        # markdown branch already did for title. Before
+        # this fix neither add road could satisfy the
+        # type's two required fields at all.
+        entry["title"] = getattr(args, "md_title", None) or getattr(args, "title_arg", None) or getattr(args, "title", None) or ""
+        entry["content"] = getattr(args, "md_content", None) or getattr(args, "content", None) or ""
         entry["category"] = getattr(args, "md_category", None) or getattr(args, "category", None) or ""
         # For markdown entry type, tags override common tags
         entry["tags"] = _parse_json_field(getattr(args, "md_tags", None) or "") if getattr(args, "md_tags", None) else (entry.get("tags", []) if entry.get("tags") else "")
@@ -823,18 +1458,37 @@ def cmd_add(args) -> None:
     entries[service] = entry
     _save_vault(vault, key)
     print(f"✓ Added {entry_type} for '{service}'")
+    if owner_program:
+        print(f"  Belongs to program: {owner_program} — only "
+              f"that program (and you, the owner) can reach it.")
+    if entry_type in OTHER_ROAD_ENTRY_TYPES:
+        # E-098: a kind from the other road is never
+        # silently merged into the toaster set — the
+        # add succeeds exactly as given, and the
+        # program says whose road the kind is, in
+        # words, at the moment it enters.
+        _note_other_road_kind(entry_type)
 
 
 def cmd_get(args) -> None:
     """Get an entry (full details)."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
-    if service not in entries:
-        print(f"✗ No entry found for '{service}'")
-        print(f"  Available: {', '.join(sorted(entries.keys())) or '(empty)'}")
+    if service not in entries or not _program_sees(caller, entries[service]):
+        if caller:
+            # Program-scoped: another program's entry and
+            # a missing entry answer identically, and the
+            # available-services list is never shown to a
+            # program (it would name other programs'
+            # entries).
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
+            print(f"  Available: {', '.join(sorted(entries.keys())) or '(empty)'}")
         sys.exit(1)
 
     entry = entries[service]
@@ -843,12 +1497,16 @@ def cmd_get(args) -> None:
 
 def cmd_list(args) -> None:
     """List all entries (passwords and sensitive fields masked)."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
-    entries = vault.get("entries", {})
+    entries = _visible_entries(vault.get("entries", {}), caller)
 
     if not entries:
-        print("No entries stored yet. Use 'add' to create one.")
+        if caller:
+            print(f"No entries for program '{caller}' yet.")
+        else:
+            print("No entries stored yet. Use 'add' to create one.")
         return
 
     tag_filter = args.tags.lower() if args.tags else None
@@ -903,13 +1561,17 @@ def _get_identity_display(entry_type: str, entry: dict) -> str:
 
 def cmd_update(args) -> None:
     """Update specific fields of an entry."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
-    if service not in entries:
-        print(f"✗ No entry found for '{service}'")
+    if service not in entries or not _program_sees(caller, entries[service]):
+        if caller:
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
         sys.exit(1)
 
     entry = entries[service]
@@ -1232,6 +1894,28 @@ def cmd_update(args) -> None:
             entry["source_url"] = args.source_url
             updated = True
 
+    # Ownership changes (E-097): only the vault owner
+    # may say who an entry belongs to. A program cannot
+    # give its entries away, take another program's, or
+    # un-own one — that act is the owner's, in person.
+    new_program = getattr(args, "program", None)
+    unassign = getattr(args, "unassign_program", False)
+    if new_program or unassign:
+        if caller:
+            print(
+                f"✗ Program '{caller}' cannot change who "
+                "an entry belongs to.\n"
+                "  Only the vault owner can do that. "
+                "Nothing was changed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if unassign:
+            entry["program"] = ""
+        else:
+            entry["program"] = _normalize_program_name(new_program)
+        updated = True
+
     if updated:
         entry["updated"] = datetime.now(timezone.utc).isoformat()
         _save_vault(vault, key)
@@ -1242,13 +1926,17 @@ def cmd_update(args) -> None:
 
 def cmd_remove(args) -> None:
     """Remove an entry."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
-    if service not in entries:
-        print(f"✗ No entry found for '{service}'")
+    if service not in entries or not _program_sees(caller, entries[service]):
+        if caller:
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
         sys.exit(1)
 
     del entries[service]
@@ -1258,11 +1946,18 @@ def cmd_remove(args) -> None:
 
 def cmd_check(args) -> None:
     """Check if an entry exists and show status."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.get("entries", {})
 
     service = args.service.lower()
+    if service in entries and not _program_sees(caller, entries[service]):
+        # Another program's entry checks as absent: a
+        # program does not even learn that the name
+        # exists (E-097).
+        _not_found_for(service, caller)
+        return
     if service in entries:
         entry = entries[service]
         entry_type = entry.get("entry_type", "credential")
@@ -1328,7 +2023,10 @@ def cmd_check(args) -> None:
         print(f"  Created: {entry.get('created', '?')[:10]}")
         print(f"  Updated: {entry.get('updated', '?')[:10]}")
     else:
-        print(f"✗ No entry found for '{service}'")
+        if caller:
+            _not_found_for(service, caller)
+        else:
+            print(f"✗ No entry found for '{service}'")
 
 
 def cmd_status(args) -> None:
@@ -1336,6 +2034,9 @@ def cmd_status(args) -> None:
     _ensure_dir()
     print(f"Vault directory: {VAULT_DIR}")
     print(f"Key file: {VAULT_KEY} ({'exists' if VAULT_KEY.exists() else 'MISSING'})")
+    if VAULT_KEY.exists():
+        _wrapped = _is_wrapped_key(VAULT_KEY.read_bytes())
+        print(f"Passphrase: {'SET — this vault asks before it opens' if _wrapped else 'NOT set — a copy of this folder opens the vault; run set-passphrase to protect it'}")
     print(f"Data file: {VAULT_FILE} ({'exists' if VAULT_FILE.exists() else 'empty'})")
     print(f"Kista version: {__version__}")
     print(f"Platform: {platform.system()} {platform.machine()}")
@@ -1349,8 +2050,15 @@ def cmd_status(args) -> None:
             print("  Run 'kista repair' to attempt auto-repair from backup.")
         else:
             vault = _load_vault(key)
-            entries = vault.get("entries", {})
+            # A program caller sees only its own entries
+            # counted and named here (E-097); the owner
+            # sees the whole vault, as always.
+            caller = _caller_program()
+            entries = _visible_entries(vault.get("entries", {}), caller)
             print(f"Vault version: {vault.get('version', '?')}")
+            if caller:
+                print(f"Program: {caller} — status covers "
+                      "only that program's entries")
             print(f"Entries: {len(entries)}")
             # Count by type
             type_counts = {}
@@ -1363,25 +2071,30 @@ def cmd_status(args) -> None:
             print(f"Created: {vault.get('created', '?')}")
             print(f"Updated: {vault.get('updated', '?')}")
 
-        # Show backup info
-        backup_dir = VAULT_DIR / "backups"
-        if backup_dir.exists():
-            backups = list(backup_dir.glob("vault_backup_*.enc"))
-            print(f"Backups: {len(backups)} available")
+        # Backup and config counts are whole-vault facts:
+        # they are shown to the owner, never to a program
+        # caller (E-097).
+        if not _caller_program():
+            # Show backup info
+            backup_dir = VAULT_DIR / "backups"
+            if backup_dir.exists():
+                backups = list(backup_dir.glob("vault_backup_*.enc"))
+                print(f"Backups: {len(backups)} available")
 
-        # Show config
-        config = _load_config()
-        if config:
-            print(f"Config: {len(config)} settings")
+            # Show config
+            config = _load_config()
+            if config:
+                print(f"Config: {len(config)} settings")
     else:
         print("Vault not initialized. Run 'init' to create.")
 
 
 def cmd_search(args) -> None:
     """Fuzzy search across services and all fields, with optional date filtering."""
+    caller = _caller_program()
     key = _get_key()
     vault = _load_vault(key)
-    entries = vault.get("entries", {})
+    entries = _visible_entries(vault.get("entries", {}), caller)
 
     query = (args.query or "").lower()
     date_filter = getattr(args, "date", None)
@@ -1492,6 +2205,7 @@ def cmd_generate_password(args) -> None:
 
 def cmd_export(args) -> None:
     """Export all credentials as encrypted backup."""
+    _refuse_program_whole_vault("export")
     if not VAULT_FILE.exists():
         print("✗ No vault to export.")
         sys.exit(1)
@@ -1511,6 +2225,7 @@ def cmd_export(args) -> None:
 
 def cmd_import(args) -> None:
     """Import credentials from encrypted backup."""
+    _refuse_program_whole_vault("import")
     src = Path(args.file)
     if not src.exists():
         print(f"✗ File not found: {src}")
@@ -1587,6 +2302,7 @@ def cmd_import(args) -> None:
 
 def cmd_backup(args) -> None:
     """Export all kista data to a JSON backup file (optionally encrypted)."""
+    _refuse_program_whole_vault("backup")
     key = _get_key()
     vault = _load_vault(key)
 
@@ -1607,8 +2323,10 @@ def cmd_backup(args) -> None:
         _atomic_write(output_path, encrypted)
         _chmod_600(output_path)
     else:
-        # Plain JSON export
+        # Plain JSON export — plaintext by the caller's explicit
+        # choice, but never looser than owner-only on disk (E-095).
         output_path.write_text(json.dumps(export_data, indent=2, ensure_ascii=False))
+        _chmod_600(output_path)
 
     print(f"✓ Backup exported to {output_path}")
     print(f"  Entries: {len(vault.get('entries', {}))}")
@@ -1620,6 +2338,7 @@ def cmd_backup(args) -> None:
 
 def cmd_restore(args) -> None:
     """Restore kista data from a backup JSON file."""
+    _refuse_program_whole_vault("restore")
     src = Path(args.file)
     if not src.exists():
         print(f"✗ File not found: {src}")
@@ -1707,6 +2426,7 @@ def cmd_restore(args) -> None:
 
 def cmd_github_backup(args) -> None:
     """Push encrypted backup to a configured GitHub repo."""
+    _refuse_program_whole_vault("github-backup")
     config = _load_config()
     repo = getattr(args, "repo", None) or config.get("backup", {}).get("repo")
 
@@ -1796,6 +2516,7 @@ def cmd_github_backup(args) -> None:
 
 def cmd_add_soul(args) -> None:
     """Backup SOUL.md and runa-identity.md to the vault."""
+    _refuse_program_whole_vault("add-soul")
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.setdefault("entries", {})
@@ -1808,7 +2529,11 @@ def cmd_add_soul(args) -> None:
     added = 0
     for soul_path in soul_paths:
         if soul_path.exists():
-            service_name = f"soul-backup-{soul_path.stem}"
+            # E-098 (docket 137): the key is lowercased
+            # like every other entry's — the mixed-case
+            # shape this line used to build made the
+            # backup unreachable by get/update/remove.
+            service_name = f"soul-backup-{soul_path.stem.lower()}"
             if service_name in entries and not getattr(args, "force", False):
                 print(f"  Skipped {service_name} (already exists, use --force to overwrite)")
                 continue
@@ -1837,12 +2562,24 @@ def cmd_add_soul(args) -> None:
     if added > 0:
         _save_vault(vault, key)
         print(f"✓ SOUL backup complete: {added} file(s) backed up")
+        # E-098 (docket 50): backing up another
+        # program's own soul files is not one of the
+        # toaster-Kista's own acts — it is the other
+        # Kista's road, kept working here exactly as
+        # it was, and the program says so in words.
+        print("  Note: a soul backup is not one of the "
+              "toaster-Kista's own kinds (passwords, "
+              "tokens, URLs, notes). It belongs to the "
+              "other Kista's wider road and is kept "
+              "here exactly as given — nothing was "
+              "merged or changed.")
     else:
         print("✗ No SOUL files found to backup.")
 
 
 def cmd_add_cron_backup(args) -> None:
     """Backup current crontab to the vault."""
+    _refuse_program_whole_vault("add-cron-backup")
     key = _get_key()
     vault = _load_vault(key)
     entries = vault.setdefault("entries", {})
@@ -1883,10 +2620,22 @@ def cmd_add_cron_backup(args) -> None:
 
     _save_vault(vault, key)
     print(f"✓ Crontab backed up to '{service_name}' ({len(cron_content.splitlines())} lines)")
+    # E-098 (docket 50): a crontab is a machine's
+    # state, not a credential kind — this backup is
+    # the other road's shape (its "states" ambition),
+    # kept working here exactly as it was, and the
+    # program says so in words.
+    print("  Note: a crontab backup is not one of the "
+          "toaster-Kista's own kinds (passwords, "
+          "tokens, URLs, notes). It belongs to the "
+          "other Kista's wider road and is kept "
+          "here exactly as given — nothing was "
+          "merged or changed.")
 
 
 def cmd_config(args) -> None:
     """Manage kista configuration settings."""
+    _refuse_program_whole_vault("config")
     config = _load_config()
 
     action = getattr(args, "config_action", None)
@@ -1972,6 +2721,16 @@ def _add_type_args(parser, entry_type) -> None:
         parser.add_argument("--phone", dest="phone_arg", help="Phone number")
         parser.add_argument("--national-id", dest="national_id", help="National ID number")
 
+    elif entry_type == "url":
+        # E-098 (docket 137): this branch did not
+        # exist — the add-url shortcut the program's
+        # own usage text advertises had no parser at
+        # all, so the branch is built here with the
+        # shortcut loop and the inference map below.
+        parser.add_argument("--url", required=True, help="URL (required)")
+        parser.add_argument("--title", dest="title_arg", help="Page/site title")
+        parser.add_argument("--description", help="Description")
+
     elif entry_type == "astrology":
         parser.add_argument("--sign", required=True, help="Zodiac sign (required)")
         parser.add_argument("--date", dest="astro_date", help="Date for the reading")
@@ -2027,6 +2786,13 @@ def _add_type_args(parser, entry_type) -> None:
 
     elif entry_type == "markdown":
         parser.add_argument("--title", dest="md_title", required=True, help="Document title (required)")
+        # E-098 (docket 137): the shortcut had no flag
+        # that could carry the document's content at
+        # all (--md-source never reached the entry), so
+        # add-markdown could never satisfy the type's
+        # required content field. --content now lands
+        # on md_content, which cmd_add reads.
+        parser.add_argument("--content", dest="md_content", help="Document content (required)")
         parser.add_argument("--md-source", help="Source content (markdown)")
         parser.add_argument("--source-url", dest="source_url", help="Source URL")
 
@@ -2046,6 +2812,10 @@ def main():
     # repair
     sub.add_parser("repair", help="Repair corrupted vault from backup")
 
+    # passphrase (E-096)
+    sub.add_parser("set-passphrase", help="Set or change the vault passphrase — a copied folder then opens nothing without it")
+    sub.add_parser("remove-passphrase", help="Remove the vault passphrase (the consequence is stated before it happens)")
+
     # add (general, with --type)
     p_add = sub.add_parser("add", help="Add a new entry")
     p_add.add_argument("service", help="Service name (e.g., 'email-provider', 'streaming-service')")
@@ -2053,13 +2823,14 @@ def main():
                        choices=list(ENTRY_TYPE_SCHEMAS.keys()),
                        help="Entry type (default: credential)")
     p_add.add_argument("--username", "-u", help="Username")
-    p_add.add_argument("--password", "-p", help="Password (insecure: visible in process list)")
+    p_add.add_argument("--password", "-p", help="Password (discouraged: visible in process list and shell history — prefer --password-file or --password-env)")
     p_add.add_argument("--password-file", help="Read password from file (secure)")
     p_add.add_argument("--password-env", help="Read password from environment variable (secure)")
     p_add.add_argument("--email", "-e", help="Email address")
     p_add.add_argument("--url", help="Service URL")
     p_add.add_argument("--notes", "-n", help="Additional notes")
     p_add.add_argument("--tags", "-t", help="Comma-separated tags")
+    p_add.add_argument("--program", help="The program this entry belongs to (E-097): only that program — and you, the owner — can reach it afterwards")
     p_add.add_argument("--force", "-f", action="store_true", help="Overwrite if exists")
     # Type-specific args for 'add' (merged from all types)
     p_add.add_argument("--key", dest="key_arg", help="API key / License key")
@@ -2077,7 +2848,7 @@ def main():
     p_add.add_argument("--domain", help="Domain (certificate)")
     p_add.add_argument("--issuer", help="Issuer (certificate/totp)")
     p_add.add_argument("--chain", help="Certificate chain (certificate)")
-    p_add.add_argument("--content", help="Note content (note)")
+    p_add.add_argument("--content", help="Content (note/markdown)")
     p_add.add_argument("--category", help="Category (note)")
     p_add.add_argument("--secret", help="Secret (totp)")
     p_add.add_argument("--digits", type=int, default=None, help="Digits (totp, default: 6)")
@@ -2097,6 +2868,54 @@ def main():
     p_add.add_argument("--sign", help="Zodiac sign (astrology)")
     p_add.add_argument("--title", help="Title (url/markdown)")
     p_add.add_argument("--description", help="Description (url)")
+    # v2.0 type fields on the general add road (E-098,
+    # docket 137): before this fix the general parser
+    # defined none of these, so `add --type
+    # character-sheet / rune-reading / tarot-reading`
+    # could never satisfy those types' required fields
+    # (name / spread type), and an astrology entry
+    # could carry nothing beyond its sign. The flags
+    # mirror the shortcuts' _add_type_args dests
+    # exactly, so both roads build the same entry.
+    p_add.add_argument("--date", dest="astro_date", help="Date for the reading (astrology)")
+    p_add.add_argument("--sun-position", dest="sun_position", help="Sun position (astrology)")
+    p_add.add_argument("--moon-position", dest="moon_position", help="Moon position (astrology)")
+    p_add.add_argument("--mercury-position", dest="mercury_position", help="Mercury position (astrology)")
+    p_add.add_argument("--venus-position", dest="venus_position", help="Venus position (astrology)")
+    p_add.add_argument("--mars-position", dest="mars_position", help="Mars position (astrology)")
+    p_add.add_argument("--jupiter-position", dest="jupiter_position", help="Jupiter position (astrology)")
+    p_add.add_argument("--saturn-position", dest="saturn_position", help="Saturn position (astrology)")
+    p_add.add_argument("--ascendant", help="Ascendant sign (astrology)")
+    p_add.add_argument("--mc", help="Midheaven (MC) sign (astrology)")
+    p_add.add_argument("--aspects", help="Aspects as JSON array or comma-separated (astrology)")
+    p_add.add_argument("--name", dest="char_name", help="Character name (character-sheet)")
+    p_add.add_argument("--race", help="Character race (character-sheet)")
+    p_add.add_argument("--class", dest="char_class", help="Character class (character-sheet)")
+    p_add.add_argument("--level", type=int, default=None, help="Character level (character-sheet)")
+    p_add.add_argument("--background", help="Character background (character-sheet)")
+    p_add.add_argument("--alignment", help="Character alignment (character-sheet)")
+    p_add.add_argument("--str", dest="str_score", type=int, default=None, help="Strength score (character-sheet)")
+    p_add.add_argument("--dex", dest="dex_score", type=int, default=None, help="Dexterity score (character-sheet)")
+    p_add.add_argument("--con", dest="con_score", type=int, default=None, help="Constitution score (character-sheet)")
+    p_add.add_argument("--int", dest="int_score", type=int, default=None, help="Intelligence score (character-sheet)")
+    p_add.add_argument("--wis", dest="wis_score", type=int, default=None, help="Wisdom score (character-sheet)")
+    p_add.add_argument("--cha", dest="cha_score", type=int, default=None, help="Charisma score (character-sheet)")
+    p_add.add_argument("--ac", type=int, default=None, help="Armor Class (character-sheet)")
+    p_add.add_argument("--hp", type=int, default=None, help="Hit Points (character-sheet)")
+    p_add.add_argument("--speed", type=int, default=None, help="Speed (character-sheet)")
+    p_add.add_argument("--prof-bonus", dest="prof_bonus", type=int, default=None, help="Proficiency bonus (character-sheet)")
+    p_add.add_argument("--skills", help="Skills (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--features", help="Features (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--equipment", help="Equipment (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--spells", help="Spells (character-sheet, JSON or comma-separated)")
+    p_add.add_argument("--backstory", help="Character backstory (character-sheet)")
+    p_add.add_argument("--spread-type", dest="spread_type", help="Spread type (rune-reading/tarot-reading)")
+    p_add.add_argument("--runes-drawn", dest="runes_drawn", help="Runes drawn (rune-reading, JSON or comma-separated)")
+    p_add.add_argument("--cards-drawn", dest="cards_drawn", help="Cards drawn (tarot-reading, JSON or comma-separated)")
+    p_add.add_argument("--positions", help="Positions (rune-reading/tarot-reading, JSON or comma-separated)")
+    p_add.add_argument("--interpretation", help="Interpretation (rune-reading/tarot-reading)")
+    p_add.add_argument("--question", help="Question asked before the reading (rune-reading/tarot-reading)")
+    p_add.add_argument("--date-drawn", dest="date_drawn", help="Date the reading was done (rune-reading/tarot-reading)")
 
     # === Convenience shortcuts for add (each auto-sets --type) ===
     for et, help_text in [
@@ -2107,6 +2926,10 @@ def main():
         ("totp", "Add a TOTP entry"),
         ("license", "Add a license entry"),
         ("identity", "Add an identity entry"),
+        # E-098 (docket 137): add-url restored — the
+        # usage text advertised it since the import,
+        # but no parser ever stood behind it.
+        ("url", "Add a URL entry"),
         ("astrology", "Add an astrology entry"),
         ("character-sheet", "Add a D&D character sheet entry"),
         ("rune-reading", "Add a rune reading entry"),
@@ -2120,6 +2943,7 @@ def main():
         # Common args for shortcuts
         p.add_argument("--tags", "-t", help="Comma-separated tags")
         p.add_argument("--notes", "-n", help="Additional notes")
+        p.add_argument("--program", help="The program this entry belongs to (E-097)")
         p.add_argument("--force", "-f", action="store_true", help="Overwrite if exists")
 
     # add-person (enhanced identity)
@@ -2128,6 +2952,7 @@ def main():
     _add_type_args(p_person, "identity")
     p_person.add_argument("--tags", "-t", help="Comma-separated tags")
     p_person.add_argument("--notes", "-n", help="Additional notes")
+    p_person.add_argument("--program", help="The program this entry belongs to (E-097)")
     p_person.add_argument("--force", "-f", action="store_true", help="Overwrite if exists")
     # Enhanced person fields
     p_person.add_argument("--email", "-e", help="Email address")
@@ -2154,13 +2979,15 @@ def main():
     p_upd.add_argument("service", help="Service name")
     # Common update fields
     p_upd.add_argument("--username", "-u", help="New username")
-    p_upd.add_argument("--password", "-p", help="New password (insecure)")
+    p_upd.add_argument("--password", "-p", help="New password (discouraged: visible in process list and shell history)")
     p_upd.add_argument("--password-file", help="Read password from file (secure)")
     p_upd.add_argument("--password-env", help="Read password from environment variable (secure)")
     p_upd.add_argument("--email", "-e", help="New email")
     p_upd.add_argument("--url", help="New URL")
     p_upd.add_argument("--notes", "-n", help="New notes")
     p_upd.add_argument("--tags", "-t", help="New comma-separated tags")
+    p_upd.add_argument("--program", help="Give this entry to a program (owner only, E-097)")
+    p_upd.add_argument("--unassign-program", action="store_true", help="Make this entry the owner's own again (owner only, E-097)")
     # Type-specific update fields
     p_upd.add_argument("--key", dest="key_arg", help="API/License key")
     p_upd.add_argument("--key-file", help="Path to private key file (sshkey/certificate)")
@@ -2321,6 +3148,7 @@ def main():
         "add-totp": "add",
         "add-license": "add",
         "add-identity": "add",
+        "add-url": "add",
         "add-astrology": "add",
         "add-character-sheet": "add",
         "add-rune-reading": "add",
@@ -2336,6 +3164,7 @@ def main():
         "add-totp": "totp",
         "add-license": "license",
         "add-identity": "identity",
+        "add-url": "url",
         "add-astrology": "astrology",
         "add-character-sheet": "character-sheet",
         "add-rune-reading": "rune-reading",
@@ -2351,6 +3180,8 @@ def main():
 
     commands = {
         "init": cmd_init,
+        "set-passphrase": cmd_set_passphrase,
+        "remove-passphrase": cmd_remove_passphrase,
         "add": cmd_add,
         "get": cmd_get,
         "list": cmd_list,
@@ -2373,6 +3204,8 @@ def main():
 
     # Handle special commands
     if command in commands:
+        if command in _WRITE_COMMANDS:
+            _acquire_write_lock()
         commands[command](args)
     else:
         parser.print_help()

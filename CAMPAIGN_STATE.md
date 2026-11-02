@@ -6,11 +6,26 @@ Base branch: development @ f26312a54af94439cf480c58a0eb4d78b54e6024
 Campaign branch: yrsa/ember-road-build
 Working tree: ~/workspace/ember-build/ (this campaign's own clone — never shared)
 
-Last updated: 2026-10-31 15:18 EDT
-Status: STOPPED between slices (no slice IN PROGRESS) — Part I + Part II + Part III CLOSED, Part IV open at E-060
-Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059
-Next slice: E-060 — The VD-RM concordance executed: Verdandi's own roadmap items × reality (E-009) — its remaining road re-cut into this part's order, its completed claims verified by tests
-
+Last updated: 2026-11-01 19:31 EST
+Push record: E-100 banking commit cb940db pushed 2026-11-01 19:29 keeper tick — remote moved 754a2e5 → cb940db, verified via ls-remote (remote head = cb940db749573cf209869532be1ea4a0605ea2c5 = local HEAD at push time; the E-100 IN PROGRESS marker commit 49aec6d rode with it). Prior: E-099 banking commit 754a2e5 pushed 2026-11-01 ~19:10 keeper tick — remote moved 47685dc → 754a2e5, verified via ls-remote (remote head = 754a2e525512673d1462379183b71dfbb8d65b9c = local HEAD at push time; the E-099 IN PROGRESS marker commit 3bfa35d and the E-098 push-verification commit 3124b06 rode with it). Prior: E-098 banking commit 47685dc pushed 2026-11-01 16:27 keeper tick — remote moved d869437 → 47685dc, verified via ls-remote (remote head = 47685dc5a911dc5b648edf0d5abb56c299ff7077 = local HEAD at push time; the E-098 IN PROGRESS marker commit 6ad5680 and the E-097 push-verification commit d869437 rode with it — the remote already stood at d869437 when this tick fetched, one step past the E-097 record's 43e9607).
+Status: STOPPED — E-100 banked (Ember core binding filed at docs/architecture/E-100_CORE_BINDING.md — the companion now fetches its model/API credentials from its own machine's toaster-Kista under E-097's per-program scoping: src/ember/kista_binding.py binds with KISTA_PROGRAM=ember-core over the E-096 passphrase road; KistaConfig + Aesir api_key_entry + PgVector kista_entry added; Aesir opens via the binding with shared _open_with_key; the Well resolver is vault-first-and-only for named entries; docket 134 CLOSED in scope — credstore gained a write lock + per-process temp names (its drill stands at E-102); template keys filed under E-033; conscious re-pins with attribution: E-095's no-lock pin inverted, E-093 census +1 classified fixture; E-057 re-pinned src 132 / 938,897 B, kista 25 / 2,807,936 B, total 131,600,644 B both copies; E-095's docket-134 paragraph stands truncated on disk (literal truncation marker at its line 327, banked at E-095) — recorded at E-100 doc §2, not invented over; gate: focal 13 passed, focal set 39 passed post-fix, member suite 149 passed / 0 failed, Run A 1 error / 20 skipped, Run D 1641 passed / 0 failed / 20 skipped CLEAN — which DISCHARGES the clean post-fix Run D owed since E-099 — and Run B post-fix completed at the 19:12 keeper tick, one tick after the slice stood built, gated and staged, because an environment episode (O_EXCL file creation denied system-wide, Errno 1; git could not write loose objects) made banking impossible that tick: 1433 passed / 6 proven-env only (Batch CDE ×3, G ×2, J ×1 — all sqlite_vec-missing, the E-004 family) / 34 skipped, exactly the count the staged record predicted; that tick also opened under a home-wide disk-quota exhaustion (EDQUOT on every new file under /home/hatch) which cleared on its own within minutes — no file was deleted by this campaign)
+Status was: IN PROGRESS — E-100 (Ember core binding: the companion fetches its model/API credentials from toaster-Kista under E-097 — KISTA_PROGRAM=ember-core + the E-096 passphrase road; carrying docket 134's lock shape, drill at E-102; plus the owed clean post-fix Run D for E-099, to be re-run at this slice's gate) opened 2026-11-01 18:14 keeper tick. BUILT AND GATED 2026-11-01 evening, STAGED BUT NOT YET BANKED: the slice is complete in the working tree and staged (12 files: src/ember/kista_binding.py new, KistaConfig + Aesir api_key_entry + PgVector kista_entry, Aesir open via the binding with shared _open_with_key, Well resolver vault-first-and-only for named entries, credstore write lock (docket 134 CLOSED in scope) + per-process temp names, E-100 doc, focal battery, template keys (E-033), conscious re-pins (E-095 no-lock pin inverted with attribution, E-093 census +1 classified fixture), E-057 re-pinned src 132 / 938,897 B, kista 25 / 2,807,936 B, total 131,600,644 B both copies). Gate at the staged tree: focal 13 passed, focal set 39 passed post-fix, member suite 149 passed / 0 failed, Run A 1 error / 20 skipped, Run D 1641 passed / 0 failed / 20 skipped CLEAN — which also DISCHARGES the clean post-fix Run D owed since E-099. Run B first run 1431 passed / 8 failed (6 proven-env + the 2 in-scope template/census failures, both fixed and re-proven); the post-fix Run B re-run was destroyed mid-run by an environment episode PROVEN this tick to a single mechanism: O_EXCL file creation is denied system-wide (Errno 1) — tempfile creation fails in every directory incl. /tmp, pytest tmp writes failed 278 times in that run, and git itself cannot write loose objects ('unable to write loose object file: Operation not permitted'), which is why this slice is staged, not banked. NEXT TICK, FIRST ACT: when O_EXCL creation works again (probe: python3 mkstemp), commit the staged tree verbatim as the E-100 banking commit (do NOT rebuild or re-stage from scratch), re-run Run B for the owed clean post-fix count (expected 1433 passed / 6 proven-env failed / 34 skipped), then push + ls-remote verify + the push-verification record commit, and only then open E-101. Also recorded at E-100: E-095's docket-134 paragraph is truncated on disk (literal truncation marker at its line 327, banked at E-095) — recorded in the E-100 doc §2, not invented over.
+Status was: STOPPED — E-099 banked (interop truth filed at docs/architecture/E-099_INTEROP_TRUTH.md — verdict NO: the two Kistas cannot exchange entries; no one-way export/import built, per the roadmap's if-no branch the E-011 boundary doc gains the technical reason as an appended addendum, extending never rewriting: (1) same key or nothing — every encrypted movement road (export/import, encrypted backup/restore) requires the SAME Fernet key, an export is a byte-copy of the vault blob carrying no key, import refuses a different key in the program's own words, proven by synthetic-entry probes (different-key import exits 1, destination holds nothing afterwards); handing over the key file hands over the whole vault, a surrender not an exchange; (2) whole-vault roads only — no road selects by kind or program, a shared-key crossing carried all 6 probed entries unfiltered (toaster set + kept identity + other-road astrology, no notice), so the toaster set E-098 ruled the only set whose crossing may be proposed cannot cross alone; (3) the other side's format is NOT MEASURED — the ai-folder Kista was never accessed, records establish ancestry only (2026-05-21 snapshot here vs a living line a month past it when E-011 recorded), ancestry is not format compatibility; the one differing-key road that mechanically works, plaintext backup/restore, is proven (plain backup holds the synthetic password in clear text; restore into a different-key vault exits 0, entry reads whole) and named FORBIDDEN for real entries under the E-093 custody law; the bridge's six preconditions filed at E-099 §4 (measured target, Volmarr's word against E-011 rule 5, toaster-set-only by construction, its own locked box, verified receipt, program tags handled openly) — until the first two stand, no entry ever crosses; docket 138 NEW → E-101 (restore's plain road is an unauthenticated whole-vault transfer between different-key vaults); E-100 untouched by the verdict (a program calling its own machine's toaster-Kista, no crossing); no program code changed — the one test-tree change is governance: the E-089 canon guard's allowlist gains this slice's battery as its sixteenth file, consciously, reason recorded; E-057 unchanged (kista member untouched, row verified standing via the focal set's E-057 pin, not re-measured); gate: focal battery 11 passed, focal set 83 passed, member suite 149 passed / 0 failed, Run A 1 error / 20 skipped, Run B 1420 passed / 6 proven-env only (post-fix run B2, exact: E-098's 1409 + 11 new; the first Run B showed the canon failure the allowlist fix repairs), Run D NOT CLEAN IN ONE POST-FIX RUN — recorded honestly: attempt 1 (pre-fix tree) ran 1627 passed / 1 failed (the canon allowlist failure only) / 7 skipped, and the canon fix is proven by Run B2 + a targeted focal+canon+E-057 run (26 passed); attempts 3–6 after the VM's ~22:10 UTC reboot, under heavy cross-campaign contention (load 6–8, seven-plus concurrent suites, MemAvailable ~1 GB at onset), failed in mass with an environment mechanism proven from the logs — 304 PermissionError [Errno 1] on tmp writes + sqlite3 disk I/O errors across unrelated files (memory, persona, updates — none of them this slice's), every sampled failing file passing in isolation (55 passed subset incl. the E-099 battery) and a direct write probe passing between attempts; a single clean post-fix Run D is OWED in a quiet window and is docketed in this record, not claimed)
+Status was: IN PROGRESS — E-099 (interop truth: can the two Kistas exchange entries? Studied; if yes, a one-way export/import with verification; if no, the boundary doc (E-011) gains the technical reason — the ai-folder Kista is never accessed; the toaster set is the only set whose crossing this campaign may propose, per E-098) opened 2026-11-01 16:32 keeper tick.
+Status was: STOPPED — E-098 banked (entry kinds filed at docs/architecture/E-098_ENTRY_KINDS.md — the 14 kinds partitioned in code into three sets the focal battery derives and proves exact: the TOASTER set credential/apikey/url/note = passwords, tokens, URLs, notes, the roadmap's four plain words (E-100 binds credential + apikey; E-104 docs written against these four only); the KEPT kinds totp/license/sshkey/certificate/identity — working, tested, kept because removing a kind strands its entries, kept ≠ promised; the OTHER ROAD's kinds astrology/character-sheet/rune-reading/tarot-reading/markdown — the ai-folder Kista's wider ambitions (states, prompts, habits) recorded from the roadmap + in-tree snapshot as ITS road, RECORDED not measured, that side never accessed, not silently merged: a NEW entry of an other-road kind prints a plain notice at the moment of the add and is kept exactly as given, custody of existing entries stays silent; docket 50 CLOSED — add-soul and add-cron-backup judged the other road's, stay working, now announce themselves in the same words, github-backup judged not an entry-kind question (E-101's, docket 135 standing); docket 137 NEW → CLOSED in scope — dead add roads found by probing and fixed here: the general add parser gained the v2.0 kinds' fields mirroring the shortcuts' attribute names, markdown became addable on both roads (handler reads both roads' title/content; add-markdown gained --content), add-url — advertised in the program's own usage text since the import but with no parser, no _add_type_args branch, and no entry in any of the three shortcut maps — built whole (surface 34 → 35, E-094's battery re-pinned consciously with attribution; E-097's record of 34 stands, true of its tree), and add-soul's mixed-case backup key (soul-backup-SOUL, unreachable by the lowercased get/update/remove lookups) fixed at the source with legacy keys healed on load; all 14 kinds proven addable on both roads by probe — 35 commands, 35 exit 0, the notice firing exactly 12 times and nowhere else; E-057 re-measured kista 25 / 2,805,999 B, total 131,582,703 B, miss unchanged 256,017 B, both copies re-pinned; gate fully clean: focal battery 13 passed, focal set 72 passed, member suite 149 passed / 0 failed, Run A 1 error / 20 skipped, Run B 1409 passed / 6 proven-env only, Run D 1617 passed / 0 failed, 7 skipped — Run B = E-097's 1396 + 13 new and Run D = E-097's 1604 + 13 new, exact; an early focal-set report of 73 was superseded by the on-disk log's 72, which is the count recorded)
+Status was: IN PROGRESS — E-098 (entry kinds: passwords, tokens, URLs, notes — the toaster set; the ai-folder Kista's wider ambitions recorded as its road, not silently merged — carrying docket 50) opened 2026-11-01 15:37 keeper tick.
+Status was: STOPPED — E-097 banked (per-program access filed at docs/architecture/E-097_PER_PROGRAM_ACCESS.md — every entry now carries a program tag (empty = the owner's own; pre-E-097 entries read exactly that way); a caller naming itself with the KISTA_PROGRAM environment variable can add, read, list, search, check, change, and remove only its own entries, and another program's entry and a missing entry answer identically so a program learns nothing about the rest of the vault — not values, names, or counts; whole-vault and vault-life operations (init, repair, passphrase, export/import, backup/restore, github-backup, add-soul, add-cron-backup, config) are the owner's acts, refused to a program caller in words before anything is touched; only the owner can move an entry (update --program / --unassign-program) and a program cannot overwrite another's entry even with --force; E-096's passphrase lock and this scoping compose — both doors hold at once, proven by probe; the honesty line stands in doc and code: a program name is an identifier, never a credential — discipline for well-behaved programs, NOT a wall against malicious same-account code, and E-095's A2 verdict stands unchanged; no new subcommand (surface stays 34); E-100 inherits the binding shape (KISTA_PROGRAM=ember-core + the E-096 passphrase road); E-057 re-measured kista 25 / 2,794,614 B, total 131,571,318 B, miss unchanged 256,017 B, both copies re-pinned; gate fully clean: focal battery 13 passed, focal set 59 passed, member suite 149 passed / 0 failed in its own shape, Run A 1 error / 20 skipped, Run B 1396 passed / 6 proven-env only, Run D 1604 passed / 0 failed, 7 skipped — Run D's first attempt under heavy cross-campaign contention showed late mass failures and died on a cache-write PermissionError, its second attempt was interrupted at 44% clean, and the third attempt in a quieter window ran fully clean at 1604 = E-096's 1591 + 13 new, so the late failures stand judged contention, not code)
+Status was: IN PROGRESS — E-097 (per-program access: a program gets only its own entries — the ai-folder Kista's proven pattern, in toaster shape — building on E-096's working unlock) opened 2026-11-01 14:14 keeper tick.
+Status was: STOPPED — E-096 banked (the unlock experience for normal folks filed at docs/architecture/E-096_UNLOCK_EXPERIENCE.md — the vault key can now be wrapped under a passphrase: set-passphrase / remove-passphrase commands, scrypt derivation from the standard library (no new dependency), the key itself never changes so entries, backups and exports are untouched; a copied vault folder — E-095's central total-loss shape — now opens nothing without the passphrase, proven by probes: no passphrase given → plain refusal exit 1 with no data, wrong passphrase → 'did not unlock' exit 1, right passphrase → entry reads whole; unwrapped vaults still open the old way and init + status now state that consequence in words at the moment it applies; the recovery story is stated before a passphrase is set, in the program's own words — a forgotten passphrase means a lost vault, no reset, no recovery copy, and that honesty is the superseding claim from this slice; docket 14 CLOSED — the import-time installer is gone entirely, a missing cryptography package is one plain message and a clean exit, TestSubprocessInstall re-pinned consciously to the new shape; docket 128 CLOSED — a --password value still works but now draws a loud plain warning at the moment of use naming the process-list and shell-history exposure and the safer shapes, both help texts reworded; batteries re-pinned consciously with attribution: E-094's mapped surface 32 → 34 subcommands, E-095's no-derivation pin inverted (that absence was its requirement to this slice), member suite 149 → 151 passed / 0 failed; E-057 re-measured kista 25 / 2,784,538 B, total 131,561,242 B, miss unchanged 256,017 B, both copies re-pinned; gate fully clean: focal battery 10 passed, focal set 46 passed, Run A 1 error / 20 skipped, Run B 1383 passed / 6 proven-env only, Run D 1591 passed / 0 failed with a freshly built extras target, 7 skipped)
+Status was: IN PROGRESS — E-096 (the unlock experience for normal folks: passphrase flow a non-technical user survives; recovery story stated honestly — carrying E-095's judged requirement, a passphrase wrapping the key, plus docket 128 and docket 14) opened 2026-11-01 13:33 keeper tick.
+Status was: STOPPED — E-095 banked (toaster-Kista threat model filed at docs/architecture/E-095_TOASTER_KISTA_THREAT_MODEL.md — sized for tiny machines, attackers A1–A7; DEFENDED proven: a lone encrypted blob gives nothing (blob-alone probe refused, no key minted over data), tampering detected (HMAC) and healed from auto-backup, values closed to other accounts (0600 files), CSPRNG password generation, corrupt-key refusal; NOT defended, stated never implied: the folder copy — key file beside the vault, NO passphrase, a copied vault directory opened whole in probe (device/SD/sync theft is the central gap), the same OS account (no unlock gate, per-program access is E-097), key loss = total loss, rollback (an older valid blob silently resurrects rotated-away passwords, proven; freshness nowhere), github-backup harvest-later (every pushed blob decrypts under one future key leak; repo privacy never checked), plaintext backup/restore shapes, stdout as a plaintext channel; REQUIREMENT handed to E-096: a passphrase wrapping the key, with docket 14 + 128 and the honest recovery story; interim claim wording binding on all Ember docs until E-096 lands; dockets 131 + 132 CLOSED in scope — built here: the vault directory is now owner-only 0700 (was umask 770 in probe), vault_meta.json now chmod 0600 on every save (was 660, service names group-readable), the plaintext backup output now chmod 0600 (was 660); battery caught the second-resolution auto-backup-name wrinkle (recorded at docket 133); dockets 133 NEW → E-102 (rollback/freshness), 134 NEW → E-100 (no inter-process lock; drill E-102), 135 NEW → E-101 (github-backup history + privacy), 136 NEW → E-187 (chmod no-op platforms unstated); E-057 re-measured kista 25 / 2,770,819 B, total 131,547,523 B, miss unchanged 256,017 B, both copies re-pinned; gate fully clean: focal 6 passed, focal set 36 passed, member suite 149 passed / 0 failed, Run A 1 error / 20 skipped, Run B 1373 passed / 6 proven-env only, Run D 1581 passed, 0 failed)
+Status was: STOPPED — E-094 banked (toaster-Kista mapped at docs/architecture/E-094_TOASTER_KISTA_MAPPED.md — one program, one Fernet-encrypted whole-vault file (vault.json.enc, AES-128-CBC + HMAC-SHA256), key a separate mode-0600 file, NO vault passphrase (E-095 judges that shape); plaintext meta holds service names only; 14 entry types and 32 subcommands derived from the code; zero consumers in src/, binding is E-100; docket 46 CLOSED — built here: KISTA_DIR unset now defaults to ~/.ember/kista/, the override wins when set, proven by sandboxed probes + a scratch init/status run; docket 5 CLOSED in scope — the member suite judged another installation's copy for its 3 failures since E-005: CREDSTORE_SCRIPT now resolves the in-tree script, its hidden stale version expectation corrected 1.3.0 → the true 2.0.0, the isolated-vault fixture's VAULT_CONFIG/BACKUP_DIR leak patched; member suite 146 passed / 3 failed → 149 passed / 0 failed; docket 14 live-reproduced (import-time pip install dies as CalledProcessError under PEP 668) → proposed owner E-096; docket 130 NEW → E-104 (member docs still state the old default; the kista README states it too and stands under the README law → E-195); E-057 re-measured kista 25 / 2,770,316 B, total 131,547,020 B, miss unchanged 256,017 B, both copies re-pinned; gate fully clean: Run A 1 error / 20 skipped, Run B 1367 passed / 6 proven-env only, Run D 1575 passed, 0 failed)
+Status was: STOPPED — E-093 banked (Part VI opens: the custody law filed at docs/architecture/E-093_CUSTODY_LAW.md — credentials live in a Kista, per machine (ai-folder Kista for house credentials, never touched by this campaign; toaster-Kista for Ember's own, bound at E-100), never in configs, code, or chat; the interim standard is the Well resolver's chain (env → keyring → mode-600 file); fresh E-013-method scan at this HEAD re-proven: 3,443 tracked / 2,991 text scanned, GitHub tokens 0, JWTs 0, bearer 0, sk- 0, key blocks 7 and AWS shapes 2 all the E-013 fixture families, 20 credential-shaped assignments all classified fixtures, the battery now arms the scan with those allowlists; docket 46 DECIDED (toaster default vault home shall be ~/.ember/kista/, KISTA_DIR override stands, built at E-094; E-011 rule 3 binds until then); docket 48 RULED under law rule 9 (known-accounts.md is an identifier ledger — not a leak, no values ever, no new campaign entries, removal remains Volmarr's word, unmade on this record); docket 127 CLOSED in scope (Aesir key file now refused at any POSIX mode other than exactly 0600, before reading; E-023/E-036 key writers chmod 0600; E-057 re-measured src 922,893 B / total 131,546,922 B, miss unchanged 256,017 B, both copies re-pinned); docket 128 NEW → E-096 (credstore --password command-line value shape); docket 129 NEW → E-187 (mimir-well backup_repo credential-bearing URL shape); E-089 canon guard allowlist extended consciously to 15 files; gate fully clean: Run A 1 error / 20 skipped, Run B 1359 passed / 6 proven-env only, Run D 1567 passed, 0 failed)
+Status was: STOPPED — E-092 banked (Part V gate PASS: one memory face live and the memory contract FROZEN at v1 (MemoryFace, 31 public operations, name-for-name E-090's surface, probed + cross-checked); migration proven on fixtures (survivors stay native measured byte-identical; palace mapping lossless, execution ruling-gated); the verdict paper on record with Volmarr's word on mempalace retirement RECORDED AS ABSENT — no ruling on record, silence never read as a word, E-079 fallback in force, member untouched at 257 files / 59,049,715 B; docket 108 CLOSED in scope (mimir-well flask>=3.0,<4 + setuptools>=61.0,<82, battery-pinned both-ways; E-057 re-measured mimir-well 59 / 618,776 B, total 131,545,913 B, miss unchanged 256,017 B; E-077 size pin re-pinned with attribution after the combined run's first pass caught it stale — 225/1 → re-run 226 passed / 1 live-skip); docket 125 RULED (watermark semantics: a pass applies only age since last access/pass, passes never compound; current compounding stands as a named defect, implementation → E-204 presentation as a candidate slice beside docket 112/119's handle-delete slice); docket 123 weighed and bounded as the v1 boundary (→ E-204 re-weigh); docket 102's assigned E-085 review honestly recorded as never taken by any Part V slice — reviewed at this gate, typed subscriber still unbuilt, backstop E-204; E-089 canon guard allowlist extended consciously to 14 files; gate fully clean: Run A 1 error / 20 skipped, Run B 1352 passed / 6 proven-env only, Run D 1560 passed, 0 failed)
+Status was: STOPPED — E-091 banked (the verdict's residue: mempalace marked bounded wherever Ember's own living documents presented it otherwise, successor MemoryFace named — UNWIRED_INVENTORY row corrected in place (docket 52 EXECUTED), the Yggdrasil sibling doc bannered SUPERSEDED-IN-PART, BOUNDED, the corpus's two front doors carrying status notes; the member itself untouched, battery-pinned at 257 tracked files / 59,049,715 B; E-089 canon guard allowlist extended consciously to 13 files; gate fully clean after the Python-write EPERM stall cleared: combined extras-shape 218 passed / 1 live-skip, Run D 1552 passed, 0 failed)
+Status was: STOPPED — E-090 banked (docs: the memory model for users (plain) + builders — one document, two halves: Part A plain for users (the three kinds of memory, word-vs-meaning finding with the toaster's stated word mode, correct-vs-supersede, the four rights with docket 119/120 limits stated, persona separation, ageing without deletion, measured prices, the diary and WYRD neighbours, mempalace's proposed-not-decided status), Part B for builders (one face over two bounded engines, the sidecar, opening + graceful offline, the complete 31-operation contract surface, index-don't-merge, constants, the WYRD export boundary, open dockets 108/112/113/119/120/125, and the stated truth that chat is not yet rewired to the face); the pinning battery derives the operation list from MemoryFace itself; E-089's canon guard extended consciously — its allowlist gains this slice's battery as a twelfth file, governance-needle reason recorded; gate fully clean incl. Run D 1546 passed, 0 failed)
+Banked: E-001, E-002, E-003, E-004, E-005, E-006, E-007, E-008, E-009, E-010, E-011, E-012, E-013, E-014, E-015, E-016, E-017, E-018, E-019, E-020, E-021, E-022, E-023, E-024, E-025, E-026, E-027, E-028, E-029, E-030, E-031, E-032, E-033, E-034, E-035, E-036, E-037, E-038, E-039, E-040, E-041, E-042, E-043, E-044, E-045, E-046, E-047, E-048, E-049, E-050, E-051, E-052, E-053, E-054, E-055, E-056, E-057, E-058, E-059, E-060, E-061, E-062, E-063, E-064, E-065, E-066, E-067, E-068, E-069, E-070, E-071, E-072, E-073, E-074, E-075, E-076, E-077, E-078, E-079, E-080, E-081, E-082, E-083, E-084, E-085, E-086, E-087, E-088, E-089, E-090, E-091, E-092, E-093, E-094, E-095, E-096, E-097, E-098, E-099, E-100
+Next slice: E-101 — backup & restore of a tiny vault (user-carried file, encrypted; restore proven) — carrying dockets 135 (github-backup history + privacy) and 138 (restore's plain road is an unauthenticated whole-vault transfer between different-key vaults, from E-099). Part VI is OPEN (E-093, E-094, E-095, E-096, E-097, E-098, E-099, E-100 banked). The mempalace retirement still awaits Volmarr's word (E-079 §6) — its recorded absence is on record at the gate, fallback in force, executing migration slice exists only under that ruling. Carried with owners: docket 100 (→ E-136), 102 (→ E-204 backstop), 109 bifrost side (→ Part VIII), 112 + 119 (→ E-204 presentation, one candidate slice), 113 member half (→ E-194), 123 (→ E-204 re-weigh), 125 implementation (→ E-204 presentation), 129 (→ E-187), 130 (→ E-104; its README line → E-195), 133 (→ E-102), 135 (→ E-101), 136 (→ E-187), 138 (→ E-101). Dockets 14 and 128 stand CLOSED at E-096; dockets 50 and 137 stand CLOSED at E-098; docket 134 stands CLOSED at E-100 (drill at E-102).
 ## Laws (from the roadmap §3, binding every slice)
 
 - Keeper discipline; never leave a discovered bug unfixed (in scope, or docketed to its part in E-016).
@@ -2419,3 +2434,2923 @@ Top-level members present (size / file count, working tree excl. .git):
   ancestor; the push also carried the tick's IN PROGRESS marker 0c38b69) —
   remote moved b275aeb → 9017035, verified via ls-remote (remote head =
   9017035acb7e4ade033679bb1cd9d8e054a1cc2f = local HEAD at push time).
+
+## E-060 — VD-RM concordance executed (DONE, 2026-10-31)
+
+- Concordance executed at `docs/architecture/E-060_VDRM_CONCORDANCE_EXECUTED.md`:
+  VD-RM's completed claims re-verified by tests this slice — `test_skuld.py`
+  **35 passed** (identical to E-009); the four-file Verdandi focal set
+  (skuld + heartbeat actions/checks/heartbeat) **374 passed, 0 failed** in
+  three consecutive serial runs. One earlier combined run under parallel
+  command load scored 371/3 with the failures never identified (tail-only
+  log) and unreproduced — recorded honestly as new docket 99 (UNRESOLVED
+  flake, with its re-open rule: capture the full log and name the tests).
+- Vör (docket 31) re-proven broken this slice with synthetic contexts:
+  `should_trigger` crashes `AttributeError: 'str' object has no attribute
+  'get'` on Skuld's own `{"status": …}` capacity shape; the no-action
+  return crashes on `ActionSeverity.INFO` (nonexistent) with the `name=`
+  field error latent behind it; Vör defines `execute()` and no
+  `_execute()`, bypassing BaseAction's crash wrapper. Repair contract
+  fixed in the E-060 doc and owned by **E-065**, including Vör's first tests.
+- The remaining road re-cut: v0.4.0 "Valhalla" is **CLOSED** — Prometheus
+  and the emotional architecture were already shipped in v0.3.0 (struck as
+  double-counted, docket 35), and Distributed Heartbeat + the REST API are
+  **RETIRED** with reasons (absent re-verified by tree search this slice;
+  distributed contradicts the E-020 tethering spec, the REST sketch's
+  local need is served by E-061/E-066/E-073; reopening either is a new
+  commission). The Urðr-integration maintenance sketch is retired
+  (static windows stand, test-proven). v1.0 "Yggdrasil production-ready"
+  is undefined/NOT PROVEN — E-076's gate must close or re-road it with
+  criteria and an owner. Code is the authority over VD-RM's sketches (37).
+- Decisions: `pulse_metrics` (34) — **WIRE, don't stop**: E-066 wires
+  Skuld to read it as its health-history source, with tests. Canonical
+  emotional set named (33 closed as a naming): **eight** labels
+  `classify()` can return — the 6 `EMOTIONAL_STATES` + `moderate` +
+  `unknown`; VD-RM's "7" struck. Budget wording settled (65's wording
+  half): hub ≠ heartbeat — hub **21.9 MiB live**, heartbeat **18.4 MiB
+  import-level** (E-041, VM) are the only measured figures; elder
+  ~1 MB/~13 MB/~15–25 MB claims superseded, and no document may quote a
+  Verdandi size without naming its program (doc edits at E-074; the
+  README is never edited — its ~1 MB line stands contradicted on record).
+  Severity docstring verdict (from E-059 §9): the comparator (UNKNOWN
+  ranks −1, below OK) is the behaviour; the docstring order is wrong
+  wording, fixed at E-074. Stale sibling docs (35) re-verified still
+  stale in the same five files; all five are E-074's list.
+- Slice gate: Run B **1054 passed, 6 failed, 25 skipped, 1 warning**
+  (the proven environment set, identical to E-058/E-059); Run D
+  **1111 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (identical
+  to E-058's Run D). Logs in `~/workspace/.verify-tmp/ember-e060/gate/`.
+  Doc-only slice, no code touched, no README touched.
+- E-061 next — event contract v1: event shapes versioned; producers/
+  consumers listed per event.
+- E-060 push: banking commit be93dfb pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 669655d, an
+  ancestor; the push also carried the tick's IN PROGRESS marker eb3d440) —
+  remote moved 669655d → be93dfb, verified via ls-remote (remote head =
+  be93dfb9453fea2ee7bce1fe7415ddd3d8858693 = local HEAD at push time).
+- CORRECTION (same day, E-060): the E-060 section above and the banking
+  commit message recorded a focal-set run of 371 passed / 3 failed under
+  parallel load, docketed as item 99. That figure is WITHDRAWN: the
+  original focal run's completed log (delivered late) reads **374 passed**,
+  every logged focal run (four, in `~/workspace/.verify-tmp/ember-e060/`)
+  is 374 passed / 0 failed, and no log anywhere contains a 371/3 run —
+  the figure was unattributable and, per the counts-from-the-runner-only
+  law, cannot stand. Docket 99 is withdrawn in the E-060 doc §8 (the
+  number is not reused; the next new docket item is 100) and the doc's
+  §2/§9 are corrected to match. All other E-060 counts (skuld 35,
+  Run B, Run D) are log-backed and unchanged.
+
+## E-061 — Event contract v1 (DONE, 2026-10-31)
+
+- Contract filed in code at `Verdandi/event_contract.py` (stdlib-only,
+  standalone for deployed copies) with its reading copy at
+  `docs/architecture/E-061_EVENT_CONTRACT_V1.md`: canonical v1 envelope
+  `{v: 1, type, data, source}` (hub stamps `_seq/_ts/_iso`; offline
+  fallback adds `_fallback`, no `_seq`); versioning rules (unknown
+  fields ignored, breaking a registered shape = version bump, new
+  types registered in the same change as their producer); control
+  messages named (subscribe/ping/recent → subscribed/pong/recent_events,
+  plus ack/shutdown). Every event registered with producer, consumers,
+  data fields, source, status: 4 conv_* + push_reward + runa_reward +
+  runa_negative + the open operator vocabulary + 5 mood families
+  (event:*, stimulation:*, orgasm, thought:*, location:*) as canonical;
+  `ping` registered as a DEFECT (docket 96, repair E-066); heartbeat_pulse
+  + heartbeat_state_change as LEGACY (flat dialect to verdandi.sock,
+  NO listener, consumers honestly empty) + the heartbeat_fallback feed
+  shape. Sockets named apart: canonical runa.sock vs legacy
+  verdandi.sock. `classify_dialect` / `normalize_event` (no field
+  dropped) / `validate_publish` implement the legacy translations.
+- Producers brought onto the contract: `publish_event_sync` now stamps
+  `'v': 1` (a literal, not an import — nervous_system.py is deployed
+  standalone; pinned by test); the mood/arousal system's `_fire_nerve`
+  now emits the canonical envelope. CORRECTION to E-059 recorded in
+  the E-061 doc §5: E-059's "runa_mood_arousal publishes nothing" was
+  wrong — `_fire_nerve` fires a FOURTH dialect ({source, event,
+  timestamp, data}) at the right socket (runa.sock) with the wrong
+  kind key, so hub feeds carried its events with no `type`; that
+  dialect is retired as a producer shape by this slice (recognised
+  for reading in the contract). Its passenger status (no in-tree
+  callers) stands. Wire shape proven behaviourally by a captured-
+  socket smoke (canonical envelope to runa.sock; evidence dir).
+- Docket 97 CLOSED: context_injector's log-event choices listed only
+  7 of the logger's 8 EVENT_TYPES (missing mood_shift); the injector
+  now derives `choices=sorted(EVENT_TYPES)` from the logger, the same
+  derivation the logger's own CLI uses, pinned by source test + a
+  `log-event --help` behaviour test. `event_contract.LOG_EVENT_TYPES`
+  mirrors the logger's set exactly (pinned equal by test).
+- Docket 93 settled in two of three parts: canonical shape declared
+  + versioned, mood dialect retired; the heartbeat producer's
+  transport rewiring onto runa.sock is expressly E-067's (cross-member
+  wiring under this contract), not dropped. Hub-side validation
+  enforcement was NOT smuggled in (no Part IV slice claims it);
+  validate_publish is available to consumers.
+- Bookkeeping fixed in scope: this slice's Verdandi changes moved
+  the E-057 member budget table — re-measured and updated in both
+  published copies (BUDGET_BOOK §7 + E-057 record, with the re-measure
+  noted in the record): Verdandi 180 files / 16,837,498 B (was 179 /
+  16,817,105 B), twelve-member total 131,231,457 B (was 131,211,064 B),
+  laptop-ceiling miss 60,282 B (was 39,889 B); profile verdict
+  unchanged (none), no RAM floor re-measured, no ceiling moved.
+- Tests: `tests/unit/test_event_contract_e061.py` **22 passed** —
+  registry completeness re-derived from producer sources (every
+  literal publish_event_sync site, the conv_* family, the heartbeat
+  legacy fires, every mood _fire_nerve family), dialect/normalize/
+  validate behaviour, producer shape pins, stdlib-only contract,
+  doc names every registered event. Verdandi focal: conversation
+  set **101 passed** (identical to E-059), heartbeat set **374
+  passed** (identical to E-060), both with the declared pytest-asyncio
+  from the isolated extras dir. Slice gate: Run B **1076 passed,
+  6 failed, 25 skipped, 1 warning** (1054 + 22; the 6 are the proven
+  environment failures — the first attempt's 2 extra failures were
+  the E-057 tests catching this slice's own weight change, fixed by
+  the re-measure above); Run D **1133 passed, 0 failed, 19 skipped,
+  1 warning**, exit 0 (1111 + 22). Logs in
+  `~/workspace/.verify-tmp/ember-e061/gate/`. No README touched.
+- E-062 next — context injection discipline: what may be injected,
+  when, with what budget — the injector's rules as tests.
+- E-061 push: banking commit 76c47fa pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 037fc0a,
+  an ancestor; the push also carried the tick's IN PROGRESS marker
+  1b0c1f8) — remote moved 037fc0a → 76c47fa, verified via ls-remote
+  (remote head = 76c47fa3bc63a9b45e5baf15eebb7c54957770f9 = local HEAD
+  at push time).
+
+## E-062 — Context injection discipline (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-062_CONTEXT_INJECTION_DISCIPLINE.md`
+  and in code at `Verdandi/context_budget.py` (stdlib-only, standalone
+  like event_contract.py): only four sources may be injected, all from
+  the one state dir — current.json, conversation_log.jsonl recent
+  summaries (one line per session), the nerve_feed.jsonl file tail
+  (never a live hub query), and reactor directives derived from the
+  same log; nothing else (no env, no configs, no outside files, no
+  credential-shaped material — E-093's custody law starts here).
+  When: once, at a job's start, as a starting brief.
+- The budget: whole block ≤ **4000 chars**; layers current 1200 /
+  recent 700 / nerve 1000 / reactions 1100 (sum = total). Per-item
+  caps in both dimensions (decisions/next ≤5 items, blockers ≤10,
+  projects ≤10; items ≤120 chars, projects ≤60; joined lines also
+  capped — blockers 600, decisions/next/projects 300 — so blockers
+  at full allowance always fit the current layer alone); summaries
+  ≤120 / recent ≤100; max_sessions clamped to ≤5; nerve ≤10 events
+  (data ≤100, source/type ≤60); reactions ≤6 directives × ≤3 items
+  (≤120 each). Shedding: reactions first, then nerve (oldest first),
+  then recent (oldest first), current last — inside current, projects
+  shed first and blockers last; every cut leaves the marker
+  `[... truncated by context budget E-062]` in the block.
+  Supplementary layers stay failure-silent.
+- `get_context_for_cron` rebuilt in layers in conversation_logger.py
+  (budget literals as deployed literals, E-061 pattern, pinned equal
+  to context_budget.py by 23 pairings in the conformance tests).
+  Two defects fixed in scope: (a) nerve tail + reactor were read
+  from a second hardcoded `Path.home()/.hermes/state` instead of the
+  logger's own STATE_DIR — silently divergent for any redirected
+  state dir; now both read STATE_DIR (identical under the default);
+  (b) context_injector's extra CURRENT STATE echo printed blockers
+  and next actions unbounded — now under the same caps. E-057 table
+  re-measured for the Verdandi weight change (181 files /
+  16,852,579 B; total 131,246,538 B; laptop miss 75,363 B), both
+  published copies updated. No new docket items; no README touched.
+- Conformance: `tests/unit/test_context_injection_e062.py` **18 passed**
+  (budget shape, literal pinning, allowed sources, adversarial
+  fixtures: full load yields ≤4000 chars with blockers surviving and
+  the marker present; flooding reactor proven live from a state-dir
+  reactor). Verdandi focal conversation set **101 passed** (identical
+  to E-059/E-061; pytest-asyncio from the e005-extras dir, short
+  TMPDIR — the hub's Unix-socket paths exceed ~108 chars under the
+  deep overlay TMPDIR, failing identically on the unmodified tree,
+  proven by stash-and-rerun). Slice gate: Run B **1094 passed,
+  6 failed, 25 skipped, 1 warning** (1076 + 18; the 6 are the proven
+  environment failures; the first attempt's extra failures were the
+  E-057 tests catching this slice's own weight change, fixed by the
+  re-measure); Run D **1151 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1133 + 18). Logs in `~/workspace/.verify-tmp/ember-e062/gate/`.
+- E-063 next — the conversation logger's law: what is logged, where,
+  for whom; retention + the user's delete right (total, provable).
+- E-062 push: banking commit 49a43ab pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 8c946b5,
+  an ancestor; the push also carried the tick's IN PROGRESS marker
+  801bf77) — remote moved 8c946b5 → 49a43ab, verified via ls-remote
+  (remote head = 49a43ab528f64c5b950bc2fd42a9d135ef67d6f9 = local HEAD
+  at push time).
+
+## E-063 — The conversation logger's law (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-063_CONVERSATION_LOGGER_LAW.md` and in
+  code at `Verdandi/logger_law.py` (stdlib-only, standalone like
+  event_contract.py / context_budget.py): what is logged is exactly four
+  entry kinds (start / event / update / end) with named fields and the
+  eight EVENT_TYPES; content is caller-supplied and logged verbatim (no
+  redaction exists — the custody rule is the writer's, E-093). Where:
+  `conversation_log.jsonl` (append-only), `current.json` (latest session's
+  snapshot), `conversations/` (created on append, otherwise unused —
+  recorded honestly), and the nerve copies (every entry fired as a conv_*
+  event into `nerve_feed.jsonl` + rotated archives, plain and gzipped).
+  Readers named: the logger's own show/recent/context + public API,
+  context_injector, the reactor, Mímir's check (size/count only), Bifröst.
+  The core does not read the log; logger→memory stays E-072's question.
+- Retention stated from sources, pinned by tests: the logger itself keeps
+  everything indefinitely (no age/entry limit, no rotation); the only
+  bounds are the heartbeat's size-based hygiene — nerve feed rotates at
+  10 MB, Bifröst prunes the log over 50 MB (feed 20 MB, newest lines,
+  ≥100 kept), Mímir warns 50 MB / critical 200 MB. That pruning is NOT a
+  privacy mechanism and is not session-aware — new docket 100 (session-
+  aware pruning or a stated verdict, owned by the E-076 gate review).
+- The delete right, built: `conversation_logger.py` gains
+  `delete_session` / `delete_all_conversations` + a `delete` CLI
+  (`delete --session <id>`; `delete --all --yes`, the --yes required and
+  a --all without it exits 2 deleting nothing). Total across log,
+  current.json (only if it belongs to the session), the live nerve feed
+  and every rotated archive (plain + gz); other sessions, non-conv feed
+  events and unattributable lines are kept, the last counted in the
+  report, never silently dropped or claimed. Provable: atomic rewrites
+  (temp file + os.replace, kept lines byte-for-byte), then a re-read of
+  every store — the report claims verified only at zero attributable
+  remaining, else exit 1. A deleted session provably no longer reaches
+  context injection (test).
+- Docket 98 CLOSED: the dead `_update_current` helper is removed, and
+  current.json ownership is now uniform law — it belongs to the session
+  that started it; a cross-session event/update/end is still logged but
+  never rewrites another session's snapshot, and a foreign end entry is
+  built from its own arguments alone (previously an event appended to
+  another session's lists, an update overwrote its actions, an end
+  closed its snapshot and carried its lists).
+- E-057 table re-measured for the Verdandi weight change (182 files /
+  16,871,542 B; total 131,265,501 B; laptop miss 94,326 B), both
+  published copies updated. Conformance:
+  `tests/unit/test_logger_law_e063.py` **16 passed**; Verdandi focal
+  conversation set **101 passed** (identical to E-059/E-061/E-062;
+  pytest-asyncio from the e005-extras dir, short TMPDIR). Slice gate:
+  Run B **1110 passed, 6 failed, 25 skipped, 1 warning** (1094 + 16;
+  the 6 are the proven environment failures, identical set); Run D
+  **1167 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1151 + 16).
+  Logs in `~/workspace/.verify-tmp/ember-e063/gate/`. No README touched.
+- E-064 next — stimuli: external events enter as typed stimuli with
+  provenance.
+- E-063 push: banking commit d257751 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 1ec6c5b, an
+  ancestor; the push also carried the tick's IN PROGRESS marker 7b45729) —
+  remote moved 1ec6c5b → d257751, verified via ls-remote (remote head =
+  d257751b3228fe6c376b982ee9a2a2093fbbbadc = local HEAD at push time).
+
+## E-064 — Stimuli (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-064_STIMULI.md` and in code at
+  `Verdandi/stimuli.py` (stdlib-only, standalone like event_contract.py /
+  context_budget.py / logger_law.py): external events enter as typed stimuli
+  with provenance. Three kinds — time, sensor, message (the roadmap's own
+  three) — and seven registered entrances: `time.tick` (heartbeat daemon
+  timer), `time.schedule` (cron job start), `sensor.check:*` (the five
+  heartbeat checks), `sensor.signal` (the signal handler's five signals),
+  `message.operator` (the hub's typed operator entrance), `message.conversation`
+  (logger entries), `message.mood_input` (the mood system's four input
+  functions). No open fallback: an unregistered name is not a stimulus.
+- Provenance is mandatory and channel-bound: a stimulus carries
+  {origin (non-empty), channel (one of timer/cron/check/signal/cli/log/direct,
+  and it must be its entrance's own channel), at (optional origin timestamp)}.
+  `to_event` renders a validated stimulus as a canonical E-061 event
+  (`stimulus:<name>`, source = origin, payload + full provenance inside data,
+  so provenance survives feed/ring/fallback copies); `from_event` is its
+  exact reverse. E-071's privacy rule now has the record it governs.
+- The one live entrance built: `nervous_system.publish_stimulus_sync` + the
+  `stimulus` CLI command — registry literals inline in the hub (deployed-
+  standalone pattern, pinned equal to stimuli.py by tests), entry time
+  stamped by the hub. A stimulus that fails validation is rejected and
+  publishes NOTHING — no hub write, no feed fallback (a fallback line would
+  be exactly an unprovenanced entry).
+- Honest bounds: the heartbeat timer/checks still surface inside the legacy
+  heartbeat_pulse — this slice registers the shape they enter AS; transport
+  rewiring stays E-067's, as E-061 assigned it. No typed stimulus consumer
+  yet (the hub set reads them as ordinary canonical events); typed reaction
+  is E-065/E-067. New docket 101: the hub's open `publish` path still
+  accepts operator events with source optional — making it stimulus-only
+  is a breaking change owned by the E-076 gate review, not smuggled in here.
+- E-057 table re-measured for the Verdandi weight change (183 files /
+  16,889,384 B; total 131,283,343 B; laptop miss 112,168 B), both published
+  copies updated. Conformance: `tests/unit/test_stimuli_e064.py` **16 passed**;
+  Verdandi focal conversation set **101 passed** (identical to
+  E-059/E-061/E-062/E-063; pytest-asyncio from the e005-extras dir, short
+  TMPDIR). Slice gate: Run B **1126 passed, 6 failed, 25 skipped, 1 warning**
+  (1110 + 16; the 6 are the proven environment failures, identical set);
+  Run D **1183 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1167 + 16).
+  The first Run D attempt was killed mid-run (SIGTERM to the harness at
+  ~36%, no summary line) and re-run clean — the figures are the re-run's
+  own log. Logs in `~/workspace/.verify-tmp/ember-e064/gate/`. No README touched.
+- E-065 next — the reflex layer: fast, dumb, safe reactions below cognition.
+- E-064 push: banking commit a2e729c pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 649ab88, an
+  ancestor; the push also carried the tick's IN PROGRESS marker 8c560a6) —
+  remote moved 649ab88 → a2e729c, verified via ls-remote (remote head =
+  a2e729c1381601d40a495aec8562d7fc61fb9748 = local HEAD at push time).
+
+## E-065 — The reflex layer (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-065_REFLEX_LAYER.md` and in code
+  at `Verdandi/reflexes.py` (stdlib-only, standalone like event_contract.py /
+  context_budget.py / logger_law.py / stimuli.py): the reactions below
+  cognition are registered and bounded. Five reflexes — auto_push,
+  auto_restart, auto_cleanup, auto_heal, preemptive_heal — mapped by the
+  heartbeat Reactor's six rules onto five checks; each spec states trigger
+  checks, floor severity, effect and BaseAction cooldown, pinned equal to
+  the live ACTION_REGISTRY, each action class's declared fields, and the
+  Reactor's rule set by the conformance tests. The three words made
+  testable: FAST (deterministic rule match, no model, no core import),
+  DUMB (fixed rules; an unregistered action is not a reflex), SAFE (WARNING
+  floor — OK/UNKNOWN fire nothing — positive cooldown, dry-run honoured,
+  and every reflex runs through BaseAction.execute's wrapper: no registered
+  action overrides execute(), pinned). NEVER SPEAKS: a reflex's only output
+  is the ActionResult record; validate_reflex_result refuses any record
+  carrying a speech field or an unregistered name (the Heimdall doc-05
+  instinct applied). Directives propose (conversation reactor), reflexes
+  act, cognition speaks.
+- **Docket 31 CLOSED** — Vör (preemptive_heal) repaired in
+  `heartbeat/actions/vor_action.py`: should_trigger / _get_capacity_prediction
+  / _get_capacity_summary guard Skuld's string capacity shapes
+  ({"status": "no_resource_data"} / "insufficient_data") with the isinstance
+  guard Skuld's own consumer uses, plus a non-dict emotion guard; both
+  ActionResult constructions use action_name= (was name=) and the no-action
+  return is ActionSeverity.SKIPPED (was the nonexistent INFO); execute()
+  became _execute() so the reflex runs under BaseAction's wrapper, with
+  trigger_checks=["prediction"] / trigger_severity=WARNING /
+  cooldown_seconds=300 declared like its siblings. Vör's FIRST tests land
+  in this slice's conformance suite (string shapes, real urgency, capacity
+  helpers, SKIPPED record, wrapper dry-run, one real pre-emptive path).
+- **Docket 95 CLOSED** — the conversation reactor's react(focus=…) was
+  accepted and silently ignored for its whole life; it now applies
+  FOCUS_MAP (each focus keeps exactly its category + its directive, other
+  categories returned empty, shape unchanged, the context injector's
+  react() call untouched) and an unknown focus raises ValueError.
+- No new reflex added; no trigger, floor, cooldown or effect changed;
+  no new docket items. Transport (E-067), nerve health incl. dockets
+  96/34 (E-066) and backpressure (E-070) keep their owners.
+- E-057 table re-measured for the Verdandi weight change (184 files /
+  16,903,436 B; total 131,297,395 B; laptop miss 126,220 B), both
+  published copies updated. Conformance:
+  `tests/unit/test_reflex_layer_e065.py` **18 passed**; Verdandi focal
+  conversation set **101 passed** (identical to E-059–E-064) and heartbeat
+  set **374 passed** (identical to E-060; pytest-asyncio from the
+  e005-extras dir, short TMPDIR). Slice gate: Run B **1144 passed,
+  6 failed, 25 skipped, 1 warning** (1126 + 18; the 6 are the proven
+  environment failures, identical set, verified in three runs); Run D
+  **1201 passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1183 + 18).
+  Logs in `~/workspace/.verify-tmp/ember-e065/gate/`. No README touched.
+- E-066 next — nerve health: a stuck/dead nerve is detected and reported;
+  the hub degrades honestly.
+- E-065 push: banking commit 06aff9b pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was a2e729c, an
+  ancestor; the push also carried E-064's push-record commit 9c75234 and
+  the tick's IN PROGRESS marker 1ad8f3a) — remote moved a2e729c → 06aff9b,
+  verified via ls-remote (remote head =
+  06aff9b18c9f4635cf8d9a691350b84fcb6735d3 = local HEAD at push time).
+
+## E-066 — Nerve health (DONE, 2026-10-31)
+
+- Discipline filed at `docs/architecture/E-066_NERVE_HEALTH.md` and in code
+  at `Verdandi/nerve_health.py` (stdlib-only, standalone like
+  event_contract.py / context_budget.py / logger_law.py / stimuli.py /
+  reflexes.py): the hub's state is classified from stated observations
+  (process aliveness and ping response tri-state — unobserved is None,
+  never invented) into exactly five states — healthy (alive, pong, no
+  warnings), degraded (answers, but a warning holds: feed ≥80% of its
+  10 MB rotation threshold, feed missing, log unwritable, or never
+  probed), stuck (alive/socket present but no pong, or a live process
+  with no socket), dead (PID file stands, process gone), absent (not
+  running) — each with its deciding reasons, warnings, and a plain
+  degrade-behaviour sentence (`validate_classification` refuses a
+  mismatched behaviour). Dead/stuck are judged before degraded/healthy,
+  so a warning can never mask a silent hub; an unprobed hub is never
+  called healthy. Hermes baseline socket failures (E-059 §8) are the
+  slice's cautionary fixture; detection never restarts anything.
+- **Docket 96 CLOSED** — `get_status()` probed the hub by publishing a
+  real `ping` event (stamped, fed, broadcast on every status check).
+  New `nervous_system.ping_hub()` sends only the `nerve_type: ping`
+  control message and accepts only `pong`; healthcheck uses it (stuck
+  wording named), `get_status` uses it and now reports `nerve_health`
+  (inline classifier in the deployed-standalone pattern, pinned equal
+  to nerve_health.py on a nine-case matrix), and the status CLI prints
+  it. Test-proven degrade honesty: `get_status` on an absent hub leaves
+  a seeded feed byte-identical and reports `absent`; on a stale-PID hub
+  it reports `dead`. The E-061 contract's `ping` spec is re-registered
+  defect → legacy (no current producer; pre-E-066 feed lines keep their
+  explanation). Degrade shapes pinned as they stand: hub-unreachable
+  publishes return marked `_fallback` feed writes (never `ack`), stuck
+  publishes return `sent / no_ack`, recent reads fall back to the feed
+  file, subscribe refuses plainly when the hub is not running.
+- **Docket 34 CLOSED** — Skuld now reads `pulse_metrics`: the daemon
+  has written a real per-pulse `health_score` every pulse since v0.3.0
+  and nothing ever read it (E-009); Skuld approximated scores from
+  pulse_history state names instead. `_get_pulse_metrics` +
+  `_health_score_series` in `heartbeat/checks/skuld.py` feed the trend,
+  anomaly and emotion paths from the metrics series, each result
+  carrying `score_source` (`pulse_metrics` / `pulse_history_state`);
+  the metrics-less fallback reproduces the old state-score behaviour
+  exactly (test-pinned). Capacity still reads pulse_history by design
+  (its resource percentages live in checks_json, which pulse_metrics
+  does not carry — stated in code and doc). E-060's WIRE decision
+  executed; E-076's gate verifies.
+- No new docket items. Transport rewiring (E-067), backpressure
+  (E-070), and dockets 100/101 (E-076 gate review) keep their owners.
+- E-057 table re-measured for the Verdandi weight change (185 files /
+  16,919,924 B; total 131,313,883 B; laptop miss 142,708 B), both
+  published copies updated. Conformance:
+  `tests/unit/test_nerve_health_e066.py` **19 passed**; Verdandi focal
+  conversation set **101 passed** (identical to E-059–E-065) and
+  heartbeat set **374 passed** (identical to E-060/E-065; pytest-asyncio
+  from the e005-extras dir, short TMPDIR). Slice gate: Run B **1163
+  passed, 6 failed, 25 skipped, 1 warning** (1144 + 19; the 6 are the
+  proven environment failures, identical set); Run D **1220 passed,
+  0 failed, 19 skipped, 1 warning**, exit 0 (1201 + 19). Logs in
+  `~/workspace/.verify-tmp/ember-e066/gate/`. No README touched.
+- E-067 next — cross-member nerves: ember core ⇄ Verdandi ⇄ memory
+  (Part V) wired under E-061's contract.
+- E-066 push: banking commit 471cc9d pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 06aff9b, an
+  ancestor; the push also carried E-065's push-record commit b5a668b and
+  this tick's IN PROGRESS marker 905da16) — remote moved 06aff9b → 471cc9d,
+  verified via ls-remote (remote head =
+  471cc9dccc8fdb7ff053b74f04623a2539f13acb = local HEAD at push time).
+
+## E-067 — Cross-member nerves (DONE, 2026-10-31)
+
+- Wiring filed at `docs/architecture/E-067_CROSS_MEMBER_NERVES.md`, registry
+  in code at `Verdandi/cross_member.py` (stdlib-only, standalone like
+  event_contract.py): the three legs E-061/E-064/E-066 assigned to this slice,
+  wired under contract v1. **Leg 1, heartbeat → hub:** `heartbeat/core.py`
+  gains `_send_nerve_event` — pulse + state change now go as canonical v1
+  envelopes (literals inline, pinned) to the canonical hub socket
+  (runa.sock; `nerve.socket_path` override still honoured), source
+  verdandi-heartbeat; `_nerve_fallback_file` writes the canonical envelope
+  + hub fallback stamps for BOTH events — the state change's legacy shape
+  had NO fallback and was silently lost (E-059 §8). **Docket 93 COMPLETE.**
+  **Leg 2, logger → hub in-tree (docket 94, E-067 half CLOSED):**
+  `conversation_logger._nerve_candidate_paths()` — deployed
+  ~/.hermes/state copy first (behaviour unchanged where deployed, pinned),
+  sibling in-tree copy second; the standalone half stays E-073's.
+  **Leg 3, core → hub (the core's first nerves):** new `src/ember/nerve.py`
+  bridge (stdlib only, never raises, ack/sent/fallback/error honesty) +
+  chat.run wired at session start, each completed turn, and session end
+  (finally block): `ember_session` / `ember_turn` events carry FACTS ONLY —
+  the turn's memory facts (Well hits, cited chunks, persisted =
+  well/journal/memory_only, ungrounded, outcome from the diary's tags) —
+  never content (sentinel-proven in tests). Memory crosses additionally
+  inside heartbeat_pulse's checks (the Mimir check, as before in intent).
+- Registration per the contract's own rule: event_contract gains canonical
+  hub specs for heartbeat_pulse / heartbeat_state_change / ember_session /
+  ember_turn (pinned equal to cross_member.py); the legacy heartbeat specs
+  stay as pre-E-067 feed lines' explanation; the E-061 doc gains a dated
+  E-067 addendum naming the new events, and E-061's heartbeat-fire test was
+  updated by this slice (the one E-061 assigned the rewiring to) to pin the
+  post-rewiring truth across both dialects. The reverse direction is
+  honestly publish-only: bridge `read_recent` offered + live-proven, no
+  typed subscriber exists, chat does not consume nerves — new **docket 102**
+  (nerve-consumption gap) owned by the E-076 gate review. Suite hygiene:
+  tests/conftest.py gains an autouse fixture redirecting the bridge's hub
+  home to a short per-test /tmp dir (tests must never write the operator's
+  live feed; AF_UNIX's ~108-char cap is why short — this slice's first run
+  proved the trap with 4 socket failures at deep TMPDIR paths).
+- E-057 table re-measured for BOTH changed members (Verdandi 186 files /
+  16,935,635 B; core 130 files / 826,913 B; total 131,342,243 B; laptop
+  miss 158,419 B), both published copies updated. Conformance:
+  `tests/unit/test_cross_member_nerves_e067.py` **21 passed**; prior Part IV
+  conformance (E-061 updated + E-062–E-066 + E-057) **116 passed**; Verdandi
+  focal conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-066 / E-060/E-065; a wider run including
+  test_heartbeat_integration scored 418/5, the 5 being that file's
+  `cwd=~/Verdandi` subprocess tests — E-005's proven machine-coupling
+  family, failing at spawn before any heartbeat code runs). Slice gate:
+  Run B **1184 passed, 6 failed, 25 skipped, 1 warning** (1163 + 21; the 6
+  are the proven environment failures); Run D **1241 passed, 0 failed,
+  19 skipped, 1 warning**, exit 0 (1220 + 21). Logs in
+  `~/workspace/.verify-tmp/ember-e067/gate/`. No README touched.
+- E-068 next — Hermes-shaped nerves: Verdandi event shapes matched against
+  the Hermes hack's volmarr-core session/turn/tool events.
+- E-067 push: banking commit 95cfa79 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 471cc9d, an
+  ancestor; the push also carried E-066's push-record commit 93f0913 and
+  this tick's IN PROGRESS marker 687e166) — remote moved 471cc9d → 95cfa79,
+  verified via ls-remote (remote head =
+  95cfa79d4de3acac1654d17c6d886985d187e978 = local HEAD at push time).
+
+## E-068 — Hermes-shaped nerves (DONE, 2026-10-31)
+
+- Match filed at `docs/architecture/E-068_HERMES_SHAPED_NERVES.md`, translation
+  registry in code at `Verdandi/hermes_nerves.py` (stdlib-only, standalone like
+  event_contract.py): the Verdandi event shapes matched against the Hermes
+  hack's volmarr-core session/turn/tool events, read post-refresh from the
+  Hermes tree itself (hermes-hack-build HEAD 7b821b2704, plugin v0.26.0;
+  verdandi.py publisher + lifecycle.py bridge + verdandi_stimuli.py intake;
+  the Hermes tree was NOT modified). **Verdict: NOT one dialect — a documented
+  translation.** Transport already one: same hub socket (runa.sock, same state
+  dir for the default profile), same outer {type, source, data} keys, one JSON
+  line per event — proven live this slice (a Hermes-shaped publish to the real
+  hub is stamped, acked, and fed). Payloads differ: Verdandi contract v1 is
+  flat data under an outer `v: 1`; Hermes data is an inner envelope
+  (schema runeforge.hermes.lifecycle v1, event_id, occurred_at, event,
+  context) with the facts one level down in `context`. Unifying would break a
+  versioned contract on one side or the other (E-061's bump rule; the Hermes
+  envelope is shared by all five volmarr-core publisher families).
+- The eight lifecycle types (hermes.session.started / .ended,
+  hermes.turn.completed / .failed / .interrupted, hermes.tool.started /
+  .completed / .failed) are registered in BOTH hermes_nerves.py (exact context
+  fields + hook + kin) and event_contract.EVENT_SPECS (hub dialect, canonical,
+  data_fields = the ENVELOPE's fields — the honest wire description); the E-061
+  doc gains a dated E-068 addendum naming all eight. `normalize_hermes_event`
+  translates losslessly (context → data; envelope metadata → _hermes_*
+  provenance keys; type/source/stamps pass through; result passes
+  validate_publish) and NEVER renames a Hermes type into a Verdandi one:
+  session kinship to ember_session is real but field-poor (no persona /
+  conversation / Well facts), turn outcome is type-encoded where ember_turn
+  carries an outcome field, and Hermes turns carry no memory facts.
+  Delivery asymmetry recorded plainly: Hermes's publisher is fire-and-forget
+  (≤1 s write, no ack read, NO feed fallback — an event sent to a down hub is
+  gone); any repair is Hermes-side work, not this slice's.
+- The reverse direction was already matched: Hermes's stimuli intake reads
+  runa_reward / runa_negative / push_reward / conv_event from the hub's
+  `recent` in their flat canonical shapes — no translation needed or added.
+  New **docket 103**: no Verdandi tool event exists to match the hermes.tool.*
+  family — owner E-076 gate review (road a core tool-facts event or record the
+  absence as Part IV's verdict). E-069 inherits the _hermes_* provenance keys
+  as replay-preservation facts.
+- E-057 table re-measured for the Verdandi weight change (187 files /
+  16,956,837 B; total 131,363,445 B; laptop miss 179,621 B), both published
+  copies updated. Conformance: `tests/unit/test_hermes_nerves_e068.py`
+  **12 passed**; prior Part IV conformance (E-061 as addended + E-062–E-067 +
+  E-057 pins) **137 passed**; Verdandi focal conversation set **101 passed**
+  and heartbeat set **374 passed** (identical to E-059–E-067 / E-060/E-065).
+  Slice gate: Run B **1196 passed, 6 failed, 25 skipped, 1 warning**
+  (1184 + 12; the 6 are the proven environment failures); Run D **1253
+  passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1241 + 12). Logs in
+  `~/workspace/.verify-tmp/ember-e068/gate/`. No README touched.
+- E-069 next — ordering & replay: events replay deterministically for
+  debugging (fixtures).
+- E-068 push: banking commit fbbcae9 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 95cfa79, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 7448d2d)
+  — remote moved 95cfa79 → fbbcae9, verified via ls-remote (remote head =
+  fbbcae99b0e26a6acf049c97e7565c805026df0d = local HEAD at push time).
+## E-069 — Ordering & replay (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-069_ORDERING_AND_REPLAY.md` and in code at
+  `Verdandi/replay.py` (stdlib-only, standalone like event_contract.py): events
+  replay deterministically for debugging. **The order:** sequenced events first
+  by the hub's own `_seq` ascending (file index breaks duplicate-`_seq` ties —
+  `_seq` order IS the hub's broadcast order, E-059/E-061); unsequenced events
+  after them by effective timestamp (`_ts`, else `_iso`, else the legacy
+  `timestamp` — numeric or ISO, naive read as UTC, stated), file index breaking
+  ties, untimestamped last in file order. No sequence is ever invented for a
+  fallback or legacy event, and their after-the-block placement is a stated
+  rule, not a wall-clock reconstruction (the honest limit, in the doc).
+- **Reading + reporting:** `load_feed_lines`/`load_feed_text` parse JSONL
+  without raising — blank lines skipped, corrupt lines (invalid JSON /
+  non-object) skipped and reported by 1-based line number, never hidden and
+  never fatal. Every replay reports the ordered events, a SHA-256 **digest**
+  of their canonical lines (sorted keys, fixed separators — same feed, same
+  digest, even from a shuffled copy of its sequenced events, test-proven),
+  the `_seq` range, **gaps** (the holes the E-061 fallback design promises),
+  duplicate `_seq` values, unsequenced/`_fallback` counts, and per-dialect
+  counts. `replay_to` hands each event to a consumer exactly once in replay
+  order and propagates sink failures. Replay edits nothing and re-publishes
+  nothing: legacy shapes, stimulus provenance (E-064), the raw Hermes inner
+  envelope and the translated `_hermes_*` keys (E-068's handoff, discharged)
+  all survive byte-for-byte at the value level, test-pinned.
+- No new docket items; dockets 100/101/102/103 keep their E-076 owner, and
+  E-070 inherits the report shape (a shedding hub's gaps can be checked
+  against it). E-057 table re-measured for the Verdandi weight change
+  (188 files / 16,968,259 B; total 131,374,867 B; laptop miss 191,043 B),
+  both published copies updated. Conformance:
+  `tests/unit/test_ordering_replay_e069.py` **19 passed**; prior Part IV
+  conformance (E-061–E-068 + E-057 pins) **149 passed**; Verdandi focal
+  conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-068 / E-060/E-065; pytest-asyncio from the
+  e005-extras dir, short TMPDIR). Slice gate: Run B **1215 passed,
+  6 failed, 25 skipped, 1 warning** (1196 + 19; the 6 are the proven
+  environment failures, identical set); Run D **1272 passed, 0 failed, 19 skipped, 1 warning**, exit 0.
+  Logs in `~/workspace/.verify-tmp/ember-e069/gate/`. No README touched.
+- E-070 next — backpressure on tiny hardware: a flooded hub sheds by
+  rule, reflexes first-protected.
+- E-069 push: banking commit 7908770 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 7d91cf4, an
+  ancestor) — remote moved 7d91cf4 → 7908770, verified via ls-remote
+  (remote head = 7908770607da92349e7481bbd040c3135feb36db = local HEAD
+  at push time).
+
+## E-070 — Backpressure on tiny hardware (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-070_BACKPRESSURE.md` and in code at
+  `Verdandi/backpressure.py` (stdlib-only, standalone like event_contract.py):
+  a flooded hub sheds by rule, reflexes first-protected. **The tiers:**
+  0 protected (`heartbeat_pulse`, `heartbeat_state_change` — the events
+  E-065's reflexes fire on), 1 high (conv_start/conv_end, ember_session,
+  ember_turn, Hermes session/turn events, hermes.tool.failed — a failure is
+  a fact), 2 normal (conv_event, conv_update, Hermes tool started/completed,
+  reward events, and deliberately any unregistered/operator type — the open
+  vocabulary is never punished), 3 low (the mood families `event:*`,
+  `stimulation:*`, `thought:*`, `location:*`, `orgasm`, retired `ping`).
+  Names read from type/event_type/event so every dialect tiers by one table.
+- **Admission (one rule):** not full → accept; full → compare with the
+  lowest-tier oldest queued event: better tier evicts it, equal tier evicts
+  the oldest of that tier (the old ring's FIFO kept inside a tier), worse
+  than everything queued → the incoming event itself is shed. Before this
+  slice the hub's only backpressure was `deque(maxlen=256)` blindly evicting
+  the oldest event with no record; now every shed is counted per tier and
+  per kind, `protected_shed` is its own counter (a protected event sheds
+  only when the ring holds nothing but protected events — the last resort,
+  reported, not hidden), and `apply_backpressure` returns the shed events
+  in loss order so E-069's replay gap report can be checked against them.
+  Pressure words (calm <70% / pressured 70–99% / full) are report
+  vocabulary only; admission is by tier alone. The feed is untouched
+  (shedding governs the recent tail, not the archive); publishers are not
+  throttled and broadcast order is unchanged — stated as honest limits.
+- **Live hub:** `nervous_system.RingBuffer` applies the same rule inline
+  (inline tier table, as with nerve health E-066, because that file is
+  loaded file-by-file), exposing `shed_count` / `protected_shed_count`;
+  typeless events tier normal, so its long-standing FIFO behaviour for
+  generic events is unchanged and the existing Verdandi ring tests pass
+  unmodified. No new docket items; dockets 100/101/102/103 keep their
+  E-076 owner, now with shedding counters to review.
+- E-057 table re-measured for the Verdandi weight change (189 files /
+  16,984,725 B; total 131,391,333 B; laptop miss 207,509 B), both
+  published copies updated. Conformance:
+  `tests/unit/test_backpressure_e070.py` **18 passed**; prior Part IV
+  conformance (E-061–E-069 + E-057 pins) **168 passed**; Verdandi focal
+  conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-069; focal runs need a SHORT TMPDIR — the long
+  workspace TMPDIR makes the hub's unix-socket paths overflow and the
+  nervous_system hub tests fail at baseline too, proven by re-running
+  one against the stashed pre-slice nervous_system.py). Slice gate:
+  Run B first attempt 1232 passed / 7 failed — the extra failure was
+  E-067's live-socket test, which passed standalone immediately after;
+  Run B re-run **1233 passed, 6 failed, 25 skipped, 1 warning**
+  (1215 + 18; the 6 are the proven environment failures, identical set);
+  Run D **1290 passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (1272 + 18). Logs in `~/workspace/.verify-tmp/ember-e070/gate/`.
+  No README touched.
+- E-071 next — privacy of nerves: stimuli provenance never leaks
+  across personae (fixtures).
+- E-070 push: banking commit eb3c1fd pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 1e0557d, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 81938a8)
+  — remote moved 1e0557d → eb3c1fd, verified via ls-remote (remote head =
+  eb3c1fd8a47f8446a2f34afd929501284d7bd54c = local HEAD at push time).
+
+## E-071 — Privacy of nerves (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-071_NERVE_PRIVACY.md` and in code at
+  `Verdandi/nerve_privacy.py` (stdlib-only, standalone like event_contract.py):
+  stimuli provenance never leaks across personae. **Bindings are explicit
+  only** — `data.persona_id` (the core's ember_session/ember_turn), a
+  stimulus's `payload.persona_id` then `provenance.persona_id`, or a session
+  binding (`conv_*` types / a `message.conversation` stimulus's
+  `payload.session_id`) resolved through a caller-supplied `session_owners`
+  mapping; the law invents no mapping. Everything else is SYSTEM (heartbeat,
+  Hermes lifecycle — no persona at all, E-068 — time/sensor stimuli) and is
+  visible to every persona, provenance intact.
+- **The rule:** own-bound → visible whole; cross-persona → withheld
+  ENTIRELY (not redacted — even the fact of a touch is private; sentinel
+  provenance proven absent from both the serialised view and the report);
+  session-bound with no known owner → withheld fail-closed; a `session_id`
+  on a non-conversation shape is a correlation id, not a binding (this
+  slice's own first test run caught that bug in the first draft of the
+  classifier — fixed in both copies before banking, per the
+  never-leave-a-bug rule). `filter_events_for_persona` returns visible
+  events unmodified in order + a counts-only report (total / visible /
+  withheld_cross_persona / withheld_unknown_session — no withheld content,
+  provenance, persona or session values). `redact_provenance` serves
+  unscoped aggregate views: origin + top-level source → "redacted",
+  channel kept, persona binding inside provenance dropped, input unmutated.
+  Honest limits stated in the doc: the feed itself is not encrypted or
+  rewritten (operator custody, E-020 — this law governs persona-scoped
+  VIEWS), and pre-E-071 stimuli with no binding are system-shaped because
+  a binding cannot be invented retroactively.
+- **Live enforcement:** the core's nerve bridge `src/ember/nerve.py` gains
+  `filter_for_persona` (the same classification inline, per that module's
+  no-member-imports discipline, pinned equal to nerve_privacy on every
+  fixture shape) and `read_recent_for_persona`, which over-fetches the hub
+  tail 4× so withholding does not silently shrink a persona's view.
+  Dockets 100–103 keep their E-076 owner; no new docket items.
+- E-057 table re-measured for both changed members (Verdandi 190 files /
+  16,996,351 B; core 130 files / 831,437 B; total 131,407,483 B; laptop
+  miss 219,135 B), both published copies updated. Conformance:
+  `tests/unit/test_nerve_privacy_e071.py` **18 passed**; prior Part IV
+  conformance (E-057 pins + E-061–E-070) **186 passed**; Verdandi focal
+  conversation set **101 passed** and heartbeat set **374 passed**
+  (identical to E-059–E-070). Slice gate: Run B **1251 passed, 6 failed,
+  25 skipped, 1 warning** (1233 + 18; the 6 are the proven environment
+  failures, identical set); Run D **1308 passed, 0 failed, 19 skipped,
+  1 warning**, exit 0 (1290 + 18). Logs in
+  `~/workspace/.verify-tmp/ember-e071/gate/`. No README touched.
+- E-072 next — the logger as memory source: logged conversations can
+  feed memory (Part V) under the user's rule, never silently.
+- E-071 push: banking commit ef30a73 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was f111dae, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 08893bd)
+  — remote moved f111dae → ef30a73, verified via ls-remote (remote head =
+  ef30a73abdef9028d5eeded089dad4941c9946ae = local HEAD at push time).
+
+## E-072 — The logger as memory source (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-072_LOGGER_AS_MEMORY_SOURCE.md` and in
+  code at `Verdandi/memory_feed.py` (stdlib-only, standalone): logged
+  conversations can feed memory ONLY under the user's explicit rule, never
+  silently. A rule must be user-granted (`granted_by == "user"`), enabled,
+  scoped (`named_sessions` with a non-empty session list, or
+  `all_sessions` — no default scope), and must name the feedable event
+  types it allows; unknown keys or a non-user grant fail closed and feed
+  nothing. Feedable: `learned`→lesson, `decision`→decision,
+  `milestone`→milestone, plus an `end` summary only when the rule opts in
+  (`include_end_summary`). Working-state event types, start/update
+  entries, empty content and unattributable entries never feed; exact
+  duplicates feed once. Every run returns candidates AND a counts-only
+  report (status no_rule / rule_disabled / invalid_rule / fed, plus one
+  count per withholding reason — no content, session or persona values),
+  so a feed is never silent even when it feeds nothing. Candidates carry
+  provenance (log file, entry kind, event type, rule_id) and a persona
+  tag only from a caller-supplied session_owners mapping (never guessed).
+- Honest limits stated in the doc: this law governs the crossing, not the
+  destination — no memory store is written (Part V's E-080 chooses the
+  receiving face on top of this law); a session deleted under E-063 feeds
+  nothing afterwards (proven live), but already-fed candidates are NOT
+  retracted by this law — new **docket 104**, owned by E-085.
+- E-057 table re-measured for Verdandi (191 files / 17,009,560 B; total
+  131,420,692 B; laptop miss 232,344 B), both published copies updated.
+  Conformance: `tests/unit/test_memory_feed_e072.py` **22 passed**;
+  the combined conformance run (E-055 + E-057 pins + E-061–E-071 +
+  E-072) **234 passed**; Verdandi focal
+  conversation **101 passed**. CORRECTION (21:47): the heartbeat focal
+  set was NOT verified this tick — the focal run used a broader six-file
+  set (eir/skuld added) finishing 451 passed / 6 failed under extreme
+  contention, and a clean canonical-four re-run was starved at load
+  ~17.9 and killed unverified; the "374 passed" claim is withdrawn and
+  the heartbeat set joins the re-verification duty below. Slice gate: Run B **1273 passed, 6 failed, 25 skipped,
+  1 warning** (1251 + 22; the 6 are the proven environment failures,
+  FAILED-list diff-identical to E-071). Run D: three attempts under heavy
+  cross-campaign contention (load 3.0–9.3) — **1325–1326 passed,
+  19 skipped**, the only failures the contention-sensitive timing tests
+  (idle CPU-tick window ×4 in every attempt; the live-socket bridge test
+  in two attempts — it passed isolated and in attempt 2). Run D is
+  recorded NOT GREEN under contention: **standing re-verification duty —
+  the next keeper tick re-runs Run D AND the canonical heartbeat focal
+  set (test_heartbeat*.py, four files) before starting E-073 and records
+  the results here; a calm-load green Run D + heartbeat focal closes
+  this note.** Logs in
+  `~/workspace/.verify-tmp/ember-e072/gate/`. No README touched.
+- E-073 next — Verdandi standalone: the hub usable without the full
+  companion (its own consumers exist in the constellation).
+- E-072 push: banking commit 0482b22 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was ee4af13, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 5204c6f)
+  — remote moved ee4af13 → 0482b22, verified via ls-remote (remote head =
+  0482b2290d922502391627f83734306abc7f2797 = local HEAD at push time).
+
+## E-072 re-verification (DONE, 2026-10-31, 21:42 keeper tick)
+
+- The standing re-verification duty from E-072 is CLOSED, green on a
+  calming load (1-minute load fell 3.88 -> 1.10 across the two runs,
+  run sequentially, one at a time): the canonical heartbeat focal set
+  (`test_heartbeat*.py`, four files, Verdandi dir, pytest-asyncio from
+  the e005-extras dir, short TMPDIR) **374 passed** in 331.46s, exit 0
+  — the withdrawn claim is re-proven exactly; and root gate Run D
+  (whole suite, extras supplied) **1330 passed, 0 failed, 19 skipped,
+  1 warning** in 204.83s, exit 0 — the contention-sensitive timing
+  tests that failed under load in E-072 all passed. Logs in
+  `~/workspace/.verify-tmp/ember-e072/reverify/` (`heartbeat_focal.log`,
+  `run_d.log`). No code touched by this re-verification.
+- E-073 next — Verdandi standalone: the hub usable without the full
+  companion (its own consumers exist in the constellation).
+
+CORRECTION to the E-072 re-verification entry above (same tick,
+later): the counts first recorded there for the heartbeat focal
+run came from a mismatched background-run report, not from the
+run's own log. Read from the log on disk
+(`~/workspace/.verify-tmp/ember-e072/reverify/heartbeat_focal.log`),
+that run — the four test_heartbeat*.py files, 388 tests — actually
+scored 383 passed, 5 failed in 644.88s. The 5 failures are all
+TestCLIIntegration tests whose subprocesses cd to ~/Verdandi,
+which does not exist on this VM (FileNotFoundError) — the
+pre-existing machine-coupled family of docket item 6 (E-005),
+not contention and not a regression. The canonical heartbeat
+focal set of E-060–E-071 is heartbeat + actions + checks +
+SKULD (374 tests; the E-072 duty text's "test_heartbeat*.py,
+four files" parenthetical misdescribed it). Run D's
+re-verification stands exactly as recorded (1330 passed,
+0 failed — its log agrees). The duty is closed on this
+corrected basis by E-073 below: canonical heartbeat set
+re-run green post-change, Run D green; the integration
+file's 5 CLI failures stay with docket item 6's family,
+whose fixing home is Part IV's remaining road / E-076
+review, not this slice.
+
+## E-073 — Verdandi standalone (DONE, 2026-10-31)
+
+- Law filed at `docs/architecture/E-073_VERDANDI_STANDALONE.md` and in
+  code at `Verdandi/standalone.py` (stdlib-only): the hub usable without
+  the full companion. One file is the hub (`nervous_system.py`,
+  stdlib-only, Unix-socket transport, eight CLI commands); the wire is
+  the E-061 contract, not the companion; consumers named (hub CLI,
+  heartbeat reward producers + conversation logger via
+  publish_event_sync, the core nerve bridge when present, external
+  Hermes publishers per E-068).
+- The slice's one repair: the hub's state dir was hard-coded to
+  `~/.hermes/state`, so standalone still silently required a
+  Hermes-shaped home. Now `VERDANDI_HOME`, when set, IS the hub's
+  state dir; otherwise the default is unchanged. The resolution is
+  stated in standalone.py and carried inline by the hub module
+  (`_resolve_state_dir`, lone-file deployed form) and by the core
+  bridge's `hub_state_dir()` (no-member-imports discipline), all
+  three pinned equal by the conformance tests incl. subprocess
+  imports of the real hub under both env shapes.
+- Live proof (this tick, logs in `~/workspace/.verify-tmp/ember-e073/`):
+  hub booted by file path alone, HOME=/tmp/e73home (empty),
+  VERDANDI_HOME=/tmp/e73state, no PYTHONPATH — socket at the relocated
+  home, healthcheck ALL CHECKS PASSED exit 0, publish acked #1,
+  recent/status correct, feed held exactly that event, and the
+  isolated HOME stayed completely empty (no .hermes, no .ember).
+- New docket items: 105 (shipped systemd units hard-code /home/pi +
+  ~/.hermes/state paths — Pi deployment shape, not standalone;
+  owner E-076) and 106 (hub `stop` reported "could not be killed"
+  for a hub in fact killed by its SIGTERM — cmd_stop's
+  os.kill(pid, 0) probe is zombie-blind; found by the live proof,
+  owner E-076). Honest limits in the doc: the heartbeat's
+  VERDANDI_HOME is its own distinct home (not unified — the live
+  Hermes deployment's heartbeat would break); pip-install of the
+  member NOT PROVEN (standalone proven at file level, as every
+  in-tree consumer loads it).
+- E-057 table re-measured for both changed members (Verdandi 192
+  files / 17,014,457 B; core 130 files / 831,912 B; total
+  131,426,064 B; laptop miss 237,241 B), both published copies
+  updated. Conformance: `tests/unit/test_standalone_e073.py`
+  **12 passed**; combined Part IV conformance (E-055 + E-057 pins +
+  E-061–E-073) **246 passed**; Verdandi focal conversation set
+  **101 passed**; canonical heartbeat set **374 passed** (6.02s,
+  disk-verified from the gate log). Slice gate: Run B **1285
+  passed, 6 failed, 25 skipped, 1 warning** (1273 + 12; the 6 are
+  the proven environment failures, identical set); Run D **1342
+  passed, 0 failed, 19 skipped, 1 warning**, exit 0 (1330 + 12).
+  Logs in `~/workspace/.verify-tmp/ember-e073/gate/`. No README
+  touched.
+- E-074 next — Docs: the nerve model for member-builders.
+- E-073 push: banking commit 0733d2b pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 7b13faf,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  2b2ea81 and the E-072 re-verification correction) — remote moved
+  7b13faf → 0733d2b, verified via ls-remote (remote head =
+  0733d2bf7e4b17a812e6d798077ba842c293ea78 = local HEAD at push time).
+
+## E-074 — Docs: the nerve model for member-builders (DONE, 2026-10-31)
+
+- Builder's guide filed at `docs/architecture/E-074_NERVE_MODEL_FOR_MEMBER_BUILDERS.md`:
+  the one reading of the whole Part IV nerve model, adding no new law.
+  It states the model in one paragraph + a shape diagram (hub =
+  `Verdandi/nervous_system.py`, state dir `VERDANDI_HOME` else
+  `~/.hermes/state`, socket `runa.sock`, feed `nerve_feed.jsonl`),
+  a builder's entry-point table (15 files x their public entry
+  points, each row naming its law slice E-061-E-073), the five
+  rules (canonical envelope E-061; stimuli with provenance E-064;
+  context + backpressure budgets E-062/E-070; logger/privacy/memory
+  laws E-063/E-071/E-072; reflexes speechless below cognition
+  E-065, honest degradation E-066, Hermes translation E-068,
+  deterministic replay E-069), the holding disciplines
+  (file-by-file loading, stdlib-only, fail-closed, counts-only
+  reports), an 8-step new-member checklist, and honest limits
+  (no typed subscriber SDK — docket 102; open publish may omit
+  source — docket 101; dockets 100/103/105/106 open with owners;
+  throughput numbers are E-075's, none invented here; member
+  install-from-package NOT PROVEN per E-073).
+- Three worked examples in the doc (stimulus -> valid canonical
+  event; persona privacy filter; replay digest determinism) run
+  as written from the repo root. Conformance:
+  `tests/unit/test_nerve_model_docs_e074.py` **5 passed** — it
+  also verifies every Part IV slice E-059-E-074 is represented,
+  every backticked repo path in the doc exists (>=25 checked),
+  and every builder-table symbol is defined at its file's top
+  level.
+- No member code touched, so the E-057 member budget table is
+  unchanged — proven by its pinning tests inside the combined
+  run. Combined Part IV conformance (E-055 + E-057 pins +
+  E-061-E-074) **251 passed** (246 + 5); Verdandi focal
+  conversation set **101 passed**; canonical heartbeat set
+  **374 passed**. Slice gate: Run B **1290 passed, 6 failed,
+  25 skipped, 1 warning** (1285 + 5; the 6 are the proven
+  environment failures, FAILED list identical to E-073);
+  Run D **1347 passed, 0 failed, 19 skipped, 1 warning**,
+  exit 0 (1342 + 5). Logs in
+  `~/workspace/.verify-tmp/ember-e074/gate/`. No README touched.
+- E-075 next — Load truth: hub throughput per profile, measured.
+- E-074 push: banking commit e8d0e17 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 1cf41c4,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  12de801) — remote moved 1cf41c4 → e8d0e17, verified via ls-remote
+  (remote head = e8d0e17918e9300664bc581a196d9478999c8054 = local HEAD
+  at push time).
+
+## E-075 — Load truth: hub throughput per profile (DONE, 2026-10-31)
+
+- Instrument filed in code at `Verdandi/load_truth.py`
+  (stdlib-only, standalone) and its reading copy at
+  `docs/architecture/E-075_LOAD_TRUTH.md`: the hub's
+  throughput measured live, per budget-book profile, the
+  profile taken as a benchmark shape (simulation
+  envelope, the E-048 method — hub pinned by taskset to
+  the profile's CPU count 1/2/4/4, driven by the
+  profile's publishers 1/2/4/8 over persistent
+  connections, 0/1/1/2 subscribers listening; timed
+  bursts 512/512/1024/1024 events plus 32 warmup and 60
+  producer-path events per run). Two faces measured:
+  persistent (one connection, ack per event) and the
+  producer face (a fresh connection per event — the
+  exact `publish_event_sync` shape). The whole harness
+  ran three times on the campaign VM (Python 3.12.3)
+  under sibling-campaign contention (load 5.2–6.3);
+  raw reports in `~/workspace/.verify-tmp/ember-e075/`
+  (`run1.json`–`run3.json`, solo `toaster.json`).
+- Measured truth (medians of three): persistent
+  throughput toaster **2735.7**, phone **1660.9**, pi
+  **1657.0**, laptop **1747.3** events/s — one publisher
+  is the hub's best shape; more publishers queue on the
+  one event loop and only latency grows (p95 0.45 →
+  14.10 ms toaster → laptop). Producer face flat at
+  **566.0 / 640.6 / 636.3 / 655.8** events/s (its cost
+  is the connection, not the hub). A solo toaster probe
+  in a quieter minute read 5172.8 / 2125.4 — the spread
+  is recorded, medians are the citable figures. Hub
+  peak RSS **22.6–22.9 MiB** in every shape (E-041's
+  21.9 MiB live figure confirmed under load); stamped
+  feed lines **~206 bytes/event** in every run.
+- Correctness measured with the speed, all twelve
+  profile runs error-free: ack `_seq` contiguous
+  1..604 (toaster/phone) and 1..1116 (pi/laptop); feed
+  lines == published, every run; `recent` answered the
+  ring's full 256 after every burst; every subscriber
+  received every event published while it listened
+  (604/604, 1116/1116, 1116/1116 per laptop
+  subscriber). Demand side stated in the doc: a
+  heartbeat pulse a minute + a few events per turn is
+  five orders of magnitude below the measured floor —
+  no profile needs a faster hub.
+- New **docket 107**: the per-profile load truth is a
+  contended VM simulation; hub throughput on real
+  tiny hardware is NOT PROVEN (a real Pi measurement
+  is the cheapest re-anchor). Owner: the E-076 gate
+  review. E-074's "load truth not in this document"
+  limit is discharged by this slice's doc.
+- E-057 table re-measured for the Verdandi change
+  (Verdandi 193 files / 17,030,199 B; core unchanged
+  130 / 831,912 B; total 131,441,806 B; laptop miss
+  252,983 B), both published copies updated.
+  Conformance: `tests/unit/test_load_truth_e075.py`
+  **8 passed** (incl. a live mini-run against the real
+  hub: contiguous seqs, feed == published, subscriber
+  window, RSS > 0). Combined Part IV conformance
+  (E-055 + E-057 pins + E-061–E-075) **259 passed**
+  (251 + 8); Verdandi focal conversation set **101
+  passed**; canonical heartbeat set **374 passed**.
+  Slice gate Run B **1298 passed, 6 failed, 25
+  skipped, 1 warning** (1290 + 8; the 6 are the proven
+  environment failures, FAILED list identical to
+  E-074). Logs in
+  `~/workspace/.verify-tmp/ember-e075/gate/`.
+- Run D is recorded **NOT GREEN under extreme
+  contention** (the E-072 pattern): attempt 1 ran with
+  a non-canonical PYTHONPATH (this tick added the
+  e005 member-test extras dir to the canonical
+  src + ember-extras shape) and scored **1351 passed,
+  4 failed** — all four the E-045 idle-window test's
+  thread count (4 vs 1), proven an artifact of that
+  extras dir by an A/B driver run (canonical shape:
+  Threads 1 throughout; with the e005 dir added:
+  Threads 4 from the first sample; CPU ticks passed
+  in both). Attempt 2, canonical shape: **1354
+  passed, 1 failed, 19 skipped, 1 warning** — the one
+  failure the E-046 cold-start median test, with the
+  1-minute load spiking to **33.15** during the run;
+  its isolated re-run at load 9.5–16.9 still starved
+  (median 13.43 s vs the 5.00 s cap; E-046's anchor
+  median was 2.87 s at load ~8, E-032's quiet run
+  0.93 s). E-075 touched no core or hub code, so no
+  regression is in scope: **standing re-verification
+  duty — the next keeper tick re-runs Run D
+  (canonical shape) and the cold-start test before
+  starting E-076 and records the results here; a
+  calm-load green Run D closes this note.**
+- Environment note: at this tick's start, git
+  loose-object writes failed with EPERM for ~2
+  minutes (plain file writes unaffected, a fresh repo
+  in /tmp unaffected by the end); the IN PROGRESS
+  marker commit landed on retry (31993df). No work
+  was lost; recorded so a recurrence is recognised.
+- E-076 next — Part IV gate (after the re-verification
+  duty above).
+- E-075 push: banking commit 59f740b pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was d04fa5a, an
+  ancestor; the push also carried this tick's IN PROGRESS marker 31993df)
+  — remote moved d04fa5a → 59f740b, verified via ls-remote (remote head =
+  59f740bce1373c2ee9bcfbf4a99901431fad891e = local HEAD at push time).
+
+## E-076 — Part IV gate (DONE, 2026-11-01)
+
+- Gate filed at `docs/architecture/E-076_PART_IV_GATE.md`:
+  **Part IV gate PASS** — all seven criteria checked (G1–G7).
+  VD-RM's remaining road is fully accounted: the E-060
+  retirements (distributed heartbeat, REST API) and
+  double-count strikes (Prometheus, emotional architecture)
+  stand; v0.4.0 "Valhalla" stands closed; `pulse_metrics`
+  verified CLOSED live at this gate (a real
+  `heartbeat.cli pulse` reported prediction + anomalies with
+  `score_source: 'pulse_metrics'`); VD-RM v1.0.0 "Yggdrasil —
+  Production-ready" re-roaded with five stated criteria to
+  its judging owner **E-204** (rows a/b/d true today; the
+  real-device load truth and the E-199 showcase rows are
+  future evidence). Event contract v1 declared **FROZEN**
+  at this gate on E-061's own versioning terms (breaking
+  change = version bump, never an edit; new types register
+  with their producer; the E-067/E-068 addenda are part of
+  the frozen registry; docket 103's absence is the v1
+  verdict).
+- Three repairs landed in scope — the gate review owned all
+  three, and a gate that owns a bug does not merely describe
+  it. **Docket 106 CLOSED:** the hub's `cmd_stop` aliveness
+  probe was zombie-blind (`os.kill(pid, 0)` answers True for
+  a zombie), so a SIGTERM-killed hub was reported "could not
+  be killed"; `nervous_system.py` gains `_pid_alive` (reads
+  the /proc state, zombie = dead, kill-probe fallback where
+  /proc is absent), proven against a real forked zombie, a
+  zombie pid file through `cmd_stop` itself, and a live
+  sleeper. **Docket 92, Verdandi half CLOSED:**
+  `Verdandi/pyproject.toml`'s two unbounded requirements
+  (`pytest-asyncio>=0.23`, `setuptools>=68.0`) are bounded
+  both ways (`<2`, `<82`), pinned by conformance. **Docket 6
+  family CLOSED for the CLI file:**
+  `Verdandi/tests/test_heartbeat_integration.py`'s five CLI
+  tests no longer run in `Path.home() / "Verdandi"` (exists
+  only on the Pi deployment — the 5 failures of the E-072
+  correction) but in the member's own dir derived from
+  `__file__`; the pulse/react pair additionally runs against
+  an isolated HOME + VERDANDI_HOME, because a pulse judges
+  its host (Huginn scanned this VM's 175 home git repos in
+  1m52s wall and `pulse` exits 1 on a critical pulse state).
+  All five pass in ~5 s.
+- Carried with owners, not lost: docket 100 → E-136 (with
+  the gate's stated verdict: Bifröst pruning is hygiene,
+  never privacy; E-063's delete right is the privacy
+  instrument), 101 → E-187 (stimulus-only publish is a v2
+  question), 102 → E-085 first review / E-204 backstop,
+  103's v2 candidacy → E-204, 104 → E-085 (as E-072
+  assigned), 105 → E-182 (native deploy recipes rewrite the
+  systemd units), 107 → E-191 (load truth on a real device,
+  criteria in the gate doc). NOT PROVEN at this gate: hub
+  throughput on real tiny hardware, a typed nerve
+  subscriber, the v1.0.0 claim.
+- The E-075 re-verification duty is DISCHARGED (gate §5):
+  re-run at this tick's opening under 1-minute load
+  25.4–27.2 — Run D attempt **1354 passed, 1 failed**, the
+  one failure (load-truth mini-run, "hub exited early
+  rc=1") proven a method artifact of that attempt's deep
+  workspace TMPDIR (socket path over the AF_UNIX cap;
+  isolated short-TMPDIR re-run of the file **8 passed**);
+  isolated cold-start at that load failed honestly (median
+  8.66 s vs 5.00 s cap, the E-075 contention shape). The
+  gate's own canonical Run D (short TMPDIR) is the closing
+  run — green, both duty tests inside it. No
+  re-verification duty carries past this gate. Logs in
+  `~/workspace/.verify-tmp/ember-e076/reverify/` +
+  `gate/`. (One crossed background notification during
+  this tick reported a phantom "422 passed, 1 failed" for
+  the heartbeat set; disk truth was used throughout — the
+  intermediate run's own log reads 421 passed / 2 failed,
+  the final 423 / 0.)
+- E-057 table re-measured for this slice's Verdandi
+  changes (Verdandi 193 files / 17,032,082 B; core
+  unchanged 130 / 831,912 B; total 131,443,689 B; laptop
+  miss 254,866 B), both published copies updated.
+  Conformance: `tests/unit/test_part_iv_gate_e076.py`
+  **7 passed**; combined Part IV conformance (E-055 +
+  E-057 pins + E-061–E-076) **266 passed** (259 + 7);
+  Verdandi heartbeat + Skuld + integration set
+  **423 passed**, exit 0 (canonical 374 + integration 49,
+  one run, final tree); Verdandi conversation focal set
+  **101 passed**. Slice gate: Run A **1 error, 11
+  skipped**, exit 2 (docket 1, unchanged); Run B **1305
+  passed, 6 failed, 25 skipped, 1 warning** (1298 + 7;
+  the 6 are the proven environment failures, FAILED list
+  identical to E-075); Run D **1362 passed, 0 failed, 19
+  skipped, 1 warning**, exit 0 (1355 + 7). No README
+  touched.
+- **Part IV CLOSED.** E-077 next — Part V opens: both
+  memory systems mapped.
+- E-076 push: banking commit cdf4e04 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 59f740b, an
+  ancestor; the push also carried E-075's push-record commit 1c2fb2b and
+  this tick's IN PROGRESS marker f27683e) — remote moved 59f740b →
+  cdf4e04, verified via ls-remote (remote head =
+  cdf4e04777a74b95da9719f2f9545ca51b054e37 = local HEAD at push time).
+
+## E-077 — Both memory systems mapped, in depth (DONE, 2026-11-01)
+
+- Map filed at `docs/architecture/E-077_BOTH_MEMORY_SYSTEMS_MAPPED.md`:
+  E-012 executed in depth for **three** systems — mempalace,
+  mimir-well, and the core's own Brunnr, the incumbent Part V
+  must judge alongside the two members. Headline proven facts:
+  neither member has changed by one byte since its import
+  (git log: one commit each, f7ef473 / 911eeba, 2026-05-21;
+  tracked sizes byte-identical to E-057 as re-pinned at E-076 —
+  mempalace 257 files / 59,049,715 B, mimir-well 58 /
+  607,675 B, pinned by this slice's conformance); the core
+  still uses neither member (zero references in `src/ember/`);
+  storage shapes stated exactly (mempalace: palace directory,
+  Chroma drawers+closets over chroma.sqlite3 + HNSW, separate
+  KG SQLite, 384-dim ONNX MiniLM; mimir-well: one SQLite file,
+  schema v9, 10 tables + 3 FTS5, the living `memories` row;
+  Brunnr: sqlite_vec / pgvector schema.sql shapes, documents /
+  chunks / episodes, 768-dim Ollama embed via Smidja);
+  retrieval stated exactly (mempalace hybrid 0.6 vector /
+  0.4 BM25 + closet boost + BM25-only fallback + Layers 0-3,
+  MCP exactly 30 tool_* functions; mimir-well FTS5 + structured
+  recall, no vector code anywhere; BrunnrHandle exactly 12
+  protocol methods, RRF hybrid with E-036's tie-break).
+- New consumer evidence beyond E-012: bifrost carries **two**
+  independent raw-SQL consumers of mimir-well's shape (bridge
+  `memory_bridge.py` + core `core.py:_ensure_mimir` via
+  `config.mimir_db_path`), neither through `RunaMemory` —
+  docket 51's three-path disagreement stands exactly (library
+  `~/.mimir_well/mimir_well.db` vs Eye/bifrost
+  `~/.hermes/memory/runa_memory.db`; Verdandi's check alone
+  follows the library). New dockets: 108 (mimir-well's flask
+  dep bounded below only — E-044 law unapplied; Part V hygiene),
+  109 (four readers/writers of the mimir shape, zero via its
+  own class; E-080 owner, Part VIII consulted), 110 (Brunnr
+  episodes carry no conversation/persona column at the adapter
+  layer; E-080/E-083 owner).
+- Test state fresh this slice: mimir-well full suite
+  **350 passed, 6 failed** — identical to E-005/E-012, the 6
+  being docket 10's Eye family; its recall-quality file ran
+  **21 passed** at calm load, proving this tick's earlier
+  apparent latency failures (two <50 ms wall-clock tests,
+  starved at load 6-11 by sibling suites) the contention
+  class. mempalace focal five files (searcher / hybrid /
+  KG / layers / closets) **170 passed** with the proxy env
+  cleaned; the dirty-proxy shape (134 / 20F / 16E) is
+  E-005's httpx `Invalid port: ':1]'` signature throughout.
+  mempalace's full suite NOT re-run (member byte-identical;
+  E-012's corrected 1712 / 14 / 1 / 106 stand; E-078 owns
+  the next full measurement under docket 54). Brunnr focal
+  + conformance 25 tests: 24 passed + this slice's own
+  conformance assertion error (bifrost path literal lives
+  in `bifrost/config.py`, not `core.py` — §6 already said
+  so), fixed in scope; conformance then **8 passed**.
+- Environment note: the E-075 write transient recurred
+  (~01:12, minutes of EPERM/ENOENT on scattered writes +
+  Python tempfile creation, /tmp carrying 7,258 sibling
+  entries); it cleared on its own, no work lost — doc and
+  test verified on disk via git status before banking.
+- Slice gate: Run A **1 error, 11 skipped**, exit 2
+  (docket 1, identical to E-076); Run B **1312 passed,
+  7 failed, 25 skipped, 1 warning** (1305 + 8 new − 1:
+  the 6 proven environment failures, identical list,
+  plus `test_load_truth_e075`'s mini-run failing
+  "hub exited early rc=1" — E-076's proven deep-TMPDIR
+  socket-cap artifact, isolated short-TMPDIR re-run
+  **8 passed**, no hub code touched); Run D **1370
+  passed, 0 failed, 19 skipped, 1 warning**, exit 0
+  (1362 + 8). Logs in `~/workspace/.verify-tmp/ember-e077/`.
+  No README touched.
+- **Part V OPEN.** E-078 next — the comparison harness.
+- E-077 push: banking commit fdb3197 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was ee01b1e,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  c1de031) — remote moved ee01b1e → fdb3197, verified via ls-remote
+  (remote head = fdb31972f1c136aa9c05e8c5684eeac47d4498a0 = local HEAD
+  at push time).
+
+## E-078 — The comparison harness (DONE, 2026-11-01)
+
+- Harness + record filed at `scripts/dev/compare_memory_systems.py` and
+  `docs/architecture/E-078_MEMORY_COMPARISON_HARNESS.md`: identical
+  synthetic workloads (20 facts + paraphrases + supersession + episodes)
+  through all three systems — mempalace, mimir-well, Brunnr — one corpus,
+  one query set, embedder held constant (ONNX all-MiniLM-L6-v2; no Ollama
+  reachable on the VM). Canonical run 2 numbers (raw reports in
+  `~/workspace/.verify-tmp/ember-e078/`): verbatim/term recall **20/20 all
+  three**; paraphrase mempalace **9/9**, Brunnr vector **9/9** / hybrid
+  **8/9**, mimir-well **0/9** (no semantic search — a measured absence);
+  only mimir-well answered importance/mood/current-truth exactly; only
+  Brunnr holds episodes as turns. Weight: mimir-well fits every profile;
+  mempalace fits none (~403 MiB peak RAM, ~185 MB deps + ~88 MB model).
+- **Bug found and fixed in scope — new docket 111:** mimir-well's FTS5
+  external-content tables had no sync triggers (schema.py's comment
+  claimed the opposite), so `fts_search` was blind to everything written
+  in the running session (as found: 0/20 verbatim, 0/20 term; LIKE 20/20).
+  Fix: `FTS_TRIGGERS` (insert/delete/update ×3 tables) in schema.py +
+  executed at open in core.py before the rebuild; regression suite
+  `mimir-well/tests/test_fts_sync.py` **6 passed** (re-verified this
+  tick). Post-fix FTS **20/20 / 20/20**. Consequences pinned: E-077 size
+  pin moved (59 files / 614,283 B), E-057 budget table + BUDGET_BOOK §7
+  re-measured (twelve-member total 131,450,297 B).
+- Test state: harness canonical run 2 all three children `ok`;
+  mimir-well full suite post-fix **353 passed, 9 failed** (6 = docket
+  10's Eye family, identical to baseline; 3 = hard wall-clock latency
+  tests proven environment — overlay fsync under synchronous=FULL,
+  same file 21 passed on /tmp; see E-078 doc §7). Root conformance
+  `test_memory_comparison_e078.py` 4 tests pass in every gate shape.
+- Slice gate (this tick's continuation, fresh runs on the staged tree;
+  logs in `~/workspace/.verify-tmp/ember-e078/gate-final/`): Run A
+  **1 error, 11 skipped**, exit 2 (docket 1, identical); Run B **1316
+  passed, 7 failed, 25 skipped, 1 warning** — the 6 proven environment
+  failures (CDE ×3, G ×2, J ×1, identical list) plus
+  `test_load_truth_e075`'s mini-run "hub exited early rc=1", E-076's
+  proven deep-TMPDIR socket-cap artifact (isolated default-TMPDIR
+  re-run this tick **8 passed**; E-078 touches no hub code); Run D
+  **1373 passed, 1 failed, 19 skipped, 1 warning** — the sole failure
+  is the same load-truth TMPDIR artifact (1370 + 4 new conformance
+  − 1 artifact vs E-077's Run D). No README touched.
+- **E-079 next** — the verdict paper, argued from these numbers +
+  ORIGINS provenance, presented for Volmarr's word.
+- E-078 push: banking commit e2cddaf pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 220de89,
+  an ancestor) — remote moved 220de89 → e2cddaf, verified via ls-remote
+  (remote head = e2cddafe4be11c2c5091b10985066417b03c3c5c = local HEAD
+  at push time).
+
+## E-079 — The verdict paper (DONE, 2026-11-01)
+
+- Verdict filed at `docs/architecture/E-079_MEMORY_VERDICT_PAPER.md`:
+  **BOUND** — one memory face (contract at E-080) over two bounded
+  house engines, argued from E-078's canonical numbers + E-012/E-003
+  provenance (neither member has an ORIGINS row, docket 72 — provenance
+  stated from packaging + git: mempalace upstream OSS milla-jovovich,
+  one import commit f7ef473; mimir-well house line Eldrä Járnsdóttir,
+  911eeba; Brunnr house core, real development history).
+- Territories: Brunnr keeps documents/chunks/episodes (verbatim 20/20,
+  paraphrase 9/9 vector, only exact episode recall, 585 B/episode);
+  mimir-well keeps living facts (importance/mood exact, only
+  current-truth view, only lifecycle + guard + audit; fits every
+  profile — 614,283 B, 24.2 MiB peak, 745 B/item). All three
+  single-system crowns argued and refused on measured evidence
+  (mempalace: fits no profile — 402.8 MiB RAM, ~185 MB deps + ~88 MB
+  model; mimir-well: paraphrase 0/9, no semantic search; Brunnr: no
+  importance/mood/current-truth/lifecycle/guard/audit faces).
+- **Retirement PROPOSED, not decided:** mempalace's honourable
+  retirement from Ember is proposed for **Volmarr's word** (no
+  in-tree consumer; upstream lives at its own home; nothing removed,
+  moved, or marked by this slice — member verified present and
+  unmodified at banking, pinned by conformance). Fallback if he
+  declines: bounded as an optional, non-default, never-bundled
+  laptop-class archive adapter with true costs stated. Until he
+  rules, the fallback's restraints apply and silence is never read
+  as a retirement word. **REPORTING NOTE for the main agent:** the
+  roadmap orders this proposal "presented for Volmarr's word" — the
+  exact plain question is in the paper §6 (retire honourably, or
+  keep bounded as the optional adapter?). E-080 does not wait on
+  the answer; E-092's gate records the word or its absence.
+- E-080 charged with five binding conditions: one canonical
+  mimir-well path (docket 51 settled there; docket 109's four raw-SQL
+  readers/writers reckoned with, Part VIII consulted); stores not
+  merged (E-081: survivors stay native; mempalace-store answer waits
+  on the ruling); persona separation as a face property (docket 110);
+  budgets bind the face (toaster first); docket 108 hygiene at or
+  before E-092. The paraphrase gap is charged to the face as an
+  *index-don't-merge* proposal (index living facts into Brunnr for
+  meaning search, resolve hits through mimir-well's current-truth
+  view) — a proposal for E-080 to implement and prove, NOT claimed
+  here; if its vector growth breaks the toaster, the toaster ships
+  word-search over living facts and says so plainly.
+- Conformance: `tests/unit/test_memory_verdict_e079.py` **5 passed**;
+  combined Part V conformance (E-077 + E-078 + E-079) **17 passed**.
+  Slice gate (logs in `~/workspace/.verify-tmp/ember-e079/gate/`):
+  Run A **1 error, 11 skipped**, exit 2 (docket 1, identical);
+  Run B **1321 passed, 7 failed, 25 skipped, 1 warning** (1316 + 5
+  new; the 6 proven environment failures identical list, plus
+  `test_load_truth_e075` under this run's deep workspace TMPDIR —
+  E-076's proven socket-cap artifact class; isolated default-TMPDIR
+  re-run this tick **8 passed**, and Run D below is green with that
+  test inside it); Run D **1379 passed, 0 failed, 19 skipped,
+  1 warning**, exit 0 (1373 + 5 new + the load-truth test passing
+  in this shape). No README touched; no member code touched.
+- E-079 push: banking commit 2469aaa pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 662d1f2,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  c404d41) — remote moved 662d1f2 → 2469aaa, verified via ls-remote
+  (remote head = 2469aaa2879e4262412a736d61db08c34780c89c = local HEAD
+  at push time).
+
+## E-080 — The chosen shape implemented: one memory contract (DONE, 2026-11-01)
+
+- Contract live at `src/ember/well/memory_face.py` (`MemoryFace`,
+  +25,444 B core), filed at
+  `docs/architecture/E-080_ONE_MEMORY_CONTRACT.md`: one face over
+  the E-079 bounded shape — living facts through mimir-well's
+  own `RunaMemory` (loaded lazily via importlib; the core's one
+  sanctioned library-path consumer, never raw SQL), documents
+  and turns through Brunnr. Stores not merged (pinned: after an
+  indexed fact, Brunnr holds exactly one document — the face's
+  synthetic index document).
+- **Docket 51 SETTLED for the companion:** the face's one
+  canonical mimir path is the library default, named once as
+  `CANONICAL_MIMIR_DB_PATH` (`~/.mimir_well/mimir_well.db`);
+  other paths only as explicit face configuration.
+  **Docket 109 reckoned (doc §6):** bifrost's two raw-SQL
+  consumers, the Eye, and Verdandi's check are NOT re-pointed
+  (Part VIII owns bifrost's side; E-085/E-092 inherit the stated
+  map); the face is not a fifth raw-SQL consumer.
+  **Docket 110 built at the face:** facts ride mimir's own
+  `user_id` persona namespace; episode persona tags live in
+  the face's sidecar above the adapter — untagged episodes
+  belong to the default persona only, fail-closed (proven).
+  Docket 108 rides to E-092 as the verdict assigned.
+- **Index-don't-merge PROVEN** (deterministic synonym-folding
+  stand-in embedder): a paraphrase question finds the ferry
+  fact (mode "meaning"); after supersession the same question
+  returns the new text and never the old — the stale index
+  chunk resolves away through mimir's current truth.
+  **Budgets bind the face, priced in the doc §5:** one indexed
+  fact = one embedded chunk = 72,239 B (E-078) → toaster
+  (~29/month against its 2 MiB growth ceiling) ships WORD
+  search over living facts and says so (`mode == "word"`,
+  profile named in the note); phone/pi/laptop index by
+  default (~145 / ~363 / ~1,452 facts/month priced). E-082
+  owns index pruning under growth pressure.
+- Two in-scope repairs landed with the slice: (1) E-044's
+  import↔extra diet stays exact — the member is loaded
+  dynamically, not statically imported, so no false PyPI
+  extra was declared for an in-tree member; (2) E-077's
+  zero-core-consumer pin was superseded by this slice and
+  now pins exactly the one sanctioned file under
+  attribution (campaign precedent: E-078's re-pin of E-057).
+  E-057 table re-measured for the core's growth (131 files /
+  857,356 B; total 131,475,741 B; laptop miss unchanged
+  254,866 B), both published copies updated.
+- Honest limits (doc §7): chat is NOT rewired to the face
+  yet (contract live and proven; E-085 first among the
+  wiring inheritors); no device truth; E-083 owns the full
+  persona fixture battery at this layer; mempalace
+  untouched, retirement still awaiting Volmarr's word.
+- Conformance: `tests/unit/test_memory_face_e080.py`
+  **11 passed**; combined Part V conformance (E-077 + E-078
+  + E-079 + E-080) **28 passed**. Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e080/gate/`): Run A
+  **1 error, 12 skipped**, exit 2 (docket 1, identical; the
+  +1 skip is this slice's own file importorskipping
+  sqlite_vec); Run B **1322 passed, 6 failed, 26 skipped,
+  1 warning** — the 6 are the proven environment failures,
+  identical list to E-079 (1321 + 1: the E-044 diet test
+  the slice's repair turned green); Run D **1390 passed,
+  0 failed, 6 skipped**, exit 0 (1379 + 11 new; the
+  pgvector integration module skipped whole this run —
+  its `pgvector` pip guard — where E-079's run collected
+  it and skipped its 13 tests individually; zero failures
+  either way). No README touched; no member code touched.
+- E-080 push: banking commit c33143f pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 8743847,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  95ae76e) — remote moved 8743847 → c33143f, verified via ls-remote
+  (remote head = c33143f9d9e506982a4e8328df4148fcdaa9b54a = local HEAD
+  at push time).
+
+## E-081 — Migration answer: survivors native; palace migrates (DONE, 2026-11-01)
+
+- Answer filed at `docs/architecture/E-081_MIGRATION_ANSWER.md`:
+  E-079 §5.2/§8's narrowed question answered in both halves.
+  **Survivors: NO migration — proven.** Stores written the
+  pre-face way (RunaMemory direct incl. a supersession;
+  Brunnr handle direct: document+chunk+episode) served
+  whole through the E-080 face (toaster profile), with
+  both stores' schemas byte-identical afterwards, every
+  content table's row count identical, and Brunnr zero
+  deltas of any kind. Only deltas: mimir-well's own read
+  audit log (+2, its audit recording the test's recalls)
+  and FTS5 shadow segment compaction on member reopen —
+  FTS content unchanged, no fact row moved.
+- **Palace: migrate, don't read-compat forever —
+  argued from fixtures, NOT executed.** Synthetic palace
+  built in the exact shape of mempalace's own stdlib
+  reader (`mempalace/mempalace/migrate.py`
+  extract_drawers_from_sqlite, sqlite3 only, ChromaDB
+  never installed) and extracted with that function:
+  drawers map losslessly to Brunnr document+chunk
+  (text byte-identical; ALL metadata + drawer id in the
+  document's persisted metadata mapping; original record
+  reconstructs exactly — proven mapper-level AND through
+  a real Brunnr store via the face); diary drawers map
+  as documents, honestly not episodes; KG triples map to
+  living-fact records field-for-field (validity,
+  confidence, provenance). Closets + stored embeddings
+  are DERIVED (closet pointer audit: every pointer
+  resolves to an extracted drawer; payload is only
+  topics/entities extracted from drawer text) — rebuilt
+  at destination, never carried. Priced: 585 B/drawer
+  word-only or 72,239 B embedded (E-078 price);
+  745 B/triple as a mimir fact (10k drawers ≈ 5.9 MB
+  word-only / ≈722 MB embedded → executing migration
+  follows the face's per-profile index rule).
+- Two findings for the executing slice: (1) the member
+  extractor is COLLECTION-BLIND (returns closets among
+  drawers — executing reader must classify by id);
+  upstream migrate() shares the blindness and skips
+  closets/KG entirely. (2) A palace can be READ with
+  stdlib alone — read-compat forever refused (forever
+  tax + the disqualified ~185 MB stack for search);
+  the stdlib reader is what the one-time migration
+  uses. Honest gap named: face's remember_fact carries
+  no confidence/validity fields — executing migration
+  writes triples through RunaMemory directly or the
+  face grows them first (E-083 in view).
+- Status discipline kept: retirement still awaiting
+  Volmarr's word (E-079 §6 question stands, presented
+  at E-079); migration executes only under that ruling;
+  if declined, the mapping stands as a user-chosen
+  one-way export under the bounded fallback. Member
+  untouched; core gained NO mempalace reader (pinned).
+- Conformance: `tests/unit/test_memory_migration_e081.py`
+  **9 passed**; combined Part V conformance (E-077 +
+  E-078 + E-079 + E-080 + E-081) **37 passed**. Slice
+  gate (logs in `~/workspace/.verify-tmp/ember-e081/gate/`):
+  Run A **1 error, 13 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1322 passed, 6 failed, 27 skipped,
+  1 warning** — the 6 are the proven environment failures,
+  identical list to E-080 (this slice's file skips whole
+  in the default env); Run D **1399 passed, 0 failed,
+  19 skipped**, exit 0 (1390 + 9 new; the skip variance
+  is E-080's noted pgvector whole-module guard shape, 13
+  tests skipping as one module — zero failures either way).
+  No README touched; no member code touched.
+- E-081 push: banking commit fb24043 pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check (remote was 2f66c54,
+  an ancestor; the push also carried this tick's IN PROGRESS marker
+  a42b722) — remote moved 2f66c54 → fb24043, verified via ls-remote
+  (remote head = fb240430df319dabc1e1acd479805f84c1bf23cc = local HEAD
+  at push time).
+
+## E-082 — Memory lifecycle: growth, decay, pruning (DONE, 2026-11-01)
+
+- Lifecycle live on the face (`src/ember/well/memory_face.py`,
+  +7,182 B core), filed at
+  `docs/architecture/E-082_MEMORY_LIFECYCLE.md`:
+  `lifecycle_report()` (growth accounting priced from
+  measured anchors only — fact 745 B E-078, turn 585 B
+  E-050/E-078, indexed fact 72,239 B E-078 — judged
+  against the profile's Part III ceiling; the toaster's
+  2 MiB ceiling = ~29 indexed facts, re-proving E-080's
+  pricing), `run_decay()` (mimir-well's own Ebbinghaus
+  decay delegated per persona, nothing reimplemented),
+  `prune_stale_index()` (sidecar pointers for facts no
+  longer current are dropped; meaning search keeps
+  serving the current fact), `run_lifecycle()` (decay →
+  prune → report, in that order).
+- **E-050 consumed, verdict unchanged:** a reference
+  month is 0.39 MiB, inside every ceiling with years of
+  headroom — lifecycle is accounting + hygiene, not
+  emergency pruning; episodes are NOT pruned (history
+  deletion is the user's right, E-084, not a budget
+  reflex); the fact index is the only growth that can
+  break a small profile and stays bounded by E-080's
+  per-profile rule.
+- **Two honest limits, new docket 112 + 113:** (112)
+  Brunnr's handle has no delete — pruned stale chunks
+  become unreachable and uncounted but their physical
+  bytes are NOT reclaimed (every prune report states
+  `physical_bytes_reclaimed: 0`); byte reclamation
+  waits on a handle-level delete, E-092 gate to assign.
+  (113) mimir-well decay()'s `pruned` count names
+  importance-flooring at 1, not row deletion (read in
+  `_decay_inner` this slice) — no face report claims
+  deletions that did not happen.
+- In-scope repair (campaign precedent E-078/E-080):
+  the core's growth re-measured the E-057 table —
+  core 131 files / 864,538 B, twelve-member total
+  131,482,923 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7) with the re-measure note extended.
+- Conformance: `tests/unit/test_memory_lifecycle_e082.py`
+  **9 passed**; combined Part V conformance (E-080 +
+  E-081 + E-082 files) **29 passed**. Slice gate (logs
+  in `~/workspace/.verify-tmp/ember-e082/gate/`): Run A
+  **1 error, 14 skipped**, exit 2 (docket 1, identical;
+  +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 28
+  skipped, 1 warning** — the 6 proven environment
+  failures identical list, plus `test_load_truth_e075`
+  under this run's deep workspace TMPDIR (E-076's
+  proven socket-cap artifact; isolated default-TMPDIR
+  re-run this tick **8 passed**; E-082 touches no hub
+  code); Run D **1407 passed, 1 failed, 19 skipped** —
+  the sole failure is the same load-truth artifact
+  (1399 + 9 new − 1 artifact vs E-081's Run D). No
+  README touched; no member code touched.
+- E-082 push: banking commit 27ee0e8 pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was 5c2cb53, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  69954bc) — remote moved 5c2cb53 → 27ee0e8, verified
+  via ls-remote (remote head =
+  27ee0e81166acd2839e065744f6d9e12178eea4e = local HEAD
+  at push time).
+
+## E-083 — Persona separation enforced at the memory face (DONE, 2026-11-01)
+
+- Enforcement live on the face (`src/ember/well/memory_face.py`,
+  +6,019 B core), filed at
+  `docs/architecture/E-083_PERSONA_SEPARATION_AT_THE_FACE.md`:
+  E-025's fixture battery executed at the Part V layer —
+  the two fixture personae (ember / sage) plus the
+  near-miss namesake (ember-2) and adversarial content
+  (a fact and a turn whose text is itself an instruction
+  carrying a secret) across every face path (word /
+  current / importance / mood / meaning recall, turns,
+  supersession, decay, prune, document searches). The
+  E-080 wall held where it had been pinned — facts
+  separated on all recall paths, cross-persona supersede
+  refused by the member and surfaced by the face,
+  outside-namespace writes invisible, separation
+  surviving a face reopen (named personae DO have
+  cross-restart history at this layer, via the sidecar),
+  corrupt sidecar failing closed.
+- **Five gaps found by the battery, all fixed in scope,
+  new dockets 114–118** (each probe-demonstrated on the
+  pre-fix code first; probes in
+  `~/workspace/.verify-tmp/ember-e083/`): (114) the
+  fact-index document's chunks were served by the plain
+  document searches — any persona's indexed fact text
+  readable with no persona check at all; the index is
+  now filtered out of document search, with the scan
+  widened so filtering never starves real documents
+  (documents added as documents remain shared grounding
+  by design, E-025/E-035). (115) `recent_turns` read a
+  fixed limit×4 window AND took its first (oldest)
+  matches — foreign runs starved a persona's turns, and
+  a single-persona history returned its oldest turns
+  under a "recent" name; the scan now widens to
+  exhaustion and answers the persona's newest `limit`
+  turns, oldest-first. (116) meaning search's fixed
+  k×4 candidate page let nearer foreign chunks starve
+  the asker's own facts; the scan widens likewise,
+  making results a per-persona ranking. (117) untagged
+  episodes answered to the hard-coded `default` id
+  instead of the face's configured default persona.
+  (118) persona ids were never validated at the face —
+  the empty string silently became the default persona
+  (reading/writing its memory) and arbitrary strings
+  were accepted as namespaces; every operation now
+  resolves through the E-025 slug rules, fail-closed
+  (reads empty, writes refused with the reason stated,
+  `add_turn` refuses an invalid tag storing nothing,
+  the constructor refuses an invalid configured
+  default).
+- In-scope re-measure (E-080/E-082 precedent): the
+  E-057 table re-measured for the core's growth —
+  core 131 files / 870,557 B, twelve-member total
+  131,488,942 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_persona_e083.py`
+  **31 passed**; combined Part V conformance (E-080 +
+  E-081 + E-082 + E-083 files) **60 passed**. Slice gate
+  (logs in `~/workspace/.verify-tmp/ember-e083/gate/`):
+  Run A **1 error, 15 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 29
+  skipped, 1 warning** — the 6 proven environment
+  failures identical list, plus `test_load_truth_e075`
+  under this run's deep workspace TMPDIR (E-076's
+  proven socket-cap artifact; isolated default-TMPDIR
+  re-run this tick **8 passed**; E-083 touches no hub
+  code); Run D **1438 passed, 1 failed, 19 skipped** —
+  the sole failure is the same load-truth artifact
+  (1407 + 31 new vs E-082's Run D). No README touched;
+  no member code touched.
+- E-083 push: banking commit 910a6b2 pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was 5736f59, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  d08c0e5) — remote moved 5736f59 → 910a6b2, verified
+  via ls-remote (remote head =
+  910a6b2c1fac74d5ca7b4aea2ccdb70fa456e305 = local HEAD
+  at push time).
+
+## E-084 — The user's memory rights (DONE, 2026-11-01)
+
+- Rights live on the face (`src/ember/well/memory_face.py`,
+  +14,425 B core), filed at
+  `docs/architecture/E-084_USER_MEMORY_RIGHTS.md`:
+  `inspect_memory()` / `inspect_fact()` (everything a
+  persona owns — facts still true, old versions shown as
+  history, remembered turns — in plain counts first),
+  `correct_fact()` (in place through the member's audited
+  update: same id, new words; an indexed fact's old entry
+  is dropped and the corrected words re-indexed, so
+  meaning search never serves the wrong words),
+  `export_memory()` (one plain bundle, the persona's own
+  memory only, optionally written as JSON to a file the
+  user carries), `delete_fact()` (row removed, index
+  entry dropped), and `delete_all_memory()` (total for
+  one persona, guarded by the exact confirmation words
+  `"delete everything"` — empty, near-miss, and
+  different-casing attempts all refuse and delete
+  nothing). Every operation is fenced by the E-083
+  persona wall: another persona's fact cannot be seen,
+  corrected, exported, or deleted from here, and the
+  refusals change nothing.
+- **Probe first:** all six operations were MISSING on
+  the arriving face (probe in
+  `~/workspace/.verify-tmp/ember-e084/`); the same probe
+  proved the member paths the face builds on —
+  `search_memories("")` enumerates exactly a persona's
+  rows (current + history, no raw SQL, docket 109 kept),
+  `update_memory` corrects with ownership enforced, and
+  `delete_memory` refuses a wrong persona and deletes
+  for the right one.
+- **Two honest limits, new dockets 119 + 120:** (119)
+  Brunnr's handle has no episode delete — delete-total
+  tombstones the persona's turns in the face's sidecar
+  (never served, inspected, or exported again; tombstones
+  survive a face reopen, including the resurrection trap
+  where an untagged tombstoned turn would otherwise
+  reappear as a default-persona turn); every delete-all
+  report states `turn_physical_bytes_reclaimed: 0` —
+  physical reclamation waits on a handle-level delete,
+  owed at or before the E-092 gate beside docket 112.
+  (120) mimir-well's audit keeps only content-free
+  hashes after a delete/update, never the words —
+  stated so deletion is neither over- nor under-claimed.
+- In-scope re-measure (E-080/E-082/E-083 precedent):
+  the E-057 table re-measured for the core's growth —
+  core 131 files / 884,982 B, twelve-member total
+  131,503,367 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_rights_e084.py`
+  **17 passed**; combined Part V conformance (E-080 +
+  E-081 + E-082 + E-083 + E-084 files) **77 passed**.
+  Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e084/gate/`): Run A
+  **1 error, 16 skipped**, exit 2 (docket 1, identical;
+  +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1322 passed, 6 failed, 30
+  skipped, 1 warning** — the 6 are the proven
+  environment failures, identical list to E-083 (the
+  load-truth artifact did not trigger this tick; its
+  tests passed inside the run); Run D **1456 passed,
+  0 failed, 19 skipped**, exit 0 (1438 + 17 new + the
+  E-083 artifact test green this run, vs E-083's Run D).
+  No README touched; no member code touched.
+- E-084 push: banking commit fd8fbe2 pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was 706b724, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  b2d954f) — remote moved 706b724 → fd8fbe2, verified
+  via ls-remote (remote head =
+  fd8fbe2da7a0598ba8317fa8f57dbe5d83edf019 = local HEAD
+  at push time).
+
+## E-085 — Memory ↔ Verdandi reconciliation (DONE, 2026-11-01)
+
+- Reconciliation filed at
+  `docs/architecture/E-085_MEMORY_VERDANDI_RECONCILIATION.md`
+  and built on the face (`src/ember/well/memory_face.py`):
+  **two views, one lawful crossing, stated boundary** —
+  the conversation logger is the truth for what was
+  logged (E-063), the face is the truth for what the
+  companion currently remembers (E-080); neither store
+  is a copy of the other and nothing was merged.
+  `ingest_log_candidates()` completes E-072's feed road
+  on the receiving side: lawful candidates only (source
+  `conversation_logger`, E-072's four categories,
+  non-empty words, named session, provenance dict), each
+  remembered through the face's own guarded
+  `remember_fact`, with provenance recorded in the
+  sidecar's new `log_facts` map (fact id, session,
+  persona, category, rule id — keyed by a hash of
+  session+category+words, so the sidecar holds no second
+  copy of the words). A persona is never guessed
+  (untagged/invalid-tag candidates counted
+  `withheld_unattributable`), a foreign-tagged candidate
+  under a named persona is `withheld_persona_mismatch`,
+  never re-homed, and a repeat feed is a counted
+  duplicate for as long as the fed fact lives (proven
+  across a face reopen); forgotten facts drop their
+  provenance through the face's delete paths, so a later
+  feed is a fresh crossing. The ingest report is counts
+  + new fact ids only (sentinel-pinned: no words, no
+  session ids). `logger_provenance()` lists fed facts
+  per persona, words never included.
+- **Docket 104 CLOSED:** a logger deletion now reaches
+  already-fed memory. `audit_logger_reconciliation
+  (live_session_ids)` finds fed facts whose session has
+  left the caller's authoritative live list (counts +
+  orphaned fact ids; deletes nothing; every report
+  warns never to audit against a size-pruned log —
+  Bifröst pruning, docket 100, is hygiene, not a user
+  deletion). `retract_deleted_session(session_id)`
+  forgets exactly that session's fed facts through
+  `delete_fact` (index entry + provenance go with each),
+  counts a user-forgotten fact as `already_gone` and
+  drops its stale provenance; direct facts, other
+  sessions, and (under a named fence) other personae are
+  untouched. Propagation is **explicit, not automatic**
+  — the logger is a standalone member with no hook into
+  the core — stated in the doc, in every retraction
+  report, and pinned by the end-to-end battery (real
+  logger → real E-072 feed → ingest → logger
+  `delete_session` → memory unchanged on its own →
+  audit finds the orphan → retraction forgets it).
+  No Verdandi code touched; no member code touched.
+- In-scope re-measure (E-080–E-084 precedent): E-057
+  table re-measured for the core's growth — core
+  131 files / 899,122 B, twelve-member total
+  131,517,507 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_logger_
+  reconciliation_e085.py` **29 passed** (repeated full
+  runs; one early run under contention showed a single
+  failure in the provenance-fence test that did not
+  reproduce in isolation or in three subsequent full
+  runs — recorded here as a contention artifact, not
+  hidden). Combined conformance (E-057 table + E-072
+  feed + Part V E-077–E-085 files, 11 files) **152
+  passed**. Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e085/gate/`): Run A
+  **1 error, 17 skipped**, exit 2 (docket 1, identical;
+  +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 31
+  skipped, 1 warning** — the 6 proven environment
+  failures, identical list to E-084, plus the
+  load-truth live-hub artifact (hub exited early;
+  the hub boots clean standalone and under a taskset
+  replication this tick, and this slice touches no
+  hub code — same artifact class as E-083's Run B).
+- **Run D NOT GREEN under contention — re-verification
+  duty heads the next tick (E-072 precedent).** Two
+  attempts: the first collapsed from ~52% with mass
+  environment errors and a cacheprovider
+  PermissionError at teardown while VM load peaked at
+  18.7 and MemAvailable fell to ~0.69 GB (fourteen
+  keeper campaigns sharing the VM); the second exited
+  120 immediately with an empty log. No failing test
+  in any credible run touches this slice's code, but
+  a green Run D is NOT claimed: the next keeper tick
+  re-runs Run D first and records the result here.
+  No README touched.
+- E-085 push: banking commit bebee70 pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was efbd054, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  93732f8) — remote moved efbd054 → bebee70, verified
+  via ls-remote (remote head =
+  bebee70d881a4a726981ff907788a0939956d36a = local HEAD
+  at push time).
+
+## E-086 — Memory ↔ WYRD-shaped export (DONE, 2026-11-01)
+
+- **First duty discharged as far as contention allowed —
+  and it caught a real bug.** E-085's owed Run D
+  re-verification ran first (extras supplied, short
+  TMPDIR, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e086/gate/runD_reverify_e085.log`):
+  **1481 passed, 4 failed, 19 skipped** in 633s. The 4
+  classified from the log, none hidden: (1–2) the E-057
+  budget-table pair — contamination by THIS tick's own
+  mid-run edit of `memory_face.py` (that test re-measures
+  the tree from disk live; green again after this slice's
+  re-measure, below); (3) the load-truth live-hub
+  artifact, the known contention class (E-083/E-085
+  precedent); (4) **a REAL BUG** — E-084's
+  `test_delete_all_is_total_for_one_persona` died on
+  mimir-well's `superseded_by` FOREIGN KEY (see the bug
+  paragraph below). So E-085's Run D is **not** recorded
+  green: its credible near-green run exposed a defect
+  instead, the defect is fixed in this slice, and the
+  clean-Run-D duty passes to E-087's tick along with
+  this slice's own.
+- **The export** (`docs/architecture/E-086_MEMORY_WYRD_EXPORT.md`,
+  built on the face as `MemoryFace.export_wyrd()`):
+  the companion's memory for one persona, re-shaped into
+  the WYRD Protocol's own published record shapes —
+  persona + companion as `EntitySummary` entities,
+  current facts as `CanonicalFactRecord`s (the full
+  `MemoryRecord` envelope over a `CanonicalFactPayload`,
+  store `mimir_canonical_store`) and grouped as
+  `FactSummary`s under the subject id, old versions as
+  the same record shape marked superseded (the current
+  record naming what it supersedes), turns as
+  `ObservationRecord` utterances (store
+  `hugin_observation_store`). **TF-145's boundary is
+  honoured and stated in the bundle itself:** cognition
+  and memory are this side's, the world-model is WYRD's;
+  the export shapes a one-way offering — Ember builds no
+  world model, writes nothing into WYRD, and claims no
+  WYRD-side ingestion. Nothing is invented to fill the
+  shapes: `fact_key` is the member's category (the only
+  key it keeps), confidence is importance (1–10)
+  rescaled to 0–1, support names a logger session only
+  where E-085's provenance recorded one, and a timeless
+  turn stamped at export is counted
+  (`turns_time_stamped_at_export`). Persona law is
+  E-084's: built from `inspect_memory`'s lawful view,
+  invalid ids refused empty, documents never included,
+  read-only. **Live-model proof beyond the pinned field
+  tables:** a bundle from the real face (supersede chain
+  + logger-fed fact + turn) validated against WYRD's own
+  pydantic models in the WYRD tree's environment —
+  **8 of 8 objects valid** (3 canonical facts, 1
+  observation, 2 entities, 2 fact summaries); the
+  battery's live test re-proves it where `wyrdforge` is
+  importable and skips honestly where it is not.
+- **THE BUG, fixed in scope (never-leave-a-bug law).**
+  `delete_all_memory` deleted facts in the member's
+  search order (importance, timestamp); an old version's
+  `superseded_by` is a foreign key to the newer fact, so
+  whenever a supersede crossed a timestamp second the
+  total delete met the new fact first, mimir-well
+  refused on the key, and the exception escaped —
+  **a "forget everything" right dying half-done**.
+  Same-second fixtures had hidden it since E-084. The
+  same trap waited in `delete_fact` for any fact an old
+  version points at. Fixes, face only (no member code
+  touched): total delete now goes oldest-first
+  (ascending id — referrers always precede referents);
+  `delete_fact` forgets the fact's lineage with it (its
+  own old versions first, counted as
+  `old_versions_deleted`, logger provenance dropped for
+  them too). Regression-pinned in this slice's battery
+  with a deterministically staggered fixture (the new
+  fact made to sort first — the exact killing order);
+  E-084's + E-085's batteries re-run green with the fix.
+  Full account in the E-086 doc §6.
+- In-scope re-measure (E-080–E-085 precedent): E-057
+  table re-measured for the core's growth — core
+  131 files / 918,056 B, twelve-member total
+  131,536,441 B, laptop miss unchanged 254,866 B —
+  both published copies updated (E-057 doc + BUDGET
+  BOOK §7).
+- Conformance: `tests/unit/test_memory_wyrd_export_e086.py`
+  **17 passed, 1 skipped** (the skip is the live-WYRD
+  validation, proven separately above; one early focal
+  run under contention showed a single failure that did
+  not reproduce in the focal re-run, the combined run,
+  or isolation — recorded as a contention artifact, not
+  hidden). Combined conformance (E-057 table + E-072
+  feed + Part V E-077–E-086 files, 12 files) **169
+  passed, 1 skipped** (the same live-WYRD skip). Slice
+  gate (logs in `~/workspace/.verify-tmp/ember-e086/gate/`):
+  Run A **1 error, 18 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's file importorskipping
+  sqlite_vec); Run B **1321 passed, 7 failed, 32 skipped,
+  1 warning** — the 6 proven environment failures plus
+  the load-truth artifact, the FAILED list byte-identical
+  to E-085's Run B.
+- **Run D NOT GREEN under contention — re-verification
+  duty heads the next tick (E-072/E-085 precedent).**
+  This slice's own Run D attempt collapsed from ~33%
+  with mass environment errors (186 failed, 106 errors,
+  fixture `PermissionError`s across unrelated files;
+  MemAvailable ~1.4 GB, load ~7, fourteen keeper
+  campaigns sharing the VM). No credible failure in it
+  touches this slice's code — the same files passed
+  169/169 in the combined run minutes earlier — but a
+  green Run D is NOT claimed. The next keeper tick
+  re-runs Run D first (for both E-085's and E-086's
+  duties) and records the result here. No README
+  touched; no member code touched; no WYRD or
+  ThoughtForge tree touched.
+- Housekeeping note, recorded honestly: while this
+  entry was first being written, a transient write
+  failure (EPERM under the same contention) truncated
+  this state file to 0 bytes. It was restored
+  byte-identical from the HEAD blob (sha256
+  5dafe3c2…) before this entry was appended — no state
+  was lost.
+- E-086 push: banking commit 38b420b pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check (remote was 60f0258, an ancestor; the
+  push also carried this tick's IN PROGRESS marker
+  c82b6fe) — remote moved 60f0258 → 38b420b, verified
+  via ls-remote (remote head =
+  38b420b98565ac9b387516345a84dbc9f506e964 = local HEAD
+  at push time).
+
+## E-087 — Corruption & recovery drills (DONE, 2026-11-01)
+
+- **First duty discharged — Run D re-verified for E-085 +
+  E-086, near-green, both failures classified, no defect
+  against banked code.** Run D (extras supplied, TMPDIR on
+  the workspace overlay, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e087/gate/runD_reverify_e085_e086.log`):
+  **1500 passed, 2 failed, 20 skipped** in 622.88s. The 2
+  classified from the log: (1) the load-truth live-hub
+  artifact, the known contention class (E-083/E-085/E-086
+  precedent; load ~12 at tick start, ~21 mid-run); (2) the
+  E-057 size-pin test — contamination by THIS tick's own
+  mid-run edits (the docket-122 fix grew the face while
+  the run was in flight; the test re-measures the tree
+  from disk live; re-pinned by this slice's re-measure,
+  below). E-085's and E-086's banked code stands
+  verified as far as this run can say it; a fully clean
+  Run D is still not on record, so the clean-Run-D duty
+  passes forward once more — it heads E-088's tick, now
+  covering E-087's code as well.
+- **The drills** (`docs/architecture/E-087_CORRUPTION_RECOVERY_DRILLS.md`;
+  battery `tests/unit/test_memory_recovery_e087.py`):
+  real injuries, reopened stores, honest answers. A child
+  process SIGKILLed mid-write in two rounds each of fact
+  writes and supersede chains: every committed fact came
+  back whole (integrity `ok`, at most one in-flight row
+  and it complete), and every supersede chain kept
+  exactly one current version with an intact
+  `superseded_by` chain. Fault injection inside write
+  transactions proved all-or-nothing for both
+  `add_memory` and `supersede`. A garbled sidecar degrades
+  fail-closed (facts untouched — word search reads
+  mimir-well's own per-persona truth; meaning search
+  resolves nothing; turns pool to the default persona
+  only); an orphan sidecar `.tmp` is ignored; a garbled
+  mimir file opens the face with that half `unavailable`,
+  reported, never raised, the Brunnr half still serving;
+  a zeroed file re-inits as a NEW empty store (named as
+  such, not a recovery); a dropped FTS index rebuilds at
+  open; a backup restores the backup-time truth exactly
+  and a garbled backup is refused untouched.
+- **THREE BUGS found by the drills and fixed in scope.**
+  (121) mimir-well's `supersede` was TWO commits — a kill
+  between them left both versions current — and a
+  guard-blocked supersede crashed with `TypeError`
+  (`None < 0`; probe-proven before the fix). Now: guard
+  first, then insert + mark in ONE transaction with
+  ownership re-checked inside it; blocked refuses
+  cleanly (None, nothing written, old fact current); the
+  audit row follows the commit and names the superseded
+  id. (122) the face's `_maybe_index` let a sidecar save
+  `OSError` raise AFTER the fact had committed — the
+  caller was told failure about a succeeded write; it
+  now returns the honest note (fact stored, index record
+  unsaved, word search still finds it). (124) **the
+  restore road itself corrupted**: `restore_from` swapped
+  the DB file under two open connections and a live WAL,
+  so the stale log replayed into the restored file —
+  post-backup writes resurrected, backup rows lost,
+  success reported. Now `restore_from` closes every held
+  connection (its own + the audit trail's) before the
+  swap, and `restore_from_backup` removes the replaced
+  file's `-wal`/`-shm` siblings after any copy. The
+  backup drill failed as first written and passes only
+  with the fix in. **Boundary docketed, not fixed —
+  (123)** `add_turn`'s Brunnr commit + sidecar tag save
+  are not one transaction: a death between them leaves
+  the turn untagged, where docket 117 serves it to the
+  default persona only (never a named other persona,
+  never off the machine); the drill pins the exact
+  behaviour and the doc hands it to the E-092 gate.
+- Member verification: mimir-well's backup / repair /
+  core / supersede-isolation / recall files re-run with
+  the fixes — **64 passed, 3 failed**; all 3 failures are
+  wall-clock latency budgets in `TestRecallLatency`
+  (<50 ms / <20 ms recalls) under VM load ~10–21, the
+  contention timing class (an earlier same-tick batch
+  showed the same family: 59 passed, 2 failed). Every
+  backup, repair, supersede and core test passed,
+  including the member's own restore tests with the
+  docket-124 fix in.
+- In-scope re-measure (E-080–E-086 precedent): E-057
+  table re-measured — core 131 files / 918,847 B,
+  mimir-well 59 files / 618,769 B, twelve-member total
+  131,541,718 B, laptop miss unchanged 254,866 B; both
+  published copies updated (E-057 doc + BUDGET BOOK §7)
+  and the E-077 pin re-pinned with attribution.
+- Conformance: battery focal (extras supplied) **18
+  passed**; combined conformance (E-057 table + E-072
+  feed + Part V E-077–E-087 files, 13 files) **187
+  passed, 1 skipped** (the live-WYRD skip, as E-086).
+  Slice gate (logs in `~/workspace/.verify-tmp/ember-e087/gate/`):
+  Run A **1 error, 19 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's battery
+  importorskipping sqlite_vec in the default env);
+  Run B **1321 passed, 7 failed, 33 skipped, 1 warning**
+  — the 6 proven environment failures plus the
+  load-truth artifact, the FAILED families identical to
+  E-086's Run B. No README touched; no vendored code
+  touched; no WYRD or ThoughtForge tree touched.
+- Push record: banking commit 74e93f9 (carrying the
+  IN PROGRESS commit 5457273 ahead of it) pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check — remote moved 25e8d1d → 74e93f9,
+  verified via ls-remote (remote head =
+  74e93f9bfbbaf3cf4278d44f1eabbe3577c5a8d3 = local HEAD
+  at push time).
+
+## E-088 — Long-life soak (DONE, 2026-11-01)
+
+- **First duty discharged — Run D re-verified for E-085 +
+  E-086 + E-087, near-green, the single failure classified,
+  no defect against banked code.** Run D (extras supplied,
+  TMPDIR on the workspace overlay, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e088/gate/runD_firstduty.log`):
+  **1519 passed, 1 failed, 20 skipped, 27 warnings** in
+  565.47s — the closest to clean yet. The one failure is
+  named in the log: the load-truth live-hub artifact
+  (`test_load_truth_e075.py::test_live_mini_run_is_correct`),
+  the known contention class (E-083/E-085/E-086/E-087
+  precedent; load ~6–9; the same test failed standalone
+  under load minutes later, 1 failed / 7 passed). The
+  E-057 size pin PASSED (no mid-run tree edits this time).
+  A fully clean Run D is still not on record, so the
+  clean-Run-D duty passes forward once more — it heads
+  E-089's tick, now covering E-088's code as well.
+- **The soak** (`docs/architecture/E-088_LONG_LIFE_SOAK.md`;
+  battery `tests/unit/test_memory_soak_e088.py`; script +
+  results in `~/workspace/.verify-tmp/ember-e088/`): a
+  simulated year through the real memory face on the
+  TOASTER profile — 365 days × 20 turns = **7,300 turns**,
+  one fact a day (**365**, +12 monthly supersessions =
+  377 rows), 12 restarts, the real diary in chat's shape,
+  acceleration by timestamp placement only. Year total,
+  every store weighed closed: **5,717,556 B (5.45 MiB)**
+  — Brunnr 4,366,336 (591 B/episode) + mimir-well
+  528,384 + sidecar 137,731 (now priced, ~19 B/turn) +
+  diary 685,105 / 365 files. Steady monthly growth
+  446,445 B — under the toaster's 2 MiB monthly ceiling
+  in every month; the year fits the toaster's 24 MiB
+  twelve-month allowance with ~4.4× headroom. **No
+  ceiling moves; no lifecycle rule tightens.** Diary
+  judgement (E-082's open question): 365 files / 0.65
+  MiB — the one-file-per-day shape stands, no action.
+- **Year-end lifecycle**: one pass — decay decayed 78 /
+  "pruned" 287 / reinforced 0, and after it inspect
+  still showed **365 current facts, 12 old, 7,300
+  turns**: floored at importance 1, never deleted
+  (docket 113's honesty at year scale). Word search
+  still served the year (ferry: 47 current at limit 50).
+- **New docket 125 — decay passes compound.** Cadence
+  probe (script + live in the battery): importance 10
+  aged 60 days ends at **1 under two monthly passes vs
+  2 under one pass** — each pass re-applies the fact's
+  full age factor to its already-decayed importance,
+  so a monthly lifecycle cadence floors facts ~twice
+  as fast as the stated 30-day half-life. A semantics
+  choice (watermark vs stated cadence), not fixed in
+  scope; owner: the E-092 Part V gate, beside 112/113.
+- In-scope re-measure (E-080–E-087 precedent): E-057
+  table re-measured — core 131 files / 921,884 B
+  (budgets anchors only), mimir-well unchanged 59 /
+  618,769 B, twelve-member total 131,544,755 B, laptop
+  miss unchanged 254,866 B; both published copies
+  updated (E-057 doc + BUDGET BOOK §7).
+- Conformance: battery focal (extras supplied) **10
+  passed** (+ E-057 file 7 passed in the same run);
+  combined conformance (E-057 table + E-072 feed +
+  Part V E-077–E-088 files, 14 files) **197
+  passed, 1 skipped** (the live-WYRD skip, as E-086/
+  E-087). Slice gate (logs in
+  `~/workspace/.verify-tmp/ember-e088/gate/`): Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical; +1 skip = this slice's battery
+  importorskipping sqlite_vec in the default env);
+  Run B **1321 passed, 7 failed, 34 skipped, 1 warning**
+  — the 6 proven environment failures plus the
+  load-truth artifact, the FAILED families identical to
+  E-087's Run B (first Run B also caught the new year
+  anchors unpublished under E-055's rule; published in
+  the BUDGET BOOK appendix in scope and the gate
+  re-run — that re-run is the one on record). No README touched; no
+  vendored code touched; no member code touched (the
+  cadence probe only read mimir-well's behaviour).
+- E-088 push: banking commit 70f434b pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check — remote moved 1cb0677 → 70f434b,
+  verified via ls-remote (remote head =
+  70f434b1de1729fa24ca983a9ac1ab586dd7cd0f = local HEAD
+  at push time).
+
+## E-089 — Canon-shaped test data only (DONE, 2026-11-01)
+
+- **First duty discharged — and the clean-Run-D question
+  ANSWERED at its root.** Run D (extras supplied, TMPDIR
+  on the workspace overlay, cacheprovider off; log
+  `~/workspace/.verify-tmp/ember-e089/gate/runD_firstduty.log`):
+  **1529 passed, 1 failed, 20 skipped, 27 warnings** in
+  605.30s — the same single load-truth failure. But its
+  standalone re-runs then failed CONSISTENTLY at low load,
+  which contention cannot explain; hand-running the hub
+  stayed up. Proven mechanism (new **docket 126**): the
+  instrument boots the hub with its socket under the
+  caller's workdir; under the campaign's own gate method
+  (pytest tmp_path under the deep overlay TMPDIR) that
+  socket path is **125 bytes — over the 108-byte AF_UNIX
+  limit** — the bind fails, the hub exits rc=1, and
+  E-083–E-088's records misread it as a load artifact
+  (their classifications are corrected in the E-089 doc
+  §4: mechanism proven, contention unproven and no longer
+  needed). Short-TMPDIR re-run of the same test: 8 passed.
+  **Fixed in scope** in `Verdandi/load_truth.py`: when
+  the natural socket path would reach 108 bytes the state
+  dir relocates to a short `vd-lt-` scratch dir under the
+  temp root, removed in the finally after the hub stops;
+  regression-pinned by a new deep-workdir live test in
+  the E-075 battery.
+- **Closing Run D — the first fully clean Run D on
+  record.** The 07:02 tick's closing attempt ended with
+  its log still empty; the 08:02 keeper tick re-ran it
+  (same method; log
+  `~/workspace/.verify-tmp/ember-e089/gate/runD_closing.log`):
+  **1539 passed, 0 failed, 20 skipped, 27 warnings** in
+  836.82s, exit 0. The arithmetic closes exactly:
+  first-duty 1529 + the E-089 battery (8) + the E-075
+  pin (1) + the formerly failing load-truth test itself
+  (1) = 1539. The clean-Run-D duty that headed
+  E-085–E-089 is CLOSED; nothing carries forward.
+  (One crossed/phantom completion notice during this run
+  reported the session finished while the runner was in
+  fact at ~60% — disk truth, the live PID + the log,
+  was used throughout, per the E-076 lesson.)
+- **The audit** (`docs/architecture/E-089_CANON_SHAPED_TEST_DATA.md`;
+  battery `tests/unit/test_canon_test_data_e089.py`): the
+  root `tests/` tree scanned for real companion history.
+  The canon stood already — the ferry/beekeeper/harbour
+  world shared by E-080–E-088, fixture personae censused
+  exactly (ember, sage, ember-2, mabel, default, other,
+  p, p1, saga + the adversarial invalid slugs), the
+  tree's only email-shaped string a synthetic
+  `alice:hunter2@example.com`. **One real-history shape
+  found and fixed:** E-080/E-081/E-082 ran their
+  fabricated facts under a REAL companion identity as
+  fixture persona (35 references) — renamed to the canon
+  persona `ember` (36 lines incl. one comment), semantics
+  unchanged, batteries re-run green (focal set below).
+  The householder's name is CONTROLLED, not forbidden:
+  11 allowlisted files, each a non-fixture use with its
+  reason in the battery (pgvector username shapes incl.
+  the guarded live test, governance needles ×3,
+  volmarr-core system name, lawbook filename); any other
+  test file carrying it now fails the gate.
+  `tests/fixtures/` holds only its README — the promised
+  fixture library was never built; all fixtures live
+  inline where the scanner sees them; the battery pins
+  the directory's contents so additions enter the census
+  loudly (a shared-module refactor was judged churn
+  without a defect; the library question goes to
+  E-193/E-194). Member suites sampled, not swept:
+  mimir-well's own tests use the householder's name as
+  its product trust model does — classified the member's
+  elder house style, NOT rewritten; holding member
+  estates to the root rule is Volmarr's word via Part XI,
+  recorded as an open note.
+- In-scope re-measure (E-080–E-088 precedent): E-057
+  table re-measured — Verdandi 193 files / 17,033,233 B
+  (+1,151, the load_truth fix), core unchanged 131 /
+  921,884 B, twelve-member total 131,545,906 B, laptop
+  miss 256,017 B; both published copies updated (E-057
+  doc + BUDGET BOOK §7).
+- Conformance + gate (logs in
+  `~/workspace/.verify-tmp/ember-e089/gate/`): focal set
+  (E-075 battery incl. the new pin + the three renamed
+  batteries + the E-089 battery) **53 passed**; combined
+  conformance (E-057 table + E-072 feed + Part V
+  E-077–E-089 files, 15 files) **205 passed, 1 skipped**
+  (the live-WYRD skip, as E-086–E-088); Run A **1 error,
+  20 skipped**, exit 2 (docket 1, identical); Run B
+  **1331 passed, 6 failed, 34 skipped, 1 warning** — the
+  6 proven environment failures ONLY: the load-truth
+  artifact is absent from Run B for the first time, the
+  docket-126 fix holding in the default env too.
+- Environment note: a VM-wide write-denial window
+  (~07:23–07:3x EST, the E-052 tempfile-probe EPERM
+  class — python write() calls refused across /tmp and
+  the workspace while shell/file-tool writes worked)
+  interrupted this tick's middle; the two E-082 failures
+  in an early combined run carry that artifact's
+  traceback (tempfile "No usable temporary directory"),
+  not the rename — the rename batteries' clean focal
+  re-run above is the record. No README touched; no
+  vendored code touched; no member code touched (the
+  load_truth fix is the instrument's own file, in
+  Verdandi's tracked tree, re-measured above).
+- E-089 push: banking commit 24fe70e (carrying the
+  IN PROGRESS commit 15c87ff ahead of it) pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check — remote moved 63e7043 → 24fe70e,
+  verified via ls-remote (remote head =
+  24fe70ea832ea1c7be7433a1c026cde3c0590fa7 = local HEAD
+  at push time).
+
+## E-090 — Docs: the memory model for users (plain) + builders (DONE, 2026-11-01)
+
+- **The document** (`docs/architecture/E-090_MEMORY_MODEL.md`;
+  battery `tests/unit/test_memory_model_docs_e090.py`):
+  Part V's built model, documented in one place in two
+  halves. **Part A, plain, for users**: the three kinds
+  of memory (living facts, conversation turns, documents
+  as shared grounding — and no fourth kind); word vs
+  meaning finding with the toaster's stated `"word"`
+  mode; correct-vs-supersede; the four rights (inspect,
+  correct, export, delete — the exact confirmation words
+  `"delete everything"`), with the honest limits stated
+  in the user's own section (docket 119: a forgotten
+  turn is unreachable forever, its bytes not yet
+  physically reclaimed; docket 120: the audit keeps
+  hashes of numbers, never words); persona separation
+  absolute; ageing that floors importance and never
+  deletes (docket 125's compounding stated, owned by
+  the E-092 gate); measured prices (fact 745 B, turn
+  585 B, indexed fact 72,239 B; monthly ceilings
+  2/10/25/100 MiB; E-050's 0.39 MiB reference month;
+  E-088's year at 5,717,556 B); the two neighbours that
+  are not this memory (the session diary — two views,
+  one guarded crossing, retraction run explicitly; the
+  WYRD-shaped export — one-way, TF-145 boundary); and
+  mempalace's status stated as **proposed, not decided**
+  (Volmarr's word, not given; fallback restraints in
+  force; the member untouched). **Part B, for
+  builders**: one face over two bounded engines (the
+  face speaks to mimir-well only through `RunaMemory`;
+  the sidecar as bookkeeping, not a third store;
+  docket 51's one canonical path); opening a face and
+  graceful-offline degradation; the **complete contract
+  surface — 31 public operations** in six groups;
+  index-don't-merge resolved through current truth;
+  the relied-on constants table; the WYRD export's
+  no-invention rules; and the open dockets (108, 112,
+  113, 119, 120, 125). Stated plainly in Part B, not
+  hidden: **chat is not yet rewired to the face** — no
+  code outside `well/memory_face.py` references it; the
+  chat loop still opens Brunnr directly (E-080 §7's
+  record stands).
+- **The battery pins the document against the code**:
+  the operation list is *derived from `MemoryFace`
+  itself* (31 public operations) and every one must be
+  documented — an operation added without a doc row
+  fails this gate; constants, prices, profile index
+  defaults, and ceilings are asserted against the
+  module and `ember.budgets` values; the honest-limit
+  dockets and the proposed-not-decided mempalace status
+  are pinned as needles.
+- **One guard extended, consciously (found by this
+  slice's first combined run, fixed in scope)**: the
+  new battery carries the governance needle "Volmarr's
+  word" for §A9's status pin, and E-089's canon guard
+  refused it, exactly as designed — combined run 1
+  scored 211 passed / 1 failed on precisely that test.
+  The battery was added to the guard's allowlist in
+  `tests/unit/test_canon_test_data_e089.py` as its
+  **twelfth file**, governance-needle reason recorded
+  (the E-089 records' "11-file" figure stands as the
+  truth of E-089's banking; the extension is this
+  slice's act, noted in the E-090 doc). The guard pair
+  re-ran **15 passed**.
+- **E-057 re-measure**: unchanged — this slice touches
+  no member and no `src/` file (docs + tests only), and
+  the E-057 battery inside the combined run re-derived
+  the published table live and passed (core 131 files /
+  921,884 B, twelve-member total 131,545,906 B, laptop
+  miss 256,017 B, as at E-089).
+- Conformance + gate (logs in
+  `~/workspace/.verify-tmp/ember-e090/gate/`): focal
+  battery **7 passed**; combined conformance (E-057
+  table + E-072 feed + Part V E-077–E-090 files,
+  16 files) **212 passed, 1 skipped** (the live-WYRD
+  skip, as E-086–E-089; 205 at E-089 + 7 new, exact);
+  Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical to E-089); Run B **1338 passed, 6 failed,
+  34 skipped, 1 warning** — the 6 proven environment
+  failures ONLY (1331 + 7, exact); Run D (re-run after
+  a service restart killed the first attempt mid-run
+  at ~46% — the log's stall was verified from disk
+  before re-running, no result was claimed from it)
+  **1546 passed, 0 failed, 20 skipped, 27 warnings**,
+  exit 0 — fully clean, second in a row (1539 + 7,
+  exact). No README touched; no code touched (the
+  allowlist edit above is a test-file governance act,
+  recorded); no member or vendored code touched.
+- E-090 push: banking commit b567644 (carrying the
+  IN PROGRESS commit 77c9637 ahead of it) pushed under
+  Volmarr's 2026-10-31 standing go-ahead after fetch +
+  ancestry check — remote moved 5472a85 → b567644,
+  verified via ls-remote (remote head =
+  b567644aed710debc8ee254a9456561bbf5f0f12 = local HEAD
+  at push time).
+
+## E-091 — The verdict's residue: docs marked truthfully (DONE, 2026-11-01)
+
+- **The markings** (record filed at `docs/architecture/E-091_VERDICT_RESIDUE.md`;
+  battery `tests/unit/test_memory_residue_e091.py`): under the E-079
+  fallback (no retirement ruling on record — silence never read as a
+  word), mempalace is marked **bounded** wherever Ember's own living
+  documents presented it otherwise, with the successor named
+  (`MemoryFace`, E-080, over Brunnr + mimir-well):
+  (1) `docs/UNWIRED_INVENTORY.md`'s mempalace row corrected in place —
+  **docket 52 EXECUTED** (the "likely abandoned or archival / content
+  unclear" characterisation, proven stale at E-012 — v3.3.5, 1,712
+  passing — replaced with the bounded truth; the wired=no fact stands;
+  the correction is dated on the file's face, not silent);
+  (2) `docs/yggdrasil/siblings/19_SIBLING_MEMPALACE.md` opens with a
+  SUPERSEDED-IN-PART, BOUNDED banner — the Brunnr-adapter / Bifrǫst
+  sub-backend integration it designs was never built (proven: `src/`
+  carries zero mempalace references; `src/ember/well/brunnr/` holds
+  only sqlite_vec + pgvector) and is superseded by E-079; its open
+  licence question answered (MIT, E-007); body unrewritten as the
+  pre-verdict design record;
+  (3) the corpus's two front doors (`10_SIBLING_MATRIX_OVERVIEW.md`,
+  `docs/yggdrasil/INDEX.md`) carry a MemPalace status note at their
+  heads; their tables stand unrewritten.
+- **The census** (case-insensitive, whole tree, raw list in
+  `~/workspace/.verify-tmp/ember-e091/census-files.txt`): **65 files**
+  outside the member carry the name; the residue doc dispositions
+  every class — dated campaign records stand as evidence (30), the
+  budget book's rows are the measured truth already (E-057 battery
+  re-derives them), the Yggdrasil interior's 18 further files are
+  marked **by reference** through the corpus's front doors (stated
+  openly as this slice's limit, not dressed as a rewrite), the elder
+  codex meta's bare enumeration rides to Part X, pyproject's mentions
+  are E-043's never-bundled exclusion already executed, and the
+  member's own documents are **not** marked — no README is ever
+  touched, and upstream's tree speaks in upstream's voice (the member
+  stands present and unmodified, battery-pinned at 257 tracked files
+  / 59,049,715 B).
+- **One guard extended, consciously**: the new battery carries the
+  governance needle "Volmarr's word", so it joins E-089's canon-guard
+  allowlist as its **thirteenth file**, reason recorded (the E-089 /
+  E-090 figures stand as the truth of their bankings; the extension
+  is this slice's act, noted in the E-091 doc). The guard pair re-ran
+  green inside the combined run. One battery defect found and fixed
+  in scope during focal runs: the first draft asserted "content
+  unclear" absent from the whole inventory — that phrase is also the
+  Hamr row's own business; the assert was scoped to the mempalace row.
+- Conformance + gate (logs in `~/workspace/.verify-tmp/ember-e091/gate/`):
+  focal battery **6 passed**; combined conformance — CORRECTION:
+  the first combined run was launched without the extras on
+  PYTHONPATH, so nine Part V battery files skipped at module
+  level on sqlite_vec: **67 passed, 9 skipped** in that shape;
+  the E-090-shape combined (extras first, 17 files) re-run at the
+  stall's discharge: **218 passed, 1 skipped** (the live-WYRD skip,
+  as E-086–E-090; 212 at E-090 + 6 new, exact);
+  Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical to E-090); Run B **1344 passed, 6 failed, 34 skipped,
+  1 warning** — the 6 proven environment failures ONLY (1338 + 6,
+  exact); Run D **1552 passed, 0 failed, 20 skipped, 27 warnings**,
+  exit 0 — fully clean (1546 at E-090 + 6 new, exact). E-057 re-measure unchanged
+  (docs + tests only; no member, no `src/` file touched). No README
+  touched; no member file touched; no code touched (the allowlist
+  edit is a test-file governance act, recorded).
+- **The stall, discharged (10:22 keeper tick)**: E-091 was built at
+  the 09:12 tick but could not bank — from ~09:42 EST the VM refused
+  every Python-process file-content write with EPERM (Run D attempt 1
+  reached 100% but its tail was corrupted by the block and pytest
+  crashed in its cache writer; no result was claimed), and the 10:12
+  tick's probe found the block still in force. This tick's probe
+  proves it has cleared: a real Python file-content write (write +
+  flush + fsync) reads its bytes back in /tmp, the workspace overlay,
+  and ~, and `os.write` lands 100 bytes in /tmp. Both owed runs were
+  then re-run in their extras shapes with `-p no:cacheprovider`
+  (combined-extras.log, runD-clean.log on disk) and are the counts
+  above. The banking follows in this commit.
+- E-091 push: banking commit 5875b65 (carrying the IN PROGRESS
+  commit 26a2865 and the E-090 push-record commit b144648 ahead of
+  it) pushed under Volmarr's 2026-10-31 standing go-ahead after
+  fetch + ancestry check — remote moved b144648 → 5875b65,
+  verified via ls-remote (remote head =
+  5875b658804f932773c1e86bc4e08d4b2fbfc749 = local HEAD
+  at push time).
+
+## E-092 — Part V gate (DONE, 2026-11-01)
+
+- **Part V gate PASS** — gate filed at
+  `docs/architecture/E-092_PART_V_GATE.md` on the roadmap's own
+  criteria: one memory face live; migration proven; the verdict
+  paper + Volmarr's word (where required) on record. All seven
+  gate criteria (G1–G7) checked in the gate doc §1.
+- **One face live, contract FROZEN at v1**: `MemoryFace`
+  (31 public operations, probed directly this slice and
+  cross-checked name-for-name against E-090's documented
+  surface by an independent read) is declared frozen on
+  E-076's terms — breaking changes are a version bump, never
+  an edit under the v1 name; additions must be documented in
+  E-090's surface in the same change (its battery derives the
+  list from the class). Stated plainly at the gate, not
+  hidden: chat is NOT yet rewired to the face (the chat loop
+  still opens Brunnr directly) — follow-on work, with E-204
+  bound to present it as a named gap if still unbuilt there.
+- **Migration proven** (E-081's proofs re-run inside this
+  gate's combined conformance): survivors stay native —
+  pre-face stores served whole, schemas byte-identical, every
+  content row unchanged; the palace mapping is lossless on
+  fixtures (drawers round-trip through a real Brunnr store,
+  triples field-for-field; closets/embeddings rebuilt as the
+  derived layers they are). No real palace opened; the
+  executing tool is ruling-gated.
+- **The verdict + the word, on record**: E-079's BOUND
+  verdict stands; mempalace retirement is proposed, not
+  decided, and **no ruling is on record** at this gate —
+  the absence itself is filed as the G4 record, with the
+  E-079 fallback in force (optional, non-default,
+  never-bundled, laptop-class only). Silence is never read
+  as a retirement word. E-091's residue markings confirmed
+  as the gate's "docs marked truthfully" line (docket 52
+  executed there); the member stands present and unmodified,
+  battery-pinned at 257 tracked files / 59,049,715 B.
+- **Docket 108 CLOSED in scope**: mimir-well's declarations
+  bounded both ways — `flask>=3.0,<4`,
+  `setuptools>=61.0,<82` — pinned by the gate battery
+  (any mimir-well requirement losing either bound fails it).
+  In-scope re-measure: mimir-well 59 files / 618,776 B
+  (+7 B), twelve-member total 131,545,913 B, laptop miss
+  unchanged 256,017 B; both published copies updated
+  (E-057 doc + BUDGET BOOK §7). E-077's member-size pin
+  re-pinned 618,769 → 618,776 with attribution recorded in
+  that battery (E-078/E-087 precedent): the combined
+  conformance's first run caught the stale pin
+  (225 passed / 1 failed) and the re-run is the gate record.
+- **Docket 125 RULED**: the watermark semantics are the
+  project's law — a decay pass applies only the age accrued
+  since the later of last access / last pass; passes never
+  compound. The member's current full-age-every-pass
+  behaviour (E-088's probe: importance 10 at 60 days ends
+  1 under two passes vs 2 under one) stands as a named
+  defect against the ruled law; implementation (per-fact
+  watermark + the cadence probe as regression fixture)
+  assigned to E-204's presentation as a candidate slice
+  beside docket 112/119's.
+- **Docket 123 weighed and bounded**: add_turn's
+  episode/tag pair is not crash-atomic; a death between
+  them leaves one turn untagged, served to the default
+  persona only — accepted as the v1 boundary, re-weighed
+  at E-204 beside the chat rewiring.
+- **Docket 102 honestly corrected**: E-076 assigned its
+  first review to E-085, but no Part V slice took it up
+  (an independent cross-check of E-077–E-091 found zero
+  mentions). Reviewed at this gate instead: Part V's nerve
+  consumer is pull-shaped (the logger crossing), a typed
+  subscriber remains unbuilt; backstop owner E-204 stands.
+  The same cross-check confirmed docket 111 (FTS sync
+  triggers, fixed E-078) belongs in the closed list — it
+  is recorded in the gate doc §6.
+- **Part V docket accounted whole** (gate doc §6): closed —
+  51, 52, 104, 110, 111, 114–118, 120 (as documented truth),
+  121, 122, 124, 126; fixed here — 108; ruled here — 125,
+  123; carried with owners — 100 (→ E-136), 102 (→ E-204),
+  109 bifrost side (→ Part VIII), 112 + 119 (→ E-204
+  presentation, one candidate slice), 113 member half
+  (→ E-194; face layer closed).
+- **One guard extended, consciously**: the gate battery
+  carries the governance needle "Volmarr's word", so it
+  joins E-089's canon-guard allowlist as its fourteenth
+  file, reason recorded.
+- Conformance + gate (logs in
+  `~/workspace/.verify-tmp/ember-e092/gate/`): focal battery
+  **8 passed**; battery + canon guard **16 passed**;
+  post-re-pin focal set (E-057 + E-077 + E-089 + E-092)
+  **31 passed**; combined Part V conformance (18 files,
+  extras shape) **226 passed, 1 skipped** (the live-WYRD
+  skip, as E-086–E-091); Run A **1 error, 20 skipped**,
+  exit 2 (docket 1, identical); Run B **1352 passed,
+  6 failed, 34 skipped, 1 warning** — the 6 proven
+  environment failures ONLY (1344 at E-091 + 8 new, exact);
+  Run D **1560 passed, 0 failed, 20 skipped, 27 warnings**,
+  exit 0 — fully clean (1552 at E-091 + 8 new, exact).
+  Method note: this tick's first Run B attempt was cut at
+  ~10% by a service restart and re-run whole; the counts
+  above are the re-run's. No README touched.
+- E-092 push: banking commit 624f3ff (carrying the IN PROGRESS
+  commit 0426ea0 and the E-091 push-record commit 0634abe ahead
+  of it) pushed under Volmarr's 2026-10-31 standing go-ahead
+  after fetch + ancestry check — remote moved 0634abe → 624f3ff,
+  verified via ls-remote (remote head =
+  624f3ff02bf071457da2d337a6f224da83a60438 = local HEAD at push
+  time).
+
+## E-093 — Custody law for the whole campaign (DONE, 2026-11-01)
+
+- **The law filed** at `docs/architecture/E-093_CUSTODY_LAW.md`:
+  ten binding rules — credentials live in a Kista (per
+  machine: ai-folder Kista for house credentials, which this
+  campaign never touches; toaster-Kista for Ember's own,
+  bound at E-100); never in configs (references only),
+  never in code, never in chat (a credential in chat is
+  exposed — rotation is the fix), never in logs/diary/
+  context; a credential file is mode 0600 or refused; a
+  passphrase is never a command-line value; fixtures are
+  synthetic and allowlisted; identifiers are not
+  credentials but are custody-sensitive; discovery creates
+  the duty (rule 10). The interim standard until E-100 is
+  the Well resolver's chain (env → keyring → mode-600
+  file, typed failure naming sources, never the value).
+- **Fresh scan, E-013's method at this HEAD** (raw output
+  in `~/workspace/.verify-tmp/ember-e093/`): 3,443 tracked
+  files, 2,991 text-shaped scanned (E-013: 3,242 / 2,754).
+  GitHub tokens 0 (independently re-verified by git grep),
+  JWTs 0, bearer literals 0, `sk-` shapes 0; private-key
+  blocks 7 and AWS shapes 2 — the same classified E-013
+  fixture families; password-bearing URLs 137, the
+  CloakBrowser vendored family plus six classified house
+  files; credential-shaped assignments in code/config 20,
+  all fixtures (the wider key-name net is the battery's
+  from here on); tracked credential-shaped filenames
+  exactly 1 (`.env.example`, documentation only). Verdict:
+  no leakage — E-013's starting fact re-proven.
+- **The scan is armed**: `tests/unit/test_custody_law_e093.py`
+  (7 passed) re-runs the classification on every suite —
+  any new high-confidence shape, unclassified assignment,
+  or house password-URL outside the allowlists fails it;
+  E-187 inherits it as its scanner seed (docket 57's
+  discipline, executed).
+- **Docket 46 DECIDED**: the toaster-Kista's default vault
+  home shall be `~/.ember/kista/` (Ember's own home;
+  `KISTA_DIR` override stands); E-094 builds it. Until
+  then E-011 §5 rule 3 binds (never run unconfigured).
+- **Docket 48 RULED** (the law's first case, rule 9):
+  `kista/references/known-accounts.md` is an identifier
+  ledger (re-verified: no credential value; one API-key
+  prefix — identifies, cannot authenticate). Not a leak;
+  no value may ever be added; the campaign adds no
+  entries; whether it belongs in the repo remains
+  Volmarr's word, unmade on this record; workers treat
+  it as custody-sensitive meanwhile.
+- **Docket 127 NEW + CLOSED in scope**: the Aesir key
+  file was read with no permission check, below the Well
+  standard in the same tree. `AesirFuni.open` now refuses
+  any POSIX mode other than exactly 0600 before reading,
+  naming the mode, never the key; the E-023/E-036 key
+  writers chmod 0600. The fix grew the core +1,009 B —
+  E-057 re-measured (src 131 files / 922,893 B; total
+  131,546,922 B; laptop miss unchanged 256,017 B) and
+  re-pinned in both published copies with attribution.
+- **Docket 128 NEW → E-096**: toaster credstore resolves
+  a vault password from a `--password` command-line value
+  (visible in process lists / shell history), against law
+  rule 7; no campaign work uses that flag meanwhile.
+- **Docket 129 NEW → E-187**: mimir-well's `backup_repo`
+  plain config string is consumed as a git remote URL —
+  a credential-bearing URL there would persist in config
+  and clone remote, against law rule 2; no such value
+  exists in the tree (E-013, re-verified this scan).
+- **One guard extended, consciously**: the E-093 battery
+  carries the governance needle "Volmarr's word" (the
+  docket-48 ruling), joining E-089's allowlist as its
+  fifteenth file, reason recorded there.
+- Gate (logs in `~/workspace/.verify-tmp/ember-e093/`):
+  focal battery **7 passed**; focal + canon guard
+  **15 passed**; E-057 re-pin set **14 passed**; Run A
+  **1 error, 20 skipped**, exit 2 (docket 1, identical);
+  Run B (re-run after the re-pin; the first attempt's 2
+  extra failures were the stale E-057 pins and nothing
+  else) **1359 passed, 6 failed, 34 skipped, 1 warning** —
+  the 6 proven environment failures ONLY (1352 at E-092
+  + 7 new, exact); Run D **1567 passed, 0 failed,
+  20 skipped**, exit 0 — fully clean (1560 at E-092 + 7
+  new, exact). No README touched; no vendored file
+  touched.
+- E-093 push: banking commit 87e34de (carrying the IN PROGRESS
+  commit 2e7dffb and the E-092 push-record commit 2320348 ahead
+  of it) pushed under Volmarr's 2026-10-31 standing go-ahead
+  after fetch + ancestry check — remote moved 624f3ff → 87e34de,
+  verified via ls-remote (remote head =
+  87e34de672e33d61d0b7ccd018910841c82bde0f = local HEAD at push
+  time).
+
+## E-094 — Toaster-Kista mapped (DONE, 2026-11-01)
+
+- **The map filed** at `docs/architecture/E-094_TOASTER_KISTA_MAPPED.md`:
+  the toaster program from its code alone — one file
+  (`kista/scripts/credstore.py`, 2,382 lines), storage
+  (§1: `.vault_key` / `vault.json.enc` / `vault_meta.json`
+  / `config.json` / `backups/`, atomic saves, last-5
+  encrypted auto-backups), crypto (§2: Fernet whole-vault
+  blob, separate mode-0600 key file validated 44-char /
+  32-byte, never regenerated over existing data,
+  self-healing repair from backup — and NO vault
+  passphrase: the defence is file permissions + the OS
+  account boundary, E-095's to judge), format (§3: one
+  JSON vault, 14 entry types with their required fields),
+  surface (§4: the CLI is the only surface — 32
+  subcommands, console script `kista`, no server, no
+  library API; entry-password resolution file → env →
+  command-line value (docket 128) → hidden prompt),
+  test state (§5), and zero consumers in `src/`
+  re-verified (binding is E-100).
+- **Docket 46 CLOSED — built here**: the `KISTA_DIR`
+  fallback default is `~/.ember/kista/` (one line);
+  proven by sandboxed import probes (unset → every
+  vault path under `<home>/.ember/kista/`, import
+  creates nothing; set → the override wins exactly)
+  and a scratch `init` + `status` run whose key and
+  data files land mode 0600. `add-soul`'s two input
+  paths still name the other program's home — that
+  command's subject matter (docket 50 → E-098), not
+  this vault's address, stated in the map §6.
+- **Docket 5 CLOSED in scope**: the member suite's 3
+  failures since E-005 judged a `~/.hermes` copy that
+  does not exist here. `CREDSTORE_SCRIPT` now resolves
+  the in-tree script; judging the real program exposed
+  a stale version expectation (1.3.0 vs the true
+  2.0.0 of `__version__` + pyproject), corrected; the
+  isolated-vault fixture leaked `VAULT_CONFIG` /
+  `BACKUP_DIR` to the real default — both now patched
+  to the scratch vault. Member suite: **146 passed /
+  3 failed → 149 passed / 0 failed** (149 tests, 43
+  classes, one file).
+- **Docket 14 live-reproduced, owner proposed**: a
+  sandboxed-home probe without user site-packages hit
+  the import-time pip install and died as a raw
+  `CalledProcessError` (PEP 668) — the first-run
+  message a non-technical user would meet. Remedy
+  shape proposed to E-096, which must also re-pin
+  `TestSubprocessInstall` consciously (it pins the
+  subprocess-install shape today).
+- **Docket 130 NEW → E-104**: the member's own docs
+  (ARCHITECTURE / ENTRY_TYPES / PHILOSOPHY /
+  SYSTEM_VISION / SKILL.md) still state the old
+  default home (SKILL.md's half is docket 49's
+  ground); `kista/README.md` states it too and stands
+  under the README law — its turn is E-195, owner's
+  hand or word only.
+- **Budget**: the slice's two kista file edits moved
+  the member +98 B — E-057 re-measured (kista 25 files
+  / 2,770,316 B; total 131,547,020 B; laptop miss
+  unchanged 256,017 B) and re-pinned in both published
+  copies with attribution (one historical attribution
+  line briefly caught by the re-pin replace was
+  restored byte-true before banking).
+- Gate (logs in `~/workspace/.verify-tmp/ember-e094/`):
+  focal battery **8 passed**; focal + E-093 + E-089
+  guards **23 passed**; E-057 re-pin set **15 passed**;
+  member suite **149 passed, 0 failed**; Run A
+  **1 error, 20 skipped**, exit 2 (docket 1, identical);
+  Run B **1367 passed, 6 failed, 34 skipped, 1 warning**
+  — the 6 proven environment failures ONLY (1359 at
+  E-093 + 8 new, exact); Run D **1575 passed, 0 failed,
+  20 skipped**, exit 0 — fully clean (1567 at E-093
+  + 8 new, exact; 13m17s under heavy VM contention,
+  load 17 at its peak). No README touched; no vendored
+  file touched; the ai-folder Kista was not accessed.
+- E-094 push: banking commit 048c452 (carrying the IN PROGRESS
+  commit 401d936 ahead of it) pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check — remote moved
+  8152029 → 048c452, verified via ls-remote (remote head =
+  048c45273cbf331cf4499cb8d794cf26b6e83e33 = local HEAD at push
+  time).
+
+
+## E-095 — Toaster-Kista threat model (DONE, 2026-11-01)
+
+- Threat model filed at `docs/architecture/E-095_TOASTER_KISTA_THREAT_MODEL.md`:
+  attackers A1–A7 sized for tiny machines (no TPM, removable
+  storage, shared household accounts, non-admin owner), every
+  load-bearing claim proven by sandboxed probes against a
+  scratch vault holding one synthetic entry (raw log
+  `~/workspace/.verify-tmp/ember-e095/probes.log`).
+- **Defended, proven**: a lone encrypted blob yields nothing
+  (copied `vault.json.enc` alone → stated refusal, exit 1, no
+  key minted over data); tampering is detected (Fernet HMAC)
+  and healed from the newest valid auto-backup; key/vault/
+  config/auto-backup files stand mode 0600; generated
+  passwords use the OS CSPRNG (`secrets.choice`); a corrupt
+  key file is refused with "data intact — do not regenerate".
+- **Not defended, stated never implied**: the folder copy is
+  total loss (key beside vault, no passphrase — a copied
+  vault directory read back in full in probe, the central
+  finding for stolen-device / pulled-SD / synced-home
+  losses); the same OS account (no unlock gate at all; `get`
+  prints whole entries to stdout); key loss = permanent
+  loss; **rollback** — an older valid blob replaced over
+  the vault silently resurrected a rotated-away password,
+  no warning (freshness is checked nowhere); github-backup
+  accumulates timestamped blobs in git history forever,
+  all decryptable under one future key leak, repo privacy
+  never checked or warned; plaintext `backup` / silent
+  plaintext `restore` shapes; docket 128's command-line
+  value exposure (already E-096's).
+- **Requirement → E-096 (judged here)**: a passphrase must
+  wrap the key so a copied folder yields nothing; priced
+  as affordable (one-time KDF at unlock; E-103 prices what
+  E-096 builds). E-096 also carries dockets 14 + 128 and
+  the honest recovery story. **Interim claim** filed word
+  for word and binding on Ember docs until E-096 lands:
+  encrypted vault file, protected from other accounts and
+  from a lone vault file — NOT against device/folder loss,
+  and no doc may imply otherwise.
+- **Dockets 131 + 132 CLOSED in scope (built here)**:
+  measured at opening under this VM's umask 0007 — vault
+  directory 770 (program never chose a mode), plaintext
+  `vault_meta.json` 660, plaintext backup output 660.
+  `_ensure_dir` now sets the vault directory 0700
+  (failure swallowed like `_chmod_600`, no platform
+  regresses); every save chmods the meta 0600; the plain
+  backup branch chmods its output 0600. Probe-verified
+  after: 700 / 600 / 600.
+- **Dockets NEW**: 133 → E-102 (rollback/freshness; plus
+  the battery-caught wrinkle that auto-backup filenames
+  are second-resolution, so same-second saves share one
+  backup name and "last five states" can be fewer than
+  five distinct states); 134 → E-100 (no inter-process
+  lock, one shared predictable temp name; E-102 drills);
+  135 → E-101 (github-backup history + repo privacy);
+  136 → E-187 (chmod-no-op platforms: the 0600 promise
+  silently rests on profile ACLs, unstated by the program).
+- **Budget**: credstore +503 B — E-057 re-measured (kista
+  25 files / 2,770,819 B; total 131,547,523 B; laptop miss
+  unchanged 256,017 B), re-pinned in both published copies
+  with an appended attribution line (the E-094 historical
+  line restored byte-true after the replace touched it).
+- Gate (logs in `~/workspace/.verify-tmp/ember-e095/`):
+  focal battery **6 passed** (doc pins + code shapes +
+  mode / folder-copy / blob-alone / rollback probes);
+  focal set (E-095 + E-094 + E-057 + E-093 + E-089)
+  **36 passed**; member suite **149 passed, 0 failed**;
+  Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical); Run B **1373 passed, 6 failed, 20 skipped**
+  — the 6 proven environment failures ONLY (1367 at
+  E-094 + 6 new, exact); Run D **1581 passed, 0 failed,
+  20 skipped**, exit 0 — fully clean (1575 at E-094 + 6
+  new, exact). No README touched; no vendored file
+  touched; the ai-folder Kista was not accessed.
+- E-095 push: banking commit 2ef9385 (carrying the IN PROGRESS
+  commit 47e162f ahead of it) pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check — remote moved
+  18ef49b → 2ef9385, verified via ls-remote (remote head =
+  2ef9385978e38af637af077df828f57c4e7d3514 = local HEAD at push
+  time).
+
+## E-096 — The unlock experience for normal folks (DONE, 2026-11-01)
+
+- Slice record filed at `docs/architecture/E-096_UNLOCK_EXPERIENCE.md`:
+  E-095's judged requirement built — the vault key wrapped
+  under a passphrase — with the recovery story stated
+  honestly, dockets 14 and 128 closed in scope, every claim
+  proven by sandboxed probes against scratch vaults holding
+  one synthetic entry (raw logs
+  `~/workspace/.verify-tmp/ember-e096/probes.log` +
+  `probes2.log`). The ai-folder Kista was not accessed.
+- **The wrapping shape**: the key file may now hold a small
+  JSON document (`kista_key_wrap: 1`): random 16-byte salt,
+  scrypt parameters (n=16384, r=8, p=1, `hashlib.scrypt`,
+  standard library only — no new dependency), and the vault
+  key Fernet-encrypted under the derived key. The vault key
+  itself never changes across set / change / remove, so
+  entries, auto-backups, and exports are untouched.
+  Unlocking reads the passphrase only from a hidden
+  terminal prompt or `KISTA_PASSPHRASE` — never a
+  command-line shape — caches it in process memory only,
+  allows three interactive tries, and a wrong passphrase
+  fails before any vault data, healing, or regeneration
+  road is touched: the wrapped file is left as it was.
+- **Proven by probe** (copied protected folder): no
+  passphrase → exit 1, one plain paragraph, no data; wrong
+  passphrase → exit 1, "did not unlock", no data; right
+  passphrase → the entry reads back whole. Entries added
+  before wrapping read identically after wrapping and
+  after `remove-passphrase` (consequence printed before
+  its confirmation). A 5-character passphrase is refused,
+  vault unchanged. Wrapped key file stands mode 0600.
+- **The unwrapped default stays, and now speaks**: a vault
+  with no passphrase set opens as before, but `init`
+  prints the consequence + the `set-passphrase` road +
+  the recovery truth on creation, and `status` reports
+  SET / NOT set with the consequence in words either way.
+- **The recovery story**: no reset, no recovery copy, no
+  back door — stated by the program before setting (its
+  opening words), at init, and after three failed tries
+  ("the protection working as promised"). A forgotten
+  passphrase loses the road in, never the file: remember
+  it later and everything opens as it was. E-101's
+  carried file is where a separate recovery copy could
+  one day live; no Ember doc may imply one exists today.
+  The E-095 interim claim is superseded for protected
+  vaults by the claim in the slice record §2.
+- **Docket 14 CLOSED**: the import-time installer
+  (network install at first import; raw CalledProcessError
+  death on PEP 668, live-reproduced at E-094) is removed
+  entirely — a missing `cryptography` package is one
+  plain message ("nothing was changed, and your vault —
+  if you have one — is untouched") and a clean exit.
+  The member suite's TestSubprocessInstall is re-pinned
+  consciously to pin exactly that (no os.system, no
+  installer invocation, the message present).
+- **Docket 128 CLOSED**: `--password` values on add /
+  update are still honoured, but at the moment of use the
+  program prints a loud plain warning naming the
+  process-list and shell-history exposure and the safer
+  shapes (--password-file, --password-env, hidden
+  prompt); both help texts now say "discouraged" with
+  the reason. Probe: the warning fires, the update lands.
+- **Batteries re-pinned consciously, with attribution**:
+  E-094's mapped surface 32 → 34 subcommands
+  (set-passphrase, remove-passphrase — its record stands
+  as written); E-095's "no derivation anywhere" pin
+  inverted (the absence was E-095's requirement to this
+  slice; its folder-copy probe stands for the unwrapped
+  default, whose consequence is now spoken). One
+  interim focal run showed E-089's two name-guard tests
+  failing while a second suite ran concurrently in the
+  same shell command; isolated and focal-set re-runs
+  pass clean, and Runs B/D below contain E-089 green —
+  recorded here as a contention artifact, not a defect.
+- **Budget**: credstore + member-test growth — E-057
+  re-measured (kista 25 files / 2,784,538 B; total
+  131,561,242 B; laptop miss unchanged 256,017 B),
+  re-pinned in both published copies with an appended
+  attribution line.
+- Gate (logs in `~/workspace/.verify-tmp/ember-e096/`):
+  focal battery **10 passed**; focal set (E-096 + E-095 +
+  E-094 + E-057 + E-093 + E-089) **46 passed**; member
+  suite **151 passed, 0 failed** (149 at E-095 + the
+  re-pinned install class's growth, runner-counted);
+  Run A **1 error, 20 skipped**, exit 2 (docket 1,
+  identical); Run B **1383 passed, 6 failed, 34 skipped**
+  — the 6 proven environment failures ONLY, name-for-name
+  E-095's set (1373 at E-095 + 10 new, exact); Run D
+  **1591 passed, 0 failed, 7 skipped**, exit 0 — fully
+  clean (1581 at E-095 + 10 new, exact; the extras target
+  was rebuilt fresh this slice — sqlite-vec + psycopg[binary]
+  + pyyaml at current versions — so its skip shape differs
+  from E-095's older target while failures are zero in
+  both). No README touched; no vendored file touched.
+- E-096 push: banking commit d929b32 (carrying the IN PROGRESS
+  commit 9bdb92c ahead of it) pushed under Volmarr's 2026-10-31
+  standing go-ahead after fetch + ancestry check — remote moved
+  b41d8b2 → d929b32, verified via ls-remote (remote head =
+  d929b3273dcd8bac4f1b9c8db56722242c23a2bb = local HEAD at push
+  time).
+
+## E-098 — Entry kinds: the toaster set (DONE, 2026-11-01)
+
+- Slice record filed at `docs/architecture/E-098_ENTRY_KINDS.md`:
+  the 14 kinds partitioned in code into three sets the
+  focal battery derives and proves exact — the TOASTER
+  set (credential/passwords, apikey/tokens, url/URLs,
+  note/notes — the roadmap's four plain words; E-100
+  binds credential + apikey, E-104 docs are written
+  against these four only), the KEPT kinds (totp,
+  license, sshkey, certificate, identity —
+  credential-family, working and tested, kept because
+  removing a kind strands its entries; kept ≠
+  promised), and the OTHER ROAD's kinds (astrology,
+  character-sheet, rune-reading, tarot-reading,
+  markdown — an agent's life-records; the ai-folder
+  Kista's wider ambitions — states, prompts, habits —
+  recorded from the roadmap + the in-tree snapshot as
+  ITS road, RECORDED not measured, that side never
+  accessed, not silently merged). A NEW entry of an
+  other-road kind now prints a plain notice at the
+  moment of the add (kept exactly as given, nothing
+  merged); custody of existing entries stays silent.
+  Raw probe logs in `~/workspace/.verify-tmp/ember-e098/`.
+- Docket 50 CLOSED: add-soul and add-cron-backup
+  judged the other road's — both stay working, both
+  now announce themselves in the same words;
+  github-backup judged NOT an entry-kind question
+  (a backup road — E-101's, with docket 135 standing).
+- Docket 137 NEW → CLOSED in scope (dead add roads,
+  found by this slice's probing; the member suite
+  never exercised the v2.0 kinds): (a) the general
+  `add` parser defined none of the v2.0 fields, so
+  `add --type character-sheet/rune-reading/
+  tarot-reading` could never satisfy their required
+  fields and astrology could carry only its sign —
+  the general parser now mirrors the shortcuts'
+  attribute names exactly; (b) NO road could add
+  markdown (the general --title/--content landed on
+  attributes the handler never read; the shortcut
+  had no content flag that reached the entry) — the
+  handler now reads both roads' names as cmd_update
+  already did, and add-markdown gained --content;
+  (c) add-url, advertised in the program's own usage
+  text since the import, had no parser, no
+  _add_type_args branch, and no entry in any of the
+  three shortcut maps — built whole; the surface
+  grows 34 → 35 and E-094's battery is re-pinned
+  consciously with attribution (E-097's record of
+  34 stands, true of its tree); (d) add-soul stored
+  its backups under a mixed-case key
+  (soul-backup-SOUL) that the lowercased
+  get/update/remove lookups could never reach — new
+  backups key lowercase like every other entry, and
+  _load_vault normalises legacy mixed-case keys on
+  load (the entry's stored name healed with the key,
+  persisted on next save; no add road can mint two
+  names differing only by case, so no merge is
+  possible). All 14 kinds proven addable on both
+  roads by probe: 35 commands, 35 exit 0, the notice
+  firing exactly 12 times (5 other-road kinds × 2
+  roads + add-soul + add-cron-backup) and nowhere
+  else; custody (get/list) silent.
+- Budget: E-057 re-measured (kista 25 / 2,805,999 B;
+  total 131,582,703 B; laptop miss unchanged
+  256,017 B), re-pinned in both published copies
+  with an appended attribution line.
+- Gate (logs in `~/workspace/.verify-tmp/ember-e098/`):
+  focal battery 13 passed; focal set (E-098 + E-097 +
+  E-096 + E-095 + E-094 + E-093 + E-089 + E-057)
+  72 passed (an early delivery reported 73; the
+  on-disk log's 72 is the recorded count); member
+  suite 149 passed / 0 failed; Run A 1 error /
+  20 skipped, exit 2 (docket 1, identical); Run B
+  1409 passed, 6 failed (the proven environment
+  set only, name-for-name E-097's; 1396 at E-097
+  + 13 new, exact), 34 skipped; Run D 1617 passed,
+  0 failed, 7 skipped, exit 0 — fully clean (1604
+  at E-097 + 13 new, exact). No README touched; no
+  vendored file touched; the ai-folder Kista was
+  not accessed.
+- E-098 push: banking commit 47685dc (carrying the IN
+  PROGRESS commit 6ad5680 and the E-097 verification
+  commit d869437 ahead of it) pushed under Volmarr's
+  2026-10-31 standing go-ahead after fetch + ancestry
+  check — remote moved d869437 → 47685dc, verified via
+  ls-remote (remote head =
+  47685dc5a911dc5b648edf0d5abb56c299ff7077 = local HEAD
+  at push time).

@@ -28,6 +28,7 @@ This IS self-awareness, implemented as routing.
 Usage:
   Serve hub:     python3 nervous_system.py serve
   Publish:       python3 nervous_system.py publish <event_type> '<json_data>'
+  Stimulus:      python3 nervous_system.py stimulus <name> '<json>' <origin> <channel>
   Recent events: python3 nervous_system.py recent [count]
   Subscribe:     python3 nervous_system.py subscribe
   Status:        python3 nervous_system.py status
@@ -46,7 +47,20 @@ from collections import deque
 from pathlib import Path
 from datetime import datetime, timezone
 
-STATE_DIR = Path.home() / '.hermes' / 'state'
+def _resolve_state_dir() -> Path:
+    """Standalone state-dir law (E-073, stated in
+    Verdandi/standalone.py and carried inline here because
+    this module's deployed form is a lone file):
+    VERDANDI_HOME, when set, names the hub's state dir
+    directly; otherwise the hub lives at ~/.hermes/state,
+    exactly as every existing consumer already expects."""
+    override = os.environ.get("VERDANDI_HOME")
+    if override:
+        return Path(override)
+    return Path.home() / '.hermes' / 'state'
+
+
+STATE_DIR = _resolve_state_dir()
 SOCKET_PATH = STATE_DIR / 'runa.sock'
 FEED_PATH = STATE_DIR / 'nerve_feed.jsonl'
 PID_PATH = STATE_DIR / 'nervous_system.pid'
@@ -142,15 +156,91 @@ def _rotate_feed_if_needed():
         log_msg(f"Feed rotation failed: {e}")
 
 
+# Inline copy of Verdandi/backpressure.py's tier table
+# (E-070), for the same deployed-file reason as the nerve-
+# health copy below: this file is loaded file-by-file and
+# cannot import the canonical module. The E-070
+# conformance suite pins this table equal to
+# backpressure.PROTECTED_TYPES / HIGH_TYPES / NORMAL_TYPES
+# / LOW_TYPES / LOW_PREFIXES.
+_BP_PROTECTED = ("heartbeat_pulse", "heartbeat_state_change")
+_BP_HIGH = (
+    "conv_start", "conv_end",
+    "ember_session", "ember_turn",
+    "hermes.session.started", "hermes.session.ended",
+    "hermes.turn.completed", "hermes.turn.failed",
+    "hermes.turn.interrupted", "hermes.tool.failed",
+)
+_BP_NORMAL = (
+    "conv_event", "conv_update",
+    "hermes.tool.started", "hermes.tool.completed",
+    "runa_reward", "runa_negative", "push_reward",
+)
+_BP_LOW_PREFIXES = ("event:", "stimulation:", "thought:", "location:")
+_BP_LOW = ("orgasm", "ping")
+
+
+def _backpressure_tier(event) -> int:
+    """The E-070 shedding tier of an event in this buffer."""
+    name = None
+    if isinstance(event, dict):
+        for key in ("type", "event_type", "event"):
+            value = event.get(key)
+            if isinstance(value, str) and value:
+                name = value
+                break
+    if name is None:
+        return 2
+    if name in _BP_PROTECTED:
+        return 0
+    if name in _BP_HIGH:
+        return 1
+    if name in _BP_NORMAL:
+        return 2
+    if name in _BP_LOW or any(name.startswith(p) for p in _BP_LOW_PREFIXES):
+        return 3
+    return 2
+
+
 class RingBuffer:
-    """Fixed-size in-memory buffer for recent events. O(1) append, O(N) retrieve last N."""
+    """Fixed-size in-memory buffer for recent events.
+
+    O(1) append until full; at capacity the buffer sheds
+    by the E-070 backpressure rule (lowest tier, oldest
+    first; an incoming event worse than everything kept
+    is shed itself) instead of the deque's blind oldest-
+    first eviction. shed_count / protected_shed_count
+    are the buffer's shedding record, never reset.
+    """
 
     def __init__(self, maxlen: int = RING_BUFFER_SIZE):
-        self._buf = deque(maxlen=maxlen)
+        self._buf = deque(maxlen=None)
         self._maxlen = maxlen
+        self.shed_count = 0
+        self.protected_shed_count = 0
 
     def append(self, event: dict):
-        self._buf.append(event)
+        if len(self._buf) < self._maxlen:
+            self._buf.append(event)
+            return
+        incoming_tier = _backpressure_tier(event)
+        items = list(self._buf)
+        victim_index = max(
+            range(len(items)),
+            key=lambda i: (_backpressure_tier(items[i]), -i),
+        )
+        victim_tier = _backpressure_tier(items[victim_index])
+        if incoming_tier > victim_tier:
+            self.shed_count += 1
+            if incoming_tier == 0:
+                self.protected_shed_count += 1
+            return
+        victim = items.pop(victim_index)
+        self.shed_count += 1
+        if victim_tier == 0:
+            self.protected_shed_count += 1
+        items.append(event)
+        self._buf = deque(items, maxlen=None)
 
     def recent(self, count: int = 20) -> list:
         items = list(self._buf)
@@ -446,6 +536,10 @@ def publish_event_sync(event_type: str, data: dict = None, source: str = None):
         data = {}
 
     event = {
+        # Contract version (event_contract.CONTRACT_VERSION, E-061).
+        # A literal, not an import: this file is deployed and loaded
+        # standalone, file-by-file, from ~/.hermes/state.
+        'v': 1,
         'type': event_type,
         'data': data,
     }
@@ -484,6 +578,71 @@ def publish_event_sync(event_type: str, data: dict = None, source: str = None):
                 s.close()
             except Exception:
                 pass
+
+
+# ── Stimuli entrance (E-064) ────────────────────────────────
+# External events enter as typed stimuli with provenance
+# (Verdandi/stimuli.py, STIMULI_VERSION 1). The literals below
+# are plain literals, not imports, for the same deployed-
+# standalone reason as the contract version above; the E-064
+# conformance tests pin them equal to stimuli.py's registry.
+_STIMULUS_KINDS = ('time', 'sensor', 'message')
+_STIMULUS_CHANNELS = ('timer', 'cron', 'check', 'signal', 'cli', 'log', 'direct')
+_STIMULUS_SPECS = {
+    'time.tick': ('time', 'timer'),
+    'time.schedule': ('time', 'cron'),
+    'sensor.signal': ('sensor', 'signal'),
+    'message.operator': ('message', 'cli'),
+    'message.conversation': ('message', 'log'),
+    'message.mood_input': ('message', 'direct'),
+}
+_STIMULUS_PATTERNS = {
+    'sensor.check:': ('sensor', 'check'),
+}
+
+
+def _stimulus_spec_for(name):
+    if name in _STIMULUS_SPECS:
+        return _STIMULUS_SPECS[name]
+    for prefix, spec in _STIMULUS_PATTERNS.items():
+        if isinstance(name, str) and name.startswith(prefix):
+            return spec
+    return None
+
+
+def publish_stimulus_sync(name: str, payload: dict = None, origin: str = None, channel: str = None):
+    """Publish an external stimulus, typed and provenanced (E-064).
+
+    A stimulus without valid provenance does NOT enter: this
+    returns {'nerve_type': 'error', 'error': ...} and publishes
+    nothing — no hub write, no feed fallback. A valid stimulus
+    is published as the canonical event type
+    'stimulus:<name>' whose data carries the payload and the
+    full provenance, with source = the provenance origin.
+    """
+    if payload is None:
+        payload = {}
+    spec = _stimulus_spec_for(name)
+    if spec is None:
+        return {'nerve_type': 'error', 'error': f'unregistered stimulus name: {name!r}'}
+    kind, expected_channel = spec
+    if kind not in _STIMULUS_KINDS:
+        return {'nerve_type': 'error', 'error': f'unknown stimulus kind: {kind!r}'}
+    if not isinstance(payload, dict):
+        return {'nerve_type': 'error', 'error': 'stimulus payload must be a dict'}
+    if not isinstance(origin, str) or not origin.strip():
+        return {'nerve_type': 'error', 'error': 'stimulus provenance origin must be a non-empty string'}
+    if channel not in _STIMULUS_CHANNELS:
+        return {'nerve_type': 'error', 'error': f'stimulus provenance channel must be one of {sorted(_STIMULUS_CHANNELS)}'}
+    if channel != expected_channel:
+        return {'nerve_type': 'error', 'error': f'stimulus {name!r} enters by channel {expected_channel!r}, not {channel!r}'}
+    provenance = {
+        'origin': origin,
+        'channel': channel,
+        'at': datetime.now(timezone.utc).isoformat(),
+    }
+    data = {'kind': kind, 'name': name, 'payload': payload, 'provenance': provenance}
+    return publish_event_sync('stimulus:' + name, data, origin)
 
 
 def get_recent_events(count: int = 20) -> list:
@@ -533,6 +692,64 @@ def get_recent_events(count: int = 20) -> list:
     return events[-count:]
 
 
+def ping_hub(timeout: float = 2.0) -> bool:
+    """Probe the hub with the nerve_type ping CONTROL message.
+
+    E-066 (docket 96): a status probe must never become
+    traffic. This sends {'nerve_type': 'ping'} — protocol,
+    not an event: the hub replies pong, nothing is stamped,
+    nothing is appended to the feed, nothing is broadcast.
+    (get_status previously probed by publishing a real
+    event of type 'ping', so every status check landed in
+    the feed as traffic.) Returns True only on a pong reply.
+    """
+    try:
+        import socket as sock_mod
+        s = sock_mod.socket(sock_mod.AF_UNIX, sock_mod.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect(str(SOCKET_PATH))
+        s.sendall(json.dumps({'nerve_type': 'ping'}).encode() + b'\n')
+        response = s.recv(4096)
+        s.close()
+        resp = json.loads(response.decode().strip())
+        return resp.get('nerve_type') == 'pong'
+    except Exception:
+        return False
+
+
+# ── Nerve-health classification (E-066) ─────────────────────
+# Inline copy of Verdandi/nerve_health.py's classification,
+# in the deployed-standalone literal pattern (E-061/E-064):
+# this file is loaded alone from ~/.hermes/state, so the
+# classifier travels as plain code here; the E-066
+# conformance tests pin this function's verdicts equal to
+# nerve_health.classify_nerve_health on the same matrix.
+def _classify_nerve_health(obs: dict) -> str:
+    """healthy / degraded / stuck / dead / absent, from facts."""
+    warnings = []
+    if obs.get('feed_exists'):
+        size = obs.get('feed_size_bytes')
+        maxb = obs.get('feed_max_bytes') or 0
+        if size is not None and maxb and size >= 0.8 * maxb:
+            warnings.append('feed near rotation')
+    elif obs.get('state_dir_exists') or obs.get('socket_exists'):
+        warnings.append('feed missing')
+    if obs.get('log_writable') is False:
+        warnings.append('log not writable')
+    if obs.get('pid_file_exists') and obs.get('pid_alive') is False:
+        return 'dead'
+    if obs.get('ping_responded') is False and (
+            obs.get('socket_exists') or obs.get('pid_alive') is True):
+        return 'stuck'
+    if obs.get('pid_alive') is True and not obs.get('socket_exists'):
+        return 'stuck'
+    if not obs.get('socket_exists') and obs.get('pid_alive') is not True:
+        return 'absent'
+    if obs.get('ping_responded') is True:
+        return 'degraded' if warnings else 'healthy'
+    return 'degraded'
+
+
 def cmd_healthcheck():
     """Comprehensive health check: verify socket, feed, service are all healthy."""
     issues = []
@@ -547,22 +764,12 @@ def cmd_healthcheck():
     # 2. Check socket file
     if SOCKET_PATH.exists():
         ok_count += 1
-        # Verify socket is responsive
-        try:
-            import socket as sock_mod
-            s = sock_mod.socket(sock_mod.AF_UNIX, sock_mod.SOCK_STREAM)
-            s.settimeout(2.0)
-            s.connect(str(SOCKET_PATH))
-            s.sendall(json.dumps({'nerve_type': 'ping'}).encode() + b'\n')
-            response = s.recv(4096)
-            s.close()
-            resp = json.loads(response.decode().strip())
-            if resp.get('nerve_type') == 'pong':
-                ok_count += 1
-            else:
-                issues.append(f"Socket responsive but unexpected reply: {resp.get('nerve_type')}")
-        except Exception as e:
-            issues.append(f"Socket exists but not responsive: {e}")
+        # Verify socket is responsive — the control ping
+        # (E-066: ping_hub, never a published event).
+        if ping_hub():
+            ok_count += 1
+        else:
+            issues.append("Socket exists but not responsive: no pong to control ping (hub stuck?)")
     else:
         issues.append("Socket file missing (hub not running)")
 
@@ -659,15 +866,37 @@ def get_status() -> dict:
                 if line.strip():
                     status['feed_events'] += 1
 
-    # Try ping
+    # Probe responsiveness with the control ping — never a
+    # published event (E-066, docket 96 CLOSED: the old code
+    # published a real 'ping' event into the feed on every
+    # status check).
+    status['hub_responsive'] = ping_hub() if status['socket_exists'] else False
+
+    # Nerve-health classification (E-066): the hub's state
+    # named from the same facts, so a stuck or dead hub is
+    # reported as such — never as merely "not responsive".
     try:
-        result = publish_event_sync('ping', {}, 'status_check')
-        if result.get('nerve_type') == 'ack':
-            status['hub_responsive'] = True
-        elif result.get('nerve_type') == 'pong':
-            status['hub_responsive'] = True
+        log_writable = None
+        try:
+            with open(LOG_PATH, 'a') as f:
+                f.write('')
+            log_writable = True
+        except OSError:
+            log_writable = False
+        status['nerve_health'] = _classify_nerve_health({
+            'state_dir_exists': STATE_DIR.exists(),
+            'socket_exists': status['socket_exists'],
+            'pid_file_exists': PID_PATH.exists(),
+            'pid_alive': (True if status['hub_running'] else
+                          (False if status['pid'] is not None else None)),
+            'ping_responded': status['hub_responsive'] if status['socket_exists'] else None,
+            'feed_exists': status['feed_exists'],
+            'feed_size_bytes': status['feed_size_bytes'] if status['feed_exists'] else None,
+            'feed_max_bytes': MAX_FEED_BYTES,
+            'log_writable': log_writable,
+        })
     except Exception:
-        status['hub_responsive'] = False
+        status['nerve_health'] = None
 
     return status
 
@@ -737,6 +966,31 @@ def cmd_publish(args):
         print(f"📤 Result: {json.dumps(result, indent=2)}")
 
 
+def cmd_stimulus(args):
+    """CLI: publish a typed stimulus with provenance (E-064)."""
+    if len(args) < 4:
+        print("Usage: python3 nervous_system.py stimulus <name> '<json_payload>' <origin> <channel>")
+        print("Example: python3 nervous_system.py stimulus message.operator '{\"text\": \"hello\"}' operator_jane cli")
+        sys.exit(2)
+    name = args[0]
+    try:
+        payload = json.loads(args[1])
+    except json.JSONDecodeError:
+        print("❌ Stimulus payload must be a JSON object")
+        sys.exit(2)
+    result = publish_stimulus_sync(name, payload, args[2], args[3])
+    if result.get('nerve_type') == 'error':
+        print(f"❌ Stimulus rejected — nothing published: {result.get('error')}")
+        sys.exit(1)
+    seq = result.get('seq', '?')
+    if result.get('nerve_type') == 'ack':
+        print(f"✅ Stimulus #{seq} published ({name} from {args[2]} via {args[3]})")
+    elif result.get('nerve_type') == 'fallback':
+        print(f"⚠️  Hub offline — stimulus written to feed directly ({name})")
+    else:
+        print(f"📤 Result: {json.dumps(result, indent=2)}")
+
+
 def cmd_recent(args):
     """CLI: show recent events."""
     count = int(args[0]) if args else 20
@@ -768,6 +1022,33 @@ def cmd_status():
     print(f"   Feed: {'✅' if status['feed_exists'] else '❌'} ({status['feed_events']} events, {status['feed_size_bytes']} bytes)")
     if status.get('hub_responsive') is not None:
         print(f"   Responsive: {'✅' if status['hub_responsive'] else '❌'}")
+    if status.get('nerve_health'):
+        print(f"   Nerve health: {status['nerve_health']}")
+
+
+def _pid_alive(pid):
+    """True only if *pid* names a live, non-zombie process.
+
+    os.kill(pid, 0) alone answers True for a zombie — a hub
+    killed by SIGTERM whose parent has not reaped it yet —
+    which made `stop` report "could not be killed" for a hub
+    that was in fact dead (docket 106, closed at E-076). A
+    zombie is dead: its /proc state says so. Where /proc is
+    absent, the kill probe's answer stands.
+    """
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    try:
+        with open(f"/proc/{pid}/stat", "rb") as fh:
+            # state is the first field after the (parenthesised) comm
+            state = fh.read().rsplit(b")", 1)[1].split()[0]
+        return state != b"Z"
+    except (OSError, IndexError):
+        return True
 
 
 def cmd_stop():
@@ -786,9 +1067,7 @@ def cmd_stop():
         # Wait up to 5 seconds for process to exit
         for i in range(5):
             time.sleep(1)
-            try:
-                os.kill(pid, 0)
-            except ProcessLookupError:
+            if not _pid_alive(pid):
                 print("✅ Hub stopped gracefully")
                 PID_PATH.unlink(missing_ok=True)
                 return
@@ -797,10 +1076,9 @@ def cmd_stop():
         print("⚠️  Process still running after 5s, sending SIGKILL...")
         os.kill(pid, signal.SIGKILL)
         time.sleep(1)
-        try:
-            os.kill(pid, 0)
+        if _pid_alive(pid):
             print("❌ Process could not be killed")
-        except ProcessLookupError:
+        else:
             print("✅ Hub killed (SIGKILL)")
             PID_PATH.unlink(missing_ok=True)
     except ProcessLookupError:
@@ -827,6 +1105,8 @@ def main():
             # Graceful shutdown handled inside serve()
     elif command == 'publish':
         cmd_publish(args)
+    elif command == 'stimulus':
+        cmd_stimulus(args)
     elif command == 'recent':
         cmd_recent(args)
     elif command == 'subscribe':
@@ -840,7 +1120,7 @@ def main():
         cmd_stop()
     else:
         print(f"Unknown command: {command}")
-        print("Commands: serve, publish, recent, subscribe, status, healthcheck, stop")
+        print("Commands: serve, publish, stimulus, recent, subscribe, status, healthcheck, stop")
         sys.exit(1)
 
 

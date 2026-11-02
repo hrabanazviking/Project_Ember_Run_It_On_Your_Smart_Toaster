@@ -308,6 +308,70 @@ MEASURED_ESSAY_BYTES_PER_EPISODE = 6_144
 
 
 # --------------------------------------------------------------------- #
+# Measured anchors (a simulated year of memory — E-088)                 #
+# --------------------------------------------------------------------- #
+
+#: **The long-life soak, measured (E-088).** A simulated
+#: year of companionship — 365 days x 20 turns (7,300
+#: turns, the book's reference workload, E-041's typical
+#: fixture) plus one living fact a day (365, with 12
+#: monthly supersessions) — was run through the real
+#: memory face (E-080) on the TOASTER profile against the
+#: real stores, with monthly restarts, monthly growth
+#: accounting, the real diary in chat's connected shape,
+#: and one full lifecycle pass at year end. Acceleration
+#: was timestamp placement only (episodes carry simulated
+#: dates; fact timestamps were set to their simulated
+#: days), never skipped writes. Method and the monthly
+#: curve live in
+#: ``docs/architecture/E-088_LONG_LIFE_SOAK.md``.
+#:
+#: The whole year's growth, every store weighed closed:
+#: Brunnr 4,366,336 B + mimir-well 528,384 B + the face's
+#: sidecar 137,731 B + the diary 685,105 B = 5,717,556 B
+#: (5.45 MiB) — inside every profile's twelve-month
+#: allowance, the toaster's 24 MiB included, with ~4.4x
+#: headroom. Steady monthly growth (months 2-12) averaged
+#: 446,445 B (~0.43 MiB), under the toaster's 2 MiB
+#: monthly ceiling in every single month.
+MEASURED_YEAR_TOTAL_BYTES = 5_717_556
+
+#: Turns in the simulated year (365 days x 20/day).
+MEASURED_YEAR_TURNS = 7_300
+
+#: Living-fact rows after the year: 365 still current
+#: plus the 12 superseded versions kept as history.
+MEASURED_YEAR_FACTS_STORED = 377
+
+#: The Brunnr store's closed size after the year: 7,300
+#: episodes at a measured 591 B/episode all-in (the
+#: E-050 steady marginal was 585.4 B — the soak's figure
+#: carries the same store at year scale).
+MEASURED_YEAR_BRUNNR_BYTES = 4_366_336
+
+#: The mimir-well store's closed size after the year:
+#: 377 fact rows plus its audit trail. The member's fixed
+#: schema (~266 KB on day one) dominates; growth over the
+#: year was ~718 B per fact row, beside E-078's 745 B
+#: anchor.
+MEASURED_YEAR_MIMIR_BYTES = 528_384
+
+#: The memory face's sidecar after the year: one persona
+#: tag per turn plus the fact bookkeeping — 137,731 B,
+#: ~19 B per turn. A real growth the E-050 month (which
+#: predates the face) did not price; now priced.
+MEASURED_YEAR_SIDECAR_BYTES = 137_731
+
+#: The diary after the year: 365 daily files, 685,105 B
+#: in all (~1,877 B a day). E-082 left the
+#: one-file-per-day shape to this soak to judge: at year
+#: scale the file count is a non-issue and the bytes are
+#: trivial — the shape stands, no lifecycle action.
+MEASURED_YEAR_DIARY_BYTES = 685_105
+MEASURED_YEAR_DIARY_FILES = 365
+
+
+# --------------------------------------------------------------------- #
 # Measured anchors (update weight — E-052)                              #
 # --------------------------------------------------------------------- #
 
@@ -583,6 +647,14 @@ __all__ = [
     "MEASURED_UPDATE_DOWNLOAD_BYTES",
     "MEASURED_UPDATE_INSTALLED_BYTES",
     "MEASURED_WELL_STEADY_BYTES_PER_EPISODE",
+    "MEASURED_YEAR_BRUNNR_BYTES",
+    "MEASURED_YEAR_DIARY_BYTES",
+    "MEASURED_YEAR_DIARY_FILES",
+    "MEASURED_YEAR_FACTS_STORED",
+    "MEASURED_YEAR_MIMIR_BYTES",
+    "MEASURED_YEAR_SIDECAR_BYTES",
+    "MEASURED_YEAR_TOTAL_BYTES",
+    "MEASURED_YEAR_TURNS",
     "PROFILE_ORDER",
     "REFERENCE_TURNS_PER_DAY",
     "WELL_BYTES_PER_EPISODE",

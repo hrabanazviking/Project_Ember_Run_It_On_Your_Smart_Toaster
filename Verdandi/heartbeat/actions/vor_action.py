@@ -45,6 +45,11 @@ class VörAction(BaseAction):
 
     name = "preemptive_heal"
     description = "Pre-emptive healing — act on WARNING + degrading trend before CRITICAL"
+    # Reflex registration (E-065, Verdandi/reflexes.py): the
+    # prediction check fires this reflex at WARNING or above.
+    trigger_checks = ["prediction"]
+    trigger_severity = CheckSeverity.WARNING
+    cooldown_seconds = 300  # BaseAction floor; per-sub-action cooldowns below
 
     # Cooldown in seconds between pre-emptive actions for the same target
     COOLDOWNS: dict[str, int] = {
@@ -63,11 +68,17 @@ class VörAction(BaseAction):
         # Check if Skuld prediction indicates pre-emptive action needed
         skuld = context.all_results.get("prediction")
         if skuld and skuld.severity in (CheckSeverity.WARNING, CheckSeverity.CRITICAL):
-            prediction_details = skuld.details
+            prediction_details = skuld.details or {}
             capacity = prediction_details.get("capacity", {})
-            for resource, pred in capacity.items():
-                if pred.get("urgency") in ("critical", "warning"):
-                    return True
+            if isinstance(capacity, dict):
+                for resource, pred in capacity.items():
+                    # Skuld's capacity may carry string status
+                    # values ({"status": "no_resource_data"} —
+                    # docket 31); only dict predictions can
+                    # carry an urgency. Skuld's own consumer
+                    # guards the same way.
+                    if isinstance(pred, dict) and pred.get("urgency") in ("critical", "warning"):
+                        return True
 
         # Check for WARNING + degrading trend in other checks
         for name, result in context.all_results.items():
@@ -79,8 +90,14 @@ class VörAction(BaseAction):
 
         return False
 
-    def execute(self, context: ActionContext) -> ActionResult:
-        """Execute pre-emptive healing actions based on prediction data."""
+    def _execute(self, context: ActionContext) -> ActionResult:
+        """Execute pre-emptive healing actions based on prediction data.
+
+        E-065 (docket 31): this is _execute, not execute — the
+        reflex runs under BaseAction.execute's wrapper like
+        every sibling action (dry-run, duration, cooldown,
+        exception folded into a FAILED result), never around it.
+        """
         actions_taken = []
         errors = []
 
@@ -105,6 +122,8 @@ class VörAction(BaseAction):
         skuld = context.all_results.get("prediction")
         if skuld and skuld.details:
             emotion = skuld.details.get("emotion", {})
+            if not isinstance(emotion, dict):
+                emotion = {}
             if emotion.get("emotion") == "urgency":
                 result = self._preemptive_service_check(context)
                 if result:
@@ -119,8 +138,8 @@ class VörAction(BaseAction):
 
         if not actions_taken and not errors:
             return ActionResult(
-                name=self.name,
-                severity=ActionSeverity.INFO,
+                action_name=self.name,
+                severity=ActionSeverity.SKIPPED,
                 message="No pre-emptive actions needed at this time",
                 details={"skuld_predictions": self._get_capacity_summary(context)},
             )
@@ -131,7 +150,7 @@ class VörAction(BaseAction):
             message += f", {len(errors)} errors"
 
         return ActionResult(
-            name=self.name,
+            action_name=self.name,
             severity=severity,
             message=message,
             details={
@@ -142,10 +161,24 @@ class VörAction(BaseAction):
         )
 
     def _get_capacity_prediction(self, context: ActionContext) -> dict:
-        """Extract capacity predictions from Skuld check results."""
+        """Extract capacity predictions from Skuld check results.
+
+        Only dict-valued per-resource predictions are returned:
+        Skuld's capacity dict may carry string status values
+        ({"status": "insufficient_data"} / {"status":
+        "no_resource_data"} — docket 31), which are not
+        predictions and must never reach a .get call. This is
+        the same isinstance guard Skuld's own consumer uses.
+        """
         skuld = context.all_results.get("prediction")
         if skuld and skuld.details:
-            return skuld.details.get("capacity", {})
+            capacity = skuld.details.get("capacity", {})
+            if not isinstance(capacity, dict):
+                return {}
+            return {
+                resource: pred for resource, pred in capacity.items()
+                if isinstance(pred, dict)
+            }
         return {}
 
     def _get_capacity_summary(self, context: ActionContext) -> dict:

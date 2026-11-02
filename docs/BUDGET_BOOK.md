@@ -271,11 +271,11 @@ running hub is 21.9 MiB live, E-041).
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 129 | 814,264 B | toaster | 12.0 MiB |
-| `Verdandi/` | 179 | 16,817,105 B | none | 12.6 MiB |
-| `kista/` | 25 | 2,770,218 B | phone | 24.2 MiB |
+| `src/` (ember core) | 132 | 938,897 B | toaster | 12.0 MiB |
+| `Verdandi/` | 193 | 17,033,233 B | none | 12.6 MiB |
+| `kista/` | 25 | 2,807,936 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
-| `mimir-well/` | 58 | 607,675 B | toaster | 20.8 MiB |
+| `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
 | `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
 | `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
@@ -285,9 +285,9 @@ running hub is 21.9 MiB live, E-041).
 | `cleasby-vigfusson-old-norse-dict/` | 170 | 24,221,782 B | none | NOT MEASURED |
 
 In plain words: the twelve running members weigh
-131,211,064 bytes together, and three of them —
+131,600,644 bytes together, and three of them —
 mempalace, the dictionary, and Verdandi (which misses
-even the laptop's ceiling by 39,889 bytes) — fit no
+even the laptop's ceiling by 256,017 bytes) — fit no
 profile's install ceiling at all. Their weight is data,
 not code: benchmark corpora, a test snapshot, loose
 images. And none of it is charged to a core user: the
@@ -343,6 +343,14 @@ cannot quietly age away from the measurements.
 | MEASURED_BATTERY_REST_CPU_S | 0.0 | E-053 (VM) |
 | MEASURED_DUTY_FULL_CPU_FRACTION | 0.4117 | E-053 (VM) |
 | MEASURED_DUTY_CONSERVE_CPU_FRACTION | 0.1885 | E-053 (VM) |
+| MEASURED_YEAR_TOTAL_BYTES | 5,717,556 | E-088 (VM, simulated year) |
+| MEASURED_YEAR_TURNS | 7,300 | E-088 (VM, simulated year) |
+| MEASURED_YEAR_FACTS_STORED | 377 | E-088 (VM, simulated year) |
+| MEASURED_YEAR_BRUNNR_BYTES | 4,366,336 | E-088 (VM, simulated year) |
+| MEASURED_YEAR_MIMIR_BYTES | 528,384 | E-088 (VM, simulated year) |
+| MEASURED_YEAR_SIDECAR_BYTES | 137,731 | E-088 (VM, simulated year) |
+| MEASURED_YEAR_DIARY_BYTES | 685,105 | E-088 (VM, simulated year) |
+| MEASURED_YEAR_DIARY_FILES | 365 | E-088 (VM, simulated year) |
 
 The book's storage arithmetic, also from the code:
 614 bytes per Well episode + 80 bytes of diary per turn

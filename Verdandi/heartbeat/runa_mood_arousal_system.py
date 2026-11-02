@@ -926,11 +926,15 @@ class RunaMoodArousalSystem:
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             sock.settimeout(2.0)
             sock.connect(str(NERVE_SOCKET))
+            # Canonical event-contract v1 envelope (E-061): the hub
+            # stamps _ts/_iso itself; the retired mood dialect
+            # ({source, event, timestamp, data}) is recognised for
+            # reading only — see Verdandi/event_contract.py.
             impulse = {
-                "source": "mood_arousal_system",
-                "event": event_type,
-                "timestamp": time.time(),
-                "data": data
+                "v": 1,
+                "type": event_type,
+                "data": data,
+                "source": "mood_arousal_system"
             }
             sock.send(json.dumps(impulse).encode())
             sock.close()

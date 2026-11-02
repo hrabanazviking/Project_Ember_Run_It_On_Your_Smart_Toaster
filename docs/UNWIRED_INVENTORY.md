@@ -1,6 +1,7 @@
 # Unwired Inventory
 
-**Last updated 2026-05-21 (post Batch K).** A canonical list of everything
+**Last updated 2026-05-21 (post Batch K); the mempalace row in §3 was
+corrected 2026-11-01 at E-091 (docket 52).** A canonical list of everything
 in this repo that is **defined but not currently wired into Ember-the-project**,
 plus the recommended action for each.
 
@@ -65,7 +66,7 @@ from `src/ember/`; `src/ember/` doesn't import from any of them.
 | **mimir-well** | AI memory database | no | Related to bifrost (Mímir leg). Wait for slice-3. |
 | **seidr_engine** | Old Norse poetry generator (Eddic meter, rule-based) | no | None planned. Standalone Norse-themed sibling. |
 | **kista** | Encrypted credential vault (Fernet, 8 entry types) | no | None planned. Could *plausibly* feed `EMBER_WELL_PASSWORD` via a `pgvector` secret resolver in V2, but not designed. |
-| **mempalace** | (README is scam-warning only — content unclear) | no | None planned. Likely abandoned or archival. |
+| **mempalace** | Upstream open-source verbatim memory system (in-tree v3.3.5, measured live at E-012; its home is upstream, not here) | no | **None — BOUNDED by the Part V verdict (E-079):** not part of the companion's memory face (successor: `MemoryFace`, E-080, over Brunnr + mimir-well); optional, non-default, never bundled, laptop-class only, with its true costs stated. Honourable retirement PROPOSED, awaiting Volmarr's word (E-079 §6) — until he rules, the fallback's restraints apply and the member stands untouched. Row corrected at E-091 (docket 52); see `docs/architecture/E-091_VERDICT_RESIDUE.md`. |
 | **CloakBrowser** | Playwright stealth wrapper for browser automation | no | None planned. Could complement `fetch_url` in slice-3+ if Ember ever needs a real browser. |
 | **astrology-engine** | Lunar phase + planetary aspects library | "Hermes Agent" mentioned (not Ember) | None planned. |
 | **Hamr** | (README is image-only — content unclear) | no | None planned. |

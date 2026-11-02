@@ -29,7 +29,7 @@ import pytest
 
 # ---- Fixtures & Helpers ----
 
-CREDSTORE_SCRIPT = Path.home() / ".hermes" / "skills" / "devops" / "runa-credentials" / "scripts" / "credstore.py"
+CREDSTORE_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "credstore.py"
 
 
 @pytest.fixture(autouse=True)
@@ -48,6 +48,8 @@ def isolated_vault(tmp_path, monkeypatch):
     monkeypatch.setattr(cs, "VAULT_KEY", key_file)
     monkeypatch.setattr(cs, "VAULT_FILE", vault_file)
     monkeypatch.setattr(cs, "VAULT_META", meta_file)
+    monkeypatch.setattr(cs, "VAULT_CONFIG", vault_dir / "config.json")
+    monkeypatch.setattr(cs, "BACKUP_DIR", vault_dir / "backups")
 
     # Also patch _ensure_dir references within the functions since they
     # reference the module-level constants indirectly
@@ -1379,17 +1381,30 @@ class TestVersionFlag:
             capture_output=True, text=True
         )
         assert result.returncode == 0
-        assert "1.3.0" in result.stdout
+        assert "2.0.0" in result.stdout
 
 
 class TestSubprocessInstall:
-    """BUG-SEC-06: os.system() replaced with subprocess.check_call."""
+    """BUG-SEC-06, closed for good at E-096 (docket 14).
 
-    def test_no_os_system_in_code(self):
-        """The code should not use os.system for pip install."""
+    History: os.system() was first replaced with
+    subprocess.check_call running an installer at import
+    time. That shape still executed an installer from the
+    network on first import and died as a raw traceback
+    on PEP 668 machines. E-096 removed the installer
+    entirely: a missing dependency is now a plain, stated
+    error message and a clean exit. This class was
+    re-pinned consciously at E-096 to pin the new shape.
+    """
+
+    def test_no_installer_runs_at_import(self):
+        """No installer of any shape runs when the module loads."""
         code = CREDSTORE_SCRIPT.read_text()
-        assert "os.system" not in code, "os.system should not be used for pip install"
-        assert "subprocess.check_call" in code, "subprocess.check_call should be used instead"
+        assert "os.system" not in code, "os.system must never return"
+        assert '"pip"' not in code, "no installer invocation may return"
+        assert "pip install" not in code
+        assert "needs the 'cryptography' package" in code, \
+            "a missing dependency must be a plain, stated message"
 
 
 class TestCrossPlatformChmod:

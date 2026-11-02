@@ -99,6 +99,21 @@ def backup_with_rotation(conn: sqlite3.Connection, db_path: Path,
     return backup_path
 
 
+def _remove_wal_siblings(db_path: Path) -> None:
+    """Remove a database's -wal/-shm siblings after a file swap.
+
+    They belong to the file that was replaced, never to the
+    one that replaced it (E-087, docket 124).
+    """
+    for suffix in ("-wal", "-shm"):
+        sibling = Path(str(db_path) + suffix)
+        try:
+            if sibling.exists():
+                sibling.unlink()
+        except OSError as e:
+            logger.warning("Could not remove stale %s: %s", sibling, e)
+
+
 def restore_from_backup(db_path: Path, backup_path: str,
                          conn_ref: Optional[sqlite3.Connection] = None) -> bool:
     """Restore the database from a backup file.
@@ -144,9 +159,16 @@ def restore_from_backup(db_path: Path, backup_path: str,
         except Exception:
             pass
 
-    # Restore
+    # Restore. E-087 (docket 124): the WAL/SHM siblings index
+    # the PRE-restore database — if they survive the copy,
+    # SQLite replays their frames into the restored file on
+    # the next open and the store comes back mixed. Callers
+    # must close their connections first (RunaMemory.
+    # restore_from does); any siblings still present here
+    # are stale by definition and are removed.
     try:
         shutil.copy2(str(backup), str(db_path))
+        _remove_wal_siblings(db_path)
         logger.info("Restored from %s", backup)
         if safety.exists():
             safety.unlink()
@@ -155,6 +177,7 @@ def restore_from_backup(db_path: Path, backup_path: str,
         logger.error("Restore failed: %s", e)
         if safety.exists():
             shutil.copy2(str(safety), str(db_path))
+            _remove_wal_siblings(db_path)
             safety.unlink()
         return False
 
