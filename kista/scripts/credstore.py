@@ -403,6 +403,26 @@ def _validate_key(key_bytes: bytes) -> bytes:
     return stripped
 
 
+def _validate_key_or_exit(raw: bytes) -> bytes:
+    """``_validate_key`` as a plain refusal (E-102, docket 139).
+
+    A truncated or damaged key file — the classic partial
+    write — used to surface the validator's ValueError as a
+    raw traceback at every command that loads the key. The
+    validator's words are already the right words for a
+    normal user ("your vault data is still intact — do NOT
+    regenerate the key"); they now reach the user as a
+    stated refusal with exit 1. Nothing is regenerated and
+    nothing is changed: the damaged file is left exactly
+    as it stands, for the owner or for help to work with.
+    """
+    try:
+        return _validate_key(raw)
+    except ValueError as exc:
+        print(f"✗ {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
 # ── Passphrase wrapping (E-096) ─────────────────────────
 # The vault key itself never changes when a passphrase is
 # set, changed, or removed — only its wrapping does, so
@@ -687,7 +707,7 @@ def _unwrap_key(raw: bytes) -> bytes:
             if os.environ.get("KISTA_PASSPHRASE") or not sys.stdin.isatty():
                 sys.exit(1)
             continue
-        key = _validate_key(vault_key)
+        key = _validate_key_or_exit(vault_key)
         _unlocked_key_cache = key
         return key
     print(
@@ -775,7 +795,7 @@ def _get_key() -> bytes:
         raw = VAULT_KEY.read_bytes()
         if _is_wrapped_key(raw):
             return _unwrap_key(raw)
-        return _validate_key(raw)
+        return _validate_key_or_exit(raw)
     # No key file exists — check if vault data exists
     if VAULT_FILE.exists():
         # Vault data exists but key is missing — cannot recover
@@ -1303,7 +1323,7 @@ def cmd_set_passphrase(args) -> None:
               "it, first unlock with the passphrase you use now.")
         vault_key = _unwrap_key(raw)
     else:
-        vault_key = _validate_key(raw)
+        vault_key = _validate_key_or_exit(raw)
     passphrase = _prompt_new_passphrase()
     _ensure_dir()
     _write_key_file(_wrap_key(vault_key, passphrase))
