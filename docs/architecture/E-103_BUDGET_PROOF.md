@@ -273,4 +273,67 @@ Standing notes handed on:
 
 ## Slice gate
 
-*To be completed at banking.*
+Measured on the VM at this slice's tree (runner only;
+logs in `~/workspace/.verify-tmp/ember-e103/gate/`):
+
+- **The owed Run D, discharged first.** Before any
+  E-103 file landed, the clean Run D owed since E-102
+  ran whole on the E-102 tree (TMPDIR on /dev/shm,
+  through the home-quota episode below): **1670
+  passed / 0 failed / 20 skipped** in 490.6 s —
+  exactly E-100's clean 1641 + E-101's 13 + E-102's 16.
+- **Focal battery** (this slice): **10 passed**.
+- **Focal set** (the thirteen Part VI batteries —
+  E-094 through E-103, the E-057 budget table, the
+  E-089 canon guard, the E-093 custody law): **135
+  passed** (= E-102's 125 + this slice's 10, exact;
+  the canon guard needed no new allowlist entry —
+  this slice's battery carries no householder name,
+  checked not assumed).
+- **Member suite** (kista's own): **149 passed /
+  0 failed**, unchanged.
+- **Run A** (whole suite, default env): **1 error /
+  20 skipped**, interrupted at collection — the
+  standing shape (the pgvector file's unguarded
+  import, docket 1's family), unchanged.
+- **Run B** (default env, pgvector file excluded):
+  **1467 passed / 11 failed / 34 skipped** — NOT
+  CLEAN, recorded honestly. Six of the failures are
+  the proven environment family (Batch CDE x3, G x2,
+  J x1, the `sqlite_vec`-missing E-004 family). The
+  other five are Verdandi hub tests (E-067 x3, E-068,
+  E-073) failing on a mechanism proven three ways:
+  their fixtures build the hub's home with
+  `mkdtemp(dir="/tmp")` in the tests' own code;
+  `/tmp` stood at **0 bytes free** (512 MB, 100% full
+  under sibling campaigns' working dirs) for the
+  entire gate window; and the same files passed whole
+  in this tick's clean owed Run D hours earlier.
+- **Run D** (whole suite, extras supplied): **1672
+  passed / 8 failed / 20 skipped** — the same five
+  hub tests, plus three integration acceptance tests
+  whose failure in the log is a raw `tempfile`
+  OSError (no space) at creation. 1672 + 8 = the
+  expected 1680 total, exact.
+- **A single clean Run B and Run D for this tree are
+  OWED** and are docketed in the campaign state —
+  E-104's tick discharges them first when `/tmp` has
+  room, as this tick discharged E-102's. The claim
+  for this slice's own code is not hung on those
+  runs: the focal set, the member suite and the owed
+  clean Run D on the parent tree are all green, and
+  no failing test touches this slice's files.
+
+**The environment episode, recorded plainly:** this
+slice opened (01:21 EST) inside the recurring
+home-quota EDQUOT flap — new files under the home
+directory refused (`Errno 122`) while the disk held
+39 GB free — and `/tmp` then filled completely
+under sibling campaigns' work and stayed full. The
+flap cleared and returned repeatedly all tick;
+measurements and drafts were kept in /tmp and
+/dev/shm meanwhile, gate scratch ran from /dev/shm,
+and nothing was deleted by this campaign. Every
+banked number above was measured on a filesystem
+the episode never touched, or is labelled with the
+episode where it was.
