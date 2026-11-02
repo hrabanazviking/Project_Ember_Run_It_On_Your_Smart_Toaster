@@ -81,6 +81,11 @@ funi:
   #   # The bearer key's FILE — a reference, never the key itself.
   #   # Create it with Aesir's keygen; Ember reads it at startup.
   #   api_key_file: "~/.config/aesir/service.key"
+  #   # OR keep the key in your toaster-Kista instead (E-100): the
+  #   # NAME of the vault entry you gave to Ember (an entry for
+  #   # the program "ember-core"). When this is set, Ember fetches
+  #   # the key from the vault and the file above is never read.
+  #   api_key_entry: ""
   #   temperature: 0.7
   #   top_p: 0.9
   #   # 256 is the Aesir service's own default reply ceiling; a
@@ -202,6 +207,9 @@ brunnr:
   #   url: "postgresql://volmarr@gungnir/knowledge"
   #   secret_ref: "~/.ember/secrets/well.password"   # mode 600 enforced
   #   secret_env: "EMBER_WELL_PASSWORD"              # checked first
+  #   kista_entry: ""   # OR the NAME of a toaster-Kista entry given
+  #                     # to Ember (E-100): when set, the vault is the
+  #                     # only place the password is looked for
   #   use_keyring: true                              # set false to skip
   #   keyring_service: "ember-well"
   #   username: null                                  # null → parsed from URL
@@ -275,6 +283,36 @@ mcp:
   #     env: {}
   #     cwd: null
   #     auto_approve: []
+
+# ---------------------------------------------------------------------------
+# Kista — Ember's own credential vault (E-100)
+# The toaster-Kista is the small credential program that ships
+# with Ember. Ember can fetch its model/API keys from it instead
+# of keeping them in files: at the vault, Ember is one program
+# named "ember-core", and it can only fetch entries you have
+# given to that program (add one with the Kista's own command:
+# `kista add <name> ... --program ember-core`). Ember never
+# writes to the vault — giving and taking back keys stays your
+# act. A key's VALUE never appears in this file; only names do.
+# ---------------------------------------------------------------------------
+kista:
+  # Off by default. Consumers turn the binding on per credential
+  # by naming an entry (funi.aesir.api_key_entry,
+  # brunnr.pgvector.kista_entry); this switch records the posture.
+  enabled: false
+  # The name Ember gives at the vault. Entries for any other
+  # program are invisible to Ember, and Ember's entries are
+  # invisible to them.
+  program: "ember-core"
+  # Where the vault lives on this machine.
+  vault_dir: "~/.ember/kista"
+  # Where the Kista program itself is. Leave unset (null) to use
+  # the copy that ships in this monorepo (kista/scripts/).
+  credstore_path: null
+  # If you locked the vault with a passphrase, Ember reads it
+  # from the environment variable NAMED here — never from this
+  # file, and it never stops to ask.
+  passphrase_env: "KISTA_PASSPHRASE"
 
 # ---------------------------------------------------------------------------
 # Logging

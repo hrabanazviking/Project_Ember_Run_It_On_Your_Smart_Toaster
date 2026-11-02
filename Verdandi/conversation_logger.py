@@ -45,9 +45,14 @@ Usage:
     python3 conversation_logger.py show --session 2026-05-10-truth-discipline
     python3 conversation_logger.py recent --count 5
     python3 conversation_logger.py context   # cron job context injection
+
+    # Delete (the user's delete right, E-063 — total and provable)
+    python3 conversation_logger.py delete --session 2026-05-10-truth-discipline
+    python3 conversation_logger.py delete --all --yes
 """
 
 import argparse
+import gzip
 import json
 import os
 import sys
@@ -62,6 +67,90 @@ CONV_LOG = STATE_DIR / "conversation_log.jsonl"
 # Valid entry types for 'event' subcommand
 EVENT_TYPES = {"decision", "file_changed", "learned", "action", "blocker", "blocker_resolved", "mood_shift", "milestone"}
 
+# Context injection budget (E-062) — the literals below are the
+# deployed copies of Verdandi/context_budget.py's values. They
+# are literals, not imports, because this file is deployed and
+# loaded standalone, file-by-file, from ~/.hermes/state (the
+# E-061 pattern); the E-062 conformance tests pin the two copies
+# equal so they cannot drift.
+_CONTEXT_TOTAL_MAX_CHARS = 4000
+_CONTEXT_CURRENT_MAX_CHARS = 1200
+_CONTEXT_RECENT_MAX_CHARS = 700
+_CONTEXT_NERVE_MAX_CHARS = 1000
+_CONTEXT_REACTIONS_MAX_CHARS = 1100
+_CONTEXT_SUMMARY_MAX_CHARS = 120
+_CONTEXT_RECENT_SUMMARY_MAX_CHARS = 100
+_CONTEXT_DECISIONS_MAX_ITEMS = 5
+_CONTEXT_NEXT_ACTIONS_MAX_ITEMS = 5
+_CONTEXT_BLOCKERS_MAX_ITEMS = 10
+_CONTEXT_PROJECTS_MAX_ITEMS = 10
+_CONTEXT_LIST_ITEM_MAX_CHARS = 120
+_CONTEXT_PROJECT_ITEM_MAX_CHARS = 60
+_CONTEXT_BLOCKERS_JOIN_MAX_CHARS = 600
+_CONTEXT_DECISIONS_JOIN_MAX_CHARS = 300
+_CONTEXT_NEXT_ACTIONS_JOIN_MAX_CHARS = 300
+_CONTEXT_PROJECTS_JOIN_MAX_CHARS = 300
+_CONTEXT_RECENT_MAX_SESSIONS = 5
+_CONTEXT_NERVE_MAX_EVENTS = 10
+_CONTEXT_NERVE_DATA_MAX_CHARS = 100
+_CONTEXT_NERVE_SOURCE_MAX_CHARS = 60
+_CONTEXT_NERVE_TYPE_MAX_CHARS = 60
+_CONTEXT_REACTIONS_MAX_DIRECTIVES = 6
+_CONTEXT_REACTIONS_ITEMS_PER_DIRECTIVE = 3
+_CONTEXT_REACTION_ITEM_MAX_CHARS = 120
+_CONTEXT_REACTION_DETAIL_MAX_CHARS = 120
+_CONTEXT_TRUNCATION_MARKER = "[... truncated by context budget E-062]"
+
+
+def _ctx_truncate(text, limit: int) -> str:
+    """Truncate text to at most limit chars, marking the cut (E-062)."""
+    text = str(text)
+    if len(text) <= limit:
+        return text
+    marker = _CONTEXT_TRUNCATION_MARKER
+    if limit <= len(marker):
+        return text[:limit]
+    return text[: limit - len(marker)] + marker
+
+
+def _ctx_cap(items, max_items: int, max_chars: int) -> list:
+    """Cap a list in both dimensions: count and per-item length (E-062)."""
+    return [_ctx_truncate(item, max_chars) for item in list(items)[:max_items]]
+
+
+def _ctx_fit(lines: list, cap: int, *, drop: str = "tail",
+             protected_head: int = 0, protected_tail: int = 0) -> list:
+    """Fit a section's lines under its char ceiling (E-062).
+
+    Whole lines shed first — from the tail, or from the head of
+    the droppable region when drop="head" (the nerve tail sheds
+    its oldest events, keeping the newest) — and the truncation
+    marker is left in the block so a shortened layer never
+    pretends to be the whole story. Protected head/tail lines
+    (section headers/footers) are never shed; if protected lines
+    alone exceed the cap, they are text-truncated as a last
+    resort.
+    """
+    lines = list(lines)
+    marker = _CONTEXT_TRUNCATION_MARKER
+
+    def _joined(extra=()):
+        return len("\n".join([*lines, *extra]))
+
+    if _joined() <= cap:
+        return lines
+    while len(lines) > protected_head + protected_tail and _joined((marker,)) > cap:
+        if drop == "head":
+            del lines[protected_head]
+        else:
+            del lines[len(lines) - protected_tail - 1]
+    insert_at = len(lines) - protected_tail if protected_tail else len(lines)
+    lines.insert(insert_at, marker)
+    if _joined() > cap:  # protected lines alone are too long
+        text = "\n".join(lines)
+        return [_ctx_truncate(text, cap)]
+    return lines
+
 
 def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -70,6 +159,21 @@ def _timestamp() -> str:
 # Cached module reference — avoids re-importing on every event
 _nerve_module = None
 _nerve_module_path = None
+
+
+def _nerve_candidate_paths():
+    """Where the nerve hub module may live, in search order (E-067).
+
+    The deployed copy (~/.hermes/state/nervous_system.py) wins
+    wherever one exists — deployed behaviour is unchanged. The
+    sibling copy beside this file is the fallback, so the
+    conversation layer works from this tree with no deployment
+    step (docket 94, E-067 half; the standalone half is E-073's).
+    """
+    return [
+        STATE_DIR / "nervous_system.py",
+        Path(__file__).resolve().parent / "nervous_system.py",
+    ]
 
 
 def _nerve_fire(entry: dict):
@@ -81,8 +185,8 @@ def _nerve_fire(entry: dict):
     """
     global _nerve_module, _nerve_module_path
     try:
-        nerve_path = STATE_DIR / "nervous_system.py"
-        if not nerve_path.exists():
+        nerve_path = next((p for p in _nerve_candidate_paths() if p.exists()), None)
+        if nerve_path is None:
             return
 
         # Refresh cache if the file changed on disk
@@ -115,41 +219,36 @@ def _append(entry: dict) -> dict:
     return entry
 
 
-def _update_current(entry: dict, session_id: str):
-    """Update current.json to reflect the latest state of the active session."""
-    # Merge with existing current.json if it exists and is the same session
-    existing = {}
+def _load_current() -> dict:
+    """Read current.json, or {} when it is missing or corrupt."""
     if CURRENT_FILE.exists():
         try:
             with open(CURRENT_FILE) as f:
-                existing = json.load(f)
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
         except (json.JSONDecodeError, IOError):
             pass
+    return {}
 
-    # Build current state from entry
-    current = {
-        "session_id": session_id,
-        "last_updated": entry.get("timestamp", _timestamp()),
-        "status": entry.get("entry_type", "unknown"),
-    }
 
-    # Preserve and merge accumulated fields
-    for field in ("summary", "decisions", "files_changed", "things_learned",
-                  "next_actions", "mood", "projects_touched", "blockers",
-                  "model", "platform", "duration_minutes", "start_time", "end_time"):
-        if field in entry:
-            current[field] = entry[field]
-        elif field in existing and existing.get("session_id") == session_id:
-            # Keep previous value if same session
-            current[field] = existing[field]
+def _current_owned_by(session_id: str) -> bool:
+    """Whether current.json belongs to ``session_id`` (E-063).
 
-    # Accumulate lists from events (don't overwrite — append unique)
-    for list_field in ("decisions", "files_changed", "things_learned", "projects_touched"):
-        if list_field not in current:
-            current[list_field] = existing.get(list_field, [])
-
-    with open(CURRENT_FILE, "w") as f:
-        json.dump(current, f, indent=2, ensure_ascii=False)
+    current.json is the LATEST session's snapshot: the session
+    that ran ``start`` most recently owns it, and only that
+    session's own event/update/end commands may change it.
+    An entry logged for another session is still appended to
+    the log — the log is the truth — but it never rewrites
+    another session's snapshot. (This settles docket 98: the
+    former _update_current helper was dead code, and the
+    cmd_* commands' hand-rolled merges diverged on exactly
+    this point; the merges below are now the law, uniformly.)
+    A missing or ownerless current.json counts as owned, so
+    the pre-E-063 behaviour for a first command stands.
+    """
+    owner = _load_current().get("session_id")
+    return owner is None or owner == session_id
 
 
 def cmd_start(args):
@@ -209,14 +308,12 @@ def cmd_event(args):
     }
     _append(entry)
 
-    # Update current.json — accumulate into appropriate list field
-    current = {}
-    if CURRENT_FILE.exists():
-        try:
-            with open(CURRENT_FILE) as f:
-                current = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+    # Update current.json — accumulate into appropriate list field,
+    # but only when current.json belongs to this session (E-063).
+    if not _current_owned_by(args.session):
+        print(f"📌 Event logged: {args.type} — {args.content[:80]}")
+        return entry
+    current = _load_current()
 
     # Map event types to current.json list fields
     field_map = {
@@ -256,13 +353,16 @@ def cmd_event(args):
 def cmd_update(args):
     """Update the session state snapshot. Can be called any time."""
     ts = _timestamp()
-    current = {}
-    if CURRENT_FILE.exists():
-        try:
-            with open(CURRENT_FILE) as f:
-                current = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+    # Only the owning session's snapshot may be updated (E-063);
+    # for any other session the update entry is built from this
+    # command's own arguments and current.json is left alone.
+    owned = _current_owned_by(args.session)
+    current = _load_current() if owned else {
+        "next_actions": [],
+        "blockers": [],
+        "projects_touched": [],
+        "mood": "",
+    }
 
     # Overwrite specified fields
     if args.next:
@@ -292,8 +392,9 @@ def cmd_update(args):
     }
     _append(entry)
 
-    with open(CURRENT_FILE, "w") as f:
-        json.dump(current, f, indent=2, ensure_ascii=False)
+    if owned:
+        with open(CURRENT_FILE, "w") as f:
+            json.dump(current, f, indent=2, ensure_ascii=False)
 
     print(f"🔄 State updated: {args.session}")
     return entry
@@ -302,13 +403,13 @@ def cmd_update(args):
 def cmd_end(args):
     """Close a session. Writes final entry and finalizes current.json."""
     ts = _timestamp()
-    current = {}
-    if CURRENT_FILE.exists():
-        try:
-            with open(CURRENT_FILE) as f:
-                current = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+    # Only the owning session may finalise current.json, and its
+    # end entry is built from its own snapshot (E-063); ending a
+    # session that does not own current.json logs the end entry
+    # from this command's arguments alone and leaves the active
+    # session's snapshot untouched.
+    owned = _current_owned_by(args.session)
+    current = _load_current() if owned else {}
 
     # Calculate duration if we have start_time
     duration = args.duration or 0
@@ -338,6 +439,11 @@ def cmd_end(args):
         "projects_touched": current.get("projects_touched", []),
     }
     _append(entry)
+
+    if not owned:
+        print(f"🏁 Session closed: {args.session}")
+        print(f"   Duration: {duration} min")
+        return entry
 
     # Finalize current.json
     current["status"] = "closed"
@@ -403,6 +509,271 @@ def cmd_context(args):
     print(get_context_for_cron(max_sessions=args.sessions))
 
 
+# --- The user's delete right (E-063): total, and provable ---
+
+
+def _is_nerve_copy_of(entry, session_id: str | None) -> bool:
+    """Whether a nerve-feed entry is a conv_* copy of a logged entry.
+
+    The logger fires every appended entry to the hub as
+    ``conv_<entry_type>`` with the whole entry as ``data`` and
+    source ``conv_logger:<session_id>`` (E-061 contract), so a
+    copy matches on type prefix plus either the source tag or
+    the copied entry's own session_id. With ``session_id``
+    None, every conv_* copy matches (the delete-all scope).
+    """
+    if not isinstance(entry, dict):
+        return False
+    if not str(entry.get("type", "")).startswith("conv_"):
+        return False
+    if session_id is None:
+        return True
+    if entry.get("source") == f"conv_logger:{session_id}":
+        return True
+    data = entry.get("data")
+    return isinstance(data, dict) and data.get("session_id") == session_id
+
+
+def _purge_jsonl(path: Path, matches) -> tuple[int, int]:
+    """Atomically drop the lines of ``path`` whose JSON entry matches.
+
+    Returns (removed, unattributed_kept). Lines that are not
+    valid JSON objects are unattributable: they are kept
+    verbatim and counted, never silently dropped — the logger
+    cannot prove whose they are. Kept lines are preserved
+    byte-for-byte. The rewrite goes through a temporary file
+    in the same directory and os.replace, so a crash leaves
+    the old file or the new one, never a torn one. A file
+    with nothing to remove is left untouched.
+    """
+    if not path.exists():
+        return 0, 0
+    kept: list[str] = []
+    removed = 0
+    unattributed = 0
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                kept.append(line)
+                continue
+            try:
+                entry = json.loads(stripped)
+            except json.JSONDecodeError:
+                entry = None
+            if not isinstance(entry, dict):
+                unattributed += 1
+                kept.append(line)
+            elif matches(entry):
+                removed += 1
+            else:
+                kept.append(line)
+    if removed == 0:
+        return 0, unattributed
+    tmp = path.with_name(path.name + ".tmp-e063")
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.writelines(kept)
+    os.replace(tmp, path)
+    return removed, unattributed
+
+
+def _purge_jsonl_gz(path: Path, matches) -> tuple[int, int]:
+    """The _purge_jsonl discipline for a gzip-compressed feed archive."""
+    if not path.exists():
+        return 0, 0
+    kept: list[str] = []
+    removed = 0
+    unattributed = 0
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                kept.append(line)
+                continue
+            try:
+                entry = json.loads(stripped)
+            except json.JSONDecodeError:
+                entry = None
+            if not isinstance(entry, dict):
+                unattributed += 1
+                kept.append(line)
+            elif matches(entry):
+                removed += 1
+            else:
+                kept.append(line)
+    if removed == 0:
+        return 0, unattributed
+    tmp = path.with_name(path.name + ".tmp-e063")
+    with gzip.open(tmp, "wt", encoding="utf-8") as f:
+        f.writelines(kept)
+    os.replace(tmp, path)
+    return removed, unattributed
+
+
+def _nerve_store_paths() -> list[Path]:
+    """Every state-dir file holding nerve-feed entries: the live
+    feed plus its rotated archives (plain and compressed)."""
+    paths = [STATE_DIR / "nerve_feed.jsonl"]
+    for pattern in ("nerve_feed_*.jsonl", "nerve_feed_*.jsonl.gz"):
+        paths.extend(sorted(STATE_DIR.glob(pattern)))
+    return paths
+
+
+def _count_nerve_copies(session_id: str | None) -> int:
+    """Count conv_* copies for a session (None = all) across the
+    live feed and every rotated archive — the verification read."""
+    total = 0
+    for path in _nerve_store_paths():
+        if not path.exists():
+            continue
+        try:
+            opener = gzip.open if path.name.endswith(".gz") else open
+            with opener(path, "rt", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if _is_nerve_copy_of(entry, session_id):
+                        total += 1
+        except (OSError, EOFError):
+            continue
+    return total
+
+
+def delete_session(session_id: str) -> dict:
+    """Delete ONE session, totally, and prove it (E-063).
+
+    Removes the session's entries from conversation_log.jsonl,
+    current.json if (and only if) it belongs to the session,
+    and the session's conv_* copies from the nerve feed and
+    its rotated archives. Afterwards every affected store is
+    re-read and the remaining attributable count must be
+    zero for the report to claim verification.
+    """
+    removed_log, unattributed = _purge_jsonl(
+        CONV_LOG, lambda e: e.get("session_id") == session_id)
+
+    current_removed = False
+    current = get_current_state()
+    if current is not None and current.get("session_id") == session_id:
+        CURRENT_FILE.unlink()
+        current_removed = True
+
+    removed_nerve = 0
+    for path in _nerve_store_paths():
+        purge = _purge_jsonl_gz if path.name.endswith(".gz") else _purge_jsonl
+        n, u = purge(path, lambda e: _is_nerve_copy_of(e, session_id))
+        removed_nerve += n
+        unattributed += u
+
+    remaining = (
+        len(_get_entries_for_session(session_id))
+        + _count_nerve_copies(session_id)
+        + (1 if (get_current_state() or {}).get("session_id") == session_id else 0)
+    )
+    return {
+        "scope": "session",
+        "session_id": session_id,
+        "log_entries_removed": removed_log,
+        "current_removed": current_removed,
+        "nerve_entries_removed": removed_nerve,
+        "unattributed_lines_kept": unattributed,
+        "remaining_attributable": remaining,
+        "verified": remaining == 0,
+    }
+
+
+def delete_all_conversations() -> dict:
+    """Delete EVERY logged conversation, totally, and prove it (E-063).
+
+    The log and current.json are removed outright; every
+    conv_* copy leaves the nerve feed and its archives (non-
+    conversation feed events are not the logger's words and
+    are kept). Verification re-reads every store.
+    """
+    removed_log = len(_read_all_entries())
+    unattributed = 0
+    if CONV_LOG.exists():
+        with open(CONV_LOG, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    entry = None
+                if not isinstance(entry, dict):
+                    unattributed += 1
+        CONV_LOG.unlink()
+
+    current_removed = False
+    if CURRENT_FILE.exists():
+        CURRENT_FILE.unlink()
+        current_removed = True
+
+    removed_nerve = 0
+    for path in _nerve_store_paths():
+        purge = _purge_jsonl_gz if path.name.endswith(".gz") else _purge_jsonl
+        n, u = purge(path, lambda e: _is_nerve_copy_of(e, None))
+        removed_nerve += n
+        unattributed += u
+
+    remaining = (
+        len(_read_all_entries())
+        + _count_nerve_copies(None)
+        + (1 if CURRENT_FILE.exists() else 0)
+    )
+    return {
+        "scope": "all",
+        "session_id": None,
+        "log_entries_removed": removed_log,
+        "current_removed": current_removed,
+        "nerve_entries_removed": removed_nerve,
+        "unattributed_lines_kept": unattributed,
+        "remaining_attributable": remaining,
+        "verified": remaining == 0,
+    }
+
+
+def cmd_delete(args):
+    """The user's delete right (E-063): one session, or all of it.
+
+    Deleting everything requires --yes: a session can be
+    named exactly, "everything" cannot, so the extra word is
+    the confirmation.
+    """
+    if getattr(args, "all", False):
+        if not getattr(args, "yes", False):
+            print("❌ Refusing to delete ALL conversations without --yes.")
+            print("   Run: delete --all --yes   (this cannot be undone)")
+            sys.exit(2)
+        report = delete_all_conversations()
+        label = "all conversations"
+    else:
+        report = delete_session(args.session)
+        label = f"session {args.session}"
+
+    print(f"🗑️  Deleted {label}:")
+    print(f"   Log entries removed: {report['log_entries_removed']}")
+    print(f"   Current snapshot removed: {'yes' if report['current_removed'] else 'no'}")
+    print(f"   Nerve-feed copies removed: {report['nerve_entries_removed']}")
+    if report["unattributed_lines_kept"]:
+        print(f"   Unattributable lines kept (not provably anyone's): "
+              f"{report['unattributed_lines_kept']}")
+    if report["verified"]:
+        print("   Verified: 0 attributable entries remain in any store.")
+    else:
+        print(f"   ⚠️  NOT VERIFIED: {report['remaining_attributable']} "
+              "attributable entries remain.")
+        sys.exit(1)
+    return report
+
+
 # --- Helper functions ---
 
 def _read_all_entries() -> list[dict]:
@@ -445,7 +816,24 @@ def _get_recent_sessions(count: int = 10) -> list[dict]:
 
 def get_context_for_cron(max_sessions: int = 5) -> str:
     """Generate a context string suitable for injecting into cron job prompts.
-    Includes both recent sessions AND reaction directives."""
+    Includes both recent sessions AND reaction directives.
+
+    The block is built under the E-062 context injection
+    discipline (Verdandi/context_budget.py): only the state
+    dir's current.json, conversation_log.jsonl summaries, the
+    nerve_feed.jsonl tail and reactor directives derived from
+    the same log may be injected; every layer is capped in
+    items, per-item length and total chars; the whole block
+    never exceeds _CONTEXT_TOTAL_MAX_CHARS; and shedding —
+    reactions first, then nerve, then recent, current last —
+    always leaves the truncation marker in the block.
+    """
+    # The caller's session count is a request, clamped to the budget.
+    try:
+        max_sessions = int(max_sessions)
+    except (TypeError, ValueError):
+        max_sessions = _CONTEXT_RECENT_MAX_SESSIONS
+    max_sessions = max(0, min(max_sessions, _CONTEXT_RECENT_MAX_SESSIONS))
     recent = _get_recent_sessions(max_sessions)
 
     # Also get current state
@@ -457,33 +845,50 @@ def get_context_for_cron(max_sessions: int = 5) -> str:
         except (json.JSONDecodeError, IOError):
             pass
 
-    lines = ["=== RUNA SESSION CONTEXT (auto-injected) ==="]
+    header = "=== RUNA SESSION CONTEXT (auto-injected) ==="
+    footer = "=== END CONTEXT ==="
 
+    # Layer 1 (sheds last): current state, fields in retention
+    # order — blockers render before the other lists so line
+    # shedding drops projects, then next actions, then
+    # decisions, and blockers last of all.
+    current_lines: list = []
     if current:
-        lines.append(f"Active session: {current.get('session_id', 'unknown')}")
-        lines.append(f"Status: {current.get('status', 'unknown')}")
-        lines.append(f"Last updated: {current.get('last_updated', 'unknown')}")
-        lines.append(f"Summary: {current.get('summary', 'none')[:120]}")
-        if current.get("decisions"):
-            lines.append(f"Decisions: {'; '.join(current['decisions'][:5])}")
-        if current.get("next_actions"):
-            lines.append(f"Next actions: {'; '.join(current['next_actions'][:5])}")
+        current_lines.append(f"Active session: {_ctx_truncate(current.get('session_id', 'unknown'), _CONTEXT_LIST_ITEM_MAX_CHARS)}")
+        current_lines.append(f"Status: {_ctx_truncate(current.get('status', 'unknown'), _CONTEXT_LIST_ITEM_MAX_CHARS)}")
+        current_lines.append(f"Last updated: {_ctx_truncate(current.get('last_updated', 'unknown'), _CONTEXT_LIST_ITEM_MAX_CHARS)}")
+        current_lines.append(f"Summary: {_ctx_truncate(current.get('summary', 'none'), _CONTEXT_SUMMARY_MAX_CHARS)}")
         if current.get("blockers"):
-            lines.append(f"Blockers: {'; '.join(current['blockers'])}")
+            blockers = _ctx_cap(current["blockers"], _CONTEXT_BLOCKERS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS)
+            current_lines.append(f"Blockers: {_ctx_truncate('; '.join(blockers), _CONTEXT_BLOCKERS_JOIN_MAX_CHARS)}")
+        if current.get("decisions"):
+            decisions = _ctx_cap(current["decisions"], _CONTEXT_DECISIONS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS)
+            current_lines.append(f"Decisions: {_ctx_truncate('; '.join(decisions), _CONTEXT_DECISIONS_JOIN_MAX_CHARS)}")
+        if current.get("next_actions"):
+            actions = _ctx_cap(current["next_actions"], _CONTEXT_NEXT_ACTIONS_MAX_ITEMS, _CONTEXT_LIST_ITEM_MAX_CHARS)
+            current_lines.append(f"Next actions: {_ctx_truncate('; '.join(actions), _CONTEXT_NEXT_ACTIONS_JOIN_MAX_CHARS)}")
         if current.get("projects_touched"):
-            lines.append(f"Projects touched: {', '.join(current['projects_touched'])}")
+            projects = _ctx_cap(current["projects_touched"], _CONTEXT_PROJECTS_MAX_ITEMS, _CONTEXT_PROJECT_ITEM_MAX_CHARS)
+            current_lines.append(f"Projects touched: {_ctx_truncate(', '.join(projects), _CONTEXT_PROJECTS_JOIN_MAX_CHARS)}")
+    current_lines = _ctx_fit(current_lines, _CONTEXT_CURRENT_MAX_CHARS)
 
+    # Layer 2: recent session summaries (one line per session).
+    recent_lines: list = []
     if recent:
-        lines.append(f"\n--- Recent {len(recent)} sessions ---")
+        recent_lines.append(f"--- Recent {len(recent)} sessions ---")
         for entry in recent:
-            ts = entry.get("timestamp", "?")[:16]
-            sid = entry.get("session_id", "?")
-            summ = entry.get("summary", "?")[:100]
-            lines.append(f"  {ts} [{sid}]: {summ}")
+            ts = str(entry.get("timestamp", "?"))[:16]
+            sid = _ctx_truncate(entry.get("session_id", "?"), _CONTEXT_LIST_ITEM_MAX_CHARS)
+            summ = _ctx_truncate(entry.get("summary", "?"), _CONTEXT_RECENT_SUMMARY_MAX_CHARS)
+            recent_lines.append(f"  {ts} [{sid}]: {summ}")
+    recent_lines = _ctx_fit(recent_lines, _CONTEXT_RECENT_MAX_CHARS, protected_head=1 if recent_lines else 0)
 
-    # Include nerve feed — recent events from ALL Runa instances (real-time awareness)
+    # Layer 3 (supplementary, failure-silent): nerve feed tail,
+    # read from the feed FILE in the logger's own state dir —
+    # never a live hub query, and never a second home path.
+    nerve_lines: list = []
     try:
-        nerve_path = Path.home() / ".hermes" / "state" / "nerve_feed.jsonl"
+        nerve_path = STATE_DIR / "nerve_feed.jsonl"
         if nerve_path.exists():
             nerve_events = []
             with open(nerve_path) as nf:
@@ -494,42 +899,86 @@ def get_context_for_cron(max_sessions: int = 5) -> str:
                             nerve_events.append(json.loads(line))
                         except json.JSONDecodeError:
                             continue
-            # Show last 10 nerve events
-            recent_nerve = nerve_events[-10:] if nerve_events else []
+            recent_nerve = nerve_events[-_CONTEXT_NERVE_MAX_EVENTS:] if nerve_events else []
             if recent_nerve:
-                lines.append("")
-                lines.append(f"=== NERVE FEED (last {len(recent_nerve)} events across all instances) ===")
+                nerve_lines.append(f"=== NERVE FEED (last {len(recent_nerve)} events across all instances) ===")
                 for ne in recent_nerve:
-                    nts = ne.get("_iso", "?")[:16]
-                    ntype = ne.get("type", "?")
-                    nsource = ne.get("source", "?")
-                    ndata = json.dumps(ne.get("data", {}), ensure_ascii=False)[:100]
-                    lines.append(f"  {nts} [{ntype}] from {nsource}: {ndata}")
-                lines.append("=== END NERVE FEED ===")
+                    nts = str(ne.get("_iso", "?"))[:16]
+                    ntype = _ctx_truncate(ne.get("type", "?"), _CONTEXT_NERVE_TYPE_MAX_CHARS)
+                    nsource = _ctx_truncate(ne.get("source", "?"), _CONTEXT_NERVE_SOURCE_MAX_CHARS)
+                    ndata = _ctx_truncate(json.dumps(ne.get("data", {}), ensure_ascii=False), _CONTEXT_NERVE_DATA_MAX_CHARS)
+                    nerve_lines.append(f"  {nts} [{ntype}] from {nsource}: {ndata}")
+                nerve_lines.append("=== END NERVE FEED ===")
     except Exception:
-        pass  # Nerve feed is supplementary awareness, not a dependency
+        nerve_lines = []  # Nerve feed is supplementary awareness, not a dependency
+    if nerve_lines:
+        nerve_lines = _ctx_fit(nerve_lines, _CONTEXT_NERVE_MAX_CHARS,
+                               drop="head", protected_head=1, protected_tail=1)
 
-    # Include reaction directives (import reactor separately to avoid circular imports)
-    lines.append("")
+    # Layer 4 (supplementary, failure-silent; sheds first):
+    # reaction directives derived from the same log.
+    reaction_lines: list = []
     try:
-        sys.path.insert(0, str(Path.home() / ".hermes" / "state"))
+        sys.path.insert(0, str(STATE_DIR))
         from reactor import react
         reactions = react()
         if reactions.get("reactions"):
-            lines.append("=== REACTION DIRECTIVES (ACT ON THESE) ===")
-            for r in reactions["reactions"]:
-                priority = r.get("priority", "?")
-                action = r.get("action", "?")
-                detail = r.get("detail", "")
-                lines.append(f"[{priority}] {action.upper()}: {detail}")
-                for item in r.get("items", [])[:3]:
-                    lines.append(f"  • {item}")
-            lines.append("=== END REACTIONS ===")
+            reaction_lines.append("=== REACTION DIRECTIVES (ACT ON THESE) ===")
+            for r in reactions["reactions"][:_CONTEXT_REACTIONS_MAX_DIRECTIVES]:
+                priority = _ctx_truncate(r.get("priority", "?"), 20)
+                action = _ctx_truncate(r.get("action", "?"), 60)
+                detail = _ctx_truncate(r.get("detail", ""), _CONTEXT_REACTION_DETAIL_MAX_CHARS)
+                reaction_lines.append(f"[{priority}] {action.upper()}: {detail}")
+                for item in _ctx_cap(r.get("items", []), _CONTEXT_REACTIONS_ITEMS_PER_DIRECTIVE, _CONTEXT_REACTION_ITEM_MAX_CHARS):
+                    reaction_lines.append(f"  • {item}")
+            reaction_lines.append("=== END REACTIONS ===")
     except Exception:
-        pass  # Non-critical — reactions are a bonus, not a dependency
+        reaction_lines = []  # Non-critical — reactions are a bonus, not a dependency
+    if reaction_lines:
+        reaction_lines = _ctx_fit(reaction_lines, _CONTEXT_REACTIONS_MAX_CHARS,
+                                  protected_head=1, protected_tail=1)
 
-    lines.append("=== END CONTEXT ===")
-    return "\n".join(lines)
+    # Assemble in presentation order and enforce the total:
+    # reactions shed first, then nerve, then recent; the
+    # current-state layer is truncated only as a last resort
+    # (its layer fit above already bounds it, so this is a
+    # belt-and-braces guard, not the normal path).
+    sections = [
+        ("reactions", reaction_lines),
+        ("nerve", nerve_lines),
+        ("recent", recent_lines),
+        ("current", current_lines),
+    ]
+    overhead = len(header) + len(footer) + 8  # newlines / spacing
+    total = overhead + sum(len("\n".join(lines)) for _, lines in sections if lines)
+    for name, lines in sections:
+        if total <= _CONTEXT_TOTAL_MAX_CHARS:
+            break
+        if not lines:
+            continue
+        if name == "current":
+            fitted = _ctx_fit(lines, max(len(_CONTEXT_TRUNCATION_MARKER),
+                                         _CONTEXT_TOTAL_MAX_CHARS - (total - len("\n".join(lines)))))
+            total += len("\n".join(fitted)) - len("\n".join(lines))
+            sections[3] = (name, fitted)
+        else:
+            note = [f"[{name} layer {_CONTEXT_TRUNCATION_MARKER[4:]}"]
+            total += len("\n".join(note)) - len("\n".join(lines))
+            sections = [(n, note if n == name else ls) for n, ls in sections]
+
+    out = [header]
+    by_name = dict(sections)
+    for name in ("current", "recent", "nerve", "reactions"):
+        lines = by_name.get(name) or []
+        if lines:
+            if name in ("nerve", "reactions"):
+                out.append("")
+            out.extend(lines)
+    out.append(footer)
+    result = "\n".join(out)
+    if len(result) > _CONTEXT_TOTAL_MAX_CHARS:  # final guard, unreachable by construction
+        result = _ctx_truncate(result, _CONTEXT_TOTAL_MAX_CHARS)
+    return result
 
 
 def get_current_state() -> dict | None:
@@ -597,6 +1046,12 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("context", help="Generate context block for cron injection")
     sp.add_argument("--sessions", type=int, default=5, help="Number of recent sessions to include")
 
+    # delete (the user's delete right, E-063)
+    sp = sub.add_parser("delete", help="Delete logged conversations — totally, with verification")
+    sp.add_argument("--session", default="", help="Session ID to delete")
+    sp.add_argument("--all", action="store_true", help="Delete ALL logged conversations")
+    sp.add_argument("--yes", action="store_true", help="Confirm a --all deletion")
+
     return parser
 
 
@@ -618,3 +1073,7 @@ if __name__ == "__main__":
         cmd_recent(args)
     elif args.command == "context":
         cmd_context(args)
+    elif args.command == "delete":
+        if not args.all and not args.session:
+            parser.error("delete needs --session <id> or --all --yes")
+        cmd_delete(args)

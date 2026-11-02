@@ -293,6 +293,7 @@ _GENERATE_OK = {
 def _aesir_config(tmp_path: Path, det: DeterminismConfig) -> FuniConfig:
     key_file = tmp_path / "service.key"
     key_file.write_text(_KEY + "\n", encoding="utf-8")
+    key_file.chmod(0o600)  # E-093 custody law: credential files are 0600
     return FuniConfig(
         runtime=FuniRuntime.AESIR,
         determinism=det,

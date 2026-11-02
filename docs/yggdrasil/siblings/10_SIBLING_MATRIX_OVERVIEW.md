@@ -4,6 +4,18 @@ A canonical reference for the eleven sibling projects, their
 status, their integration role in Yggdrasil, and where to find
 deep details.
 
+> **Status note — MemPalace (E-091, 2026-11-01):** the
+> MemPalace row below is superseded in part by the Part V
+> verdict (E-079). MemPalace is **bounded** in Ember —
+> optional, non-default, never bundled, not part of the
+> companion's memory face; the successor is `MemoryFace`
+> (E-080) over Brunnr + mimir-well, and MemPalace's
+> honourable retirement is proposed, awaiting Volmarr's
+> word. See the banner on
+> [`19_SIBLING_MEMPALACE.md`](19_SIBLING_MEMPALACE.md) and
+> `docs/architecture/E-091_VERDICT_RESIDUE.md`. The tables
+> below stand unrewritten as this corpus's design record.
+
 ---
 
 ## The matrix

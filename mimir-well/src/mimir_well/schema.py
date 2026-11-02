@@ -170,8 +170,95 @@ FTS_TABLES = [
 ]
 
 # ─── FTS sync ──────────────────────────────────────────────────────────────
-# With content=external mode, FTS5 auto-syncs on INSERT, UPDATE, and DELETE.
-# No triggers are needed — SQLite handles it all internally.
+# CORRECTED at Ember E-078 (docket 111): the sentence that stood here
+# before ("with content= mode, FTS5 auto-syncs; no triggers are
+# needed") is false for external-content FTS5 tables. SQLite only
+# maintains the index automatically for ordinary FTS5 tables whose
+# content it owns; for content= tables the application must keep the
+# index in sync, and the standard mechanism is the trigger set
+# below (SQLite FTS5 documentation, "External Content Tables").
+# Without it, fts_search saw only what the open-time rebuild in
+# RunaMemory._init_db had indexed — everything written during a
+# session was invisible to FTS until the store was reopened.
+# The triggers are created with IF NOT EXISTS at every open, so
+# stores created before this fix gain them (and the open-time
+# rebuild heals their index once) without a schema version bump:
+# no table shape changes, SCHEMA_VERSION stays 9.
+
+FTS_TRIGGERS = [
+    # memories_fts over memories(content, category, tags)
+    """
+    CREATE TRIGGER IF NOT EXISTS memories_fts_ai
+    AFTER INSERT ON memories BEGIN
+        INSERT INTO memories_fts(rowid, content, category, tags)
+        VALUES (new.id, new.content, new.category, new.tags);
+    END
+    """,
+    """
+    CREATE TRIGGER IF NOT EXISTS memories_fts_ad
+    AFTER DELETE ON memories BEGIN
+        INSERT INTO memories_fts(memories_fts, rowid, content, category, tags)
+        VALUES ('delete', old.id, old.content, old.category, old.tags);
+    END
+    """,
+    """
+    CREATE TRIGGER IF NOT EXISTS memories_fts_au
+    AFTER UPDATE ON memories BEGIN
+        INSERT INTO memories_fts(memories_fts, rowid, content, category, tags)
+        VALUES ('delete', old.id, old.content, old.category, old.tags);
+        INSERT INTO memories_fts(rowid, content, category, tags)
+        VALUES (new.id, new.content, new.category, new.tags);
+    END
+    """,
+    # knowledge_fts over knowledge(content, domain, source)
+    """
+    CREATE TRIGGER IF NOT EXISTS knowledge_fts_ai
+    AFTER INSERT ON knowledge BEGIN
+        INSERT INTO knowledge_fts(rowid, content, domain, source)
+        VALUES (new.id, new.content, new.domain, new.source);
+    END
+    """,
+    """
+    CREATE TRIGGER IF NOT EXISTS knowledge_fts_ad
+    AFTER DELETE ON knowledge BEGIN
+        INSERT INTO knowledge_fts(knowledge_fts, rowid, content, domain, source)
+        VALUES ('delete', old.id, old.content, old.domain, old.source);
+    END
+    """,
+    """
+    CREATE TRIGGER IF NOT EXISTS knowledge_fts_au
+    AFTER UPDATE ON knowledge BEGIN
+        INSERT INTO knowledge_fts(knowledge_fts, rowid, content, domain, source)
+        VALUES ('delete', old.id, old.content, old.domain, old.source);
+        INSERT INTO knowledge_fts(rowid, content, domain, source)
+        VALUES (new.id, new.content, new.domain, new.source);
+    END
+    """,
+    # saga_events_fts over saga_events(event_type, entity_id)
+    """
+    CREATE TRIGGER IF NOT EXISTS saga_events_fts_ai
+    AFTER INSERT ON saga_events BEGIN
+        INSERT INTO saga_events_fts(rowid, event_type, entity_id)
+        VALUES (new.id, new.event_type, new.entity_id);
+    END
+    """,
+    """
+    CREATE TRIGGER IF NOT EXISTS saga_events_fts_ad
+    AFTER DELETE ON saga_events BEGIN
+        INSERT INTO saga_events_fts(saga_events_fts, rowid, event_type, entity_id)
+        VALUES ('delete', old.id, old.event_type, old.entity_id);
+    END
+    """,
+    """
+    CREATE TRIGGER IF NOT EXISTS saga_events_fts_au
+    AFTER UPDATE ON saga_events BEGIN
+        INSERT INTO saga_events_fts(saga_events_fts, rowid, event_type, entity_id)
+        VALUES ('delete', old.id, old.event_type, old.entity_id);
+        INSERT INTO saga_events_fts(rowid, event_type, entity_id)
+        VALUES (new.id, new.event_type, new.entity_id);
+    END
+    """,
+]
 # ─── SQLite PRAGMAs ────────────────────────────────────────────────────────
 
 PRAGMAS = [

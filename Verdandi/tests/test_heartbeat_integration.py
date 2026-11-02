@@ -312,14 +312,36 @@ class TestCheckProducesResults:
 # 5. CLI INTEGRATION
 # ═══════════════════════════════════════════════════════════════════
 
+VERDANDI_DIR = Path(__file__).resolve().parents[1]
+
+
 class TestCLIIntegration:
     """Test CLI commands work end-to-end."""
 
-    def test_pulse_command_exits_zero(self):
+    # The member's own directory, derived from this file —
+    # never Path.home() / "Verdandi": that home only exists on
+    # the Pi deployment, so these tests failed on every other
+    # machine (docket 6 family, fixed at E-076).
+
+    @staticmethod
+    def _isolated_env(tmp_path):
+        # A pulse reads the host it runs on: Huginn scans the
+        # home directory's git repos and the CLI exits 1 when
+        # the pulse state is critical, so on a busy development
+        # machine these tests judged the machine, not the code
+        # (the docket 6 family's second layer, fixed at E-076
+        # with the cwd above). An isolated HOME + VERDANDI_HOME
+        # gives the CLI an empty, clean world to pulse.
+        env = dict(os.environ)
+        env["HOME"] = str(tmp_path)
+        env["VERDANDI_HOME"] = str(tmp_path / "state")
+        return env
+
+    def test_pulse_command_exits_zero(self, tmp_path):
         result = subprocess.run(
             ["python3", "-m", "heartbeat.cli", "pulse"],
             capture_output=True, text=True, timeout=30,
-            cwd=str(Path.home() / "Verdandi"),
+            cwd=str(VERDANDI_DIR), env=self._isolated_env(tmp_path),
         )
         assert result.returncode == 0
 
@@ -327,7 +349,7 @@ class TestCLIIntegration:
         result = subprocess.run(
             ["python3", "-m", "heartbeat.cli", "paths"],
             capture_output=True, text=True, timeout=10,
-            cwd=str(Path.home() / "Verdandi"),
+            cwd=str(VERDANDI_DIR),
         )
         assert result.returncode == 0
         assert "state_dir" in result.stdout
@@ -336,15 +358,15 @@ class TestCLIIntegration:
         result = subprocess.run(
             ["python3", "-m", "heartbeat.cli", "config"],
             capture_output=True, text=True, timeout=10,
-            cwd=str(Path.home() / "Verdandi"),
+            cwd=str(VERDANDI_DIR),
         )
         assert result.returncode == 0
 
-    def test_react_command_dry_run(self):
+    def test_react_command_dry_run(self, tmp_path):
         result = subprocess.run(
             ["python3", "-m", "heartbeat.cli", "react"],
             capture_output=True, text=True, timeout=30,
-            cwd=str(Path.home() / "Verdandi"),
+            cwd=str(VERDANDI_DIR), env=self._isolated_env(tmp_path),
         )
         assert result.returncode == 0
         assert "DRY-RUN" in result.stdout
@@ -354,7 +376,7 @@ class TestCLIIntegration:
         result = subprocess.run(
             ["python3", "-m", "heartbeat.cli", "--version"],
             capture_output=True, text=True, timeout=10,
-            cwd=str(Path.home() / "Verdandi"),
+            cwd=str(VERDANDI_DIR),
         )
         assert result.returncode == 0
         assert "0.3.0" in result.stdout
