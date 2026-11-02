@@ -28,6 +28,13 @@ Self-owned encrypted vault. Old Norse *kista* = strongbox, chest, coffer.
 > in the Ember repo instead. The boundary between the two Kistas is
 > `docs/audit/E-011_TWO_KISTAS_BOUNDARY.md` (final form at E-104).
 
+> **The plain names (E-105).** In words meant for a person, this copy is
+> **Ember's Kista** — the chest that comes with Ember, on the user's own
+> machine. The other one is **the house Kista** — the house assistants'
+> own chest, on the house computer, under its own keeper. Never bare
+> "Kista" where both could be meant; the naming record is
+> `docs/architecture/E-105_NAMING_KINDNESS.md` in the Ember repo.
+
 **This copy's home**: the `kista/` member of the Project Ember monorepo
 (`hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster`, MIT license).
 The standalone repo `runafreyjasdottir/kista` is the *other* Kista's home —

@@ -551,3 +551,30 @@ to the tree).
 *Filed by the E-104 slice, 2026-11-02. Next: E-105 —
 the naming kindness: user-facing names distinguish
 the two Kistas without jargon.*
+
+---
+
+## Naming addendum (E-105) — what to call the two chests
+
+*Appended by the E-105 slice, extending this guide
+and never rewriting it. The naming record stands at
+`docs/architecture/E-105_NAMING_KINDNESS.md`.*
+
+This guide's chest has a plain name now, and so
+does the other one:
+
+- **Ember's Kista** — this one: yours, the chest
+  that comes with Ember and lives on your own
+  machine at `~/.ember/kista/`. Everything in
+  this guide is about Ember's Kista.
+- **The house Kista** — the other one: the house
+  assistants' own chest, on the house computer,
+  under its own keeper. Ember cannot open it,
+  fix it, or move anything to or from it.
+
+The one sentence to carry: Ember's Kista is
+yours, on your machine; the house Kista is the
+house's own, on the house computer; and no entry ever crosses
+between them. If anyone
+offering help says only "Kista", it is kind —
+and expected — to ask which chest they mean.

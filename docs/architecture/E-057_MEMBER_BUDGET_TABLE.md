@@ -11,7 +11,7 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,615,902
+imported members of the E-002 census) weigh **131,616,318
 bytes (125.45 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
@@ -211,7 +211,13 @@ home corrected to this program's own, the E-098
 partition noted in ENTRY_TYPES.md, SKILL.md reframed
 to this copy): kista now reads 25 files /
 2,823,194 B, the total 131,615,902 bytes, the laptop
-miss unchanged at 256,017 bytes.)*
+miss unchanged at 256,017 bytes. Re-measured again at
+E-105, whose naming kindness added the plain names
+(Ember's Kista / the house Kista) to SKILL.md's
+identity banner and to no other member file: kista
+now reads 25 files / 2,823,610 B, the total
+131,616,318 bytes, the laptop miss unchanged at
+256,017 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -253,7 +259,7 @@ table prices exactly that choice, per profile.
 |---|---|---|---|---|
 | `src/` (ember core) | 132 | 938,897 B | toaster | 12.0 MiB |
 | `Verdandi/` | 193 | 17,033,233 B | none | 12.6 MiB |
-| `kista/` | 25 | 2,823,194 B | phone | 24.2 MiB |
+| `kista/` | 25 | 2,823,610 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
 | `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
