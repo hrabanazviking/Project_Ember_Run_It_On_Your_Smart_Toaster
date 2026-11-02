@@ -343,6 +343,49 @@ its single dependency installs at laptop weight, and
 no Ember document may call the vault toaster-
 installable until the Part VI gate rules on it.
 
+### The engines' own costs (E-114)
+
+Two more members are now priced the same way: the
+seiðr engine and the astrology engine, the companion's
+inner life (Part VII). The method and every run are in
+`docs/architecture/E-114_ENGINE_BUDGET_ROWS.md`; all
+figures are campaign-VM measurements (medians of three
+fresh processes for memory), none from a toaster-class
+device — that device proof is NOT PROVEN.
+
+| What the engines cost | Measured | Against the profiles |
+|---|---|---|
+| Seiðr, carried in (its package; no dependencies at all) | 88,707 B | toaster — the whole tracked member is 105,889 B, 5% of the toaster's install ceiling |
+| Seiðr, one seeded verse through the core service | 14.7 MiB peak | inside the toaster's 64 MiB turn ceiling |
+| Astrology, its tracked checkout | 7,483,464 B | 7,230,510 B of it is pictures; the engine itself is one file of 140,715 B |
+| Astrology, the sky carried in (the engine file + pyswisseph as installed) | 7,779,880 B | pi only — 93% of the pi install ceiling; not toaster, not phone |
+| Astrology, one chart (the sky alone) | 18.1 MiB peak | inside the toaster's turn ceiling |
+| Astrology, the local-time dependencies as installed today (timezonefinder's closure + pytz) | 106,212,923 B | **no profile** — the timezone data package and numpy are the weight |
+| Astrology, one chart with local time resolved | 38.5 MiB peak | inside the toaster's turn ceiling (60%) |
+
+In plain words: the verse engine is toaster-sized in
+every way there is — it carries in for less than a
+twentieth of the smallest ceiling, needs no dependency
+of any kind, and spends about a fifth of the smallest
+machine's working memory for the moment of a verse.
+The astrology engine's *sky* is nearly as well
+behaved: the engine is a single small file, its one
+hard dependency is the ephemeris library, and together
+they fit the pi profile and work inside even the
+toaster's memory ceiling. What is not small is knowing
+what o'clock a place means: the timezone library, as
+the package index serves it today, drags a data
+package and a numerical library behind it that
+together outweigh every profile in this book several
+times over. A chart without it still casts — its time
+is read as UTC, and the answer says so in plain words
+(E-110) — so the honest shape of the choice is: the
+sky fits the pi; local time, at today's packaging,
+fits nothing, and is an optional extra a carrier
+chooses with open eyes. Neither engine writes anything
+of its own, and neither is a resident process: at rest
+and standing idle they cost exactly zero.
+
 ## Appendix — the measured anchors, by their code names
 
 Every anchor in `ember.budgets`, at the value the code
