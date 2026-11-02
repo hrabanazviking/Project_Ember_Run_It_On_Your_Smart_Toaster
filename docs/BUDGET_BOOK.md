@@ -277,7 +277,7 @@ running hub is 21.9 MiB live, E-041).
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
 | `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
-| `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
+| `astrology-engine/` | 25 | 7,482,898 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
 | `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
 | `Open-VTT/` | 209 | 6,768,730 B | pi | NOT MEASURED |
@@ -285,7 +285,7 @@ running hub is 21.9 MiB live, E-041).
 | `cleasby-vigfusson-old-norse-dict/` | 170 | 24,221,782 B | none | NOT MEASURED |
 
 In plain words: the twelve running members weigh
-131,616,318 bytes together, and three of them —
+131,621,907 bytes together, and three of them —
 mempalace, the dictionary, and Verdandi (which misses
 even the laptop's ceiling by 256,017 bytes) — fit no
 profile's install ceiling at all. Their weight is data,

@@ -11,8 +11,8 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,616,318
-bytes (125.45 MiB) of tracked files** between them, and
+imported members of the E-002 census) weigh **131,621,907
+bytes (125.52 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
 and Verdandi (17,033,233 B) — and in each case the weight
@@ -217,7 +217,12 @@ E-105, whose naming kindness added the plain names
 identity banner and to no other member file: kista
 now reads 25 files / 2,823,610 B, the total
 131,616,318 bytes, the laptop miss unchanged at
-256,017 bytes.)*
+256,017 bytes. Re-measured again at E-109, whose
+accuracy fixes (the lots, fall, lunation, solar-return,
+sect and jd_to_dt repairs in the one engine file) grew
+that file: astrology-engine now reads 25 files /
+7,482,898 B, the total 131,621,907 bytes, the laptop
+miss unchanged at 256,017 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -263,7 +268,7 @@ table prices exactly that choice, per profile.
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
 | `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
-| `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
+| `astrology-engine/` | 25 | 7,482,898 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
 | `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
 | `Open-VTT/` | 209 | 6,768,730 B | pi | NOT MEASURED |

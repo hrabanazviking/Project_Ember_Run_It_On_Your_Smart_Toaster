@@ -25,14 +25,19 @@ engine file is loaded directly and probed):
 * the gazetteer: 426 entries, 394 unique keys, the
   Tivat entry carrying Cancun's coordinates and the
   ``tientSin`` key unreachable by a lower-cased
-  lookup (docket 152; E-109 re-pins);
+  lookup (docket 152; re-pinned at E-109, where the
+  fixes landed: 395 unique keys, Tivat on its own
+  coordinates, Tianjin reachable, Charleston split);
 * docket 149's shape, probed on synthetic
   positions: in a day chart the Lot of Fortune
   comes out where the Lot of Spirit belongs
-  (Fortune/Spirit swapped; E-109 re-pins);
+  (Fortune/Spirit swapped; re-pinned at E-109:
+  Fortune and Spirit now stand in their traditional
+  places);
 * docket 150's shape, probed: the Sun in Libra —
   its traditional fall — is scored Peregrine, no
-  Fall label (E-109 re-pins);
+  Fall label (re-pinned at E-109: the Fall label
+  now lands);
 * the consumer claim: no file under ``src/``
   mentions astrology at all.
 """
@@ -138,7 +143,10 @@ def test_tracked_member_files_and_size_stand():
         path = MEMBER / rel
         assert path.is_file(), rel
         total += path.stat().st_size
-    assert total == 7477309
+    # 7,477,309 B at E-108; re-pinned at E-109, whose
+    # accuracy fixes grew the one engine file by
+    # 5,589 B (the E-057 table re-pinned likewise).
+    assert total == 7482898
 
 
 def test_surface_counts_derived_from_code():
@@ -185,16 +193,21 @@ def test_docket_148_no_ephemeris_shapes():
 
 
 def test_docket_152_gazetteer_shape():
+    # Re-pinned at E-109 (docket 152 fixed there): the
+    # entry count stands, the Charleston split adds one
+    # unique key, Tivat carries its own coordinates, and
+    # Tianjin resolves instead of defaulting to 0,0.
     seg = SOURCE[SOURCE.index("CITIES = {"):
                  SOURCE.index("result = CITIES.get")]
     keys = re.findall(r'^\s*"([^"]+)":\s*\(', seg, re.M)
     assert len(keys) == 426
-    assert len(set(keys)) == 394
+    assert len(set(keys)) == 395
     tivat = re.search(r'"tivat":\s*\(([^)]*)\)', SOURCE).group(1)
     cancun = re.search(r'"cancun":\s*\(([^)]*)\)', SOURCE).group(1)
-    assert tivat == cancun  # Tivat carries Cancun's coordinates
+    assert tivat != cancun
+    assert tivat == "42.4347, 18.6998"
     lat, lon, resolved = AE.geocode_city("Tianjin", "CN")
-    assert (lat, lon, resolved) == (0.0, 0.0, False)
+    assert (lat, lon, resolved) == (39.1422, 117.1767, True)
 
 
 def test_docket_149_fortune_spirit_swapped():
@@ -203,15 +216,17 @@ def test_docket_149_fortune_spirit_swapped():
         ("Mercury", 30.0), ("Mars", 120.0),
         ("Jupiter", 180.0), ("Saturn", 270.0))}
     lots = AE.calc_lots(pos, 0.0, True)
-    # Traditional day Fortune = ASC + Moon - Sun = 90;
-    # the engine returns 270 there (Spirit's formula),
-    # and 90 at Spirit. E-109 re-pins on the fix.
-    assert lots["Lot of Fortune"] == 270.0
-    assert lots["Lot of Spirit"] == 90.0
+    # Re-pinned at E-109 (docket 149 fixed there):
+    # traditional day Fortune = ASC + Moon - Sun = 90,
+    # and Spirit = ASC + Sun - Moon = 270.
+    assert lots["Lot of Fortune"] == 90.0
+    assert lots["Lot of Spirit"] == 270.0
 
 
 def test_docket_150_fall_never_detected():
+    # Re-pinned at E-109 (docket 150 fixed there): the
+    # textbook falls now carry the Fall label.
     score, labels = AE.essential_dignity("Sun", "Libra", 15)
-    assert not any("Fall" in label for label in labels)
+    assert any("Fall" in label for label in labels)
     score, labels = AE.essential_dignity("Moon", "Scorpio", 15)
-    assert not any("Fall" in label for label in labels)
+    assert any("Fall" in label for label in labels)
