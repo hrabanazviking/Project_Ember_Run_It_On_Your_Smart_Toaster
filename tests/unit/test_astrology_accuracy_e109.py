@@ -81,7 +81,7 @@ def test_doc_records_the_accuracy_verdict():
     text = _flat(DOC)
     for needle in ("within one arcminute",
                    "the accuracy gate passes",
-                   "7,482,898 B",
+                   "7,482,898 B",  # E-109's own record of its tree; the book row below carries the current size (re-pinned at E-113)
                    "epoch-of-date",
                    "NOT PROVEN",
                    "Next: E-110"):
@@ -101,7 +101,7 @@ def test_doc_names_dockets_closed_and_carried():
 def test_member_size_repinned_at_e057():
     row = [line for line in BOOK.read_text(encoding="utf-8").splitlines()
            if line.startswith("| `astrology-engine/`")][0]
-    assert "7,482,898 B" in row
+    assert "7,483,464 B" in row
     # The total was 131,621,907 bytes at E-109; re-pinned
     # at E-110 with attribution (its engines service grew
     # the core and its docket-142 repair grew the seiðr
@@ -110,7 +110,7 @@ def test_member_size_repinned_at_e057():
     # module grew the core and its time.astrology
     # registration grew Verdandi — the E-057 table
     # re-pinned likewise).
-    assert "131,676,841 bytes" in _flat(BOOK)  # re-pinned at E-112 (E-057 total grew)
+    assert "131,680,683 bytes" in _flat(BOOK)  # re-pinned at E-113 (E-057 total grew)
 
 
 # ── Docket 149: the lots ────────────────────────────────

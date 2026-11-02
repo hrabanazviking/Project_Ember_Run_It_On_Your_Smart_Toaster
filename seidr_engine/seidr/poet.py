@@ -63,6 +63,13 @@ class Skald:
         
         if config.seed is not None:
             self._rng = random.Random(config.seed)
+            # E-113 (docket 146): the words come from the
+            # lexicon's stream, so the seed must restart
+            # that stream too — a seeded stanza is
+            # reproducible from its seed alone, whoever
+            # holds this Skald and whatever it composed
+            # before.
+            self.lexicon.reseed(config.seed)
         
         if form.name() == "fornyrthislag":
             return self._compose_fornyrthislag(config, form)
@@ -80,6 +87,16 @@ class Skald:
         if config is None:
             config = PoemConfig()
         
+        if config.seed is not None:
+            # E-113 (docket 146): the per-stanza seed
+            # derivation below draws from this Skald's own
+            # stream, so restart that stream (and the
+            # lexicon's) at the poem's seed first — a
+            # reused Skald then composes the same seeded
+            # poem a fresh one does.
+            self._rng = random.Random(config.seed)
+            self.lexicon.reseed(config.seed)
+
         stanzas = []
         for i in range(config.num_stanzas):
             # Slightly vary the seed for each stanza
@@ -289,7 +306,12 @@ class Skald:
             # Fall back to any domain
             entries = self.lexicon.get_words()
         groups = set(e.alliteration_group for e in entries if e.alliteration_group)
-        return self._rng.choice(list(groups)) if groups else "vowel"
+        # E-113 (docket 146): sorted, never list(set(...)) —
+        # a string set's order follows the process's hash
+        # seed, so the same composition seed chose a
+        # different group in every process; sorted order
+        # makes a seeded choice the same everywhere.
+        return self._rng.choice(sorted(groups)) if groups else "vowel"
     
     def _pick_unique_word(self, **kwargs) -> Optional[WordEntry]:
         """Pick a word that hasn't been used in this composition yet.

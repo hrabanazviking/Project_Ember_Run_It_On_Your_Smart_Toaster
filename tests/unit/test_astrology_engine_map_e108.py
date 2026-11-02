@@ -146,7 +146,7 @@ def test_tracked_member_files_and_size_stand():
     # 7,477,309 B at E-108; re-pinned at E-109, whose
     # accuracy fixes grew the one engine file by
     # 5,589 B (the E-057 table re-pinned likewise).
-    assert total == 7482898
+    assert total == 7483464  # re-pinned at E-113
 
 
 def test_surface_counts_derived_from_code():

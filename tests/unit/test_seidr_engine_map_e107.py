@@ -112,7 +112,7 @@ def test_tracked_member_files_and_size_stand():
     # the dead include_old_norse shapes from
     # seidr/poet.py (net +431 B with its ruling
     # comments; the E-057 table re-pinned likewise).
-    assert total == 104387
+    assert total == 105889  # re-pinned at E-113
 
 
 def test_lexicon_counts_derived_from_code():

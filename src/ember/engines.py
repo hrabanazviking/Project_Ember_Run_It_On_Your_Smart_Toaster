@@ -65,6 +65,34 @@ The shape, in plain words:
   declaration. The verse engine needs nothing beyond the
   standard library (:data:`SEIDR_DEPENDENCIES` is empty, and
   that emptiness is itself pinned).
+- **Determinism + offline, ruled** (E-113; dockets 146
+  and 153): a seeded verse request is reproducible from
+  its seed alone — across calls, across holders of the
+  member's Skald, and across processes — because the
+  member now reseeds every stream a composition draws
+  from at the start of a seeded composition, and the
+  member's CLI composes at the very seed it is given
+  (one seed semantics; its former best-of-five derived
+  seeds are gone). An unseeded verse is not reproducible
+  and is nowhere claimed to be: the member's branding
+  now says *deterministic when seeded*. A chart is a
+  pure function of its pinned date, time, and place —
+  reproducible exactly — and the service's road is
+  **fully local**: the place resolves only from explicit
+  coordinates or the member's built-in table, and the
+  member's two network geocoding tiers (Nominatim,
+  GeoNames) are never consulted through this contract,
+  because a place they resolve is neither offline nor
+  reproducible (docket 153's offline ruling: this
+  engine is offline exactly for the places its table
+  or explicit coordinates cover; the CLI's cascade
+  keeps the network tiers as its own road). The
+  timezone lookup and conversion are local data
+  (timezonefinder, pytz), the ephemeris is the local
+  library model, and seiðr needs nothing beyond the
+  standard library — under a cut network both services
+  answer exactly as under a live one, for every
+  request they can serve at all.
 - **The chart contract is tropical only** (docket 154): the
   member's sidereal branch exists in its code but no caller
   has ever reached it and no accuracy fixture has ever run
@@ -157,15 +185,17 @@ ASTROLOGY_DEPENDENCIES: Final[tuple[Dependency, ...]] = (
     Dependency(
         "kerykeion", "kerykeion",
         "a network geocoding tier (GeoNames) for places the "
-        "built-in table does not carry; without it that tier "
-        "drops out and the built-in table is the offline road",
+        "built-in table does not carry — the member CLI's "
+        "road only: the service never consults it (E-113's "
+        "offline ruling, docket 153)",
         False,
     ),
     Dependency(
         "geopy", "geopy",
         "a network geocoding tier (Nominatim) for places the "
-        "built-in table does not carry; without it that tier "
-        "drops out and the built-in table is the offline road",
+        "built-in table does not carry — the member CLI's "
+        "road only: the service never consults it (E-113's "
+        "offline ruling, docket 153)",
         False,
     ),
 )
@@ -210,8 +240,9 @@ class VerseRequest:
     one of the engine's nine worlds or ``None`` (the composer
     chooses per composition, and the response reports the
     world actually used). ``seed`` is the determinism switch:
-    a seeded request is byte-reproducible, an unseeded one is
-    not claimed to be (E-107 §6; E-113 owns the ruling).
+    a seeded request is byte-reproducible — from its seed
+    alone, across calls and processes (E-113's ruling,
+    docket 146) — and an unseeded one is not claimed to be.
     """
 
     form: str = "fornyrthislag"
@@ -373,9 +404,12 @@ class ChartRequest:
     the place, or ``None`` (the engine's noon default, flagged
     in the response as unknown time). The place is explicit
     coordinates (``lat`` and ``lon`` together) or a ``city``
-    (with optional ``nation``) resolved through the engine's
-    own cascade — explicit coordinates first, its built-in
-    table the offline tier. There is deliberately no sidereal
+    (with optional ``nation``) resolved the offline way
+    (E-113, docket 153): explicit coordinates first, then
+    the engine's built-in table — its network geocoding
+    tiers are never consulted through this contract, so a
+    city the table does not carry is refused, never
+    fetched. There is deliberately no sidereal
     field (docket 154) and no house-system field: Placidus is
     the only system the member computes (E-108 §2).
     """
@@ -586,7 +620,8 @@ def request_chart(
         (year, month, day, utc_hour, lat, lon, tz_name, tz_label,
          time_known, place_defaulted) = engine.resolve_birth(
             request.date, request.time, request.city,
-            request.nation, request.lat, request.lon)
+            request.nation, request.lat, request.lon,
+            offline=True)
     except Exception as exc:  # unparsable date/time, stated
         return ChartResult.refused(
             f"astrology service: the birth data could not be "

@@ -11,7 +11,7 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,676,841
+imported members of the E-002 census) weigh **131,680,683
 bytes (125.52 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
@@ -244,7 +244,7 @@ dead `include_old_norse` shapes from its poet
 file: the core now reads 135 files / 992,245 B,
 seidr_engine now reads 11 files / 104,387 B, the
 total 131,676,841 bytes, the laptop miss unchanged
-at 256,944 bytes.)*
+at 256,944 bytes. Re-measured again at E-113, whose determinism repairs (the lexicon reseed and the sorted alliteration-group pick in the seiðr member's poet and lexicon files, and its CLI's one-seed rewrite), whose offline road in the astrology member's one engine file, and whose engines-service contract words grew those members: the core now reads 135 files / 994,019 B, seidr_engine now reads 11 files / 105,889 B, astrology-engine now reads 25 files / 7,483,464 B, the total 131,680,683 bytes, the laptop miss unchanged at 256,944 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -284,13 +284,13 @@ table prices exactly that choice, per profile.
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 135 | 992,245 B | toaster | 12.0 MiB |
+| `src/` (ember core) | 135 | 994,019 B | toaster | 12.0 MiB |
 | `Verdandi/` | 193 | 17,034,160 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,823,610 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
-| `seidr_engine/` | 11 | 104,387 B | toaster | 13.3 MiB |
-| `astrology-engine/` | 25 | 7,482,898 B | pi | 12.4 MiB |
+| `seidr_engine/` | 11 | 105,889 B | toaster | 13.3 MiB |
+| `astrology-engine/` | 25 | 7,483,464 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
 | `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
 | `Open-VTT/` | 209 | 6,768,730 B | pi | NOT MEASURED |

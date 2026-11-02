@@ -463,7 +463,8 @@ def local_to_utc(year, month, day, local_hour, tz_name):
 
 
 def resolve_birth(date_str, time_str, city, nation="",
-                  lat_override=None, lon_override=None):
+                  lat_override=None, lon_override=None,
+                  offline=False):
     """One-stop resolution of birth data → (y, mo, d, utc_hour, lat, lon, tz_name, tz_label).
 
     Steps:
@@ -484,7 +485,8 @@ def resolve_birth(date_str, time_str, city, nation="",
     y, mo, d, local_hour = parse_date_time(date_str, time_str)
     time_known = time_str is not None
 
-    lat, lon, city_resolved = geocode_city(city, nation, lat_override, lon_override)
+    lat, lon, city_resolved = geocode_city(city, nation, lat_override, lon_override,
+                                           offline=offline)
     city_default_used = not city_resolved
 
     tz_name = resolve_timezone(lat, lon)
@@ -506,7 +508,8 @@ def resolve_birth(date_str, time_str, city, nation="",
 
     return y, mo, d, utc_hour, lat, lon, tz_name or "UTC", tz_label, time_known, city_default_used
 
-def geocode_city(city, nation="", lat_override=None, lon_override=None):
+def geocode_city(city, nation="", lat_override=None, lon_override=None,
+                 offline=False):
     """Resolve city → (lat, lon, city_resolved).
     
     city_resolved is True if the city name was actually matched (not defaulted).
@@ -517,12 +520,21 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
       3. kerykeion built-in geonames DB
       4. Hardcoded ~120-city fallback table
       5. Warn + return (0, 0)
+
+    With ``offline=True`` (E-113, docket 153's ruling —
+    the road the Ember core's service always takes)
+    tiers 2 and 3 are skipped entirely: they are
+    network services, so a place they resolve is
+    neither offline nor reproducible. Only explicit
+    coordinates and the built-in table resolve a
+    place offline; anything else falls through to
+    tier 5 and the caller sees the default flag.
     """
     if lat_override is not None and lon_override is not None:
         return float(lat_override), float(lon_override), False
 
     # --- Nominatim (most accurate, works for any city worldwide) ---
-    if city:
+    if city and not offline:
         geo = _geo()
         if geo:
             query = f"{city}, {nation}".strip(", ")
@@ -539,7 +551,7 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
                 pass
 
     # --- kerykeion geonames ---
-    if KK and city:
+    if KK and city and not offline:
         try:
             import logging
             logging.disable(logging.CRITICAL)
