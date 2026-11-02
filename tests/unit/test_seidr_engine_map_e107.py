@@ -107,8 +107,12 @@ def test_tracked_member_files_and_size_stand():
         total += path.stat().st_size
     # 103,728 B at E-107; re-pinned at E-110, whose
     # docket-142 repair grew seidr/forms.py by 228 B
-    # (the E-057 table re-pinned likewise).
-    assert total == 103956
+    # (the E-057 table re-pinned likewise). Re-pinned
+    # again at E-112, whose docket-144 ruling removed
+    # the dead include_old_norse shapes from
+    # seidr/poet.py (net +431 B with its ruling
+    # comments; the E-057 table re-pinned likewise).
+    assert total == 104387
 
 
 def test_lexicon_counts_derived_from_code():
@@ -159,8 +163,16 @@ def test_no_consumer_in_the_core():
     # first core consumer — the E-107 map's "no consumers"
     # verdict was the ground E-110 built on, and this pin
     # now guards that the service is the ONLY core file
+    # naming the engine. Re-pinned at E-112 with
+    # attribution: the conversation layer
+    # (src/ember/seidr_conversation.py) is the service's
+    # first conversation consumer in turn, so the pin now
+    # guards that these two are the only core files
     # naming the engine.
-    assert offenders == ["src/ember/engines.py"], offenders
+    assert sorted(offenders) == [
+        "src/ember/engines.py",
+        "src/ember/seidr_conversation.py",
+    ], offenders
 
 
 # ── The docketed shapes, probed ─────────────────────────

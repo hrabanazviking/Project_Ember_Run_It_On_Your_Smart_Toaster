@@ -69,13 +69,21 @@ DIARY_BYTES_PER_TURN = 80
 #: not a benchmark burst.
 REFERENCE_TURNS_PER_DAY = 20
 
-#: What the installed core weighed on measurement day: the
-#: package itself (729,802 B, byte-identical installed and in
-#: source), its dist-info (83,102 B) and the one default extra a
-#: working install carries, ``sqlite-vec`` (165,939 B with its
-#: dist-info) — 978,843 bytes in all, bytecode caches excluded
-#: (they are a runtime artefact, counted in the book's prose).
-MEASURED_INSTALL_BYTES = 978_843
+#: What the installed core weighs, as re-measured at E-112
+#: by E-041's own method (a fresh venv install on the VM,
+#: bytecode caches excluded): the package itself (991,046 B,
+#: byte-identical installed and in source), its dist-info
+#: (84,617 B) and the one default extra a working install
+#: carries, ``sqlite-vec`` 0.1.9 (199,548 B with its
+#: dist-info) — 1,275,211 bytes in all. E-041's founding
+#: measurement (978,843 B: package 729,802 B, dist-info
+#: 83,102 B, sqlite-vec 165,939 B) is superseded by this
+#: re-measurement, not edited away: the package grew
+#: across Parts II–VII and the extra grew with its
+#: releases, and the E-042 gate caught the package alone
+#: outgrowing the old all-in anchor at E-112. The growth
+#: itself is docket 159, owned by E-114/E-197.
+MEASURED_INSTALL_BYTES = 1_275_211
 
 #: The heaviest idle shape measured: the CLI surface imported
 #: and the default Well open — 40.7 MiB RSS on the VM. (Idle

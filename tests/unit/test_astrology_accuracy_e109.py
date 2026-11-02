@@ -110,7 +110,7 @@ def test_member_size_repinned_at_e057():
     # module grew the core and its time.astrology
     # registration grew Verdandi — the E-057 table
     # re-pinned likewise).
-    assert "131,657,131 bytes" in _flat(BOOK)
+    assert "131,676,841 bytes" in _flat(BOOK)  # re-pinned at E-112 (E-057 total grew)
 
 
 # ── Docket 149: the lots ────────────────────────────────

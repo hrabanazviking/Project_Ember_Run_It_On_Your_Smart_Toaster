@@ -71,12 +71,19 @@ regression armour.
 Measured on the campaign VM (x86, Python 3.12.3, fresh
 processes, memory read from `/proc`):
 
-- **Install: 978,843 bytes in all** — the package
-  (729,802 B, byte-identical installed and in source),
-  its dist-info (83,102 B) and the one default extra a
-  working install carries, `sqlite-vec` (165,939 B with
-  its dist-info). Bytecode caches excluded; after first
-  run they add ~0.6 MB more. The old front-door claim of
+- **Install: 1,275,211 bytes in all** — the package
+  (991,046 B, byte-identical installed and in source),
+  its dist-info (84,617 B) and the one default extra a
+  working install carries, `sqlite-vec` 0.1.9
+  (199,548 B with its dist-info). Bytecode caches
+  excluded; after first run they add ~0.6 MB more.
+  (E-041's founding measurement was 978,843 B in all;
+  it was re-measured at E-112 by the same method after
+  the E-042 gate caught the grown package alone
+  exceeding the old all-in anchor — the core no longer
+  installs in under a MiB, and still fits the
+  toaster's 2 MiB ceiling. The growth is docket 159.)
+  The old front-door claim of
   "~50 MB installed" is struck: it overstates Ember by
   ~50×. The ~3.5 GB "typical install" story is Ollama
   (~700 MB) plus models (~2.6 GB) plus Ember (~1 MB).
@@ -271,12 +278,12 @@ running hub is 21.9 MiB live, E-041).
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 134 | 972,966 B | toaster | 12.0 MiB |
+| `src/` (ember core) | 135 | 992,245 B | toaster | 12.0 MiB |
 | `Verdandi/` | 193 | 17,034,160 B | none | 12.6 MiB |
 | `kista/` | 25 | 2,823,610 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
-| `seidr_engine/` | 11 | 103,956 B | toaster | 13.3 MiB |
+| `seidr_engine/` | 11 | 104,387 B | toaster | 13.3 MiB |
 | `astrology-engine/` | 25 | 7,482,898 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
 | `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
@@ -285,7 +292,7 @@ running hub is 21.9 MiB live, E-041).
 | `cleasby-vigfusson-old-norse-dict/` | 170 | 24,221,782 B | none | NOT MEASURED |
 
 In plain words: the twelve running members weigh
-131,657,131 bytes together, and three of them —
+131,676,841 bytes together, and three of them —
 mempalace, the dictionary, and Verdandi (which misses
 even the laptop's ceiling by 256,944 bytes) — fit no
 profile's install ceiling at all. Their weight is data,
@@ -345,7 +352,7 @@ cannot quietly age away from the measurements.
 
 | Anchor | Value | From |
 |---|---|---|
-| MEASURED_INSTALL_BYTES | 978,843 | E-041 (VM) |
+| MEASURED_INSTALL_BYTES | 1,275,211 | E-041 (VM), re-measured E-112 (VM) |
 | MEASURED_IDLE_RAM_MIB | 40.7 | E-041 (VM) |
 | MEASURED_TURN_RAM_MIB | 40.1 | E-041 (VM) |
 | MEASURED_COLD_START_FIRST_WORD_S | 2.87 | E-046 (VM) |

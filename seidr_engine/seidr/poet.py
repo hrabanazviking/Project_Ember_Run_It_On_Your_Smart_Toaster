@@ -23,10 +23,13 @@ class PoemConfig:
     """Configuration for poem generation."""
     form: str = "fornyrthislag"  # poetic form name
     domain: Optional[str] = None  # limit vocabulary to a world/domain
-    topic: Optional[str] = None  # thematic topic hint
+    topic: Optional[str] = None  # a label carried on the stanza; composition never reads it — not a hint (E-112, docket 144)
     num_stanzas: int = 1
     use_kennings: bool = True
-    include_old_norse: bool = False  # show Old Norse alongside English
+    # include_old_norse was removed at E-112 (docket 144): the
+    # field was copied config-to-config and never consulted —
+    # a promise nothing kept. Old Norse travels as data (the
+    # lexicon's own forms), not as a rendering flag.
     alliteration_strictness: float = 0.7  # 0.0-1.0, probability of enforcing alliteration
     seed: Optional[int] = None
 
@@ -86,7 +89,6 @@ class Skald:
                 topic=config.topic,
                 num_stanzas=1,
                 use_kennings=config.use_kennings,
-                include_old_norse=config.include_old_norse,
                 alliteration_strictness=config.alliteration_strictness,
                 seed=(config.seed or 42) + i * 1000 + self._rng.randint(0, 999) if config.seed else None
             )
@@ -739,10 +741,16 @@ class Poem:
     def __str__(self) -> str:
         return self.format()
     
-    def format(self, include_runic_header: bool = True, 
-               include_form_info: bool = True,
-               include_old_norse: bool = False) -> str:
-        """Format the poem for display."""
+    def format(self, include_runic_header: bool = True,
+               include_form_info: bool = True) -> str:
+        """Format the poem for display.
+
+        (The former ``include_old_norse`` parameter was
+        removed at E-112, docket 144: it was accepted and
+        silently ignored — a poem holds line text, not word
+        entries, so this renderer never had the forms to
+        show. Old Norse forms travel as lexicon data.)
+        """
         lines = []
         
         if include_runic_header:
