@@ -53,7 +53,7 @@ If the vault is not the easiest path, it will not be walked.
 > *Þegja sé ekki samþykki.*  
 > *What is not spoken cannot be taken.*
 
-The vault encrypts. Fernet — AES-128-CBC with HMAC-SHA256 — wraps every entry in iron. The key lives at `~/.hermes/credentials/.vault_key`, `chmod 600`, owned by your own user. No cloud. No third-party server. No shared master password across devices.
+The vault encrypts. Fernet — AES-128-CBC with HMAC-SHA256 — wraps every entry in iron. The key lives at `~/.ember/kista/.vault_key` (the default home since E-094; `KISTA_DIR` can point it elsewhere), `chmod 600`, owned by your own user. No cloud. No third-party server. No shared master password across devices.
 
 The old Norse knew that a secret told is a secret sold. **Kista keeps its mouth shut.** The only plaintext metadata is service names and timestamps — never passwords, never emails, never tokens.
 

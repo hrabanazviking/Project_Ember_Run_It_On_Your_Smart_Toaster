@@ -228,13 +228,13 @@ IMPORT:  source file ──read──► _decrypt(src_bytes, current_key)
 ## 4. File Layout
 
 ```
-~/.hermes/credentials/
+~/.ember/kista/          # the default home (E-094); `KISTA_DIR` overrides it
 ├── .vault_key          # Fernet key, chmod 600 (MUST be 600)
 ├── vault.json.enc      # Encrypted vault, chmod 600
 └── vault_meta.json     # Plaintext index (service names + timestamps only)
 ```
 
-**Invariant:** `.vault_key` and `vault.json.enc` MUST be mode 600/400 (owner-read-write only). `vault_meta.json` is intentionally readable — it contains no secrets.
+**Invariant:** `.vault_key` and `vault.json.enc` MUST be mode 600/400 (owner-read-write only). `vault_meta.json` contains no secrets — service names and timestamps only — and since E-095 it is also written chmod 600, so even the names are closed to other accounts.
 
 ---
 
