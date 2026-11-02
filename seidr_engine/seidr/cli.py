@@ -180,33 +180,23 @@ def main() -> None:
         seed=args.seed
     )
     
-    # Generate multiple attempts and keep the best
-    best_poem = None
-    best_score = -1
-    
-    for attempt in range(5):
-        attempt_seed = (args.seed or 42) + attempt * 7919  # Different seed each attempt
-        attempt_config = PoemConfig(
-            form=config.form,
-            domain=config.domain,
-            num_stanzas=config.num_stanzas,
-            use_kennings=config.use_kennings,
-            seed=attempt_seed
-        )
-        
-        try:
-            poem = skald.compose_poem(attempt_config)
-            score = _score_poem(poem)
-            if score > best_score:
-                best_score = score
-                best_poem = poem
-        except Exception as e:
-            continue
-    
-    if best_poem is None:
+    # One seed semantics (E-113, docket 146): the CLI
+    # composes exactly once, at the seed it was given —
+    # ``--seed S`` prints the poem the library composes
+    # at S, the same poem the service serves at S. The
+    # former shape silently derived five attempt seeds
+    # ((seed or 42) + attempt x 7919), swallowed any
+    # attempt that raised, and printed the highest
+    # scorer, so a seeded CLI poem was the best of five
+    # other seeds' poems and no seed meant the same
+    # thing in both places.
+    try:
+        best_poem = skald.compose_poem(config)
+    except Exception:
         print("  ᛬ The seiðr-worker could not find words today. ᛬")
         print("  ᛬ Try a different domain or form. ᛬")
         sys.exit(1)
+    best_score = _score_poem(best_poem)
     
     # Display
     if args.frame:

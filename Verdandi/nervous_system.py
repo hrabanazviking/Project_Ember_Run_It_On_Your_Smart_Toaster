@@ -591,6 +591,7 @@ _STIMULUS_CHANNELS = ('timer', 'cron', 'check', 'signal', 'cli', 'log', 'direct'
 _STIMULUS_SPECS = {
     'time.tick': ('time', 'timer'),
     'time.schedule': ('time', 'cron'),
+    'time.astrology': ('time', 'cron'),
     'sensor.signal': ('sensor', 'signal'),
     'message.operator': ('message', 'cli'),
     'message.conversation': ('message', 'log'),

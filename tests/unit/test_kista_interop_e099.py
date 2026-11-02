@@ -228,6 +228,12 @@ def test_probe_plaintext_backup_crosses_and_is_the_forbidden_road(tmp_path):
     # which is exactly why it must be named: it moves
     # secrets in clear text, forbidden for real entries
     # by the E-093 custody law. Synthetic values only here.
+    # Re-pinned consciously at E-101, with attribution:
+    # docket 138's remedy — which this battery itself
+    # handed to E-101 — gates the plain road behind
+    # --allow-plaintext, so the crossing below now
+    # refuses first, then crosses only at the explicit
+    # word. The finding this probe proves is unchanged.
     a = _source_vault(tmp_path)
     bk = tmp_path / "a_backup_plain.json"
     _run(tmp_path, a, "backup", "--output", str(bk))
@@ -236,6 +242,10 @@ def test_probe_plaintext_backup_crosses_and_is_the_forbidden_road(tmp_path):
     _run(tmp_path, b, "init")
     assert (b / ".vault_key").read_bytes() != \
         (a / ".vault_key").read_bytes()
-    out = _run(tmp_path, b, "restore", str(bk)).stdout
+    refused = _run(tmp_path, b, "restore", str(bk), check=False)
+    assert refused.returncode == 1
+    assert "--allow-plaintext" in refused.stderr
+    out = _run(tmp_path, b, "restore", str(bk),
+               "--allow-plaintext").stdout
     assert "Restored 6 new" in out
     assert "synthetic-pw-A" in _run(tmp_path, b, "get", "site").stdout

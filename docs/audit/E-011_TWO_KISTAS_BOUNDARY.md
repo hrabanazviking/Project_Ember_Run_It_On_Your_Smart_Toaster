@@ -352,3 +352,55 @@ per-entry verification with a plain-words receipt,
 and program tags stripped or explicitly mapped.
 Until the first two stand, §5 rule 5 stands
 unexceptioned: **no entry ever crosses.**
+
+## E-104 final addendum (2026-11-02) — the boundary, final form
+
+*Appended by the E-104 slice (docs: Kista for users
+(plain) + the boundary doc final), under the same
+discipline as the E-099 addendum above: everything
+above stands exactly as filed; this addendum extends
+it and rewrites nothing. The full final form is
+`docs/architecture/E-104_KISTA_FOR_USERS.md` Part B.*
+
+**The boundary is final.** Part VI is complete in
+substance: the toaster-Kista is mapped, threat-
+modelled, passphrase-locked, program-scoped,
+kind-judged, core-bound, backup-proven, drilled,
+and budget-proven (E-094–E-103), and its user guide
+and this final form are filed at E-104. The
+dispositions of this doc's six hazards, at E-104:
+
+- **H1 (the default home) — CLOSED** at E-094
+  (docket 46): `~/.ember/kista/`, `KISTA_DIR`
+  overrides. The member documents that still stated
+  the old default are corrected at E-104 (docket
+  130, closed for every member file except
+  `kista/README.md`, whose lines are reserved to
+  the owner's hand or word at E-195).
+- **H2 (Verdandi's third vault shape) — STILL
+  STANDING**, verified at the E-104 tree: the
+  health check still expects `~/.kista/vault.db`.
+  Its assigned owner (Part IV) closed without
+  taking it; it is carried, named, to the
+  campaign's closing presentation at E-204.
+- **H3 (tests judging the other installation) —
+  CLOSED** at E-094 (docket 5).
+- **H4 (the ai-side ledger in this tree) — RULED**
+  at E-093 (docket 48): an identifier ledger, not
+  a leak; it stays, removal is the owner's word.
+- **H5 (the aspirational Yggdrasil shape) — STANDS
+  AS PROPOSAL**: never built, never a description.
+- **H6 (same version, different programs) — STANDS
+  AS A CITING RULE**: which one, where, when.
+
+The custody rules of §5 stand in the final form
+recorded at E-104 §B5 — three of them carrying
+Part VI's amendments in the open (rule 3's reason
+retired by E-094 while its discipline stands;
+rule 5 read with E-099's preconditions; rule 2 in
+its E-093 custody-law form). **No entry ever
+crosses, and nothing syncs, in either direction.**
+What remains for the two Kistas is only a
+vocabulary: the user-facing names that tell them
+apart without jargon are E-105's work, and they
+rename nothing built here.

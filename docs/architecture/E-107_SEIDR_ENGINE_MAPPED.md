@@ -1,0 +1,456 @@
+# E-107 — Seiðr Engine Mapped: What It Computes, Its Inputs and Outputs, Its Consumers Today
+
+*Project Ember campaign, Part VII (The Inner Life:
+Seiðr Engine & Astrology Engine) — OPENING slice,
+a map, not a build. Filed 2026-11-02 on branch
+`yrsa/ember-road-build` in the campaign's own clone
+(`~/workspace/ember-build`), on top of E-106 banked
+(c0befb8) + its push record (b5c9f5b) + this slice's
+IN PROGRESS marker (02bd8ba). Every count below was
+measured this slice from the member's own code at
+this tree (probes in `~/workspace/.verify-tmp/ember-e107/`);
+nothing is recalled from elder documents. Where an
+elder document claims more than the code does, the
+code wins and the gap is docketed (§8). No README
+was touched; no member code was changed by this
+slice — Part VII builds on this map in E-110 and
+after.*
+
+## The map, in plain words — read this first
+
+**The seiðr engine is a small, self-contained verse
+machine. It does not think, divine, or interpret —
+it composes Old-Norse-flavoured English verse by
+rule.** Given a poetic form, optionally a world to
+draw words from, and optionally a seed, it picks
+words from a built-in word-hoard of 337 entries
+sorted into the Nine Worlds, fits them into line
+templates that respect each form's syllable range
+and alliteration, decorates some lines with
+kennings, and hands back a stanza or a poem as
+text. That is the whole of what it computes today:
+no rune draws, no fate model, no interpretation —
+those are things later slices may *offer through*
+it (E-112), not things it does.
+
+**It has no consumers today.** Nothing in the
+companion's core imports it, calls it, or knows it
+exists; the campaign's own inventory already
+records it as unwired, and elder design documents
+describe a purpose for it — verse as a mood signal
+for chat — that has never been built. Its only
+living callers are its own command line and its
+own tests. Part VII exists to change that
+deliberately (E-110's service binding, E-112's
+place in conversation), and this map is the ground
+those slices stand on.
+
+**It is honest small:** eleven tracked files,
+103,728 bytes, standard library only, no files
+read or written, no network, no environment or
+config read — and seeded composition is exactly
+reproducible, which Part VII's determinism slice
+(E-113) will hold it to. The map also found real
+defects, each docketed to a named Part VII owner
+in §8: one verse form displays its lines in the
+wrong order, an unknown world name is silently
+answered with borrowed words instead of an error,
+two config fields do nothing, the form validators
+check less than their own descriptions claim, and
+"deterministic" is true only when a seed is
+supplied.
+
+## 1. The member as it stands
+
+| Fact | Measured value |
+|---|---|
+| Location | `seidr_engine/` (package `seidr`) |
+| Tracked files | 11 tracked files, 103,728 B in all — the E-057 row, verified standing at this tree |
+| Package version | 0.1.0 (`pyproject.toml` and `seidr/__init__.py` agree) |
+| Licence | MIT (member `LICENSE`; pyproject declares MIT) |
+| Authorship as filed | "Runa Gridweaver Freyjasdóttir", May 2026, in the package docstring — `ORIGINS.md` carries no row naming this member; the campaign's provenance for it is the package itself plus the sibling design doc (§7), and extending ORIGINS is E-196's work, not this slice's |
+| Dependencies | None — Python standard library only (`random`, `dataclasses`, `typing`, `abc`, `argparse`, `sys`; `re` is imported in `poet.py` and never used, a dead import recorded here, not a defect with an owner) |
+| Smallest profile (E-057) | toaster; import-level RAM floor 13.3 MiB — the row stands; Part VII's own budget rows are E-114 |
+
+The code, file by file (line counts from `wc` at
+this tree):
+
+| File | Lines | What it is |
+|---|---|---|
+| `seidr/lexicon.py` | 710 | The word-hoard: every word and kenning, hard-coded as data built at import |
+| `seidr/poet.py` | 814 | The composer: `Skald`, `PoemConfig`, `Poem`, the line templates |
+| `seidr/forms.py` | 378 | The four verse forms and their stated rules: `Line`, `HalfStanza`, `Stanza`, the form classes, the registry |
+| `seidr/cli.py` | 281 | The command line: banners, argument parsing, best-of-five scoring, display |
+| `seidr/__init__.py` | 21 | The public face: version, the four form classes, `Lexicon`, `Skald`, `PoemConfig`, `Poem`, `NINE_WORLDS` |
+| `seidr/__main__.py` | 15 | `python -m seidr` → the CLI's `main()` |
+| `tests/test_seidr.py` | 285 | The member's own suite: 38 tests (§6) |
+| `pyproject.toml`, `LICENSE`, `README.md`, `tests/__init__.py` | — | Packaging and elder text; the README stands untouched under the campaign law |
+
+## 2. What it computes — the model, stated exactly
+
+The engine models exactly three things:
+
+1. **A vocabulary, organised as worlds.** The
+   `Lexicon` holds word entries, each carrying its
+   text, a stated syllable count, a derived stress
+   pattern (Germanic initial stress, generated by
+   function, not stored), a derived alliteration
+   group (vowels alliterate together; `sk`/`sp`/`st`
+   alliterate as clusters; otherwise the first
+   letter), its world, its part of speech, any
+   kennings it appears in, and — for every
+   non-connector entry — its Old Norse form. It
+   also holds kennings: a base thing, an expression,
+   its component words, and its world.
+2. **Four verse forms as rule objects.** Each form
+   states its name in ASCII and in Old Norse, its
+   per-line syllable range, its alliteration
+   expectation per line position, a validator, and
+   a human description. What the validators
+   actually check is less than the descriptions
+   claim — §8, docket 145.
+3. **Composition as constrained picking.** The
+   `Skald` draws words through the lexicon's
+   filtered queries (world, part of speech,
+   syllable window, alliteration group) into eight
+   line templates plus a fallback, tracking words
+   already used in the current composition to
+   discourage repetition, retrying a line up to 50
+   times to land inside its syllable range, and
+   assembling the form's stanza shape. There is no
+   learned model, no external data, and no state
+   between compositions beyond the random source.
+
+What it does **not** model, whatever the word
+seiðr suggests: no draws or lots, no wyrd or fate
+state, no question-and-answer shape, no
+interpretation of its own output. The roadmap's
+own honesty rule for E-112 is already the truth
+of this code — the engine computes; meaning is
+the companion's voice, labelled.
+
+## 3. The lexicon, measured
+
+Built fresh at every `Lexicon()` construction from
+the loader methods in `lexicon.py` — no data files.
+
+| World | Entries | | World | Entries |
+|---|---|---|---|---|
+| asgard | 42 | | jotunheim | 31 |
+| vanaheim | 34 | | svartalfheim | 26 |
+| alfheim | 27 | | niflheim | 25 |
+| midgard | 45 | | muspelheim | 24 |
+| helheim | 28 | | connectors | 55 |
+| **Total** | **337 word entries** | | | |
+
+- Parts of speech across the hoard: 161 nouns,
+  68 verbs, 53 adjectives, 14 prepositions,
+  14 adverbs, 10 auxiliaries, 8 conjunctions,
+  7 pronouns, 2 articles.
+- **28 kennings**, by world: asgard 13, vanaheim 9,
+  jotunheim 4, alfheim 1, svartalfheim 1 — five
+  worlds hold none. By base: sea 4; battle, sword,
+  gold 3 each; warrior, ship, poetry, woman 2 each;
+  blood, raven, mead, earth, mountains, sky, Freyja
+  1 each (15 bases).
+- Old Norse forms: **282 of 337** entries carry
+  one — exactly the non-connector entries; the 55
+  connectors carry none, by construction.
+- Duplicate shapes, recorded as they stand: one
+  exact within-world duplicate — jotunheim's verb
+  "devour" appears twice with two different Old
+  Norse forms, so it is drawn at double weight.
+  The remaining same-word entries in a world are
+  cross-part-of-speech homographs (sacrifice as
+  noun and verb in asgard, love in midgard, forge
+  and craft in svartalfheim, burn in muspelheim,
+  obscure in niflheim, yet as conjunction and
+  adverb among the connectors) — distinct entries
+  sharing a spelling. §8, docket 147.
+
+## 4. The forms, measured
+
+The registry holds **6 keys for 4 forms** — two
+keys are alternate spellings (`fornyrdislag`,
+`ljodahattr`) resolving to the same form objects.
+
+| Form | Old Norse name | Syllables per line | Lines per stanza (composer) | Alliteration expectation |
+|---|---|---|---|---|
+| fornyrthislag | fornyrðislag | 4–6 | 4 (two pairs) | any / any |
+| ljodhattr | ljóðaháttr | 4–6 (full lines composed at 5–8) | 4 pair lines + 2 full lines | any; the full line is free |
+| drottkvaett | dróttkvætt | 5–7 | 8 (four couplets) | any |
+| malahattr | málaháttr | 5–8 | 8 (four couplets) | any |
+
+An unknown form name is the one input the library
+refuses outright: `get_form` raises `ValueError`
+naming the available forms — probed at this tree.
+Contrast the unknown *world*, §8, docket 143.
+
+## 5. Inputs and outputs
+
+**Inputs** (the library road — `PoemConfig`, every
+field accounted for):
+
+| Field | Default | What it actually does |
+|---|---|---|
+| `form` | `fornyrthislag` | Selects the form object; unknown names raise |
+| `domain` | none (a world is picked per composition) | Restricts the vocabulary to one world — unvalidated (docket 143) |
+| `topic` | none | Stored on the stanza and copied between configs; never read by composition — a label, not the "thematic hint" its comment claims (docket 144) |
+| `num_stanzas` | 1 | The poem's stanza count |
+| `use_kennings` | true | Gates the kenning line template |
+| `include_old_norse` | false | **Dead in composition**: copied config-to-config and never consulted by the composer; Old Norse display exists only as `Poem.format(include_old_norse=...)`, a separate parameter the composer never passes (docket 144) |
+| `alliteration_strictness` | 0.7 | A probability gate inside the templates: how often the alliteration filter is applied to a slot |
+| `seed` | none | §6 — the determinism switch |
+
+The engine reads **nothing else**: no files, no
+environment variables, no config, no network, no
+clock. Its only other input surface is the command
+line (§5, below).
+
+**Outputs:**
+
+- `Stanza` — half-stanzas of line pairs, any full
+  lines, and the form / topic / domain labels.
+  `Stanza.lines` flattens pairs first and appends
+  full lines after — an ordering that matters at
+  §8, docket 142.
+- `Line` — text, syllable count, alliteration
+  group, domain.
+- `Poem` — stanzas plus config, rendered by
+  `format()` (runic rule lines, optional form
+  header) or `format_ascii_frame()` (a runestone
+  box). Rendering is the caller's act; composition
+  itself prints nothing.
+- The CLI's output: banner, the best-scoring of
+  five attempts (§6), optionally framed, optionally
+  with a verbose structure listing; `--list` prints
+  the forms, the per-world counts of §3, and every
+  kenning. Exit 1 with a plain two-line message
+  only when all five attempts raise.
+
+**The CLI surface** (argparse, `prog="seidr"`,
+also the installed script name in pyproject):
+positional form (four choices), `--domain/-d`
+(nine choices — the worlds, connectors excluded),
+`--stanzas/-s`, `--no-kennings`, `--seed`,
+`--frame/-f`, `--list`, `--verbose/-v`. Invalid
+choices are refused by argparse itself with exit
+2 — the CLI is stricter than the library it wraps.
+
+## 6. Determinism, and the member's own tests
+
+- **Seeded, the library is exactly reproducible:**
+  two skalds at seed 123 produce byte-identical
+  formatted poems — probed at this tree.
+- **Unseeded, it is not:** two unseeded poems
+  differ. The package nevertheless brands itself
+  "deterministic" in its docstring, its pyproject
+  description, and its sibling design doc. The
+  true claim is *deterministic when seeded* —
+  §8, docket 146, owned by E-113, whose whole
+  subject is this.
+- **The CLI's seed is not the library's seed:**
+  the CLI derives five attempt seeds —
+  `(seed or 42) + attempt × 7919` — composes five
+  poems, silently swallowing any attempt that
+  raises, and prints the highest scorer under its
+  own 0–10 structural score (diversity, repetition,
+  alliteration variety, kenning presence). A seeded
+  CLI poem is therefore the best of five seeded
+  poems, not the poem the library composes at that
+  seed. Also docket 146.
+- The member's own suite, run this slice in its
+  own shape (`PYTHONPATH=seidr_engine`, its own
+  pyproject testpaths): **38 passed, 0 failed**.
+  Its coverage is real for lexicon queries, form
+  existence and ranges, and seeded composition —
+  and weak exactly where §8 lives: the ljodhattr
+  test asserts only that the stanza has at least
+  four lines, and no test composes an unknown
+  world, reads `include_old_norse`, or checks a
+  validator against an alliteration mismatch.
+
+## 7. Consumers today — the complete list
+
+Probed this slice by searching the tree's code for
+the engine's name and public classes:
+
+- **The companion core (`src/`): none.** No file
+  under `src/` mentions the engine at all. The
+  core's persona, ritual, and conversation code
+  does not import it.
+- **The other members' code: none.** The single
+  `seidr` string in another member's code —
+  `mimir-well/scripts/migrate_fact_store.py` —
+  maps a legacy category label to "semantic" in a
+  migration table; it is not this engine and does
+  not call it.
+- **The root test tree: two standing pins only** —
+  E-043's install-weight battery and E-057's
+  member budget table cite the member's size; no
+  root test imports or composes with it.
+- **Elder documents describe a consumer that was
+  never built.** `docs/UNWIRED_INVENTORY.md`
+  records the member plainly: wired — no; "None
+  planned. Standalone Norse-themed sibling." The
+  Yggdrasil design corpus (`docs/yggdrasil/`)
+  describes the aspiration — verse as a
+  register-shaping mood signal for chat, never
+  pasted into replies — in its sibling sheet, its
+  generation-plane sheet, and its
+  emotional-intelligence framework. No code
+  implements any of it. That aspiration is design
+  input for E-112, not a consumer.
+- E-029 already recorded the member as pure local
+  computation by construction (it composed in the
+  bare default environment at E-006); this map
+  re-proves the shape from the code: nothing to
+  wire for the network, everything to wire for
+  the companion.
+
+So the consumers today are exactly two: **the
+command line, and the member's own tests.** E-110
+builds the first real one — the engines as
+services to the core, under typed requests and
+responses — on this map.
+
+## 8. Findings — the docket this map opens
+
+Each finding was probed at this tree; each is
+assigned to the Part VII slice whose subject it
+is. Nothing here is fixed by this mapping slice;
+nothing is left ownerless.
+
+- **Docket 142 — ljodhattr's lines display in the
+  wrong order → E-110.** The composer builds two
+  pairs and two full lines, the form's own shape
+  being pair, full line, pair, full line. But
+  `Stanza.__str__`'s ljodhattr formatter walks the
+  half-stanza list as if it held four entries, so
+  the printed stanza is pair, pair, first full
+  line, blank, second full line — the first full
+  line lands after the *second* pair (seen live in
+  this slice's CLI probe). `Stanza.lines` likewise
+  appends both full lines after all pair lines.
+  Any consumer reading lines in order — E-110's
+  service first — would serve the verse misordered.
+  E-110 re-pins this slice's battery probe when it
+  fixes the order at the source.
+- **Docket 143 — an unknown world is answered
+  silently with borrowed words → E-120** (failure
+  honesty), with a contract note for E-110: probed
+  — composing with `domain="nosuchworld"` returns
+  four one-word lines drawn from other worlds
+  ("Njord", "Valkyrie", "ale", "serpent" at seed
+  42), the stanza still labelled with the bogus
+  world. The template fallbacks mask the empty
+  pool instead of the input being refused. The
+  library must state the error; E-110's contract
+  must validate the world before composing so the
+  service never reaches the fallback with a bad
+  name.
+- **Docket 144 — two config fields are dead or
+  misdescribed → E-112.** `include_old_norse` is
+  never consulted by composition (§5), and `topic`
+  is a stored label whose comment promises a
+  thematic hint the composer never takes. When
+  E-112 decides what seiðr offers a conversation,
+  it decides these fields' fate with it: wire them
+  truly, or remove them from the config the
+  service exposes (E-110's contract must not carry
+  a field that silently does nothing).
+- **Docket 145 — the validators check less than
+  their descriptions claim → E-119.** Probed:
+  fornyrthislag's validator accepts four lines
+  whose alliteration groups all differ — its
+  alliteration branch is a literal `pass` — and
+  checks only count and syllables; drottkvaett's
+  validator likewise checks only count and
+  syllables, and no code anywhere checks the
+  rhyme / hending its class description calls
+  mandatory (the composer's own docstring admits
+  it approximates). E-119, writing the engine docs
+  and runnable examples, reconciles claim and
+  code: either the validators grow to check what
+  they say, or the descriptions say what they
+  check — a Part VII gate (E-122) accounting item
+  either way.
+- **Docket 146 — "deterministic" is true only
+  when seeded, and the CLI's seed differs from
+  the library's → E-113.** §6: unseeded
+  composition is irreproducible, and a seeded CLI
+  run prints the best of five derived-seed
+  attempts, not the library's poem at that seed.
+  E-113 (determinism + offline, both engines)
+  owns the ruling: one seed semantics across
+  library and CLI, and the branding words
+  corrected to the conditional truth wherever
+  Ember's own documents repeat them.
+- **Docket 147 — lexicon data wrinkles → E-119.**
+  The jotunheim "devour" duplicate (§3) is drawn
+  at double weight with two Old Norse forms —
+  one entry is presumably a mis-keyed second
+  verb. E-119's docs/examples pass over the
+  lexicon data anyway; it rules the duplicate
+  there (merge, rename to the intended verb, or
+  record as deliberate), and the cross-part-of-
+  speech homographs stand recorded in §3 as the
+  standing shape it rules against.
+
+Carried into Part VII from earlier parts, named
+here so the part opens with its full board:
+E-114 takes this member's budget row (with the
+astrology engine's); the E-057 row itself stands
+unchanged by this slice (no member file moved).
+
+## 9. Gate re-measurement (E-017 method)
+
+Measured this slice, VM profile (Python 3.12.3,
+pytest 9.1.1); raw logs in
+`~/workspace/.verify-tmp/ember-e107/`.
+
+- **Pre-doc standing check** (the batteries that
+  pin this member's standing — E-057's table,
+  E-043's install weight, E-089's canon guard):
+  **20 passed** before this slice's files landed.
+- **Member suite** (its own shape, §6):
+  **38 passed, 0 failed**.
+- **Focal set** (this slice's battery + the three
+  standing batteries above): **31 passed** — the
+  pre-doc 20 + this slice's 11, exact.
+- **Run A** (whole suite, default env): interrupted
+  at collection — **1 error, 20 skipped**, exit 2
+  (docket 1, unchanged since the E-017 freeze).
+- **Run B** (default env, pgvector file excluded):
+  **1506 passed, 6 failed, 34 skipped** — E-106's
+  1495 + this slice's 11, exact; the 6 are the
+  proven environment failures (Batch CDE ×3, G ×2,
+  J ×1 — the sqlite_vec family), FAILED list
+  identical in kind.
+- **Run D** (whole suite, extras supplied from the
+  isolated dir): **1714 passed, 0 failed,
+  20 skipped**, exit 0 — E-106's 1703 + 11, fully
+  clean.
+- This slice adds one architecture doc and one root
+  battery and changes no member code, so the E-057
+  table stands un-re-measured (11 files /
+  103,728 B, the pin inside the focal set
+  verifying it).
+
+## Carried forward
+
+- Part VII is OPEN. Next: E-108 (astrology engine
+  mapped).
+- Dockets 142–147 opened here, owners: E-110
+  (142, plus 143's contract note), E-120 (143),
+  E-112 (144), E-119 (145, 147), E-113 (146).
+- NOT PROVEN at this slice: any service binding
+  (E-110), any use in conversation (E-112), the
+  accuracy of the lexicon's Old Norse forms as
+  scholarship (taken here as data, not verified —
+  no slice in Part VII is charged with verifying
+  them, and none may claim it), any real-hardware
+  figure beyond E-057's standing row.
+
+*Filed by the E-107 slice, 2026-11-02. Next:
+E-108 — astrology engine mapped.*

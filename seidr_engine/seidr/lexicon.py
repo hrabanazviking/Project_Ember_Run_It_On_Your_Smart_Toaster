@@ -129,6 +129,18 @@ class Lexicon:
         self.kennings: List[Kenning] = []
         self._rng = random.Random(seed)
         self._load_base_vocabulary()
+
+    def reseed(self, seed: Optional[int] = None) -> None:
+        """Restart this lexicon's random stream at ``seed``.
+
+        E-113 (docket 146): a seeded composition must be
+        reproducible from its seed alone, not from however
+        far this lexicon's stream had already run — the
+        Skald reseeds its lexicon at the start of every
+        seeded composition, so a reused lexicon draws the
+        same words a fresh one would.
+        """
+        self._rng = random.Random(seed)
     
     def _add_word(self, word: str, syllables: int, domain: str, 
                   part_of_speech: str, old_norse: Optional[str] = None,

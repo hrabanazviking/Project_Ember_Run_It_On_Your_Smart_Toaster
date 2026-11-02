@@ -142,6 +142,16 @@ def test_credential_assignments_are_the_classified_fixtures():
         # its synthetic Aesir-shaped vault key, used only
         # against isolated scratch vaults.
         "tests/unit/test_kista_core_binding_e100.py": 1,
+        # Classified at E-105, consciously (the act this
+        # battery exists to force): the E-104 user-guide
+        # battery's one credential-shaped assignment is
+        # its synthetic scratch-vault passphrase (the
+        # well-known example phrase), used only against
+        # isolated scratch vaults. It entered the
+        # tracked tree at E-104's banking, after that
+        # slice's focal halves ran, so the classification
+        # lands here at the first gate to see it tracked.
+        "tests/unit/test_kista_for_users_e104.py": 1,
     }, counts
 
 

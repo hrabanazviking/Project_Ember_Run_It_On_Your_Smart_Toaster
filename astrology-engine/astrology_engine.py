@@ -252,7 +252,15 @@ EXALTATION = {
     "Pluto":   "Aries",
     "N.Node":  "Gemini",
 }
-FALL = {v: k for k, v in EXALTATION.items() if isinstance(v, str)}
+# Fall: the sign opposite a planet's exaltation (E-109, docket 150).
+# The old shape inverted EXALTATION itself, producing a sign->planet
+# map the dignity check could never match, so no planet was ever
+# scored in fall. This is a planet->sign map, like EXALTATION.
+FALL = {
+    planet: SIGNS[(SIGNS.index(sign) + 6) % 12]
+    for planet, sign in EXALTATION.items()
+    if isinstance(sign, str)
+}
 # Exaltation degrees (traditional)
 EXALTATION_DEG = {
     "Sun": ("Aries", 19), "Moon": ("Taurus", 3),
@@ -455,7 +463,8 @@ def local_to_utc(year, month, day, local_hour, tz_name):
 
 
 def resolve_birth(date_str, time_str, city, nation="",
-                  lat_override=None, lon_override=None):
+                  lat_override=None, lon_override=None,
+                  offline=False):
     """One-stop resolution of birth data → (y, mo, d, utc_hour, lat, lon, tz_name, tz_label).
 
     Steps:
@@ -476,7 +485,8 @@ def resolve_birth(date_str, time_str, city, nation="",
     y, mo, d, local_hour = parse_date_time(date_str, time_str)
     time_known = time_str is not None
 
-    lat, lon, city_resolved = geocode_city(city, nation, lat_override, lon_override)
+    lat, lon, city_resolved = geocode_city(city, nation, lat_override, lon_override,
+                                           offline=offline)
     city_default_used = not city_resolved
 
     tz_name = resolve_timezone(lat, lon)
@@ -498,7 +508,8 @@ def resolve_birth(date_str, time_str, city, nation="",
 
     return y, mo, d, utc_hour, lat, lon, tz_name or "UTC", tz_label, time_known, city_default_used
 
-def geocode_city(city, nation="", lat_override=None, lon_override=None):
+def geocode_city(city, nation="", lat_override=None, lon_override=None,
+                 offline=False):
     """Resolve city → (lat, lon, city_resolved).
     
     city_resolved is True if the city name was actually matched (not defaulted).
@@ -509,12 +520,21 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
       3. kerykeion built-in geonames DB
       4. Hardcoded ~120-city fallback table
       5. Warn + return (0, 0)
+
+    With ``offline=True`` (E-113, docket 153's ruling —
+    the road the Ember core's service always takes)
+    tiers 2 and 3 are skipped entirely: they are
+    network services, so a place they resolve is
+    neither offline nor reproducible. Only explicit
+    coordinates and the built-in table resolve a
+    place offline; anything else falls through to
+    tier 5 and the caller sees the default flag.
     """
     if lat_override is not None and lon_override is not None:
         return float(lat_override), float(lon_override), False
 
     # --- Nominatim (most accurate, works for any city worldwide) ---
-    if city:
+    if city and not offline:
         geo = _geo()
         if geo:
             query = f"{city}, {nation}".strip(", ")
@@ -531,7 +551,7 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
                 pass
 
     # --- kerykeion geonames ---
-    if KK and city:
+    if KK and city and not offline:
         try:
             import logging
             logging.disable(logging.CRITICAL)
@@ -608,6 +628,10 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
         "montpelier": (44.2601, -72.5806),
         "richmond": (37.5407, -77.4360),
         "olympia": (47.0379, -122.9007),
+        # Bare "charleston" is the WV capital (this section);
+        # Charleston SC is "charleston sc" below — the two
+        # stood as one duplicated key with a silent winner
+        # until E-109 (docket 152).
         "charleston": (38.3498, -81.6326),
         "madison": (43.0731, -89.4012),
         "cheyenne": (41.1400, -104.8197),
@@ -670,7 +694,7 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
         "tampa": (27.9506, -82.4572),
         "nashville": (36.1627, -86.7816),
         "raleigh": (35.7796, -78.6382),
-        "charleston": (32.7766, -79.9311),
+        "charleston sc": (32.7766, -79.9311),
         "savannah": (32.0809, -81.0912),
         "richmond": (37.5407, -77.4360),
         "virginia beach": (36.8529, -75.9780),
@@ -933,7 +957,7 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
         "guadalajara": (20.6597, -103.3496),
         "monterrey": (25.6866, -100.3161),
         "cancun": (21.1619, -86.8515),
-        "tivat": (21.1619, -86.8515),
+        "tivat": (42.4347, 18.6998),
         "bogota": (4.7110, -74.0721),
         "medellin": (6.2442, -75.5812),
         "buenos aires": (-34.6037, -58.3816),
@@ -987,7 +1011,7 @@ def geocode_city(city, nation="", lat_override=None, lon_override=None):
         "islamabad": (33.6844, 73.0479),
         "colombo": (6.9271, 79.8612),
         "kabul": (34.5553, 69.2075),
-        "tientSin": (39.1422, 117.1767),
+        "tianjin": (39.1422, 117.1767),
         "ulaanbaatar": (47.8864, 106.9052),
     }
     result = CITIES.get(city.lower())
@@ -1123,7 +1147,7 @@ def essential_dignity(planet, sign, degree):
         else:
             labels.append("Exaltation ★★★★")
             score += 4
-    elif FALL.get(sign) == planet:
+    elif FALL.get(planet) == sign:
         labels.append("Fall ✗")
         score -= 4
 
@@ -1196,9 +1220,15 @@ def calc_antiscia(positions):
 
 def is_day_chart(sun_lon, asc_lon):
     """Sun above horizon = day chart (Sun between Asc and Desc going via top)."""
-    # Sun is in day if its longitude is within 180° of ASC going counter-clockwise (above horizon)
+    # The longitudes above the horizon run from the Descendant
+    # (ASC + 180) forward through the MC back to the Ascendant,
+    # so the Sun is above the horizon exactly when its offset
+    # from the ASC is in [180, 360). The old test returned the
+    # opposite half — a London noon chart read as a night chart
+    # (E-109, docket 158; probed against the Sun's true altitude
+    # at eleven hours of 2000-01-01, inverted at every one).
     diff = (sun_lon - asc_lon) % 360
-    return diff <= 180
+    return diff >= 180
 
 def calc_lots(positions, asc_lon, day_chart):
     """Calculate Arabic Lots. Returns dict of lot_name -> longitude."""
@@ -1216,14 +1246,18 @@ def calc_lots(positions, asc_lon, day_chart):
         except KeyError:
             return None
 
-    # Fortune
-    fl = lot("Moon", "Sun")
+    # Fortune — day: ASC + Moon - Sun (E-109, docket 149).
+    # lot(from_p, to_p) computes ASC + to - from by day and
+    # ASC + from - to by night, so Fortune is lot("Sun", "Moon")
+    # and Spirit lot("Moon", "Sun"); the two calls stood swapped
+    # here, and every lot built on Fortune or Spirit inherited it.
+    fl = lot("Sun", "Moon")
     if fl is not None:
         lots["Lot of Fortune"] = fl
         fortune_lon = fl
 
-    # Spirit
-    sl = lot("Sun", "Moon")
+    # Spirit — day: ASC + Sun - Moon (E-109, docket 149)
+    sl = lot("Moon", "Sun")
     if sl is not None:
         lots["Lot of Spirit"] = sl
 
@@ -1294,21 +1328,130 @@ def calc_lunar_phase(sun_lon, moon_lon):
             return name, glyph, diff, illumination
     return "Dark Moon", "🌑", diff, 0
 
+def _elongation(jd):
+    """Moon-Sun elongation in degrees (0-360) at a Julian day."""
+    positions = calc_planet_positions(jd)
+    sun = positions.get("Sun", {}).get("longitude")
+    moon = positions.get("Moon", {}).get("longitude")
+    if sun is None or moon is None:
+        return None
+    return (moon - sun) % 360
+
+
+def _next_phase(jd_start, target):
+    """Next Julian day when the elongation crosses ``target``.
+
+    A lunation is an elongation event — a new moon is the Moon
+    meeting the Sun (elongation 0), a full moon its opposite
+    (180) — never a fixed-longitude crossing (E-109, docket 151;
+    the old code called swe.mooncross_ut with targets 0 and 2,
+    which under pyswisseph 2.10 returns nothing at all). The
+    search scans a day at a time and bisects the crossing, the
+    same shape as this engine's exact transit searches.
+    Elongation grows ~12.2 degrees a day, so a one-day step
+    cannot skip a crossing.
+    """
+    def offset(jd):
+        elong = _elongation(jd)
+        if elong is None:
+            return None
+        return ((elong - target + 180) % 360) - 180
+
+    prev_jd = jd_start
+    prev = offset(prev_jd)
+    if prev is None:
+        return None
+    if prev == 0:
+        return prev_jd
+    # The wrap discontinuity sits 180 degrees from the target;
+    # a true crossing passes through 0 with both bracketing
+    # offsets small, a wrap jump flips between large values.
+    for _ in range(40):
+        jd = prev_jd + 1.0
+        curr = offset(jd)
+        if curr is None:
+            return None
+        if curr == 0:
+            return jd
+        if prev * curr < 0 and abs(prev) < 20 and abs(curr) < 20:
+            lo, hi, d_lo = prev_jd, jd, prev
+            for _ in range(50):
+                mid = (lo + hi) / 2
+                d_mid = offset(mid)
+                if d_mid is None:
+                    return None
+                if d_lo * d_mid <= 0:
+                    hi = mid
+                else:
+                    lo, d_lo = mid, d_mid
+                if hi - lo < 1e-5:
+                    break
+            return (lo + hi) / 2
+        prev_jd, prev = jd, curr
+    return None
+
+
 def next_lunation(jd_start):
     """Find next New Moon and Full Moon from jd_start."""
     if not SWE:
         return None, None
-    results = []
-    for phase_type in [0, 2]:  # 0=New Moon, 2=Full Moon
-        try:
-            ret, jd_out = swe.mooncross_ut(phase_type, jd_start, swe.FLG_SWIEPH)
-            if ret >= 0:
-                results.append(jd_out)
-            else:
-                results.append(None)
-        except Exception:
-            results.append(None)
-    return results[0], results[1]
+    return _next_phase(jd_start, 0.0), _next_phase(jd_start, 180.0)
+
+
+def find_solar_return(natal_sun_lon, jd_center):
+    """Julian day near ``jd_center`` when the Sun returns to
+    ``natal_sun_lon``, or None without the ephemeris.
+
+    The calendar anniversary of a birth is never more than
+    about a day and a half from the true return, so a scan of
+    the surrounding days brackets the crossing and bisection
+    refines it to the stated 0.001-degree tolerance (E-109,
+    docket 156; the old iteration stepped diff/360 days a pass
+    under a 50-pass cap and stopped ~26 degrees short).
+    """
+    if not SWE:
+        return None
+
+    def offset(jd):
+        positions = calc_planet_positions(jd)
+        sun = positions.get("Sun", {}).get("longitude")
+        if sun is None:
+            return None
+        return ((sun - natal_sun_lon + 180) % 360) - 180
+
+    start = jd_center - 5.0
+    prev = offset(start)
+    if prev is None:
+        return None
+    if prev == 0:
+        return start
+    jd = start
+    # The Sun moves ~1 degree a day and never turns back, so
+    # the bracket offsets are small near a true crossing; the
+    # wrap, 180 degrees away, flips between large values.
+    while jd < jd_center + 5.0:
+        nxt = jd + 0.5
+        curr = offset(nxt)
+        if curr is None:
+            return None
+        if curr == 0:
+            return nxt
+        if prev * curr < 0 and abs(prev) < 20 and abs(curr) < 20:
+            lo, hi, d_lo = jd, nxt, prev
+            for _ in range(60):
+                mid = (lo + hi) / 2
+                d_mid = offset(mid)
+                if d_mid is None:
+                    return None
+                if abs(d_mid) < 0.001:
+                    return mid
+                if d_lo * d_mid <= 0:
+                    hi = mid
+                else:
+                    lo, d_lo = mid, d_mid
+            return (lo + hi) / 2
+        jd, prev = nxt, curr
+    return None
 
 def void_of_course(jd, moon_lon, positions):
     """Check if Moon is void of course — no applying major aspects before sign ingress.
@@ -1425,7 +1568,13 @@ def jd_to_dt(jd):
     """Convert Julian day to datetime string."""
     if SWE:
         try:
-            y, m, d, h = swe.jdut1_to_utc(jd, 0)[:4]
+            # revjul returns (year, month, day, fractional hour) —
+            # the shape this formatter was written for (E-109,
+            # docket 157). The old call, jdut1_to_utc(jd, 0),
+            # passed 0 = JUL_CAL, so every printed date landed
+            # 13 days early in this era, and its (…, hour, minute,
+            # second) return shape silently zeroed the minutes.
+            y, m, d, h = swe.revjul(jd, swe.GREG_CAL)
             dt = datetime.datetime(int(y), int(m), int(d))
             hour = int(h)
             minute = int((h - hour) * 60)
@@ -2358,19 +2507,13 @@ def cmd_solar_return(args):
     natal_pos = calc_planet_positions(jd_natal)
     natal_sun_lon = natal_pos.get("Sun", {}).get("longitude", 0)
 
-    # Start searching from ~March of target year
-    jd_search = julian_day(target_year, mo - 1 if mo > 1 else 12, d, 0)
-    # Refine with iterative approach
-    for _ in range(50):
-        pos = calc_planet_positions(jd_search)
-        sun_lon = pos.get("Sun", {}).get("longitude", natal_sun_lon)
-        diff = (natal_sun_lon - sun_lon) % 360
-        if diff > 180:
-            diff -= 360
-        if abs(diff) < 0.001:
-            break
-        # Sun moves ~1 degree/day
-        jd_search += diff / 360.0
+    # The true return sits within days of the calendar
+    # anniversary in the target year; find_solar_return
+    # brackets and bisects it to 0.001 degrees (E-109).
+    jd_anniversary = julian_day(target_year, mo, d, utc_hour)
+    jd_search = find_solar_return(natal_sun_lon, jd_anniversary)
+    if jd_search is None:
+        jd_search = jd_anniversary
 
     sr_pos = calc_planet_positions(jd_search)
     sr_cusps, sr_asc, sr_mc = calc_houses(jd_search, lat, lon)
@@ -2570,7 +2713,11 @@ def cmd_aspect_grid(args):
     jd = julian_day(y, mo, d, hour)  # aspect-grid has no location so no TZ conversion
     positions = calc_planet_positions(jd)
 
-    header("FULL ASPECT GRID", args.date)
+    # The convention is stated, never silent (E-109, docket 155):
+    # with no location there is no timezone to convert from, so
+    # the input time is read as UTC.
+    header("FULL ASPECT GRID",
+           f"{args.date}  {args.time or ''} — time treated as UTC (no location)")
     print_aspects(calc_aspects(positions), max_show=200)
 
 
@@ -2626,7 +2773,10 @@ def cmd_antiscia(args):
     jd = julian_day(y, mo, d, hour)
     positions = calc_planet_positions(jd)
 
-    header("ANTISCIA & CONTRA-ANTISCIA", f"{args.date}  {args.time or ''}")
+    # Stated convention (E-109, docket 155): no location, so
+    # the input time is read as UTC, as in aspect-grid.
+    header("ANTISCIA & CONTRA-ANTISCIA",
+           f"{args.date}  {args.time or ''} — time treated as UTC (no location)")
 
     print("  Antiscia mirror: solstice axis (0° Cancer / 0° Capricorn)")
     print("  Contra-antiscia: equinox axis (0° Aries / 0° Libra)")

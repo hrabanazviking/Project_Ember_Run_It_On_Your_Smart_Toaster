@@ -49,10 +49,18 @@ class Stanza:
     
     @property
     def lines(self) -> List[Line]:
+        # Lines in reading order. For ljóðaháttr each pair is
+        # completed by its full line before the next pair begins
+        # (pair, full line, pair, full line) — the full lines are
+        # interleaved after their pairs, never appended after all
+        # pairs (E-110, docket 142). Any full line beyond one per
+        # pair keeps its place after the last pair.
         result = []
-        for hs in self.half_stanzas:
+        for i, hs in enumerate(self.half_stanzas):
             result.extend(hs.lines)
-        result.extend(self.full_lines)
+            if i < len(self.full_lines):
+                result.append(self.full_lines[i])
+        result.extend(self.full_lines[len(self.half_stanzas):])
         return result
     
     def __str__(self) -> str:
@@ -65,32 +73,23 @@ class Stanza:
     
     def _format_ljodhattr(self) -> str:
         """Format ljóðaháttr with proper structure:
-        pair + full line, then pair + full line."""
+        pair + full line, then pair + full line.
+
+        Each half-stanza is one alliterating pair completed by
+        its full line (indented); a blank line separates the two
+        half-stanzas. The full line follows its own pair — it is
+        never deferred past the next pair (E-110, docket 142).
+        """
         parts = []
-        hs_idx = 0
-        fl_idx = 0
-        # Structure: hs0, hs1 are pairs; full_lines[0] and full_lines[1] are full lines
-        # Half-stanza 1
-        if hs_idx < len(self.half_stanzas):
-            parts.append(str(self.half_stanzas[hs_idx]))
-            hs_idx += 1
-        if hs_idx < len(self.half_stanzas):
-            parts.append(str(self.half_stanzas[hs_idx]))
-            hs_idx += 1
-        if fl_idx < len(self.full_lines):
-            parts.append(f"    {self.full_lines[fl_idx].text}")
-            fl_idx += 1
-        parts.append("")  # blank line between half-stanzas
-        # Half-stanza 2
-        if hs_idx < len(self.half_stanzas):
-            parts.append(str(self.half_stanzas[hs_idx]))
-            hs_idx += 1
-        if hs_idx < len(self.half_stanzas):
-            parts.append(str(self.half_stanzas[hs_idx]))
-            hs_idx += 1
-        if fl_idx < len(self.full_lines):
-            parts.append(f"    {self.full_lines[fl_idx].text}")
-            fl_idx += 1
+        for i, hs in enumerate(self.half_stanzas):
+            if i:
+                parts.append("")  # blank line between half-stanzas
+            parts.append(str(hs))
+            if i < len(self.full_lines):
+                parts.append(f"    {self.full_lines[i].text}")
+        # Full lines beyond one per pair keep their place last.
+        for fl in self.full_lines[len(self.half_stanzas):]:
+            parts.append(f"    {fl.text}")
         return "\n".join(parts)
     
 
