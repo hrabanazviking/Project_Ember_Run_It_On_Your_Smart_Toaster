@@ -528,3 +528,59 @@ pytest 9.1.1); raw logs in
 
 *Filed by the E-108 slice, 2026-11-02. Next:
 E-109 — astrology accuracy gate.*
+
+## Correction (2026-11-02, later the same morning)
+
+The environment claim in §8's suspect paragraph —
+that the ephemeris package "could not be fetched
+at this tick (the package index returned no
+matching distribution)" — is corrected. The first
+download attempt did fail that way, but the full
+install (`pyswisseph` + `ephem` into an isolated
+target dir outside the repo) was still running
+when this slice banked and **completed minutes
+later**: pyswisseph 2.10.3.2 and ephem 4.2.1 are
+installed at
+`~/workspace/.verify-tmp/ember-e108/deps`. The
+slice's verdict is unchanged — a map files no
+accuracy verdict, and E-109 remains the accuracy
+gate — but three probed results now stand as
+E-109's opening evidence, measured with the
+ephemeris live (probe:
+`~/workspace/.verify-tmp/ember-e108/probe_live.py`):
+
+- **The core ephemeris path is sound at the
+  arcminute level.** At 2000-01-01 12:00 UTC the
+  engine's longitudes for all ten classical
+  bodies were compared against pyephem (an
+  independent implementation): Sun 280.3689° vs
+  280.3786°, Moon 223.3238° vs 223.3276°, and
+  every body within **0.06–0.58 arcminutes** of
+  the reference. Placidus houses computed for
+  London at the same instant (ASC 24.0146°,
+  MC 279.4932°). This is a cross-check, not
+  E-109's gate: two implementations agreeing
+  does not by itself prove either against
+  published reference values, and the fixtures
+  remain E-109's to build under the fixture law.
+- **Docket 151 is sharpened:** under pyswisseph
+  2.10.3.2, `next_lunation` returns
+  `(None, None)` outright — the `lunar` command
+  prints no lunation lines at all (its caller's
+  guards swallow the empties). Against the known
+  sky (new moon 2000-01-06, full moon
+  2000-01-21), the function returns nothing, not
+  merely wrong dates.
+- **The solar-return suspect is PROVEN and takes
+  docket 156 → E-109.** Replicating
+  `cmd_solar_return`'s iteration for a
+  1990-06-15 natal chart targeting 2026: after
+  the full 50 passes the Sun is still **26.25°
+  short** of the natal longitude — the
+  `diff / 360.0`-day step cannot reach the 0.001°
+  tolerance from a month out, exactly as suspected.
+  Every solar-return chart the engine prints is
+  therefore cast for a moment days away from the
+  true return. E-109 owns the fix's proof (a
+  day-scaled step or bisection, as its own
+  transit searches already use).
