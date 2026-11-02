@@ -102,7 +102,11 @@ def test_member_size_repinned_at_e057():
     row = [line for line in BOOK.read_text(encoding="utf-8").splitlines()
            if line.startswith("| `astrology-engine/`")][0]
     assert "7,482,898 B" in row
-    assert "131,621,907 bytes" in _flat(BOOK)
+    # The total was 131,621,907 bytes at E-109; re-pinned
+    # at E-110 with attribution (its engines service grew
+    # the core and its docket-142 repair grew the seiðr
+    # member — the E-057 table re-pinned likewise).
+    assert "131,646,711 bytes" in _flat(BOOK)
 
 
 # ── Docket 149: the lots ────────────────────────────────

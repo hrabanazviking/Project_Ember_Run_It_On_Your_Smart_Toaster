@@ -105,7 +105,10 @@ def test_tracked_member_files_and_size_stand():
         path = MEMBER / rel
         assert path.is_file(), rel
         total += path.stat().st_size
-    assert total == 103728
+    # 103,728 B at E-107; re-pinned at E-110, whose
+    # docket-142 repair grew seidr/forms.py by 228 B
+    # (the E-057 table re-pinned likewise).
+    assert total == 103956
 
 
 def test_lexicon_counts_derived_from_code():
@@ -151,21 +154,36 @@ def test_no_consumer_in_the_core():
         if "seidr" in path.read_text(
                 encoding="utf-8", errors="replace").lower():
             offenders.append(str(path.relative_to(REPO)))
-    assert offenders == [], offenders
+    # Re-pinned at E-110 with attribution: the engines
+    # service (src/ember/engines.py) is now the member's
+    # first core consumer — the E-107 map's "no consumers"
+    # verdict was the ground E-110 built on, and this pin
+    # now guards that the service is the ONLY core file
+    # naming the engine.
+    assert offenders == ["src/ember/engines.py"], offenders
 
 
 # ── The docketed shapes, probed ─────────────────────────
 
 
 def test_docket_142_ljodhattr_full_lines_appended_last():
+    # Re-pinned at E-110 (docket 142 FIXED at the source
+    # there): the flattened lines and the rendered stanza
+    # now interleave pair, full line, pair, full line —
+    # the form's own shape — instead of appending both
+    # full lines after all pairs.
     stanza = Skald(seed=42).compose(
         PoemConfig(form="ljodhattr", seed=42))
     assert len(stanza.full_lines) == 2
-    assert stanza.lines[-2:] == list(stanza.full_lines)
+    pair_1 = list(stanza.half_stanzas[0].lines)
+    pair_2 = list(stanza.half_stanzas[1].lines)
+    assert list(stanza.lines) == [
+        *pair_1, stanza.full_lines[0],
+        *pair_2, stanza.full_lines[1],
+    ]
     rendered = str(stanza)
-    second_pair_last = stanza.half_stanzas[1].lines[1].text
-    assert rendered.index(stanza.full_lines[0].text) > \
-        rendered.index(second_pair_last)
+    assert rendered.index(stanza.full_lines[0].text) < \
+        rendered.index(pair_2[0].text)
 
 
 def test_docket_143_unknown_world_composes_silently():

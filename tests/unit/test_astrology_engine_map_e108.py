@@ -170,7 +170,13 @@ def test_no_consumer_in_the_core():
         if "astrology" in path.read_text(
                 encoding="utf-8", errors="replace").lower():
             offenders.append(str(path.relative_to(REPO)))
-    assert offenders == [], offenders
+    # Re-pinned at E-110 with attribution: the engines
+    # service (src/ember/engines.py) is now the member's
+    # first core consumer — the E-108 map's "no consumers"
+    # verdict was the ground E-110 built on, and this pin
+    # now guards that the service is the ONLY core file
+    # naming the engine.
+    assert offenders == ["src/ember/engines.py"], offenders
 
 
 def test_member_has_no_test_suite():
