@@ -307,6 +307,35 @@ bare environment lacks, and its real weight is a
 proprietary browser binary that is not in this tree at
 all; the tracked size above is its wrapper only.
 
+### The vault's own costs (E-103)
+
+One member has now been priced the way the core was:
+the toaster-Kista's vault, measured at rest, in use,
+and installed, against the toaster profile's ceilings
+(the method and every run are in
+`docs/architecture/E-103_BUDGET_PROOF.md`; all figures
+are campaign-VM measurements, none from a toaster-class
+device — that device proof is NOT PROVEN).
+
+| What the vault costs | Measured | Against the toaster |
+|---|---|---|
+| At rest, empty | 764 B in all | — |
+| At rest, 100 entries (vault, five backups, key, meta) | 328,548 B | 16% of one month's 2 MiB storage allowance |
+| One typical entry's growth | ~563 B in the vault blob | the allowance's edge at ≈617 entries |
+| Idle | 0 — there is no resident process | the idle ceilings met by construction |
+| Peak RAM, one command, unwrapped (100 entries) | 27.2 MiB | inside the 64 MiB turn ceiling |
+| Peak RAM, one command, passphrase unlock | 41.3 MiB | 65% of the turn ceiling — the scrypt unlock's working set |
+| Installed: the program + its one dependency | 15,723,450 B | **laptop profile only** — the program is 149,853 B; the `cryptography` dependency is the miss (docket 140, E-106) |
+
+In plain words: the vault is toaster-sized in the
+two ways a vault spends a small machine's life — what
+it keeps, and what it uses while you talk to it — and
+it costs nothing at all standing still. The one
+honest exception is carrying it in: on this machine
+its single dependency installs at laptop weight, and
+no Ember document may call the vault toaster-
+installable until the Part VI gate rules on it.
+
 ## Appendix — the measured anchors, by their code names
 
 Every anchor in `ember.budgets`, at the value the code
