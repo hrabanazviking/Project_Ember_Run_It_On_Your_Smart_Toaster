@@ -159,6 +159,23 @@ STIMULUS_SPECS = (
               "person, is the origin of this touch.",
     ),
     StimulusSpec(
+        name="time.astrology",
+        kind=KIND_TIME,
+        producer="src/ember/day_astrology.py (the companion's day "
+                 "computation, cast through the E-110 chart service)",
+        payload_fields=("date", "moment", "place", "julian_day",
+                        "positions", "ascendant", "mc", "day_chart",
+                        "tz_name", "tz_label", "ephemeris_model", "frame"),
+        channel=CHANNEL_CRON,
+        notes="Ritual-shaped time (E-111): the day's astrology, "
+              "computed locally through the chart service at one "
+              "stated moment (12:00 local), never fetched. When "
+              "the service refuses (above all, no ephemeris), no "
+              "stimulus is built and nothing is published. The "
+              "payload carries no persona: the day is a system "
+              "event (E-071).",
+    ),
+    StimulusSpec(
         name="sensor.check:*",
         kind=KIND_SENSOR,
         producer="heartbeat/checks (Eir health, Huginn projects, "

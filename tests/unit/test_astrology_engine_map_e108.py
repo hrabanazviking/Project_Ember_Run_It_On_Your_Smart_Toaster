@@ -175,8 +175,17 @@ def test_no_consumer_in_the_core():
     # first core consumer — the E-108 map's "no consumers"
     # verdict was the ground E-110 built on, and this pin
     # now guards that the service is the ONLY core file
+    # naming the engine. Re-pinned again at E-111 with
+    # attribution: the day-astrology module
+    # (src/ember/day_astrology.py) is the service's first
+    # consumer in turn — it names the engine to say what
+    # it computes through the service — so the pin now
+    # guards that these two are the only core files
     # naming the engine.
-    assert offenders == ["src/ember/engines.py"], offenders
+    assert sorted(offenders) == [
+        "src/ember/day_astrology.py",
+        "src/ember/engines.py",
+    ], offenders
 
 
 def test_member_has_no_test_suite():

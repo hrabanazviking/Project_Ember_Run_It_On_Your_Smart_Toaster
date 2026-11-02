@@ -105,8 +105,12 @@ def test_member_size_repinned_at_e057():
     # The total was 131,621,907 bytes at E-109; re-pinned
     # at E-110 with attribution (its engines service grew
     # the core and its docket-142 repair grew the seiðr
-    # member — the E-057 table re-pinned likewise).
-    assert "131,646,711 bytes" in _flat(BOOK)
+    # member — the E-057 table re-pinned likewise), and
+    # again at E-111 with attribution (its day-astrology
+    # module grew the core and its time.astrology
+    # registration grew Verdandi — the E-057 table
+    # re-pinned likewise).
+    assert "131,657,131 bytes" in _flat(BOOK)
 
 
 # ── Docket 149: the lots ────────────────────────────────
