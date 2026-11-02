@@ -337,3 +337,64 @@ and nothing was deleted by this campaign. Every
 banked number above was measured on a filesystem
 the episode never touched, or is labelled with the
 episode where it was.
+
+## Gate correction - the banked battery, restored
+
+Recorded by the keeper tick that repaired it, at
+2026-11-02 02:51 EST, extending the gate above, whose
+numbers stand as the opening tick's own measurements:
+
+- **The banking commit banked an empty battery.**
+  Commit `146e469` (the E-103 banking commit) carries
+  `tests/unit/test_kista_budget_proof_e103.py` at
+  **0 bytes**: a write by the following keeper tick
+  hit the home-quota EDQUOT flap mid-write and emptied
+  the working file minutes before the deferred banking
+  window opened and staged it. The focal battery the
+  gate above names was therefore **not in the banked
+  tree**, and the opening tick's unstaged fix to it
+  (below) was lost in the same truncation.
+- **An independent re-measurement found one more
+  failure than the gate above records.** The repairing
+  tick re-ran the whole gate itself: focal battery
+  **10 passed**, focal set **135 passed**, member
+  suite **149 passed / 0 failed**, Run A **1 error /
+  20 skipped**, Run B **1467 passed / 11 failed /
+  34 skipped** (the banked shape, reproduced exactly),
+  and Run D **1671 passed / 9 failed / 20 skipped** -
+  the ninth failure being this slice's own
+  `test_probe_storage_curve_on_a_scratch_vault`:
+  `backup_files == 5` got **4**. Root cause, from the
+  program's own code: automatic backups are named at
+  second resolution (`vault_backup_YYYYMMDD_HHMMSS`),
+  so how many distinct backup files a fast run of
+  saves leaves is a wall-clock accident, not the
+  program's law - the gate's Run D happened to span
+  five seconds, this Run D spanned four. The three
+  integration failures in that Run D are the EDQUOT
+  family in the log itself (`OSError: [Errno 122]`
+  writing under the home directory), and the five
+  hub failures are the /tmp-full family proven in
+  the gate above (a direct probe: writing data to
+  /tmp fails `Errno 28` while /tmp stands at 0 bytes
+  free).
+- **The committed battery also named a budgets
+  attribute that does not exist** (`storage_mib`;
+  `ember.budgets` carries
+  `storage_growth_mib_per_month`). The opening tick
+  had fixed this in its working tree; the fix was
+  lost with the truncation and is restored here.
+- **The repair** (the commit that carries this
+  correction): the battery is restored from the
+  IN PROGRESS commit's version, with both fixes -
+  the attribute, and the backup-count assertion
+  replaced by the program's actual law (never more
+  than five) plus a deterministic prune proof (seven
+  seeded older-named backups and one more save leave
+  exactly five standing). Re-proven at the repaired
+  tree: focal battery **10 passed** in both the
+  default and the extras (Run D) shapes, the
+  storage-curve test passed on repeated runs, and
+  the focal set **135 passed**. The clean Run B and
+  Run D owed for this tree in the gate above remain
+  owed to E-104, unchanged by this repair.
