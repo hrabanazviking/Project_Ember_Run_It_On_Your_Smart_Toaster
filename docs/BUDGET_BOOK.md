@@ -71,12 +71,19 @@ regression armour.
 Measured on the campaign VM (x86, Python 3.12.3, fresh
 processes, memory read from `/proc`):
 
-- **Install: 978,843 bytes in all** — the package
-  (729,802 B, byte-identical installed and in source),
-  its dist-info (83,102 B) and the one default extra a
-  working install carries, `sqlite-vec` (165,939 B with
-  its dist-info). Bytecode caches excluded; after first
-  run they add ~0.6 MB more. The old front-door claim of
+- **Install: 1,275,211 bytes in all** — the package
+  (991,046 B, byte-identical installed and in source),
+  its dist-info (84,617 B) and the one default extra a
+  working install carries, `sqlite-vec` 0.1.9
+  (199,548 B with its dist-info). Bytecode caches
+  excluded; after first run they add ~0.6 MB more.
+  (E-041's founding measurement was 978,843 B in all;
+  it was re-measured at E-112 by the same method after
+  the E-042 gate caught the grown package alone
+  exceeding the old all-in anchor — the core no longer
+  installs in under a MiB, and still fits the
+  toaster's 2 MiB ceiling. The growth is docket 159.)
+  The old front-door claim of
   "~50 MB installed" is struck: it overstates Ember by
   ~50×. The ~3.5 GB "typical install" story is Ollama
   (~700 MB) plus models (~2.6 GB) plus Ember (~1 MB).
@@ -271,13 +278,13 @@ running hub is 21.9 MiB live, E-041).
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 132 | 938,897 B | toaster | 12.0 MiB |
-| `Verdandi/` | 193 | 17,033,233 B | none | 12.6 MiB |
-| `kista/` | 25 | 2,807,936 B | phone | 24.2 MiB |
+| `src/` (ember core) | 136 | 1,011,519 B | toaster | 12.0 MiB |
+| `Verdandi/` | 193 | 17,034,160 B | none | 12.6 MiB |
+| `kista/` | 25 | 2,823,610 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
-| `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
-| `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
+| `seidr_engine/` | 11 | 105,889 B | toaster | 13.3 MiB |
+| `astrology-engine/` | 25 | 7,483,464 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
 | `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
 | `Open-VTT/` | 209 | 6,768,730 B | pi | NOT MEASURED |
@@ -285,9 +292,9 @@ running hub is 21.9 MiB live, E-041).
 | `cleasby-vigfusson-old-norse-dict/` | 170 | 24,221,782 B | none | NOT MEASURED |
 
 In plain words: the twelve running members weigh
-131,600,644 bytes together, and three of them —
+131,698,183 bytes together, and three of them —
 mempalace, the dictionary, and Verdandi (which misses
-even the laptop's ceiling by 256,017 bytes) — fit no
+even the laptop's ceiling by 256,944 bytes) — fit no
 profile's install ceiling at all. Their weight is data,
 not code: benchmark corpora, a test snapshot, loose
 images. And none of it is charged to a core user: the
@@ -307,6 +314,78 @@ bare environment lacks, and its real weight is a
 proprietary browser binary that is not in this tree at
 all; the tracked size above is its wrapper only.
 
+### The vault's own costs (E-103)
+
+One member has now been priced the way the core was:
+the toaster-Kista's vault, measured at rest, in use,
+and installed, against the toaster profile's ceilings
+(the method and every run are in
+`docs/architecture/E-103_BUDGET_PROOF.md`; all figures
+are campaign-VM measurements, none from a toaster-class
+device — that device proof is NOT PROVEN).
+
+| What the vault costs | Measured | Against the toaster |
+|---|---|---|
+| At rest, empty | 764 B in all | — |
+| At rest, 100 entries (vault, five backups, key, meta) | 328,548 B | 16% of one month's 2 MiB storage allowance |
+| One typical entry's growth | ~563 B in the vault blob | the allowance's edge at ≈617 entries |
+| Idle | 0 — there is no resident process | the idle ceilings met by construction |
+| Peak RAM, one command, unwrapped (100 entries) | 27.2 MiB | inside the 64 MiB turn ceiling |
+| Peak RAM, one command, passphrase unlock | 41.3 MiB | 65% of the turn ceiling — the scrypt unlock's working set |
+| Installed: the program + its one dependency | 15,723,450 B | **laptop profile only** — the program is 149,853 B; the `cryptography` dependency is the miss (docket 140, E-106) |
+
+In plain words: the vault is toaster-sized in the
+two ways a vault spends a small machine's life — what
+it keeps, and what it uses while you talk to it — and
+it costs nothing at all standing still. The one
+honest exception is carrying it in: on this machine
+its single dependency installs at laptop weight, and
+no Ember document may call the vault toaster-
+installable until the Part VI gate rules on it.
+
+### The engines' own costs (E-114)
+
+Two more members are now priced the same way: the
+seiðr engine and the astrology engine, the companion's
+inner life (Part VII). The method and every run are in
+`docs/architecture/E-114_ENGINE_BUDGET_ROWS.md`; all
+figures are campaign-VM measurements (medians of three
+fresh processes for memory), none from a toaster-class
+device — that device proof is NOT PROVEN.
+
+| What the engines cost | Measured | Against the profiles |
+|---|---|---|
+| Seiðr, carried in (its package; no dependencies at all) | 88,707 B | toaster — the whole tracked member is 105,889 B, 5% of the toaster's install ceiling |
+| Seiðr, one seeded verse through the core service | 14.7 MiB peak | inside the toaster's 64 MiB turn ceiling |
+| Astrology, its tracked checkout | 7,483,464 B | 7,230,510 B of it is pictures; the engine itself is one file of 140,715 B |
+| Astrology, the sky carried in (the engine file + pyswisseph as installed) | 7,779,880 B | pi only — 93% of the pi install ceiling; not toaster, not phone |
+| Astrology, one chart (the sky alone) | 18.1 MiB peak | inside the toaster's turn ceiling |
+| Astrology, the local-time dependencies as installed today (timezonefinder's closure + pytz) | 106,212,923 B | **no profile** — the timezone data package and numpy are the weight |
+| Astrology, one chart with local time resolved | 38.5 MiB peak | inside the toaster's turn ceiling (60%) |
+
+In plain words: the verse engine is toaster-sized in
+every way there is — it carries in for less than a
+twentieth of the smallest ceiling, needs no dependency
+of any kind, and spends about a fifth of the smallest
+machine's working memory for the moment of a verse.
+The astrology engine's *sky* is nearly as well
+behaved: the engine is a single small file, its one
+hard dependency is the ephemeris library, and together
+they fit the pi profile and work inside even the
+toaster's memory ceiling. What is not small is knowing
+what o'clock a place means: the timezone library, as
+the package index serves it today, drags a data
+package and a numerical library behind it that
+together outweigh every profile in this book several
+times over. A chart without it still casts — its time
+is read as UTC, and the answer says so in plain words
+(E-110) — so the honest shape of the choice is: the
+sky fits the pi; local time, at today's packaging,
+fits nothing, and is an optional extra a carrier
+chooses with open eyes. Neither engine writes anything
+of its own, and neither is a resident process: at rest
+and standing idle they cost exactly zero.
+
 ## Appendix — the measured anchors, by their code names
 
 Every anchor in `ember.budgets`, at the value the code
@@ -316,7 +395,7 @@ cannot quietly age away from the measurements.
 
 | Anchor | Value | From |
 |---|---|---|
-| MEASURED_INSTALL_BYTES | 978,843 | E-041 (VM) |
+| MEASURED_INSTALL_BYTES | 1,275,211 | E-041 (VM), re-measured E-112 (VM) |
 | MEASURED_IDLE_RAM_MIB | 40.7 | E-041 (VM) |
 | MEASURED_TURN_RAM_MIB | 40.1 | E-041 (VM) |
 | MEASURED_COLD_START_FIRST_WORD_S | 2.87 | E-046 (VM) |

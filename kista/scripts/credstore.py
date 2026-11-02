@@ -35,7 +35,14 @@ Usage:
   kista check <service>
   kista search <query>
   kista backup [--output FILE] [--encrypt]
-  kista restore <file>
+  kista backup --carry [--output FILE]  # User-carried file, encrypted
+                                        # under a backup passphrase you
+                                        # choose (E-101) — restores into
+                                        # any vault, on any machine, with
+                                        # that passphrase and nothing else
+  kista restore <file> [--allow-plaintext]  # A plain (unencrypted)
+                                        # backup is refused unless you
+                                        # say --allow-plaintext (E-101)
   kista github-backup [--repo URL] [--push]
   kista config set <key> <value>
   kista config get <key>
@@ -396,6 +403,26 @@ def _validate_key(key_bytes: bytes) -> bytes:
     return stripped
 
 
+def _validate_key_or_exit(raw: bytes) -> bytes:
+    """``_validate_key`` as a plain refusal (E-102, docket 139).
+
+    A truncated or damaged key file — the classic partial
+    write — used to surface the validator's ValueError as a
+    raw traceback at every command that loads the key. The
+    validator's words are already the right words for a
+    normal user ("your vault data is still intact — do NOT
+    regenerate the key"); they now reach the user as a
+    stated refusal with exit 1. Nothing is regenerated and
+    nothing is changed: the damaged file is left exactly
+    as it stands, for the owner or for help to work with.
+    """
+    try:
+        return _validate_key(raw)
+    except ValueError as exc:
+        print(f"✗ {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
 # ── Passphrase wrapping (E-096) ─────────────────────────
 # The vault key itself never changes when a passphrase is
 # set, changed, or removed — only its wrapping does, so
@@ -457,6 +484,156 @@ def _wrap_key(vault_key: bytes, passphrase: str) -> bytes:
         "wrapped": Fernet(wrapping).encrypt(vault_key).decode(),
     }
     return (json.dumps(doc, indent=2) + "\n").encode()
+
+
+# ── User-carried backup (E-101) ─────────────────────────
+# The road E-095 and E-099 found missing: a backup file a
+# person can carry to another machine and open there.
+# The vault-key shapes cannot do that — an export and an
+# --encrypt backup both demand the SAME vault key at the
+# other end, and no road may carry the key itself. So a
+# carried file is encrypted under its own passphrase,
+# chosen for this backup alone, derived with the same
+# scrypt shape as E-096's wrapping (standard library, no
+# new dependency). The file is a small JSON envelope —
+# KDF parameters and salt in the clear, the whole export
+# envelope as one Fernet token under the derived key:
+#
+#   {"kista_carry_backup": 1, "kdf": "scrypt",
+#    "n": 16384, "r": 8, "p": 1, "salt": "<base64>",
+#    "encrypted": "<Fernet token>"}
+#
+# A copied carried file without its passphrase opens
+# nothing (the E-096 probe shape), and the passphrase is
+# never the vault key, never travels inside the file,
+# and is never taken from a command-line argument
+# (the docket 128 rule, applied here too).
+CARRY_MARKER = "kista_carry_backup"
+
+
+def _read_backup_passphrase(create: bool) -> str:
+    """Read the backup passphrase for a carried file:
+    the KISTA_BACKUP_PASSPHRASE environment variable
+    (for scripts), or a hidden prompt on a terminal.
+    Anything else is a plain refusal. For a new file
+    the recovery truth is stated before the choice:
+    a forgotten backup passphrase means this backup
+    can never be opened — by anyone, including you."""
+    env = os.environ.get("KISTA_BACKUP_PASSPHRASE")
+    if env:
+        if len(env) < _MIN_PASSPHRASE_LEN:
+            print(
+                f"✗ The backup passphrase is too short — use at least "
+                f"{_MIN_PASSPHRASE_LEN} characters. Nothing was written.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        return env
+    if sys.stdin.isatty():
+        if create:
+            print(
+                "Before you choose: if you forget this backup "
+                "passphrase, this backup file can never be opened "
+                "— not by you, not by anyone. There is no reset "
+                "and no recovery copy. Write it down somewhere "
+                "safe, apart from the file itself."
+            )
+            first = getpass.getpass(
+                "Choose a backup passphrase (input hidden): ")
+            second = getpass.getpass(
+                "Type it again to be sure: ")
+            if first != second:
+                print("✗ The two copies did not match. "
+                      "Nothing was written.", file=sys.stderr)
+                sys.exit(1)
+            if len(first) < _MIN_PASSPHRASE_LEN:
+                print(
+                    f"✗ The backup passphrase is too short — use at "
+                    f"least {_MIN_PASSPHRASE_LEN} characters. "
+                    f"Nothing was written.",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            return first
+        return getpass.getpass("Backup passphrase (input hidden): ")
+    print(
+        "✗ No backup passphrase was given. Set the "
+        "KISTA_BACKUP_PASSPHRASE environment variable, or run "
+        "this in a terminal so the program can ask without "
+        "showing what you type. Nothing was changed.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def _make_carry_file(export_data: dict, passphrase: str) -> bytes:
+    """Encrypt an export envelope under a backup
+    passphrase; returns the carried file's bytes."""
+    salt = os.urandom(16)
+    derived = _derive_wrapping_key(
+        passphrase, salt, _SCRYPT_N, _SCRYPT_R, _SCRYPT_P)
+    token = Fernet(derived).encrypt(
+        json.dumps(export_data, indent=2,
+                   ensure_ascii=False).encode())
+    doc = {
+        CARRY_MARKER: 1,
+        "kdf": "scrypt",
+        "n": _SCRYPT_N,
+        "r": _SCRYPT_R,
+        "p": _SCRYPT_P,
+        "salt": base64.b64encode(salt).decode(),
+        "encrypted": token.decode(),
+    }
+    return (json.dumps(doc, indent=2) + "\n").encode()
+
+
+def _carry_doc(raw: bytes) -> dict | None:
+    """The parsed envelope when *raw* is a carried
+    backup file (E-101), else None."""
+    if raw[:1] != b"{":
+        return None
+    try:
+        doc = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        return None
+    if isinstance(doc, dict) and doc.get(CARRY_MARKER) == 1:
+        return doc
+    return None
+
+
+def _open_carry_file(doc: dict, passphrase: str) -> dict:
+    """Open a carried backup file with its passphrase.
+    A wrong passphrase is a plain, stated refusal and
+    nothing is read from the file."""
+    try:
+        salt = base64.b64decode(doc["salt"])
+        derived = _derive_wrapping_key(
+            passphrase, salt,
+            int(doc.get("n", _SCRYPT_N)),
+            int(doc.get("r", _SCRYPT_R)),
+            int(doc.get("p", _SCRYPT_P)))
+        decrypted = Fernet(derived).decrypt(
+            doc["encrypted"].encode())
+        data = json.loads(decrypted)
+    except InvalidToken:
+        print(
+            "✗ That backup passphrase did not open this file. "
+            "Nothing was restored and nothing was changed.\n"
+            "  If the passphrase is forgotten, this backup "
+            "cannot be opened — that is the protection "
+            "working as promised.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    except (KeyError, ValueError, TypeError) as exc:
+        print(f"✗ This carried backup file is damaged: {exc}",
+              file=sys.stderr)
+        sys.exit(1)
+    if not isinstance(data, dict):
+        print("✗ Invalid backup format: expected a JSON object.",
+              file=sys.stderr)
+        sys.exit(1)
+    return data
 
 
 def _read_vault_passphrase() -> str:
@@ -530,7 +707,7 @@ def _unwrap_key(raw: bytes) -> bytes:
             if os.environ.get("KISTA_PASSPHRASE") or not sys.stdin.isatty():
                 sys.exit(1)
             continue
-        key = _validate_key(vault_key)
+        key = _validate_key_or_exit(vault_key)
         _unlocked_key_cache = key
         return key
     print(
@@ -618,7 +795,7 @@ def _get_key() -> bytes:
         raw = VAULT_KEY.read_bytes()
         if _is_wrapped_key(raw):
             return _unwrap_key(raw)
-        return _validate_key(raw)
+        return _validate_key_or_exit(raw)
     # No key file exists — check if vault data exists
     if VAULT_FILE.exists():
         # Vault data exists but key is missing — cannot recover
@@ -1146,7 +1323,7 @@ def cmd_set_passphrase(args) -> None:
               "it, first unlock with the passphrase you use now.")
         vault_key = _unwrap_key(raw)
     else:
-        vault_key = _validate_key(raw)
+        vault_key = _validate_key_or_exit(raw)
     passphrase = _prompt_new_passphrase()
     _ensure_dir()
     _write_key_file(_wrap_key(vault_key, passphrase))
@@ -2313,6 +2490,34 @@ def cmd_backup(args) -> None:
         "vault": vault,
     }
 
+    if getattr(args, "carry", False):
+        # E-101: the user-carried file — encrypted under
+        # its own backup passphrase, so it restores into
+        # any vault on any machine (see the E-101 section
+        # above). Never the vault key: the key stays home.
+        if getattr(args, "encrypt", False):
+            print(
+                "✗ Choose one shape: --carry (a passphrase you "
+                "choose) or --encrypt (this vault's own key), "
+                "not both. Nothing was written.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        passphrase = _read_backup_passphrase(create=True)
+        carry_path = (Path(args.output) if args.output
+                      else Path("kista_carry_backup.enc"))
+        _atomic_write(carry_path, _make_carry_file(export_data, passphrase))
+        _chmod_600(carry_path)
+        print(f"✓ Carried backup written to {carry_path}")
+        print(f"  Entries: {len(vault.get('entries', {}))}")
+        print("  Encrypted: Yes — with the backup passphrase "
+              "you just chose, not the vault key.")
+        print("  Carry the file anywhere; keep the passphrase "
+              "apart from the file.")
+        print("  On the other machine: kista restore "
+              f"{carry_path.name} — it will ask for the passphrase.")
+        return
+
     output_path = Path(args.output) if args.output else Path("kista_backup.json")
 
     if getattr(args, "encrypt", False):
@@ -2346,27 +2551,55 @@ def cmd_restore(args) -> None:
 
     key = _get_key()
 
-    # Determine if the file is encrypted
-    try:
-        data = src.read_bytes()
-        # Try to parse as plain JSON first
-        if data[:1] == b"{":
+    # Determine the file's shape. Three roads in:
+    # a carried file (E-101, its own passphrase), a plain
+    # JSON file (gated below — docket 138), and the
+    # vault-key encrypted shape.
+    data = src.read_bytes()
+    carry = _carry_doc(data)
+    if carry is not None:
+        passphrase = _read_backup_passphrase(create=False)
+        backup_data = _open_carry_file(carry, passphrase)
+    elif data[:1] == b"{":
+        try:
             backup_data = json.loads(data)
-        else:
-            # Try to decrypt as encrypted backup
-            try:
-                decrypted = _decrypt(data, key)
-                backup_data = json.loads(decrypted)
-            except (InvalidToken, json.JSONDecodeError) as exc:
-                print(f"✗ Cannot read backup file: {exc}", file=sys.stderr)
-                sys.exit(1)
-    except json.JSONDecodeError as exc:
-        # Try encrypted format
+        except json.JSONDecodeError as exc:
+            print(f"✗ Cannot read backup file: {exc}", file=sys.stderr)
+            sys.exit(1)
+        # Docket 138 (E-099's finding, judged here): a plain
+        # backup is readable by anyone who ever held the
+        # file, and restoring one brings its entries into
+        # this vault with no proof of where they came
+        # from — under this vault's different key, silently.
+        # That road now needs the owner's explicit word.
+        if not getattr(args, "allow_plaintext", False):
+            print(
+                "✗ This backup file is plain, unencrypted text. "
+                "Anyone who has ever held it could read every "
+                "entry in it — and could have changed them.\n"
+                "  Restoring it would bring those entries into "
+                "this vault with no proof of where they came "
+                "from.\n"
+                "  If you made this file yourself and you trust "
+                "every hand it passed through, say so plainly:\n"
+                f"    kista restore {src} --allow-plaintext\n"
+                "  Nothing was restored and nothing was changed.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        print(
+            "⚠ Restoring a PLAIN backup, at your explicit word: "
+            "its entries were readable — and changeable — by "
+            "anyone who held the file. They enter this vault "
+            "exactly as they stand in it."
+        )
+    else:
+        # Try to decrypt as encrypted backup
         try:
             decrypted = _decrypt(data, key)
             backup_data = json.loads(decrypted)
-        except (InvalidToken, json.JSONDecodeError) as exc2:
-            print(f"✗ Cannot read backup file: {exc2}", file=sys.stderr)
+        except (InvalidToken, json.JSONDecodeError) as exc:
+            print(f"✗ Cannot read backup file: {exc}", file=sys.stderr)
             sys.exit(1)
 
     # Validate backup structure
@@ -2434,6 +2667,24 @@ def cmd_github_backup(args) -> None:
         print("✗ No GitHub repo configured. Use 'kista config set backup.repo <url>' or --repo flag.", file=sys.stderr)
         sys.exit(1)
 
+    # Docket 135 (E-095's finding, judged at E-101): the
+    # harvest shape, named at the moment of use — every
+    # pushed blob stays in the repository's history and
+    # every one opens under this vault's one key.
+    print("⚠ Read this before any backup goes to GitHub:")
+    print("  Every backup pushed there stays in that repository's")
+    print("  history for as long as the repository lives —")
+    print("  deleting the file later does not remove old copies.")
+    print("  Every one of those copies opens with this vault's")
+    print("  one key: if the key ever reaches someone else, the")
+    print("  whole pushed history opens, not just today's vault.")
+    print("  This program cannot check whether that repository")
+    print("  is private. Only use a private repository that")
+    print("  is yours. The working copy kept on this machine")
+    print("  (under github_tmp/) holds that same history, too.")
+    print("  For a backup you carry yourself, 'kista backup")
+    print("  --carry' is the safer road (E-101).")
+
     push = getattr(args, "push", False)
 
     # Create an encrypted backup
@@ -2456,6 +2707,7 @@ def cmd_github_backup(args) -> None:
     backup_dir.mkdir(parents=True, exist_ok=True)
     backup_file = backup_dir / f"kista_backup_{timestamp}.enc"
     backup_file.write_bytes(encrypted)
+    _chmod_600(backup_file)
 
     print(f"✓ Encrypted backup created: {backup_file}")
     print(f"  Target repo: {repo}")
@@ -3111,12 +3363,14 @@ def main():
     p_backup = sub.add_parser("backup", help="Export vault data to JSON backup (optionally encrypted)")
     p_backup.add_argument("--output", "-o", help="Output file path (default: kista_backup.json)")
     p_backup.add_argument("--encrypt", action="store_true", help="Encrypt the backup with vault key")
+    p_backup.add_argument("--carry", action="store_true", help="Write a user-carried backup, encrypted under a backup passphrase you choose — restores into any vault on any machine (E-101)")
 
     # restore (new v2.0)
     p_restore = sub.add_parser("restore", help="Restore vault data from a backup JSON file")
     p_restore.add_argument("file", help="Backup file path")
     p_restore.add_argument("--merge", action="store_true", help="Merge: fill in blank fields")
     p_restore.add_argument("--overwrite", action="store_true", help="Overwrite existing entries")
+    p_restore.add_argument("--allow-plaintext", action="store_true", help="Restore a plain, unencrypted backup file — only for a file you made yourself (E-101)")
 
     # github-backup (new v2.0)
     p_gh = sub.add_parser("github-backup", help="Push encrypted backup to GitHub repository")

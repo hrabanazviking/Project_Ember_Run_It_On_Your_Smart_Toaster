@@ -57,8 +57,8 @@ A working Python CLI tool that provides:
 - **init** — Initialize the vault and generate the encryption key
 
 Encryption: Fernet (AES-128-CBC + HMAC-SHA256).  
-Storage: `~/.hermes/credentials/vault.json.enc` (encrypted) + `vault_meta.json` (service names only).  
-Key: `~/.hermes/credentials/.vault_key` (chmod 600, owned by the user).
+Storage: `~/.ember/kista/vault.json.enc` (encrypted) + `vault_meta.json` (service names only) — the default home since E-094; `KISTA_DIR` overrides it.  
+Key: `~/.ember/kista/.vault_key` (chmod 600, owned by the user).
 
 ---
 
@@ -70,10 +70,10 @@ These are the improvements that make Kista fully compliant with Mythic Engineeri
 
 **1.1. Cross-platform path resolution**
 
-Currently uses `Path.home() / ".hermes" / "credentials"` which works but is not documented in the help text. Make paths configurable via:
-- Environment variable `KISTA_DIR` (preferred)
-- CLI flag `--vault-dir`
-- Default: `~/.hermes/credentials`
+Built in part (E-094, reconciled at E-104): the program now resolves `Path.home() / ".ember" / "kista"` by default, and paths are configurable via:
+- Environment variable `KISTA_DIR` (preferred) — **built**
+- CLI flag `--vault-dir` — **not built**; this line stands as the proposal it always was
+- Default: `~/.ember/kista`
 
 This follows the Mythic Engineering rule: **no absolute paths hardcoded in documentation**.
 
@@ -92,7 +92,7 @@ When fields like `--password` are omitted from the command line, prompt interact
 **1.4. Audit log**
 
 An append-only, encrypted log of vault operations:
-- `~/.hermes/credentials/vault_audit.log.enc`
+- `~/.ember/kista/vault_audit.log.enc` (proposed; the audit log itself is not built)
 - Each entry: timestamp, operation, service name, success/failure
 - Never logs field values — only that an operation occurred
 - Commands: `kista audit` (view log), `kista audit --since 2026-01-01`
@@ -178,8 +178,8 @@ kista add email-provider-work --email user@example.com \
 **3.1. Multi-vault support**
 
 ```
-kista init --vault personal     # ~/.hermes/credentials/personal/
-kista init --vault work         # ~/.hermes/credentials/work/
+kista init --vault personal     # ~/.ember/kista/personal/
+kista init --vault work         # ~/.ember/kista/work/
 kista --vault work get github   # Access the work vault
 ```
 

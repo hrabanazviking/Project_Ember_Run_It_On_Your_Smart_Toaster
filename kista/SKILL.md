@@ -1,19 +1,46 @@
 ---
-name: runa-credentials
-description: "Kista — Runa's self-owned encrypted vault. 8 entry types: credentials, API keys, SSH keys, certificates, notes, TOTP, licenses, identities. Independent access, no external dependencies."
+name: kista-toaster
+description: "Kista (the Smart Toaster's copy, in the Project Ember monorepo) — a self-owned encrypted vault. 14 entry types in all; the toaster set it promises is credentials, API keys, URLs, and notes. Independent access, no external dependencies beyond the cryptography package."
 version: 2.0.0
 author: Runa Gridweaver Freyjasdottir
 metadata:
-  hermes:
+  ember:
     tags: [security, credentials, encryption, vault, cli-tool]
-    homepage: https://github.com/runafreyjasdottir/kista
+    home: the kista/ member of hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster
 ---
 
 # Kista 🔐
 
 Self-owned encrypted vault. Old Norse *kista* = strongbox, chest, coffer.
 
-**Public repo**: https://github.com/runafreyjasdottir/kista (MIT license)
+> **Which Kista this file is about (reconciled at E-104).** This file
+> arrived in the Ember monorepo as the Hermes-side skill text for the
+> *other* Kista — the ai-folder Kista, Runa's operational vault. At
+> E-104 its identity, counts, and vault paths were reconciled to the
+> copy that actually lives here: the Smart Toaster's Kista, the
+> `kista/` member of Project Ember. The program description, entry
+> types, commands, and security sections below describe that program.
+> The later operational sections (Standing Rules, Account Discovery
+> Workflow, and parts of Pitfalls) are inherited Hermes-side working
+> text, kept as provenance: they are one agent's house rules for the
+> other vault, **not** instructions for a person using this program.
+> For using this vault, read `docs/architecture/E-104_KISTA_FOR_USERS.md`
+> in the Ember repo instead. The boundary between the two Kistas is
+> `docs/audit/E-011_TWO_KISTAS_BOUNDARY.md` (final form at E-104).
+
+> **The plain names (E-105).** In words meant for a person, this copy is
+> **Ember's Kista** — the chest that comes with Ember, on the user's own
+> machine. The other one is **the house Kista** — the house assistants'
+> own chest, on the house computer, under its own keeper. Never bare
+> "Kista" where both could be meant; the naming record is
+> `docs/architecture/E-105_NAMING_KINDNESS.md` in the Ember repo.
+
+**This copy's home**: the `kista/` member of the Project Ember monorepo
+(`hrabanazviking/Project_Ember_Run_It_On_Your_Smart_Toaster`, MIT license).
+The standalone repo `runafreyjasdottir/kista` is the *other* Kista's home —
+the ai-folder Kista, a different program with the same name and lineage.
+The two are never synced and no entry ever crosses between them
+(the boundary: `docs/audit/E-011_TWO_KISTAS_BOUNDARY.md`, final form at E-104).
 
 ## Entry Types (v2.0.0)
 
@@ -95,7 +122,7 @@ kista restore <path>                          # Full vault restore (v2.0)
 ## Security
 
 - Fernet encryption (AES-128-CBC + HMAC-SHA256) at rest
-- Key stored at `~/.hermes/credentials/.vault_key` (chmod 600)
+- Key stored at `~/.ember/kista/.vault_key` (chmod 600; the default home since E-094, `KISTA_DIR` overrides it)
 - Sensitive data via `--password-file`, `--key-file`, `--cert-file` (never CLI args)
 - Atomic writes, key protection, no network access
 - Configurable vault location via `KISTA_DIR` env var

@@ -1209,24 +1209,41 @@ class TestAtomicWrite:
 class TestKeyValidation:
     """BUG-ERR-04: Truncated key file makes vault inaccessible — validate on load."""
 
-    def test_truncated_key_rejected(self, isolated_vault):
-        """A truncated key should be rejected with an actionable error."""
+    def test_truncated_key_rejected(self, isolated_vault, capsys):
+        """A truncated key should be rejected with an actionable error.
+
+        RE-PINNED AT E-102 (docket 139), consciously and with
+        attribution: this test originally expected _get_key to
+        raise ValueError — which at the command line surfaced
+        as a raw traceback, the very shape this class exists to
+        forbid for corrupt vaults. _get_key now refuses plainly:
+        SystemExit, with the validator's actionable words on
+        stderr ("do NOT regenerate the key"). The rejection and
+        its message stand; only their shape is re-pinned.
+        """
         cs = isolated_vault["module"]
         _init_vault(cs)
         _add_entry(cs, "svc", password="pw")
         # Truncate the key file
         key_bytes = isolated_vault["key_file"].read_bytes()
         isolated_vault["key_file"].write_bytes(key_bytes[:20])  # Truncated!
-        with pytest.raises(ValueError, match="Invalid vault key"):
+        with pytest.raises(SystemExit):
             cs._get_key()
+        assert "Invalid vault key" in capsys.readouterr().err
 
-    def test_empty_key_rejected(self, isolated_vault):
-        """An empty key file should be rejected."""
+    def test_empty_key_rejected(self, isolated_vault, capsys):
+        """An empty key file should be rejected.
+
+        RE-PINNED AT E-102 (docket 139) with the truncated-key
+        test above: SystemExit with the actionable message on
+        stderr, never a ValueError traceback.
+        """
         cs = isolated_vault["module"]
         _init_vault(cs)
         isolated_vault["key_file"].write_bytes(b"")
-        with pytest.raises(ValueError, match="Invalid vault key"):
+        with pytest.raises(SystemExit):
             cs._get_key()
+        assert "Invalid vault key" in capsys.readouterr().err
 
 
 class TestCorruptVaultRecovery:

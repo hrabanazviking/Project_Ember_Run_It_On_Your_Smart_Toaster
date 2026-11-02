@@ -11,11 +11,11 @@ honestly itemised." The published table lives in
 **The companion core is tiny; the monorepo around it is
 not — and now every member's weight is on one table.**
 The twelve members that can run (the core plus the eleven
-imported members of the E-002 census) weigh **131,600,644
-bytes (125.45 MiB) of tracked files** between them, and
+imported members of the E-002 census) weigh **131,698,183
+bytes (125.60 MiB) of tracked files** between them, and
 almost all of that weight is three members: mempalace
 (59,049,715 B), the Old Norse dictionary (24,221,782 B)
-and Verdandi (17,033,233 B) — and in each case the weight
+and Verdandi (17,034,160 B) — and in each case the weight
 is data, not code (benchmark corpora, a test snapshot,
 loose images; E-002/E-014).
 
@@ -25,7 +25,7 @@ mimir-well, seidr_engine, bifrost), kista fits the phone,
 four fit the pi (astrology-engine, Hamr, Open-VTT,
 CloakBrowser's tracked tree), and three fit **no profile
 at all** — mempalace, the dictionary, and Verdandi, which
-misses even the laptop's 16 MiB ceiling by 256,017 bytes.
+misses even the laptop's 16 MiB ceiling by 256,944 bytes.
 *(Re-measured at E-061, which changed Verdandi's tracked
 weight: at E-061's filing the totals above and the Verdandi
 row read 131,211,064 bytes and 16,817,105 B / 179 files,
@@ -197,8 +197,54 @@ the Aesir and Well consumers' vault roads, and the
 Kista config) grew the core and whose docket-134
 write lock grew the credstore: the core now reads
 132 files / 938,897 B, kista now reads 25 files /
-2,807,936 B, the total 131,600,644 bytes, the
-laptop miss unchanged at 256,017 bytes.)*
+2,818,528 B, the total 131,611,236 bytes, the
+laptop miss unchanged at 256,017 bytes.
+Re-measured again at E-102, whose docket-139 repair
+(the plain-refusal wrapper on every key-loading road)
+and its member-suite re-pin notes grew the credstore
+member again: kista now reads 25 files / 2,820,119 B,
+the total 131,612,827 bytes, the laptop miss
+unchanged at 256,017 bytes. Re-measured again at
+E-104, whose docket-130/49 reconciliation edited
+kista's own member docs (five files: the old default
+home corrected to this program's own, the E-098
+partition noted in ENTRY_TYPES.md, SKILL.md reframed
+to this copy): kista now reads 25 files /
+2,823,194 B, the total 131,615,902 bytes, the laptop
+miss unchanged at 256,017 bytes. Re-measured again at
+E-105, whose naming kindness added the plain names
+(Ember's Kista / the house Kista) to SKILL.md's
+identity banner and to no other member file: kista
+now reads 25 files / 2,823,610 B, the total
+131,616,318 bytes, the laptop miss unchanged at
+256,017 bytes. Re-measured again at E-109, whose
+accuracy fixes (the lots, fall, lunation, solar-return,
+sect and jd_to_dt repairs in the one engine file) grew
+that file: astrology-engine now reads 25 files /
+7,482,898 B, the total 131,621,907 bytes, the laptop
+miss unchanged at 256,017 bytes. Re-measured again at
+E-110, whose engines service (the new
+`ember.engines` module) grew the core and whose
+docket-142 repair grew the seiðr member's forms
+file: the core now reads 133 files / 963,473 B,
+seidr_engine now reads 11 files / 103,956 B, the
+total 131,646,711 bytes, the laptop miss unchanged
+at 256,017 bytes. Re-measured again at E-111, whose
+day-astrology module (the new `ember.day_astrology`)
+grew the core and whose `time.astrology` registration
+grew Verdandi's stimuli registry and the hub's literal
+registry: the core now reads 134 files / 972,966 B,
+Verdandi now reads 193 files / 17,034,160 B, the
+total 131,657,131 bytes, the laptop miss now
+256,944 bytes. Re-measured again at E-112, whose
+conversation layer (the new
+`ember.seidr_conversation` module) grew the core
+and whose docket-144 ruling removed the member's
+dead `include_old_norse` shapes from its poet
+file: the core now reads 135 files / 992,245 B,
+seidr_engine now reads 11 files / 104,387 B, the
+total 131,676,841 bytes, the laptop miss unchanged
+at 256,944 bytes. Re-measured again at E-113, whose determinism repairs (the lexicon reseed and the sorted alliteration-group pick in the seiðr member's poet and lexicon files, and its CLI's one-seed rewrite), whose offline road in the astrology member's one engine file, and whose engines-service contract words grew those members: the core now reads 135 files / 994,019 B, seidr_engine now reads 11 files / 105,889 B, astrology-engine now reads 25 files / 7,483,464 B, the total 131,698,183 bytes,  Re-measured again at E-115, which added the core's dictionary binding `src/ember/dictionary.py` (the Cleasby-Vigfusson lookup service): the core now reads 136 files / 1,011,519 B, the total 131,698,183 bytes, the laptop miss unchanged at 256,944 bytes.)*
 None of this makes any member cost anything to a core
 user: since E-043 the members are excluded from the
 core's distribution and are never installed with it. A
@@ -238,13 +284,13 @@ table prices exactly that choice, per profile.
 
 | Member | Tracked files | Tracked size | Smallest profile covering it | Import-level RAM floor |
 |---|---|---|---|---|
-| `src/` (ember core) | 132 | 938,897 B | toaster | 12.0 MiB |
-| `Verdandi/` | 193 | 17,033,233 B | none | 12.6 MiB |
-| `kista/` | 25 | 2,807,936 B | phone | 24.2 MiB |
+| `src/` (ember core) | 136 | 1,011,519 B | toaster | 12.0 MiB |
+| `Verdandi/` | 193 | 17,034,160 B | none | 12.6 MiB |
+| `kista/` | 25 | 2,823,610 B | phone | 24.2 MiB |
 | `mempalace/` | 257 | 59,049,715 B | none | 11.5 MiB |
 | `mimir-well/` | 59 | 618,776 B | toaster | 20.8 MiB |
-| `seidr_engine/` | 11 | 103,728 B | toaster | 13.3 MiB |
-| `astrology-engine/` | 25 | 7,477,309 B | pi | 12.4 MiB |
+| `seidr_engine/` | 11 | 105,889 B | toaster | 13.3 MiB |
+| `astrology-engine/` | 25 | 7,483,464 B | pi | 12.4 MiB |
 | `bifrost/` | 10 | 77,916 B | toaster | 15.2 MiB |
 | `Hamr/` | 168 | 6,081,769 B | pi | 40.1 MiB |
 | `Open-VTT/` | 209 | 6,768,730 B | pi | NOT MEASURED |

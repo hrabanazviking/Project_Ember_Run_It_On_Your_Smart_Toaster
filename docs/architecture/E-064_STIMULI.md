@@ -234,3 +234,27 @@ Tests pinning:
 
 *Filed by the E-064 slice, 2026-10-31. Next: E-065 — the
 reflex layer.*
+
+---
+
+## Addendum (E-111, 2026-11-02) — a new entrance registered
+
+One entrance has been registered since this record was
+filed, by the slice that built it (E-111, ritual-shaped
+time; its own record is
+`docs/architecture/E-111_RITUAL_SHAPED_TIME.md`). It
+stands in §3's register as an additional row:
+
+| Stimulus (`name`) | Kind | Producer | Channel | Payload fields |
+|---|---|---|---|---|
+| `time.astrology` | time | `src/ember/day_astrology.py` (the companion's day computation, cast through the E-110 chart service) | cron | `date`, `moment`, `place`, `julian_day`, `positions`, `ascendant`, `mc`, `day_chart`, `tz_name`, `tz_label`, `ephemeris_model`, `frame` |
+
+The day's astrology enters as a stimulus like any other
+outside touch: computed locally at one stated moment
+(12:00 local), never fetched, with provenance origin
+`ember_day_astrology`. When the chart service refuses —
+above all when the ephemeris is absent — no stimulus is
+built and nothing is published. The payload carries no
+persona, so under E-071 it is a system event. This
+addendum extends the register; the body above is the
+E-064 record as filed and is not rewritten.

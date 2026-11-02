@@ -1,6 +1,6 @@
 """
 ᛋᛖᛁᛞᚱ — Seiðr Engine
-A deterministic Old Norse poetry generator
+An Old Norse poetry generator — deterministic when seeded
 
 The seiðr-worker sits between worlds, weaving wyrd-threads
 into patterns that were always meant to exist.

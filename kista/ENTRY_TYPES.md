@@ -15,6 +15,28 @@
 4. **`kista add <service> --type <type>` is the canonical interface.** Convenience shortcuts (`add-apikey`, `add-note`, etc.) are syntactic sugar that set `--type` and expose only relevant flags. They must not diverge in behavior.
 5. **Service key remains the primary lookup.** Even for types where "service" is a stretch metaphor (e.g., a recovery phrase), `service` is still the human-readable label for finding the entry. Example: `kista add "bitcoin-wallet-seed" --type note`.
 
+> **How the fourteen types stand today (E-098, reconciled at E-104).**
+> This specification describes all fourteen types as one design, because
+> that is how they were built. The campaign's later judgment partitions
+> them, and a reader of this document should know the partition before
+> treating the fourteen as one promise:
+>
+> - **The toaster set — this program's own kinds:** `credential`
+>   (passwords), `apikey` (tokens), `url` (URLs), `note` (notes).
+>   Ember is built on these four, and the user docs (E-104) are
+>   written against them.
+> - **Kept kinds — working and tested, kept so no existing entry is
+>   ever stranded, but not promised to Ember:** `totp`, `license`,
+>   `sshkey`, `certificate`, `identity`.
+> - **The other road's kinds — the ai-folder Kista's wider ambitions,
+>   recorded here, not merged into the toaster set:** `astrology`,
+>   `character-sheet`, `rune-reading`, `tarot-reading`, `markdown`.
+>   A new entry of one of these kinds is announced in words by the
+>   program at the moment it is added, and kept exactly as given.
+>
+> The full judgment, with its reasons, is
+> `docs/architecture/E-098_ENTRY_KINDS.md` in the Ember repo.
+
 ---
 
 ## 1. Vault Schema Change
@@ -995,7 +1017,7 @@ ${KISTA_DIR}/
 └── vault_meta.json         # Plaintext metadata index (no secrets)
 ```
 
-Default: `~/.hermes/credentials/` (overridden by `KISTA_DIR` env var).
+Default: `~/.ember/kista/` (the toaster-Kista's own home since E-094; overridden by `KISTA_DIR` env var).
 
 No changes to file structure are required. KISTA_DIR works identically for all entry types because they all live in the same encrypted JSON blob.
 

@@ -23,10 +23,13 @@ class PoemConfig:
     """Configuration for poem generation."""
     form: str = "fornyrthislag"  # poetic form name
     domain: Optional[str] = None  # limit vocabulary to a world/domain
-    topic: Optional[str] = None  # thematic topic hint
+    topic: Optional[str] = None  # a label carried on the stanza; composition never reads it — not a hint (E-112, docket 144)
     num_stanzas: int = 1
     use_kennings: bool = True
-    include_old_norse: bool = False  # show Old Norse alongside English
+    # include_old_norse was removed at E-112 (docket 144): the
+    # field was copied config-to-config and never consulted —
+    # a promise nothing kept. Old Norse travels as data (the
+    # lexicon's own forms), not as a rendering flag.
     alliteration_strictness: float = 0.7  # 0.0-1.0, probability of enforcing alliteration
     seed: Optional[int] = None
 
@@ -60,6 +63,13 @@ class Skald:
         
         if config.seed is not None:
             self._rng = random.Random(config.seed)
+            # E-113 (docket 146): the words come from the
+            # lexicon's stream, so the seed must restart
+            # that stream too — a seeded stanza is
+            # reproducible from its seed alone, whoever
+            # holds this Skald and whatever it composed
+            # before.
+            self.lexicon.reseed(config.seed)
         
         if form.name() == "fornyrthislag":
             return self._compose_fornyrthislag(config, form)
@@ -77,6 +87,16 @@ class Skald:
         if config is None:
             config = PoemConfig()
         
+        if config.seed is not None:
+            # E-113 (docket 146): the per-stanza seed
+            # derivation below draws from this Skald's own
+            # stream, so restart that stream (and the
+            # lexicon's) at the poem's seed first — a
+            # reused Skald then composes the same seeded
+            # poem a fresh one does.
+            self._rng = random.Random(config.seed)
+            self.lexicon.reseed(config.seed)
+
         stanzas = []
         for i in range(config.num_stanzas):
             # Slightly vary the seed for each stanza
@@ -86,7 +106,6 @@ class Skald:
                 topic=config.topic,
                 num_stanzas=1,
                 use_kennings=config.use_kennings,
-                include_old_norse=config.include_old_norse,
                 alliteration_strictness=config.alliteration_strictness,
                 seed=(config.seed or 42) + i * 1000 + self._rng.randint(0, 999) if config.seed else None
             )
@@ -287,7 +306,12 @@ class Skald:
             # Fall back to any domain
             entries = self.lexicon.get_words()
         groups = set(e.alliteration_group for e in entries if e.alliteration_group)
-        return self._rng.choice(list(groups)) if groups else "vowel"
+        # E-113 (docket 146): sorted, never list(set(...)) —
+        # a string set's order follows the process's hash
+        # seed, so the same composition seed chose a
+        # different group in every process; sorted order
+        # makes a seeded choice the same everywhere.
+        return self._rng.choice(sorted(groups)) if groups else "vowel"
     
     def _pick_unique_word(self, **kwargs) -> Optional[WordEntry]:
         """Pick a word that hasn't been used in this composition yet.
@@ -739,10 +763,16 @@ class Poem:
     def __str__(self) -> str:
         return self.format()
     
-    def format(self, include_runic_header: bool = True, 
-               include_form_info: bool = True,
-               include_old_norse: bool = False) -> str:
-        """Format the poem for display."""
+    def format(self, include_runic_header: bool = True,
+               include_form_info: bool = True) -> str:
+        """Format the poem for display.
+
+        (The former ``include_old_norse`` parameter was
+        removed at E-112, docket 144: it was accepted and
+        silently ignored — a poem holds line text, not word
+        entries, so this renderer never had the forms to
+        show. Old Norse forms travel as lexicon data.)
+        """
         lines = []
         
         if include_runic_header:
